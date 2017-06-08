@@ -1,0 +1,32 @@
+{
+  "name": "network-js",
+  "version": "1.0.0",
+  "description": "Simple, promises based neural network library",
+  "scripts": {
+    "test": "nyc mocha",
+    "coverage": "istanbul cover _mocha",
+    "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
+  },
+  "author": "Dan Ruta",
+  "license": "MIT",
+  "dependencies": {
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-3": "^6.5.0",
+    "babelify": "^7.3.0",
+    "chai": "3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "coveralls": "^2.13.1",
+    "grunt": "^1.0.1",
+    "grunt-babel": "*",
+    "grunt-cli": "^1.2.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-uglify": "*",
+    "grunt-contrib-watch": "^1.0.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.4.2",
+    "mocha-lcov-reporter": "^1.3.0",
+    "nyc": "^11.0.2",
+    "sinon": "^2.3.2",
+    "sinon-chai": "^2.10.0"
+  }
+}

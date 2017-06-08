@@ -1,5 +1,6 @@
 # Network.js
 [![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
+
 Network.js is promise based implementation of a (currently) really basic neural network, functional in node as well as the browser. The focus was end user simplicity. 
 
 This project is in its infancy, and more features and optimisations will periodically be added.

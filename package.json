@@ -4,8 +4,8 @@
   "description": "Simple, promises based neural network library",
   "scripts": {
     "test": "nyc mocha",
-    "coverage": "istanbul cover _mocha",
-    "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
   },
   "author": "Dan Ruta",
   "license": "MIT",

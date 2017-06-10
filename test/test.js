@@ -912,4 +912,10 @@ describe("Netmath", () => {
             expect(NetMath.softmax([23, 54, 167, 3])).to.deep.equal([0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251])
         })
     })
+
+    describe("Mean Squared Error", () => {
+        it("meanSquaredError([13,17,18,20,24], [12,15,20,22,24]) == 2.6", () => {
+            expect(NetMath.meanSquaredError([13,17,18,20,24], [12,15,20,22,24])).to.equal(2.6)
+        })
+    })
 })

@@ -104,7 +104,7 @@ const normalizedResults = NetMath.softmax(netResult)
 |:-------------:| :-----:| :-----:| :---: |
 | Learning Rate | The speed at which the net will learn. | Any number | 0.2 |
 | Activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
-| Cost | Cost function to use when printing out the net error | "crossEntropy" | "crossEntropy" |
+| Cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
 ## Future plans
 ---
 ##### Short term

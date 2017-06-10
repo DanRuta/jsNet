@@ -65,6 +65,11 @@ class NetMath {
         const total = values.reduce((prev, curr) => prev+curr, 0)
         return values.map(value => value/total)
     }
+
+    static meanSquaredError (calculated, desired) {
+        return calculated.map((output, index) => Math.pow(output - desired[index], 2))
+                         .reduce((prev, curr) => prev+curr, 0) / calculated.length
+    }
 }
 
 typeof window=="undefined" && (global.NetMath = NetMath)

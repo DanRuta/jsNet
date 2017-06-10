@@ -59,7 +59,6 @@ net.train(training) // This on its own is enough
 .then(() => console.log("done")) // This resolves a promise, meaning you can add further code here (eg testing)
 ```
 You can also provide a callback, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, and the input data for that iteration. 
-table
 
 ### Testing
 ---
@@ -100,11 +99,12 @@ const normalizedResults = NetMath.softmax(netResult)
 ## Configurations
 ---
 #### Network
-|  attribute | What it does | Available Configurations | Default value |
+|  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| Learning Rate | The speed at which the net will learn. | Any number | 0.2 |
-| Activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
-| Cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
+| learningRate | The speed at which the net will learn. | Any number | 0.2 |
+| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain" | null |
+| activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
+| cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
 ## Future plans
 ---
 ##### Short term

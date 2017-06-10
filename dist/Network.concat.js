@@ -51,24 +51,53 @@ typeof window=="undefined" && (global.Layer = Layer)
 
 class NetMath {
     
+    // Activation functions
     static sigmoid (value, prime) {
         return prime ? NetMath.sigmoid(value)*(1-NetMath.sigmoid(value))
                      : 1/(1+Math.exp(-value))
     }
 
+    // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
                      .reduce((p,c) => p-c, 0)
     }
 
-    static softmax (values) {
-        const total = values.reduce((prev, curr) => prev+curr, 0)
-        return values.map(value => value/total)
-    }
-
     static meanSquaredError (calculated, desired) {
         return calculated.map((output, index) => Math.pow(output - desired[index], 2))
                          .reduce((prev, curr) => prev+curr, 0) / calculated.length
+    }
+
+    // Weight updating functions
+    static noAdaptiveLR (value, deltaValue) {
+        return value + this.learningRate * deltaValue
+    }
+
+    static gain (value, deltaValue, gain, neuron, weightI) {
+
+        const newVal = value + this.learningRate * deltaValue * gain
+
+        if(newVal<=0 && value>0 || newVal>=0 && value<0){
+            if(weightI!=null){
+                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+            }else{
+                neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
+            }
+        }else {
+            if(weightI!=null){
+                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+            }else {
+                neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
+            }
+        }
+
+        return newVal
+    }
+
+    // Other
+    static softmax (values) {
+        const total = values.reduce((prev, curr) => prev+curr, 0)
+        return values.map(value => value/total)
     }
 }
 
@@ -77,12 +106,14 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate=0.2, layers=[], activation="sigmoid", cost="crossEntropy"}={}) {
-        this.learningRate = learningRate
+    constructor ({learningRate=0.2, layers=[], adaptiveLR, activation="sigmoid", cost="crossEntropy"}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
+
+        this.learningRate = learningRate
+        this.weightUpdateFn = NetMath[adaptiveLR ? adaptiveLR : "noAdaptiveLR"]
         this.activation = NetMath[activation]
         this.cost = NetMath[cost]
 
@@ -304,12 +335,9 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
-                    const newWeight = neuron.weights[dwi] + this.learningRate * dw
-                    neuron.weights[dwi] = newWeight
+                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron.weightGains[dwi], neuron, dwi)()
                 })
-
-                const newBias = neuron.bias + this.learningRate * neuron.deltaBias
-                neuron.bias = newBias
+                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron.biasGain, neuron)()
             })
         })
     }
@@ -359,7 +387,10 @@ class Neuron {
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1
         }
+
         this.deltaWeights = this.weights.map(v => 0)
+        this.weightGains = [...new Array(size)].map(v => 1)
+        this.biasGain = 1
     }
 }
 

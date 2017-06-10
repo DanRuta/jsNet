@@ -2,12 +2,14 @@
 
 class Network {
 
-    constructor ({learningRate=0.2, layers=[], activation="sigmoid", cost="crossEntropy"}={}) {
-        this.learningRate = learningRate
+    constructor ({learningRate=0.2, layers=[], adaptiveLR, activation="sigmoid", cost="crossEntropy"}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
+
+        this.learningRate = learningRate
+        this.weightUpdateFn = NetMath[adaptiveLR ? adaptiveLR : "noAdaptiveLR"]
         this.activation = NetMath[activation]
         this.cost = NetMath[cost]
 
@@ -229,12 +231,9 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
-                    const newWeight = neuron.weights[dwi] + this.learningRate * dw
-                    neuron.weights[dwi] = newWeight
+                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron.weightGains[dwi], neuron, dwi)()
                 })
-
-                const newBias = neuron.bias + this.learningRate * neuron.deltaBias
-                neuron.bias = newBias
+                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron.biasGain, neuron)()
             })
         })
     }

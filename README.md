@@ -52,7 +52,7 @@ The data structure must (currently) be an object with key ```input``` having an 
 ```
 You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch.
 ```javascript
-const {training} = mnist.set(800, 200) // Get the training data from the mnist library, liked above
+const {training} = mnist.set(800, 200) // Get the training data from the mnist library, linked above
 
 const net = new Network()
 net.train(training) // This on its own is enough
@@ -87,8 +87,8 @@ freshNetwork.fromJSON(data)
 ### Trained usage
 ---
 Once the network has been trained, tested and imported into your page, you can use it via the ```forward``` function.
-The data structure must be the same as when training/testing (see above).
 ```javascript
+const userInput = [1,0,1,0,0.5] // Example input
 const netResult = net.forward(userInput)
 ```
 This will return an array of the activations in the output layer.

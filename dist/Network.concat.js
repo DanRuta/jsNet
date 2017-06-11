@@ -13,7 +13,7 @@ class Layer {
 
     assignPrev (layer) {
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size))   
+        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR))   
     }
 
     forward (data) {
@@ -73,25 +73,31 @@ class NetMath {
         return value + this.learningRate * deltaValue
     }
 
-    static gain (value, deltaValue, gain, neuron, weightI) {
+    static gain (value, deltaValue, neuron, weightI) {
 
-        const newVal = value + this.learningRate * deltaValue * gain
+        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.weightGains[weightI])
 
         if(newVal<=0 && value>0 || newVal>=0 && value<0){
-            if(weightI!=null){
-                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
-            }else{
-                neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
-            }
+            if(weightI!=null)
+                 neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+            else neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
         }else {
-            if(weightI!=null){
-                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
-            }else {
-                neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
-            }
+            if(weightI!=null)
+                 neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+            else neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
         }
 
         return newVal
+    }
+
+    static adagrad (value, deltaValue, neuron, weightI) {
+
+        if(weightI!=null)
+             neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
+        else neuron.biasCache += Math.pow(deltaValue, 2)
+
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+                                                                                        : neuron.biasCache))
     }
 
     // Other
@@ -106,14 +112,15 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate=0.2, layers=[], adaptiveLR, activation="sigmoid", cost="crossEntropy"}={}) {
+    constructor ({learningRate=0.2, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy"}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
 
         this.learningRate = learningRate
-        this.weightUpdateFn = NetMath[adaptiveLR ? adaptiveLR : "noAdaptiveLR"]
+        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
+        this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation]
         this.cost = NetMath[cost]
 
@@ -183,6 +190,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.activation = this.activation
+        layer.adaptiveLR = this.adaptiveLR
 
         if(layerIndex){
             this.layers[layerIndex-1].assignNext(layer)
@@ -335,9 +343,9 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
-                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron.weightGains[dwi], neuron, dwi)()
+                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
                 })
-                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron.biasGain, neuron)()
+                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
             })
         })
     }
@@ -382,15 +390,22 @@ class Neuron {
         }
     }
 
-    init (size) {
+    init (size, adaptiveLR) {
         if(!this.imported){
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1
         }
 
         this.deltaWeights = this.weights.map(v => 0)
-        this.weightGains = [...new Array(size)].map(v => 1)
-        this.biasGain = 1
+
+        if(adaptiveLR=="gain"){
+            this.weightGains = [...new Array(size)].map(v => 1)
+            this.biasGain = 1
+
+        }else if(adaptiveLR=="adagrad"){
+            this.weightsCache = [...new Array(size)].map(v => 0)
+            this.biasCache = 0
+        }
     }
 }
 

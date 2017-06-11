@@ -10,15 +10,22 @@ class Neuron {
         }
     }
 
-    init (size) {
+    init (size, adaptiveLR) {
         if(!this.imported){
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1
         }
 
         this.deltaWeights = this.weights.map(v => 0)
-        this.weightGains = [...new Array(size)].map(v => 1)
-        this.biasGain = 1
+
+        if(adaptiveLR=="gain"){
+            this.weightGains = [...new Array(size)].map(v => 1)
+            this.biasGain = 1
+
+        }else if(adaptiveLR=="adagrad"){
+            this.weightsCache = [...new Array(size)].map(v => 0)
+            this.biasCache = 0
+        }
     }
 }
 

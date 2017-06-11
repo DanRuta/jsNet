@@ -24,25 +24,31 @@ class NetMath {
         return value + this.learningRate * deltaValue
     }
 
-    static gain (value, deltaValue, gain, neuron, weightI) {
+    static gain (value, deltaValue, neuron, weightI) {
 
-        const newVal = value + this.learningRate * deltaValue * gain
+        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.weightGains[weightI])
 
         if(newVal<=0 && value>0 || newVal>=0 && value<0){
-            if(weightI!=null){
-                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
-            }else{
-                neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
-            }
+            if(weightI!=null)
+                 neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+            else neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
         }else {
-            if(weightI!=null){
-                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
-            }else {
-                neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
-            }
+            if(weightI!=null)
+                 neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+            else neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
         }
 
         return newVal
+    }
+
+    static adagrad (value, deltaValue, neuron, weightI) {
+
+        if(weightI!=null)
+             neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
+        else neuron.biasCache += Math.pow(deltaValue, 2)
+
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+                                                                                        : neuron.biasCache))
     }
 
     // Other

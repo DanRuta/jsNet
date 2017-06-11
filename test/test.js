@@ -47,6 +47,10 @@ describe("Network", () => {
                 expect(net.cost).to.equal(NetMath.crossEntropy)
             })
 
+            it("Defaults the adaptiveLR to noAdaptiveLR", () => {
+                expect(net.adaptiveLR).to.equal("noAdaptiveLR")
+            })
+
             it("Sets the net.weightUpdateFn to NetMath.noAdaptiveLR when setting it to false, null, or 'noAdaptiveLR'", () => {
                 const net2 = new Network({adaptiveLR: null})
                 expect(net2.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
@@ -54,6 +58,11 @@ describe("Network", () => {
                 expect(net3.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
                 const net4 = new Network({adaptiveLR: "noAdaptiveLR"})
                 expect(net4.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
+            })
+
+            it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
+                const net2 = new Network({adaptiveLR: "adagrad"})
+                expect(net2.weightUpdateFn).to.equal(NetMath.adagrad)
             })
         })
 
@@ -195,6 +204,13 @@ describe("Network", () => {
             expect(layer1.activation).to.equal("test")
         })
 
+        it("Assigns the network's adaptiveLR config string to the layer", () => {
+            net.layers = [layer1]
+            net.adaptiveLR = "test"
+            net.joinLayer(layer1)
+            expect(layer1.adaptiveLR).to.equal("test")
+        })
+
         it("Assigns layer2 to layer1's next layer", () => {
             net.layers = [layer1, layer2]
             net.joinLayer(layer1, 0)
@@ -316,7 +332,7 @@ describe("Network", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: null})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noAdaptiveLR"})
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
@@ -332,7 +348,7 @@ describe("Network", () => {
         it("Increments the bias of all neurons with their deltaBias", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: null})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noAdaptiveLR"})
 
             layer2.neurons.forEach(neuron => neuron.bias = 0.25)
             layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
@@ -698,6 +714,20 @@ describe("Layer", () => {
     describe("assignPrev", () => {
 
         const layer = new Layer()
+        let layer1
+        let layer2
+
+        beforeEach(() => {
+            layer1 = new Layer(2)
+            layer2 = new Layer(2)
+            sinon.stub(layer2.neurons[0], "init") 
+            sinon.stub(layer2.neurons[1], "init")
+        })
+
+        afterEach(() => {
+            layer2.neurons[0].init.restore()
+            layer2.neurons[1].init.restore()
+        })
 
         it("Adds a reference to a layer to its prevLayer property", () => {
             const layer2 = new Layer()
@@ -706,18 +736,22 @@ describe("Layer", () => {
         })
 
         it("Inits all the neurons in the layer's neurons array", () => {
-            const layer1 = new Layer(2)
-            const layer2 = new Layer(2)
-
-            sinon.spy(layer2.neurons[0], "init") 
-            sinon.spy(layer2.neurons[1], "init") 
-
             layer2.assignPrev(layer)
             expect(layer2.neurons[0].init).to.have.been.called
             expect(layer2.neurons[1].init).to.have.been.called
+        })
 
-            layer2.neurons[0].init.restore()
-            layer2.neurons[1].init.restore()
+        it("Calls the neuron's init function with the prev layer's neurons count", () => {
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2)
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2)
+        })
+
+        it("Calls the neuron's init function with this layer's adaptiveLR", () => {
+            layer2.adaptiveLR = "testStuff"
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2, "testStuff")
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2, "testStuff")
         })
     })
 
@@ -853,20 +887,21 @@ describe("Neuron", () => {
 
     describe("init", () => {
   
+        let neuron
+
+        beforeEach(() => neuron = new Neuron())
+
         it("Creates a weights array, of length the same as given parameter", () => {
-            const neuron = new Neuron()
             neuron.init(5)
             expect(neuron.weights.length).to.equal(5)
         })
 
         it("Weights are all between -0.1 and +0.1", () => {
-            const neuron = new Neuron()
             neuron.init(5)
             expect(neuron.weights.every(w => w>=-0.1 && w<=0.1)).to.be.true
         })
 
         it("Creates a bias value between -0.1 and +0.1", () => {
-            const neuron = new Neuron()
             neuron.init(5)
             expect(neuron.bias).to.not.be.undefined
             expect(neuron.bias).to.be.at.most(0.1)
@@ -874,20 +909,17 @@ describe("Neuron", () => {
         })
 
         it("Creates an array of delta weights with the same length as the weights array", () => {
-            const neuron = new Neuron()
             neuron.init(5)
             expect(neuron.deltaWeights).to.not.be.undefined
             expect(neuron.deltaWeights.length).to.equal(neuron.weights.length)
         })
 
         it("Sets all the delta weights to 0", () => {
-            const neuron = new Neuron()
             neuron.init(5)
             expect(neuron.deltaWeights).to.deep.equal([0,0,0,0,0])
         })
 
         it("Does not change the weights when the neuron is marked as imported", () => {
-            const neuron = new Neuron()
             neuron.imported = true
             neuron.weights = ["test"]
             neuron.init()
@@ -895,7 +927,6 @@ describe("Neuron", () => {
         })
 
         it("Does not change the bias when the neuron is marked as imported", () => {
-            const neuron = new Neuron()
             neuron.imported = true
             neuron.weights = ["test"]
             neuron.bias = "test"
@@ -904,17 +935,39 @@ describe("Neuron", () => {
         })
 
         it("Creates a weightGains array if the 'adaptiveLR' parameter is 'gain', with same size as weights, with 1 values", () => {
-            const neuron = new Neuron()
-            neuron.init(3, true)
+            neuron.init(3, "gain")
             expect(neuron.weightGains).to.not.be.undefined
             expect(neuron.weightGains).to.have.lengthOf(3)
             expect(neuron.weightGains).to.deep.equal([1,1,1])
         })
 
         it("Creates a biasGain value of 1 if the 'adaptiveLR' parameter is 'gain'", () => {
-            const neuron = new Neuron()
-            neuron.init(3, true)
+            neuron.init(3, "gain")
             expect(neuron.biasGain).to.equal(1)
+        })
+
+        it("Does not create the weightGains and biasGain when the adaptiveLR is not 'gain'", () => {
+            neuron.init(3, "not gain")
+            expect(neuron.weightGains).to.be.undefined
+            expect(neuron.biasGain).to.be.undefined
+        })
+
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is 'adagrad', with 0 values", () => {
+            neuron.init(3, "adagrad")
+            expect(neuron.weightsCache).to.not.be.undefined
+            expect(neuron.weightsCache).to.have.lengthOf(3)
+            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+        })
+
+        it("Creates a biasCache value of 0 if the 'adaptiveLR' parameter is 'adagrad'", () => {
+            neuron.init(3, "adagrad")
+            expect(neuron.biasCache).to.equal(0)
+        })
+
+        it("Does not create the weightsCache or biasCache if the 'adaptiveLR' is not 'adagrad'", () => {
+            neuron.init(3, "not adagrad")
+            expect(neuron.weightsCache).to.be.undefined
+            expect(neuron.biasCache).to.be.undefined
         })
     })
 })
@@ -967,11 +1020,13 @@ describe("Netmath", () => {
         beforeEach(() => neuron = new Neuron())
 
         it("Doubles a value when the gain is 2 and learningRate 1", () => {
-            const result = NetMath.gain.bind({learningRate: 1}, 10, 5, 2, neuron)()
+            neuron.biasGain = 2
+            const result = NetMath.gain.bind({learningRate: 1}, 10, 5, neuron)()
             expect(result).to.equal(20)
         })
         it("Halves a value when the learning rate is 0.1 and gain is -5", () => {
-            const result = NetMath.gain.bind({learningRate: 0.1}, 5, 5, -5, neuron)()
+            neuron.biasGain = -5
+            const result = NetMath.gain.bind({learningRate: 0.1}, 5, 5, neuron)()
             expect(result).to.equal(2.5)
         })
         it("Increments a neuron's bias gain by 0.05 when the bias value doesn't change sign", () => {
@@ -980,7 +1035,7 @@ describe("Netmath", () => {
             }
             neuron.bias = 0.1
             neuron.biasGain =  1
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(1.05)
         })
         it("Does not increase the gain to more than 5", () => {
@@ -989,7 +1044,7 @@ describe("Netmath", () => {
             }
             neuron.bias = 0.1
             neuron.biasGain =  4.99
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(5)
         })
         it("Multiplies a neuron's bias gain by 0.95 when the value changes sign", () => {
@@ -998,7 +1053,7 @@ describe("Netmath", () => {
             }
             neuron.bias = 0.1
             neuron.biasGain =  1
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(0.95)
         })
         it("Does not reduce the bias gain to less than 0.5", () => {
@@ -1007,7 +1062,7 @@ describe("Netmath", () => {
             }
             neuron.bias = 0.1
             neuron.biasGain =  0.51
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(0.5)
         })
         it("Increases weight gain the same way as the bias gain", () => {
@@ -1016,8 +1071,8 @@ describe("Netmath", () => {
             }
             neuron.weights = [0.1, 0.1]
             neuron.weightGains =  [1, 4.99]
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron, 0)()
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron, 1)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron, 0)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron, 1)()
             expect(neuron.weightGains[0]).to.equal(1.05)
             expect(neuron.weightGains[1]).to.equal(5)
         })
@@ -1027,10 +1082,43 @@ describe("Netmath", () => {
             }
             neuron.weights = [0.1, 0.1]
             neuron.weightGains =  [1, 0.51]
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron, 0)()
-            NetMath.gain.bind(fakeThis, 0.1, 1, 1, neuron, 1)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron, 0)()
+            NetMath.gain.bind(fakeThis, 0.1, 1, neuron, 1)()
             expect(neuron.weightGains[0]).to.equal(0.95)
             expect(neuron.weightGains[1]).to.equal(0.5)
+        })
+    })
+
+    describe("adagrad", () => {
+
+        let neuron
+
+        beforeEach(() => neuron = new Neuron())
+
+        it("Increments the neuron's biasCache by the square of its deltaBias", () => {
+            neuron.biasCache = 0
+            NetMath.adagrad.bind({learningRate: 2}, 1, 3, neuron)()
+            expect(neuron.biasCache).to.equal(9)
+        })
+
+        it("Returns a new value matching the formula for adagrad", () => {
+            neuron.biasCache = 0
+            const result = NetMath.adagrad.bind({learningRate: 0.5}, 1, 3, neuron)() 
+            expect(result.toFixed(1)).to.equal("1.5")
+        })
+
+        it("Increments the neuron's weightsCache the same was as the biasCache", () => {
+            neuron.weightsCache = [0, 1, 2]
+            const result1 = NetMath.adagrad.bind({learningRate: 2}, 1, 3, neuron, 0)()
+            const result2 = NetMath.adagrad.bind({learningRate: 2}, 1, 4, neuron, 1)()
+            const result3 = NetMath.adagrad.bind({learningRate: 2}, 1, 2, neuron, 2)()
+            expect(neuron.weightsCache[0]).to.equal(9)
+            expect(neuron.weightsCache[1]).to.equal(17)
+            expect(neuron.weightsCache[2]).to.equal(6)
+
+            expect(result1.toFixed(1)).to.equal("3.0")
+            expect(result2.toFixed(1)).to.equal("2.9")
+            expect(result3.toFixed(1)).to.equal("2.6")
         })
     })
 })

@@ -2,14 +2,15 @@
 
 class Network {
 
-    constructor ({learningRate=0.2, layers=[], adaptiveLR, activation="sigmoid", cost="crossEntropy"}={}) {
+    constructor ({learningRate=0.2, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy"}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
 
         this.learningRate = learningRate
-        this.weightUpdateFn = NetMath[adaptiveLR ? adaptiveLR : "noAdaptiveLR"]
+        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
+        this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation]
         this.cost = NetMath[cost]
 
@@ -79,6 +80,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.activation = this.activation
+        layer.adaptiveLR = this.adaptiveLR
 
         if(layerIndex){
             this.layers[layerIndex-1].assignNext(layer)
@@ -231,9 +233,9 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
-                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron.weightGains[dwi], neuron, dwi)()
+                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
                 })
-                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron.biasGain, neuron)()
+                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
             })
         })
     }

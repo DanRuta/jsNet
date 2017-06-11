@@ -67,7 +67,7 @@ Once the network is trained, you can test it like so:
 const {training, test} = mnist.set(800, 200)
 net.train(training).then(() => net.test(test))
 ```
-The network will log the testing iteration and the error. This also resolves a promise.
+The network will log the testing iteration and the error. This also resolves a promise, with the average test error percentage.
 
 ### Exporting
 ---
@@ -102,7 +102,7 @@ const normalizedResults = NetMath.softmax(netResult)
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain" | null |
+| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain", "adagrad" | null |
 | activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
 | cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
 ## Future plans

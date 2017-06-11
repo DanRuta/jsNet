@@ -1,8 +1,9 @@
 # Upcoming
 ---
 #### Network
+- Added Adagrad as adaptiveLR configuration
+- Added gain as adaptiveLR configuration
 - Added adaptiveLR as a network configuration
-- Added gain as an adaptive learning rate function
 #### NetMath
 - Added Mean Squared Error cost function
 

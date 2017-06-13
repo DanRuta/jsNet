@@ -11,7 +11,7 @@ class Network {
         if(learningRate!=undefined && learningRate!=null) {
             this.learningRate = learningRate
         }else {
-            this.learningRate = adaptiveLR=="RMSProp" ? 0.01 : 0.2
+            this.learningRate = adaptiveLR=="RMSProp" ? 0.001 : 0.2
         }
 
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR

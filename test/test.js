@@ -82,7 +82,7 @@ describe("Network", () => {
 
             it("Defaults the learning rate to 0.01 if the adaptiveLR is RMSProp", () => {
                 const net2 = new Network({adaptiveLR: "RMSProp"})
-                expect(net2.learningRate).to.equal(0.01)
+                expect(net2.learningRate).to.equal(0.001)
             })
 
             it("Still allows user learning rates to be set, even if adaptiveLR is RMSProp", () => {

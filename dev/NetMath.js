@@ -51,6 +51,16 @@ class NetMath {
                                                                                         : neuron.biasCache))
     }
 
+    static RMSProp (value, deltaValue, neuron, weightI) {
+
+        if(weightI!=null)
+             neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+        else neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+                                                                                        : neuron.biasCache))
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)

@@ -22,7 +22,7 @@ describe("Network", () => {
 
     describe("Constructor", () => {
 
-        describe("Config defaults", () => {
+        describe("Config and defaults", () => {
 
             let net
             beforeEach(() => net = new Network())
@@ -63,6 +63,31 @@ describe("Network", () => {
             it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
                 const net2 = new Network({adaptiveLR: "adagrad"})
                 expect(net2.weightUpdateFn).to.equal(NetMath.adagrad)
+            })
+
+            it("Defaults the net.rmsDecay to 0.99 if the adaptiveLR is RMSProp", () => {
+                const net2 = new Network({adaptiveLR: "RMSProp"})
+                expect(net2.rmsDecay).to.equal(0.99)
+            })
+
+            it("Sets the net.rmsDecay to use input, if supplied", () => {
+                const net2 = new Network({adaptiveLR: "RMSProp", rmsDecay: 0.9})
+                expect(net2.rmsDecay).to.equal(0.9)
+            })
+
+            it("Does not set an rmsDecay, if adaptiveLR is not RMSProp, even if supplied", () => {
+                const net2 = new Network({adaptiveLR: "adagrad", rmsDecay: 0.9})
+                expect(net2.rmsDecay).to.be.undefined
+            })
+
+            it("Defaults the learning rate to 0.01 if the adaptiveLR is RMSProp", () => {
+                const net2 = new Network({adaptiveLR: "RMSProp"})
+                expect(net2.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows user learning rates to be set, even if adaptiveLR is RMSProp", () => {
+                const net2 = new Network({adaptiveLR: "RMSProp", learningRate: 0.5})
+                expect(net2.learningRate).to.equal(0.5)
             })
         })
 
@@ -959,13 +984,31 @@ describe("Neuron", () => {
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is 'RMSProp', with 0 values", () => {
+            neuron.init(3, "RMSProp")
+            expect(neuron.weightsCache).to.not.be.undefined
+            expect(neuron.weightsCache).to.have.lengthOf(3)
+            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+        })
+
         it("Creates a biasCache value of 0 if the 'adaptiveLR' parameter is 'adagrad'", () => {
+            neuron.init(3, "adagrad")
+            expect(neuron.biasCache).to.equal(0)
+        })
+
+        it("Creates a biasCache value of 0 if the 'adaptiveLR' parameter is 'RMSProp'", () => {
             neuron.init(3, "adagrad")
             expect(neuron.biasCache).to.equal(0)
         })
 
         it("Does not create the weightsCache or biasCache if the 'adaptiveLR' is not 'adagrad'", () => {
             neuron.init(3, "not adagrad")
+            expect(neuron.weightsCache).to.be.undefined
+            expect(neuron.biasCache).to.be.undefined
+        })
+
+        it("Does not create the weightsCache or biasCache if the 'adaptiveLR' is not 'RMSProp'", () => {
+            neuron.init(3, "not RMSProp")
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
@@ -1121,4 +1164,37 @@ describe("Netmath", () => {
             expect(result3.toFixed(1)).to.equal("2.6")
         })
     })
+
+    describe("RMSProp", () => {
+        let neuron
+
+        beforeEach(() => neuron = new Neuron())
+
+        it("Sets the cache value to the correct formula", () => {
+            neuron.biasCache = 10
+            NetMath.RMSProp.bind({learningRate: 2, rmsDecay: 0.99}, 1, 3, neuron)()
+            expect(neuron.biasCache).to.equal(9.99) // 9.9 + 0.01 * 9
+        })
+
+        it("Returns a new value matching the formula for RMSProp, using this new cache value", () => {
+            neuron.biasCache = 10
+            const result = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron)()
+            expect(result.toFixed(2)).to.equal("1.47") // 1 + 0.5 * 3 / 3.1607
+        })
+
+        it("Updates the weightsCache the same way as the biasCache", () => {
+            neuron.weightsCache = [0, 1, 2]
+            const result1 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron, 0)()
+            const result2 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 4, neuron, 1)()
+            const result3 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 2, neuron, 2)()
+            expect(neuron.weightsCache[0].toFixed(2)).to.equal("0.09")
+            expect(neuron.weightsCache[1].toFixed(2)).to.equal("1.15")
+            expect(neuron.weightsCache[2].toFixed(2)).to.equal("2.02")
+
+            expect(result1.toFixed(1)).to.equal("6.0")
+            expect(result2.toFixed(1)).to.equal("2.9")
+            expect(result3.toFixed(1)).to.equal("1.7")
+        })
+    })
 })
+

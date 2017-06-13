@@ -22,7 +22,7 @@ class Neuron {
             this.weightGains = [...new Array(size)].map(v => 1)
             this.biasGain = 1
 
-        }else if(adaptiveLR=="adagrad"){
+        }else if(adaptiveLR=="adagrad" || adaptiveLR=="RMSProp"){
             this.weightsCache = [...new Array(size)].map(v => 0)
             this.biasCache = 0
         }

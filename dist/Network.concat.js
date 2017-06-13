@@ -100,6 +100,16 @@ class NetMath {
                                                                                         : neuron.biasCache))
     }
 
+    static RMSProp (value, deltaValue, neuron, weightI) {
+
+        if(weightI!=null)
+             neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+        else neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+                                                                                        : neuron.biasCache))
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
@@ -112,17 +122,26 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate=0.2, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy"}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
 
-        this.learningRate = learningRate
+        if(learningRate!=undefined && learningRate!=null) {
+            this.learningRate = learningRate
+        }else {
+            this.learningRate = adaptiveLR=="RMSProp" ? 0.01 : 0.2
+        }
+
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation]
         this.cost = NetMath[cost]
+
+        if(this.adaptiveLR=="RMSProp"){
+            this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
+        }
 
         if(layers.length) {
 
@@ -313,7 +332,7 @@ class Network {
 
             const testInput = () => {
 
-                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1)/100)
+                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
 
                 const output = this.forward(testSet[testIteration].input)
                 const target = testSet[testIteration].expected || testSet[testIteration].output
@@ -324,7 +343,7 @@ class Network {
 
                 if(testIteration < testSet.length)
                     setTimeout(testInput.bind(this), 0)
-                else resolve(totalError/testSet.length/100)
+                else resolve(totalError/testSet.length)
             }
             testInput()
         })
@@ -402,7 +421,7 @@ class Neuron {
             this.weightGains = [...new Array(size)].map(v => 1)
             this.biasGain = 1
 
-        }else if(adaptiveLR=="adagrad"){
+        }else if(adaptiveLR=="adagrad" || adaptiveLR=="RMSProp"){
             this.weightsCache = [...new Array(size)].map(v => 0)
             this.biasCache = 0
         }

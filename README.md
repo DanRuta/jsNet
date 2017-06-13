@@ -105,6 +105,7 @@ const normalizedResults = NetMath.softmax(netResult)
 | adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain", "adagrad", "RMSProp"* | null |
 | activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
 | cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
+
 \* Learning rate should be lower with RMSProp, around 0.001. 
 ## Future plans
 ---

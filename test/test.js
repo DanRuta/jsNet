@@ -89,6 +89,16 @@ describe("Network", () => {
                 const net2 = new Network({adaptiveLR: "RMSProp", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
             })
+
+            it("Defaults the learning rate to 0.01 if the adaptiveLR is adam", () => {
+                const net2 = new Network({adaptiveLR: "adam"})
+                expect(net2.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows user learning rates to be set, even if adaptiveLR is adam", () => {
+                const net2 = new Network({adaptiveLR: "adam", learningRate: 0.5})
+                expect(net2.learningRate).to.equal(0.5)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -1012,6 +1022,24 @@ describe("Neuron", () => {
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
+
+        it("Creates and sets neuron.m to 0 if the 'adaptiveLR' parameter is 'adam'", () => {
+            neuron.init(3, "adam")
+            expect(neuron.m).to.not.be.undefined
+            expect(neuron.m).to.equal(0)
+        })
+
+        it("Creates and sets neuron.v to 0 if the 'adaptiveLR' parameter is 'adam'", () => {
+            neuron.init(3, "adam")
+            expect(neuron.v).to.not.be.undefined
+            expect(neuron.v).to.equal(0)
+        })
+
+        it("Does not create neuron.m or neuron.v when the 'adaptiveLR' parameter is not 'adam", () => {
+            neuron.init(3, "not adam")
+            expect(neuron.m).to.be.undefined
+            expect(neuron.v).to.be.undefined
+        })
     })
 })
 
@@ -1194,6 +1222,32 @@ describe("Netmath", () => {
             expect(result1.toFixed(1)).to.equal("6.0")
             expect(result2.toFixed(1)).to.equal("2.9")
             expect(result3.toFixed(1)).to.equal("1.7")
+        })
+    })
+
+    describe("adam", () => {
+
+        let neuron
+
+        beforeEach(() => neuron = new Neuron())
+
+        it("Sets the neuron.m to the correct value, following the algorithm", () => {
+            neuron.m = 0.1
+            NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
+            expect(neuron.m.toFixed(2)).to.equal("0.11") // 0.9 * 0.1 + (1-0.9) * 0.2
+        })
+
+        it("Sets the neuron.v to the correct value, following the algorithm", () => {
+            neuron.v = 0.1
+            NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
+            expect(neuron.v.toFixed(5)).to.equal("0.09994") // 0.999 * 0.1 + (1-0.999) * 0.2*0.2
+        })
+
+        it("Calculates a value correctly, following the algorithm", () => {
+            neuron.m = 0.121
+            neuron.v = 0.045
+            const result = NetMath.adam.bind({learningRate: 0.01, iterations: 0.2}, -0.3, 0.02, neuron)()
+            expect(result.toFixed(6)).to.equal("-0.298474")            
         })
     })
 })

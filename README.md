@@ -101,11 +101,12 @@ const normalizedResults = NetMath.softmax(netResult)
 #### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| learningRate | The speed at which the net will learn. | Any number | 0.2 (0.001 when using RMSProp) |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain", "adagrad", "RMSProp"* | null |
+| learningRate | The speed at which the net will learn. | Any number | 0.2 (0.001 for RMSProp, 0.01 for adam) |
+| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain", "adagrad", "RMSProp"*, "adam"\*\* | null |
 | activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
 | cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
-\* Learning rate should be lower with RMSProp, around 0.001. 
+\* Learning rate should be lower when using RMSProp, around 0.001. 
+\** Learning rate should be lower when using adam, around 0.01
 ## Future plans
 ---
 ##### Short term

@@ -110,6 +110,17 @@ class NetMath {
                                                                                         : neuron.biasCache))
     }
 
+    static adam (value, deltaValue, neuron) {
+
+        neuron.m = 0.9*neuron.m + (1-0.9) * deltaValue
+        const mt = neuron.m / (1-Math.pow(0.9, this.iterations + 1))
+
+        neuron.v = 0.999*neuron.v + (1-0.999)*(Math.pow(deltaValue, 2))
+        const vt = neuron.v / (1-Math.pow(0.999, this.iterations + 1))
+
+        return value + this.learningRate * mt / (Math.sqrt(vt) + 1e-8)
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
@@ -128,12 +139,23 @@ class Network {
         this.epochs = 0
         this.iterations = 0
 
-        if(learningRate!=undefined && learningRate!=null) {
-            this.learningRate = learningRate
-        }else {
-            this.learningRate = adaptiveLR=="RMSProp" ? 0.001 : 0.2
-        }
+        switch(true) {
+            case learningRate!=undefined && learningRate!=null:
+                this.learningRate = learningRate
+                break
 
+            case adaptiveLR=="RMSProp":
+                this.learningRate = 0.001
+                break
+
+            case adaptiveLR=="adam":
+                this.learningRate = 0.01
+                break
+
+            default:
+                this.learningRate = 0.2
+        }
+        
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation]
@@ -417,13 +439,22 @@ class Neuron {
 
         this.deltaWeights = this.weights.map(v => 0)
 
-        if(adaptiveLR=="gain"){
-            this.weightGains = [...new Array(size)].map(v => 1)
-            this.biasGain = 1
+        switch(adaptiveLR) {
+            case "gain":
+                this.weightGains = [...new Array(size)].map(v => 1)
+                this.biasGain = 1
+                break
 
-        }else if(adaptiveLR=="adagrad" || adaptiveLR=="RMSProp"){
-            this.weightsCache = [...new Array(size)].map(v => 0)
-            this.biasCache = 0
+            case "adagrad":
+            case "RMSProp":
+                this.weightsCache = [...new Array(size)].map(v => 0)
+                this.biasCache = 0
+                break
+
+            case "adam":
+                this.m = 0
+                this.v = 0
+                break
         }
     }
 }

@@ -8,12 +8,23 @@ class Network {
         this.epochs = 0
         this.iterations = 0
 
-        if(learningRate!=undefined && learningRate!=null) {
-            this.learningRate = learningRate
-        }else {
-            this.learningRate = adaptiveLR=="RMSProp" ? 0.001 : 0.2
-        }
+        switch(true) {
+            case learningRate!=undefined && learningRate!=null:
+                this.learningRate = learningRate
+                break
 
+            case adaptiveLR=="RMSProp":
+                this.learningRate = 0.001
+                break
+
+            case adaptiveLR=="adam":
+                this.learningRate = 0.01
+                break
+
+            default:
+                this.learningRate = 0.2
+        }
+        
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation]

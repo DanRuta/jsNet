@@ -18,13 +18,22 @@ class Neuron {
 
         this.deltaWeights = this.weights.map(v => 0)
 
-        if(adaptiveLR=="gain"){
-            this.weightGains = [...new Array(size)].map(v => 1)
-            this.biasGain = 1
+        switch(adaptiveLR) {
+            case "gain":
+                this.weightGains = [...new Array(size)].map(v => 1)
+                this.biasGain = 1
+                break
 
-        }else if(adaptiveLR=="adagrad" || adaptiveLR=="RMSProp"){
-            this.weightsCache = [...new Array(size)].map(v => 0)
-            this.biasCache = 0
+            case "adagrad":
+            case "RMSProp":
+                this.weightsCache = [...new Array(size)].map(v => 0)
+                this.biasCache = 0
+                break
+
+            case "adam":
+                this.m = 0
+                this.v = 0
+                break
         }
     }
 }

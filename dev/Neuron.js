@@ -26,8 +26,14 @@ class Neuron {
 
             case "adagrad":
             case "RMSProp":
-                this.weightsCache = [...new Array(size)].map(v => 0)
+            case "adadelta":
                 this.biasCache = 0
+                this.weightsCache = [...new Array(size)].map(v => 0)
+
+                if(adaptiveLR=="adadelta"){
+                    this.adadeltaCache = [...new Array(size)].map(v => 0)
+                    this.adadeltaBiasCache = 0
+                }
                 break
 
             case "adam":

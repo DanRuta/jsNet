@@ -13,7 +13,7 @@ class Layer {
 
     assignPrev (layer) {
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR))   
+        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR, this.rho))   
     }
 
     forward (data) {
@@ -121,6 +121,22 @@ class NetMath {
         return value + this.learningRate * mt / (Math.sqrt(vt) + 1e-8)
     }
 
+    static adadelta (value, deltaValue, neuron, weightI) {
+
+        if(weightI!=null) {
+            neuron.weightsCache[weightI] = this.rho * neuron.weightsCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
+            const newVal = value + Math.sqrt((neuron.adadeltaCache[weightI] + 1e-6)/(neuron.weightsCache[weightI] + 1e-6)) * deltaValue
+            neuron.adadeltaCache[weightI] = this.rho * neuron.adadeltaCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
+            return newVal
+
+        }else {
+            neuron.biasCache = this.rho * neuron.biasCache + (1-this.rho) * Math.pow(deltaValue, 2)
+            const newVal = value + Math.sqrt((neuron.adadeltaBiasCache + 1e-6)/(neuron.biasCache + 1e-6)) * deltaValue
+            neuron.adadeltaBiasCache = this.rho * neuron.adadeltaBiasCache + (1-this.rho) * Math.pow(deltaValue, 2)
+            return newVal
+        }
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
@@ -133,27 +149,32 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
 
+        if(learningRate!=null){    
+            this.learningRate = learningRate
+        }
+
         switch(true) {
-            case learningRate!=undefined && learningRate!=null:
-                this.learningRate = learningRate
-                break
 
             case adaptiveLR=="RMSProp":
-                this.learningRate = 0.001
+                this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
                 break
 
             case adaptiveLR=="adam":
-                this.learningRate = 0.01
+                this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                break
+
+            case adaptiveLR=="adadelta":
+                this.rho = rho==null ? 0.95 : rho
                 break
 
             default:
-                this.learningRate = 0.2
+                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
         }
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
@@ -232,6 +253,10 @@ class Network {
 
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
+
+        if(this.rho!=undefined){
+            layer.rho = this.rho
+        }
 
         if(layerIndex){
             this.layers[layerIndex-1].assignNext(layer)
@@ -447,8 +472,14 @@ class Neuron {
 
             case "adagrad":
             case "RMSProp":
-                this.weightsCache = [...new Array(size)].map(v => 0)
+            case "adadelta":
                 this.biasCache = 0
+                this.weightsCache = [...new Array(size)].map(v => 0)
+
+                if(adaptiveLR=="adadelta"){
+                    this.adadeltaCache = [...new Array(size)].map(v => 0)
+                    this.adadeltaBiasCache = 0
+                }
                 break
 
             case "adam":

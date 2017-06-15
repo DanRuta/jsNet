@@ -13,7 +13,7 @@ class Layer {
 
     assignPrev (layer) {
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR))   
+        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR, this.rho))   
     }
 
     forward (data) {

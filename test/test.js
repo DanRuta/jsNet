@@ -99,6 +99,22 @@ describe("Network", () => {
                 const net2 = new Network({adaptiveLR: "adam", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
             })
+
+            it("Defaults the net.rho to 0.95 if the adaptiveLR is adadelta", () => {
+                const net2 = new Network({adaptiveLR: "adadelta"})
+                expect(net2.rho).to.equal(0.95)
+            })
+
+            it("Still allows user rho values to be set", () => {
+                const net2 = new Network({adaptiveLR: "adadelta", rho: 0.5})
+                expect(net2.rho).to.equal(0.5)
+            })
+
+            it("Still sets a rho value, even if a learning rate is given", () => {
+                const net2 = new Network({adaptiveLR: "adadelta", rho: 0.9, learningRate: 0.01})
+                expect(net2.rho).to.equal(0.9)
+                expect(net2.learningRate).to.equal(0.01)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -258,6 +274,20 @@ describe("Network", () => {
             net.joinLayer(layer1, 0)
             net.joinLayer(layer2, 1)
             expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Assigns the network's rho value to the layer, if it exists", () => {
+            net.layers = [layer1]
+            net.rho = "test"
+            net.joinLayer(layer1)
+            expect(layer1.rho).to.equal("test")
+        })
+
+        it("Does not set the network's rho value to the layer if it does not exist", () => {
+            net.layers = [layer1]
+            net.rho = undefined
+            net.joinLayer(layer1)
+            expect(layer1.rho).to.be.undefined
         })
     })
 
@@ -969,76 +999,105 @@ describe("Neuron", () => {
             expect(neuron.bias).to.equal("test")
         })
 
-        it("Creates a weightGains array if the 'adaptiveLR' parameter is 'gain', with same size as weights, with 1 values", () => {
+        it("Creates a weightGains array if the adaptiveLR parameter is gain, with same size as weights, with 1 values", () => {
             neuron.init(3, "gain")
             expect(neuron.weightGains).to.not.be.undefined
             expect(neuron.weightGains).to.have.lengthOf(3)
             expect(neuron.weightGains).to.deep.equal([1,1,1])
         })
 
-        it("Creates a biasGain value of 1 if the 'adaptiveLR' parameter is 'gain'", () => {
+        it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
             neuron.init(3, "gain")
             expect(neuron.biasGain).to.equal(1)
         })
 
-        it("Does not create the weightGains and biasGain when the adaptiveLR is not 'gain'", () => {
+        it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
             neuron.init(3, "not gain")
             expect(neuron.weightGains).to.be.undefined
             expect(neuron.biasGain).to.be.undefined
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is 'adagrad', with 0 values", () => {
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adagrad, with 0 values", () => {
             neuron.init(3, "adagrad")
             expect(neuron.weightsCache).to.not.be.undefined
             expect(neuron.weightsCache).to.have.lengthOf(3)
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is 'RMSProp', with 0 values", () => {
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is RMSProp, with 0 values", () => {
             neuron.init(3, "RMSProp")
             expect(neuron.weightsCache).to.not.be.undefined
             expect(neuron.weightsCache).to.have.lengthOf(3)
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a biasCache value of 0 if the 'adaptiveLR' parameter is 'adagrad'", () => {
+        it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
             neuron.init(3, "adagrad")
             expect(neuron.biasCache).to.equal(0)
         })
 
-        it("Creates a biasCache value of 0 if the 'adaptiveLR' parameter is 'RMSProp'", () => {
+        it("Creates a biasCache value of 0 if the adaptiveLR parameter is RMSProp", () => {
             neuron.init(3, "adagrad")
             expect(neuron.biasCache).to.equal(0)
         })
 
-        it("Does not create the weightsCache or biasCache if the 'adaptiveLR' is not 'adagrad'", () => {
+        it("Does not create the weightsCache or biasCache if the adaptiveLR is not adagrad", () => {
             neuron.init(3, "not adagrad")
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
 
-        it("Does not create the weightsCache or biasCache if the 'adaptiveLR' is not 'RMSProp'", () => {
+        it("Does not create the weightsCache or biasCache if the adaptiveLR is not RMSProp", () => {
             neuron.init(3, "not RMSProp")
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
 
-        it("Creates and sets neuron.m to 0 if the 'adaptiveLR' parameter is 'adam'", () => {
+        it("Creates and sets neuron.m to 0 if the adaptiveLR parameter is adam", () => {
             neuron.init(3, "adam")
             expect(neuron.m).to.not.be.undefined
             expect(neuron.m).to.equal(0)
         })
 
-        it("Creates and sets neuron.v to 0 if the 'adaptiveLR' parameter is 'adam'", () => {
+        it("Creates and sets neuron.v to 0 if the adaptiveLR parameter is adam", () => {
             neuron.init(3, "adam")
             expect(neuron.v).to.not.be.undefined
             expect(neuron.v).to.equal(0)
         })
 
-        it("Does not create neuron.m or neuron.v when the 'adaptiveLR' parameter is not 'adam", () => {
+        it("Does not create neuron.m or neuron.v when the adaptiveLR parameter is not adam", () => {
             neuron.init(3, "not adam")
             expect(neuron.m).to.be.undefined
             expect(neuron.v).to.be.undefined
+        })
+
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
+            neuron.init(3, "adadelta")
+            expect(neuron.weightsCache).to.not.be.undefined
+            expect(neuron.weightsCache).to.have.lengthOf(3)
+            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+        })
+
+        it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
+            neuron.init(3, "adadelta")
+            expect(neuron.adadeltaBiasCache).to.equal(0)
+        })
+
+        it("Creates a adadeltaCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
+            neuron.init(3, "adadelta")
+            expect(neuron.adadeltaCache).to.not.be.undefined
+            expect(neuron.adadeltaCache).to.have.lengthOf(3)
+            expect(neuron.adadeltaCache).to.deep.equal([0,0,0])
+        })
+
+        it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or RMSProp", () => {
+            neuron.init(3, "adagrad")
+            expect(neuron.adadeltaCache).to.be.undefined
+            expect(neuron.adadeltaBiasCache).to.be.undefined
+            const neuron2 = new Neuron()
+            neuron2.init(3, "RMSProp")
+            expect(neuron2.adadeltaCache).to.be.undefined
+            expect(neuron2.adadeltaBiasCache).to.be.undefined
         })
     })
 })
@@ -1248,6 +1307,60 @@ describe("Netmath", () => {
             neuron.v = 0.045
             const result = NetMath.adam.bind({learningRate: 0.01, iterations: 0.2}, -0.3, 0.02, neuron)()
             expect(result.toFixed(6)).to.equal("-0.298474")            
+        })
+    })
+
+    describe("adadelta", () => {
+
+        let neuron
+
+        beforeEach(() => neuron = new Neuron())
+
+        it("Sets the neuron.biasCache to the correct value, following the adadelta formula", () => {
+            neuron.biasCache = 0.5
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()
+            expect(neuron.biasCache).to.equal(0.477) // 0.95 * 0.5 + (1-0.95) * 0.2**2
+        })
+
+        it("Sets the weightsCache to the correct value, following the adadelta formula, same as biasCache", () => {
+            neuron.weightsCache = [0.5, 0.75]
+            neuron.adadeltaCache = [0, 0]
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 0)()
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 1)()
+            expect(neuron.weightsCache[0]).to.equal(0.477)
+            expect(neuron.weightsCache[1].toFixed(4)).to.equal("0.7145")
+        })
+
+        it("Creates a value for the bias correctly, following the algorithm", () => {
+            neuron.biasCache = 0.5
+            neuron.adadeltaBiasCache = 0.25
+            const newValue = NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()
+            expect(newValue.toFixed(5)).to.equal("0.64479") // 0.5 + sqrt(~0.25/~0.477) * 0.2 (~ because of eps)
+        })
+
+        it("Creates a value for the weight correctly, the same was as the bias", () => {
+            neuron.weightsCache = [0.5, 0.75]
+            neuron.adadeltaCache = [0.1, 0.2]
+            const newValue1 = NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 0)()
+            const newValue2 = NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 1)()
+            expect(newValue1.toFixed(5)).to.equal("0.59157") // 0.5 + sqrt(~0.1/~0.5) * 0.2
+            expect(newValue2.toFixed(5)).to.equal("0.60581")
+        })
+
+        it("Updates the neuron.adadeltaBiasCache with the correct value, following the formula", () => {
+            neuron.biasCache = 0.5
+            neuron.adadeltaBiasCache = 0.25
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()
+            expect(neuron.adadeltaBiasCache).to.equal(0.2395) // 0.95 * 0.25 + (1-0.95) * 0.2*0.2 
+        })
+
+        it("Updates the neuron.adadeltaCache with the correct value, following the formula, same as adadeltaBiasCache", () => {
+            neuron.weightsCache = [0.5, 0.75]
+            neuron.adadeltaCache = [0.1, 0.2]
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 0)()
+            NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 1)()
+            expect(neuron.adadeltaCache[0]).to.equal(0.097) // 0.95 * 0.1 + (1-0.95) * 0.2*0.2
+            expect(neuron.adadeltaCache[1]).to.equal(0.192)
         })
     })
 })

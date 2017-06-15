@@ -2,27 +2,32 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
 
+        if(learningRate!=null){    
+            this.learningRate = learningRate
+        }
+
         switch(true) {
-            case learningRate!=undefined && learningRate!=null:
-                this.learningRate = learningRate
-                break
 
             case adaptiveLR=="RMSProp":
-                this.learningRate = 0.001
+                this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
                 break
 
             case adaptiveLR=="adam":
-                this.learningRate = 0.01
+                this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                break
+
+            case adaptiveLR=="adadelta":
+                this.rho = rho==null ? 0.95 : rho
                 break
 
             default:
-                this.learningRate = 0.2
+                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
         }
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
@@ -101,6 +106,10 @@ class Network {
 
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
+
+        if(this.rho!=undefined){
+            layer.rho = this.rho
+        }
 
         if(layerIndex){
             this.layers[layerIndex-1].assignNext(layer)

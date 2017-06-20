@@ -29,9 +29,16 @@ class Network {
             default:
 
                 if(this.learningRate==undefined){
-                    if(activation=="tanh") 
-                         this.learningRate = 0.001
-                    else this.learningRate = 0.2
+                    switch(activation) {
+                        case "relu":
+                            this.learningRate = 0.01
+                            break
+                        case "tanh":
+                            this.learningRate = 0.001
+                            break
+                        default:
+                            this.learningRate = 0.2
+                    }
                 }
         }
         

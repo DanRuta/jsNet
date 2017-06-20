@@ -64,6 +64,11 @@ class NetMath {
                      : (exp-1)/(exp+1) || 1e-18
     }
 
+    static relu (value, prime) {
+        return prime ? value > 0 ? 1 : 0
+                     : Math.max(value, 0)
+    }
+
     // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
@@ -183,9 +188,16 @@ class Network {
             default:
 
                 if(this.learningRate==undefined){
-                    if(activation=="tanh") 
-                         this.learningRate = 0.001
-                    else this.learningRate = 0.2
+                    switch(activation) {
+                        case "relu":
+                            this.learningRate = 0.01
+                            break
+                        case "tanh":
+                            this.learningRate = 0.001
+                            break
+                        default:
+                            this.learningRate = 0.2
+                    }
                 }
         }
         

@@ -125,6 +125,16 @@ describe("Network", () => {
                 const net = new Network({activation: "tanh", learningRate: 0.01})
                 expect(net.learningRate).to.equal(0.01)
             })
+
+            it("Defaults the learningRate to 0.01 when activation is relu", () => {
+                const net = new Network({activation: "relu"})
+                expect(net.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows a user to set a learningRate when activation is relu", () => {
+                const net = new Network({activation: "relu", learningRate: 0.001})
+                expect(net.learningRate).to.equal(0.001)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -1140,6 +1150,21 @@ describe("Netmath", () => {
         it("Doesn't return NaN if the input value is too high", () => {
             expect(NetMath.tanh(900)).to.not.be.NaN
             expect(NetMath.tanh(900, true)).to.not.be.NaN
+        })
+    })
+
+    describe("relu", () => {
+        it("relu(2)==2", () => {
+            expect(NetMath.relu(2)).to.equal(2)
+        })
+        it("relu(-2)==0", () => {
+            expect(NetMath.relu(-2)).to.equal(0)
+        })
+        it("relu(2, true)==1", () => {
+            expect(NetMath.relu(2, true)).to.equal(1)
+        })
+        it("relu(-2, true)==0", () => {
+            expect(NetMath.relu(-2, true)).to.equal(0)
         })
     })
 

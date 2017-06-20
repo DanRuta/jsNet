@@ -2,6 +2,7 @@
 ---
 #### NetMath
 - Added tanh activation function
+- Added relu activation function
 # v1.1.0 - Adaptive learning rates
 ---
 #### Network

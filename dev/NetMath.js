@@ -4,8 +4,15 @@ class NetMath {
     
     // Activation functions
     static sigmoid (value, prime) {
-        return prime ? NetMath.sigmoid(value)*(1-NetMath.sigmoid(value))
-                     : 1/(1+Math.exp(-value))
+        const val = 1/(1+Math.exp(-value))
+        return prime ? val*(1-val)
+                     : val
+    }
+
+    static tanh (value, prime) {
+        const exp = Math.exp(2*value)
+        return prime ? 4/Math.pow(Math.exp(value)+Math.exp(-value), 2) || 1e-18
+                     : (exp-1)/(exp+1) || 1e-18
     }
 
     // Cost functions

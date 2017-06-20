@@ -27,7 +27,12 @@ class Network {
                 break
 
             default:
-                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
+
+                if(this.learningRate==undefined){
+                    if(activation=="tanh") 
+                         this.learningRate = 0.001
+                    else this.learningRate = 0.2
+                }
         }
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR

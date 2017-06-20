@@ -1,4 +1,8 @@
-# Upcoming
+# Upcoming - Activation functions
+---
+#### NetMath
+- Added tanh activation function
+# v1.1.0 - Adaptive learning rates
 ---
 #### Network
 - Added rho as a network configuration

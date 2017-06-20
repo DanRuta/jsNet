@@ -115,6 +115,16 @@ describe("Network", () => {
                 expect(net2.rho).to.equal(0.9)
                 expect(net2.learningRate).to.equal(0.01)
             })
+
+            it("Defaults the learningRate to 0.001 if the activation is tanh", () => {
+                const net = new Network({activation: "tanh"})
+                expect(net.learningRate).to.equal(0.001)
+            })
+
+            it("Still allows a user to set a learningRate when activation is tanh", () => {
+                const net = new Network({activation: "tanh", learningRate: 0.01})
+                expect(net.learningRate).to.equal(0.01)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -1111,7 +1121,26 @@ describe("Netmath", () => {
         })
         it("sigmoid(0.8430688214048092, true) == 0.21035474941074114", () => {
             expect(NetMath.sigmoid(0.8430688214048092, true)).to.equal(0.21035474941074114)
-        })        
+        })
+    })
+
+    describe("Tanh", () => {
+        it("tanh(1)==0.7615941559557649", () => {
+            expect(NetMath.tanh(1)).to.equal(0.7615941559557649)
+        })
+        it("tanh(0.5)==0.46211715726000974", () => {
+            expect(NetMath.tanh(0.5)).to.equal(0.46211715726000974)
+        })
+        it("tanh(0.5, true)==0.7864477329659275", () => {
+            expect(NetMath.tanh(0.5, true)).to.equal(0.7864477329659275)
+        })
+        it("tanh(1.5, true)==0.18070663892364855", () => {
+            expect(NetMath.tanh(1.5, true)).to.equal(0.18070663892364855)
+        })
+        it("Doesn't return NaN if the input value is too high", () => {
+            expect(NetMath.tanh(900)).to.not.be.NaN
+            expect(NetMath.tanh(900, true)).to.not.be.NaN
+        })
     })
 
     describe("Cross Entropy", () => {

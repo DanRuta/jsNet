@@ -28,7 +28,7 @@ describe("Network", () => {
             beforeEach(() => net = new Network())
 
             it("Defaults the activation to sigmoid and sets the function from NetMath to net.activation", () => {
-                expect(net.activation).to.equal(NetMath.sigmoid)
+                expect(net.activation.name).to.equal("bound sigmoid")
             })
 
             it("Defaults the learning rate to 0.2", () => {
@@ -135,6 +135,26 @@ describe("Network", () => {
                 const net = new Network({activation: "relu", learningRate: 0.001})
                 expect(net.learningRate).to.equal(0.001)
             })
+
+            it("Defaults lreluSlope to -0.0005 when using lrelu activation", () => {
+                const net = new Network({activation: "lrelu"})
+                expect(net.lreluSlope).to.equal(-0.0005)
+            })
+
+            it("Still allows a user to set a lreluSlope when activation is lrelu", () => {
+                const net = new Network({activation: "lrelu", lreluSlope: -0.001})
+                expect(net.lreluSlope).to.equal(-0.001)
+            })
+
+            it("Defaults the learningRate to 0.01 when activation is lrelu", () => {
+                const net = new Network({activation: "lrelu"})
+                expect(net.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows a user to set a learningRate when activation is lrelu", () => {
+                const net = new Network({activation: "lrelu", learningRate: 0.001})
+                expect(net.learningRate).to.equal(0.001)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -197,7 +217,7 @@ describe("Network", () => {
         it("Calls the joinLayer function with each layer when state is constructed", () => {
             const layer1 = new Layer(1)
             const layer2 = new Layer(2)
-            const netThis = {state: "constructed", layers: [layer1, layer2], joinLayer: net.joinLayer}
+            const netThis = {state: "constructed", layers: [layer1, layer2], joinLayer: net.joinLayer, activation: NetMath.sigmoid}
             net.initLayers.bind(netThis)()
 
             expect(netThis.state).to.equal("initialised")
@@ -207,14 +227,14 @@ describe("Network", () => {
         })
 
         it("Calculates reasonable sizes for layers, when state is defined (with a small net)", () => {
-            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer], joinLayer: net.joinLayer}
+            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer], joinLayer: net.joinLayer, activation: NetMath.sigmoid}
             net.initLayers.bind(netThis, 3, 2)()
             expect(netThis.layers.map(layer => layer.size)).to.deep.equal([3, 5, 3, 2])
             expect(net.joinLayer.callCount).to.equal(4)
         })
 
         it("Calculates reasonable sizes for layers, when state is defined (with a big net)", () => {
-            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer, Layer, Layer], joinLayer: net.joinLayer}
+            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer, Layer, Layer], joinLayer: net.joinLayer, activation: NetMath.sigmoid}
             net.initLayers.bind(netThis, 784, 10)()
 
             expect(netThis.state).to.equal("initialised")
@@ -223,7 +243,7 @@ describe("Network", () => {
         })
 
         it("Creates three Layers when state is not-defined. First and last layer sizes respective to input/output, middle is in-between", () => {
-            const netThis = {state: "not-defined", joinLayer: net.joinLayer, layers: []}
+            const netThis = {state: "not-defined", joinLayer: net.joinLayer, layers: [], activation: NetMath.sigmoid}
             net.initLayers.bind(netThis, 3, 2)()
 
             expect(netThis.state).to.equal("initialised")
@@ -232,7 +252,7 @@ describe("Network", () => {
         })
 
         it("Creates three Layers when state is not-defined. (the same, but with big net)", () => {
-            const netThis = {state: "not-defined", joinLayer: net.joinLayer, layers: []}
+            const netThis = {state: "not-defined", joinLayer: net.joinLayer, layers: [], activation: NetMath.sigmoid}
             net.initLayers.bind(netThis, 784, 10)()
             expect(netThis.state).to.equal("initialised")
             expect(net.joinLayer).to.have.been.calledThrice
@@ -242,10 +262,10 @@ describe("Network", () => {
         it("Sets the network's activation function to the layers", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({layers: [layer1, layer2]})
+            const net = new Network({layers: [layer1, layer2], activation: "sigmoid"})
 
-            expect(layer1.activation).to.equal(NetMath.sigmoid)
-            expect(layer2.activation).to.equal(NetMath.sigmoid)
+            expect(layer1.activation.name).to.equal("bound sigmoid")
+            expect(layer2.activation.name).to.equal("bound sigmoid")
         })
     })
 
@@ -1165,6 +1185,21 @@ describe("Netmath", () => {
         })
         it("relu(-2, true)==0", () => {
             expect(NetMath.relu(-2, true)).to.equal(0)
+        })
+    })
+
+    describe("lrelu", () => {
+        it("lrelu(2)==2", () => {
+            expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, 2)()).to.equal(2)
+        })
+        it("lrelu(-2)==-0.001", () => {
+            expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2)()).to.equal(-0.001)
+        })
+        it("lrelu(2, true)==1", () => {
+            expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, 2, true)()).to.equal(1)
+        })
+        it("lrelu(-2, true)==0", () => {
+            expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2, true)()).to.equal(-0.0005)
         })
     })
 

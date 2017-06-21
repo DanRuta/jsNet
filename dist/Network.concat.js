@@ -69,6 +69,11 @@ class NetMath {
                      : Math.max(value, 0)
     }
 
+    static lrelu (value, prime) {
+        return prime ? value > 0 ? 1 : this.lreluSlope
+                     : Math.max(this.lreluSlope*Math.abs(value), value)
+    }
+
     // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
@@ -161,7 +166,7 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -190,6 +195,7 @@ class Network {
                 if(this.learningRate==undefined){
                     switch(activation) {
                         case "relu":
+                        case "lrelu":
                             this.learningRate = 0.01
                             break
                         case "tanh":
@@ -203,11 +209,15 @@ class Network {
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
-        this.activation = NetMath[activation]
+        this.activation = NetMath[activation].bind(this)
         this.cost = NetMath[cost]
 
         if(this.adaptiveLR=="RMSProp"){
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
+        }
+
+        if(activation=="lrelu"){
+            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
         }
 
         if(layers.length) {

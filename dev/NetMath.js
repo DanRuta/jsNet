@@ -20,6 +20,11 @@ class NetMath {
                      : Math.max(value, 0)
     }
 
+    static lrelu (value, prime) {
+        return prime ? value > 0 ? 1 : this.lreluSlope
+                     : Math.max(this.lreluSlope*Math.abs(value), value)
+    }
+
     // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))

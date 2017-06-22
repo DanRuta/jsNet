@@ -5,6 +5,7 @@
 - Added relu activation function
 - Added lrelu activation function
 - Added lreluSlope as a network configuration
+- Added rrelu activation function
 # v1.1.0 - Adaptive learning rates
 ---
 #### Network

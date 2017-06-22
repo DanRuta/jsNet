@@ -32,6 +32,7 @@ class Network {
                     switch(activation) {
                         case "relu":
                         case "lrelu":
+                        case "rrelu":
                             this.learningRate = 0.01
                             break
                         case "tanh":
@@ -46,6 +47,7 @@ class Network {
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation].bind(this)
+        this.activationConfig = activation
         this.cost = NetMath[cost]
 
         if(this.adaptiveLR=="RMSProp"){
@@ -123,6 +125,7 @@ class Network {
 
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
+        layer.activationConfig = this.activationConfig
 
         if(this.rho!=undefined){
             layer.rho = this.rho
@@ -313,4 +316,4 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (global.Network = Network) 
+typeof window=="undefined" && (global.Network = Network)

@@ -13,7 +13,10 @@ class Layer {
 
     assignPrev (layer) {
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size, this.adaptiveLR, this.rho))   
+        this.neurons.forEach(neuron => neuron.init(layer.size, {
+            adaptiveLR: this.adaptiveLR,
+            activationConfig: this.activationConfig
+        }))   
     }
 
     forward (data) {
@@ -22,7 +25,7 @@ class Layer {
 
             neuron.sum = neuron.bias
             this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
-            neuron.activation = this.activation(neuron.sum)
+            neuron.activation = this.activation(neuron.sum, false, neuron)
         })
     }
 
@@ -32,7 +35,7 @@ class Layer {
             if(typeof expected !== "undefined") {
                 neuron.error = expected[ni] - neuron.activation
             }else {
-                neuron.derivative = this.activation(neuron.sum, true)
+                neuron.derivative = this.activation(neuron.sum, true, neuron)
                 neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * n.weights[ni])
                                                                          .reduce((p,c) => p+c, 0)
             }
@@ -72,6 +75,11 @@ class NetMath {
     static lrelu (value, prime) {
         return prime ? value > 0 ? 1 : this.lreluSlope
                      : Math.max(this.lreluSlope*Math.abs(value), value)
+    }
+
+    static rrelu (value, prime, neuron) {
+        return prime ? value > 0 ? 1 : neuron.rreluSlope
+                     : Math.max(neuron.rreluSlope, value)   
     }
 
     // Cost functions
@@ -196,6 +204,7 @@ class Network {
                     switch(activation) {
                         case "relu":
                         case "lrelu":
+                        case "rrelu":
                             this.learningRate = 0.01
                             break
                         case "tanh":
@@ -210,6 +219,7 @@ class Network {
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation].bind(this)
+        this.activationConfig = activation
         this.cost = NetMath[cost]
 
         if(this.adaptiveLR=="RMSProp"){
@@ -287,6 +297,7 @@ class Network {
 
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
+        layer.activationConfig = this.activationConfig
 
         if(this.rho!=undefined){
             layer.rho = this.rho
@@ -477,7 +488,7 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (global.Network = Network) 
+typeof window=="undefined" && (global.Network = Network)
 "use strict"
 
 class Neuron {
@@ -490,7 +501,7 @@ class Neuron {
         }
     }
 
-    init (size, adaptiveLR) {
+    init (size, {adaptiveLR, activationConfig}={}) {
         if(!this.imported){
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1
@@ -520,6 +531,10 @@ class Neuron {
                 this.m = 0
                 this.v = 0
                 break
+        }
+
+        if(activationConfig=="rrelu") {
+            this.rreluSlope = Math.random() * 0.001
         }
     }
 }

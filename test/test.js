@@ -155,6 +155,21 @@ describe("Network", () => {
                 const net = new Network({activation: "lrelu", learningRate: 0.001})
                 expect(net.learningRate).to.equal(0.001)
             })
+
+            it("Sets the net.activationConfig to the given activation config value.", () => {
+                const net = new Network({activation: "relu"})
+                expect(net.activationConfig).to.equal("relu")
+            })
+
+            it("Defaults the learningRate to 0.01 when activation is rrelu", () => {
+                const net = new Network({activation: "rrelu"})
+                expect(net.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows a user to set a learningRate when activation is rrelu", () => {
+                const net = new Network({activation: "rrelu", learningRate: 0.001})
+                expect(net.learningRate).to.equal(0.001)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -328,6 +343,13 @@ describe("Network", () => {
             net.rho = undefined
             net.joinLayer(layer1)
             expect(layer1.rho).to.be.undefined
+        })
+
+        it("Sets the layer's activationConfig to the net.activationConfig", () => {
+            net.layers = [layer1]
+            net.activationConfig = "test"
+            net.joinLayer(layer1)
+            expect(layer1.activationConfig).to.equal("test")
         })
     })
 
@@ -852,11 +874,12 @@ describe("Layer", () => {
             expect(layer2.neurons[1].init).to.have.been.calledWith(2)
         })
 
-        it("Calls the neuron's init function with this layer's adaptiveLR", () => {
-            layer2.adaptiveLR = "testStuff"
+        it("Calls the neuron's init function with this layer's adaptiveLR and activationConfig", () => {
+            layer2.adaptiveLR = "test"
+            layer2.activationConfig = "stuff"
             layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2, "testStuff")
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2, "testStuff")
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2, {adaptiveLR: "test", activationConfig: "stuff"})
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2, {adaptiveLR: "test", activationConfig: "stuff"})
         })
     })
 
@@ -1040,105 +1063,113 @@ describe("Neuron", () => {
         })
 
         it("Creates a weightGains array if the adaptiveLR parameter is gain, with same size as weights, with 1 values", () => {
-            neuron.init(3, "gain")
+            neuron.init(3, {adaptiveLR: "gain"})
             expect(neuron.weightGains).to.not.be.undefined
             expect(neuron.weightGains).to.have.lengthOf(3)
             expect(neuron.weightGains).to.deep.equal([1,1,1])
         })
 
         it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
-            neuron.init(3, "gain")
+            neuron.init(3, {adaptiveLR: "gain"})
             expect(neuron.biasGain).to.equal(1)
         })
 
         it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
-            neuron.init(3, "not gain")
+            neuron.init(3, {adaptiveLR: "not gain"})
             expect(neuron.weightGains).to.be.undefined
             expect(neuron.biasGain).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adagrad, with 0 values", () => {
-            neuron.init(3, "adagrad")
+            neuron.init(3, {adaptiveLR: "adagrad"})
             expect(neuron.weightsCache).to.not.be.undefined
             expect(neuron.weightsCache).to.have.lengthOf(3)
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is RMSProp, with 0 values", () => {
-            neuron.init(3, "RMSProp")
+            neuron.init(3, {adaptiveLR: "RMSProp"})
             expect(neuron.weightsCache).to.not.be.undefined
             expect(neuron.weightsCache).to.have.lengthOf(3)
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
-            neuron.init(3, "adagrad")
+            neuron.init(3, {adaptiveLR: "adagrad"})
             expect(neuron.biasCache).to.equal(0)
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is RMSProp", () => {
-            neuron.init(3, "adagrad")
+            neuron.init(3, {adaptiveLR: "adagrad"})
             expect(neuron.biasCache).to.equal(0)
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not adagrad", () => {
-            neuron.init(3, "not adagrad")
+            neuron.init(3, {adaptiveLR: "not adagrad"})
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not RMSProp", () => {
-            neuron.init(3, "not RMSProp")
+            neuron.init(3, {adaptiveLR: "not RMSProp"})
             expect(neuron.weightsCache).to.be.undefined
             expect(neuron.biasCache).to.be.undefined
         })
 
         it("Creates and sets neuron.m to 0 if the adaptiveLR parameter is adam", () => {
-            neuron.init(3, "adam")
+            neuron.init(3, {adaptiveLR: "adam"})
             expect(neuron.m).to.not.be.undefined
             expect(neuron.m).to.equal(0)
         })
 
         it("Creates and sets neuron.v to 0 if the adaptiveLR parameter is adam", () => {
-            neuron.init(3, "adam")
+            neuron.init(3, {adaptiveLR: "adam"})
             expect(neuron.v).to.not.be.undefined
             expect(neuron.v).to.equal(0)
         })
 
         it("Does not create neuron.m or neuron.v when the adaptiveLR parameter is not adam", () => {
-            neuron.init(3, "not adam")
+            neuron.init(3, {adaptiveLR: "not adam"})
             expect(neuron.m).to.be.undefined
             expect(neuron.v).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron.init(3, "adadelta")
+            neuron.init(3, {adaptiveLR: "adadelta"})
             expect(neuron.weightsCache).to.not.be.undefined
             expect(neuron.weightsCache).to.have.lengthOf(3)
             expect(neuron.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-            neuron.init(3, "adadelta")
+            neuron.init(3, {adaptiveLR: "adadelta"})
             expect(neuron.adadeltaBiasCache).to.equal(0)
         })
 
         it("Creates a adadeltaCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron.init(3, "adadelta")
+            neuron.init(3, {adaptiveLR: "adadelta"})
             expect(neuron.adadeltaCache).to.not.be.undefined
             expect(neuron.adadeltaCache).to.have.lengthOf(3)
             expect(neuron.adadeltaCache).to.deep.equal([0,0,0])
         })
 
         it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or RMSProp", () => {
-            neuron.init(3, "adagrad")
+            neuron.init(3, {adaptiveLR: "adagrad"})
             expect(neuron.adadeltaCache).to.be.undefined
             expect(neuron.adadeltaBiasCache).to.be.undefined
             const neuron2 = new Neuron()
-            neuron2.init(3, "RMSProp")
+            neuron2.init(3, {adaptiveLR: "RMSProp"})
             expect(neuron2.adadeltaCache).to.be.undefined
             expect(neuron2.adadeltaBiasCache).to.be.undefined
         })
+
+        it("Creates a random neuron.rreluSlope number if the activationConfig value is rrelu", () => {
+            neuron.init(3, {activationConfig: "rrelu"})
+            expect(neuron.rreluSlope).to.not.be.undefined
+            expect(neuron.rreluSlope).to.be.a.number
+            expect(neuron.rreluSlope).to.be.at.most(0.0011)
+        })
+
     })
 })
 
@@ -1185,6 +1216,21 @@ describe("Netmath", () => {
         })
         it("relu(-2, true)==0", () => {
             expect(NetMath.relu(-2, true)).to.equal(0)
+        })
+    })
+
+    describe("rrelu", () => {
+        it("rrelu(2, false, {rreluSlope: 0.0005})==2", () => {
+            expect(NetMath.rrelu(2, false, {rreluSlope: 0.0005})).to.equal(2)
+        })
+        it("rrelu(-2, false, {rreluSlope: 0.0005})==0", () => {
+            expect(NetMath.rrelu(-2, false, {rreluSlope: 0.0005})).to.equal(0.0005)
+        })
+        it("rrelu(2, true, {rreluSlope: 0.0005})==1", () => {
+            expect(NetMath.rrelu(2, true, {rreluSlope: 0.0005})).to.equal(1)
+        })
+        it("rrelu(-2, true, {rreluSlope: 0.0005})==0", () => {
+            expect(NetMath.rrelu(-2, true, {rreluSlope: 0.0005})).to.equal(0.0005)
         })
     })
 

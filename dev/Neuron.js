@@ -10,7 +10,7 @@ class Neuron {
         }
     }
 
-    init (size, adaptiveLR) {
+    init (size, {adaptiveLR, activationConfig}={}) {
         if(!this.imported){
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1
@@ -40,6 +40,10 @@ class Neuron {
                 this.m = 0
                 this.v = 0
                 break
+        }
+
+        if(activationConfig=="rrelu") {
+            this.rreluSlope = Math.random() * 0.001
         }
     }
 }

@@ -30,6 +30,11 @@ class NetMath {
                      : Math.max(neuron.rreluSlope, value)   
     }
 
+    static lecuntanh (value, prime) {
+        return prime ? 1.15333 * Math.pow(NetMath.sech((2/3) * value), 2)
+                     : 1.7159 * NetMath.tanh((2/3) * value)
+    }
+
     // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
@@ -114,6 +119,10 @@ class NetMath {
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
         return values.map(value => value/total)
+    }
+
+    static sech (value) {
+        return (2*Math.exp(-value))/(1+Math.exp(-2*value))
     }
 }
 

@@ -36,6 +36,7 @@ class Network {
                             this.learningRate = 0.01
                             break
                         case "tanh":
+                        case "lecuntanh":
                             this.learningRate = 0.001
                             break
                         default:

@@ -6,6 +6,8 @@
 - Added lrelu activation function
 - Added lreluSlope as a network configuration
 - Added rrelu activation function
+- Added lecuntanh activation function
+- Added sech to NetMath
 # v1.1.0 - Adaptive learning rates
 ---
 #### Network

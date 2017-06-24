@@ -170,6 +170,16 @@ describe("Network", () => {
                 const net = new Network({activation: "rrelu", learningRate: 0.001})
                 expect(net.learningRate).to.equal(0.001)
             })
+
+            it("Defaults the learningRate to 0.001 when activation is lecuntanh", () => {
+                const net = new Network({activation: "lecuntanh"})
+                expect(net.learningRate).to.equal(0.001)
+            })
+
+            it("Still allows a user to set a learningRate when activation is lecuntanh", () => {
+                const net = new Network({activation: "lecuntanh", learningRate: 0.01})
+                expect(net.learningRate).to.equal(0.01)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -1246,6 +1256,30 @@ describe("Netmath", () => {
         })
         it("lrelu(-2, true)==0", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2, true)()).to.equal(-0.0005)
+        })
+    })
+
+    describe("sech", () => {
+        it("sech(1)==0.6480542736638853", () => {
+            expect(NetMath.sech(1)).to.equal(0.6480542736638853)
+        })
+        it("sech(-0.5)==0.886818883970074", () => {
+            expect(NetMath.sech(-0.5)).to.equal(0.886818883970074)
+        })
+    })
+
+    describe("lecuntanh", () => {
+        it("lecuntanh(2)==1.4929388053842507", () => {
+            expect(NetMath.lecuntanh(2)).to.equal(1.4929388053842507)
+        })
+        it("lecuntanh(-2)==-1.4929388053842507", () => {
+            expect(NetMath.lecuntanh(-2)).to.equal(-1.4929388053842507)
+        })
+        it("lecuntanh(2, true)==0.2802507761872869", () => {
+            expect(NetMath.lecuntanh(2, true)).to.equal(0.2802507761872869)
+        })
+        it("lecuntanh(-2, true)==0.2802507761872869", () => {
+            expect(NetMath.lecuntanh(-2, true)).to.equal(0.2802507761872869)
         })
     })
 

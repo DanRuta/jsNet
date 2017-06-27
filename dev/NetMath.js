@@ -35,6 +35,11 @@ class NetMath {
                      : 1.7159 * NetMath.tanh((2/3) * value)
     }
 
+    static elu (value, prime, neuron) {
+        return prime ? value >=0 ? 1 : NetMath.elu(value, false, neuron) + neuron.eluAlpha
+                     : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) -1)
+    }
+    
     // Cost functions
     static crossEntropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))

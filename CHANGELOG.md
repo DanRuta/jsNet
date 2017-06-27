@@ -8,6 +8,8 @@
 - Added rrelu activation function
 - Added lecuntanh activation function
 - Added sech to NetMath
+- Added elu activation function
+- Added eluAlpha as a network configuration, for elu
 # v1.1.0 - Adaptive learning rates
 ---
 #### Network

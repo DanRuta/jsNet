@@ -15,8 +15,9 @@ class Layer {
         this.prevLayer = layer
         this.neurons.forEach(neuron => neuron.init(layer.size, {
             adaptiveLR: this.adaptiveLR,
-            activationConfig: this.activationConfig
-        }))   
+            activationConfig: this.activationConfig,
+            eluAlpha: this.eluAlpha
+        }))
     }
 
     forward (data) {

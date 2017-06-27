@@ -180,6 +180,26 @@ describe("Network", () => {
                 const net = new Network({activation: "lecuntanh", learningRate: 0.01})
                 expect(net.learningRate).to.equal(0.01)
             })
+
+            it("Defaults the learningRate to 0.01 when activation is elu", () => {
+                const net = new Network({activation: "elu"})
+                expect(net.learningRate).to.equal(0.01)
+            })
+
+            it("Still allows a user to set a learningRate when activation is elu", () => {
+                const net = new Network({activation: "elu", learningRate: 0.001})
+                expect(net.learningRate).to.equal(0.001)
+            })
+
+            it("Defaults the eluAlpha to 1 when activation is elu", () => {
+                const net = new Network({activation: "elu"})
+                expect(net.eluAlpha).to.equal(1)
+            })
+
+            it("Still allows a user to set a eluAlpha when activation is elu", () => {
+                const net = new Network({activation: "elu", eluAlpha: 2})
+                expect(net.eluAlpha).to.equal(2)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -360,6 +380,20 @@ describe("Network", () => {
             net.activationConfig = "test"
             net.joinLayer(layer1)
             expect(layer1.activationConfig).to.equal("test")
+        })
+
+        it("Assigns the network's eluAlpha value to the layer, if it exists", () => {
+            net.layers = [layer1]
+            net.eluAlpha = "test"
+            net.joinLayer(layer1)
+            expect(layer1.eluAlpha).to.equal("test")
+        })
+
+        it("Does not set the network's eluAlpha value to the layer if it does not exist", () => {
+            net.layers = [layer1]
+            net.eluAlpha = undefined
+            net.joinLayer(layer1)
+            expect(layer1.eluAlpha).to.be.undefined
         })
     })
 
@@ -888,8 +922,17 @@ describe("Layer", () => {
             layer2.adaptiveLR = "test"
             layer2.activationConfig = "stuff"
             layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2, {adaptiveLR: "test", activationConfig: "stuff"})
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2, {adaptiveLR: "test", activationConfig: "stuff"})
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
+        })
+
+        it("Calls the neuron's init function with this layer's eluAlpha", () => {
+            layer2.eluAlpha = 1
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
         })
     })
 
@@ -1180,6 +1223,10 @@ describe("Neuron", () => {
             expect(neuron.rreluSlope).to.be.at.most(0.0011)
         })
 
+        it("Sets the neuron.eluAlpha to the given value, if given a value", () => {
+            neuron.init(3, {activationConfig: "elu", eluAlpha: 0.5})
+            expect(neuron.eluAlpha).to.equal(0.5)
+        })
     })
 })
 
@@ -1280,6 +1327,23 @@ describe("Netmath", () => {
         })
         it("lecuntanh(-2, true)==0.2802507761872869", () => {
             expect(NetMath.lecuntanh(-2, true)).to.equal(0.2802507761872869)
+        })
+    })
+
+    describe("elu", () => {
+        it("elu(2)==2", () => {
+            expect(NetMath.elu.bind(null, 2, false, {eluAlpha: 1})()).to.equal(2)
+        })
+
+        it("elu(-0.25)==-0.22119921692859512", () => {
+            expect(NetMath.elu.bind(null, -0.25, false, {eluAlpha: 1})()).to.equal(-0.22119921692859512)
+        })
+
+        it("elu(2, true)==1", () => {
+            expect(NetMath.elu.bind(null, 2, true, {eluAlpha: 1})()).to.equal(1)
+        })
+        it("elu(-0.5, true)==0.6065306597126334", () => {
+            expect(NetMath.elu.bind(null, -0.5, true, {eluAlpha: 1})()).to.equal(0.6065306597126334)
         })
     })
 

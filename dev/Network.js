@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -33,6 +33,7 @@ class Network {
                         case "relu":
                         case "lrelu":
                         case "rrelu":
+                        case "elu":
                             this.learningRate = 0.01
                             break
                         case "tanh":
@@ -57,6 +58,8 @@ class Network {
 
         if(activation=="lrelu"){
             this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        }else if(activation=="elu") {
+            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
         if(layers.length) {
@@ -130,6 +133,10 @@ class Network {
 
         if(this.rho!=undefined){
             layer.rho = this.rho
+        }
+        
+        if(this.eluAlpha!=undefined){
+            layer.eluAlpha = this.eluAlpha
         }
 
         if(layerIndex){

@@ -104,20 +104,21 @@ const normalizedResults = NetMath.softmax(netResult)
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
 | adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
-| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh | sigmoid |
+| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
 | cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | crossEntropy |
 | rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
 | rho | Momentum for Adadelta | Any number | 0.95 |
 | lreluSlope | Slope for lrelu | Any number | 0.99 |
 
-Learning rate is 0.2 by default, except when using the following configurations:  
+Learning rate is 0.2 by default, except when using the following configurations:
+
 | Modifier| Type | Default value| 
 |:-------------:| :-----: | :-----: |
 | RMSProp | adaptiveLR | 0.001 |
 | adam | adaptiveLR | 0.01 |
 | adadelta | adaptiveLR | undefined |
 | tanh, lecuntanh | activation | 0.001 |
-| relu, lrelu, rrelu | activation | 0.01 |
+| relu, lrelu, rrelu, elu | activation | 0.01 |
 
 ## Future plans
 ---

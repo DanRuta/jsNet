@@ -90,7 +90,7 @@ class NetMath {
 
     static elu (value, prime, neuron) {
         return prime ? value >=0 ? 1 : NetMath.elu(value, false, neuron) + neuron.eluAlpha
-                     : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) -1)
+                     : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) - 1)
     }
     
     // Cost functions
@@ -285,6 +285,7 @@ class Network {
 
             case "defined":
                 this.layers = this.definedLayers.map((layer, li) => {
+                    
                     if(!li)
                         return new layer(input)
 
@@ -525,6 +526,7 @@ class Neuron {
     }
 
     init (size, {adaptiveLR, activationConfig, eluAlpha}={}) {
+        
         if(!this.imported){
             this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
             this.bias = Math.random()*0.2-0.1

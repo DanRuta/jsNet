@@ -98,6 +98,7 @@ class Network {
 
             case "defined":
                 this.layers = this.definedLayers.map((layer, li) => {
+                    
                     if(!li)
                         return new layer(input)
 

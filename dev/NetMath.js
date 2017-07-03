@@ -37,7 +37,7 @@ class NetMath {
 
     static elu (value, prime, neuron) {
         return prime ? value >=0 ? 1 : NetMath.elu(value, false, neuron) + neuron.eluAlpha
-                     : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) -1)
+                     : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) - 1)
     }
     
     // Cost functions

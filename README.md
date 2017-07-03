@@ -109,6 +109,7 @@ const normalizedResults = NetMath.softmax(netResult)
 | rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
 | rho | Momentum for Adadelta | Any number | 0.95 |
 | lreluSlope | Slope for lrelu | Any number | 0.99 |
+| eluAlpha | Alpha value for ELU | Any number | 1 |
 
 Learning rate is 0.2 by default, except when using the following configurations:
 

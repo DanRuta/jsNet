@@ -1,4 +1,18 @@
-# Upcoming
+# v1.2.0 - Activation functions (Part 1)
+---
+#### Network
+- Added lreluSlope, for lrelu activation
+- Added eluAlpha, for elu activation
+#### NetMath
+- Added tanh activation function
+- Added relu activation function
+- Added lrelu activation function
+- Added rrelu activation function
+- Added lecuntanh activation function
+- Added sech to NetMath
+- Added elu activation function
+
+# v1.1.0 - Adaptive learning rates
 ---
 #### Network
 - Added rho as a network configuration

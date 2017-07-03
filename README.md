@@ -1,7 +1,7 @@
 # Network.js
 [![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
 
-Network.js is promise based implementation of a (currently) really basic neural network, functional in node as well as the browser. The focus was end user simplicity. 
+Network.js is promise based implementation of a (currently) really basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
@@ -11,7 +11,7 @@ I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples 
 
 ### Constructing
 ---
-A network can be built in a few different ways, 
+A network can be built in a few different ways: 
 
 ##### 1 
 With absolutely no parameters, and it will figure out an appropriate structure once you pass it some data.
@@ -40,6 +40,7 @@ const net = new Network({
     layers: [new Layer(784), new Layer(100), new Layer(10)]
 })
 ```
+The default values are values I have found produced good results in the datasets I used for testing. You will, of course, get best results by hand picking configurations appropriate to your own data set.
 
 ### Training
 ----
@@ -101,23 +102,32 @@ const normalizedResults = NetMath.softmax(netResult)
 #### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| learningRate | The speed at which the net will learn. | Any number | 0.2 (0.001 for RMSProp, 0.01 for adam) |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, "gain", "adagrad", "RMSProp"*, "adam"\*\* , "adadelta"| null |
-| activation | Activation function used by neurons | "sigmoid" | "sigmoid" |
-| cost | Cost function to use when printing out the net error | "crossEntropy", "meanSquaredError" | "crossEntropy" |
+| learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
+| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
+| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
+| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | crossEntropy |
 | rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
 | rho | Momentum for Adadelta | Any number | 0.95 |
+| lreluSlope | Slope for lrelu | Any number | 0.99 |
+| eluAlpha | Alpha value for ELU | Any number | 1 |
 
-\* Learning rate should be lower when using RMSProp, around 0.001. 
+Learning rate is 0.2 by default, except when using the following configurations:
 
-\** Learning rate should be lower when using adam, around 0.01
+| Modifier| Type | Default value| 
+|:-------------:| :-----: | :-----: |
+| RMSProp | adaptiveLR | 0.001 |
+| adam | adaptiveLR | 0.01 |
+| adadelta | adaptiveLR | undefined |
+| tanh, lecuntanh | activation | 0.001 |
+| relu, lrelu, rrelu, elu | activation | 0.01 |
+
 ## Future plans
 ---
 ##### Short term
 More and more features will be added to this little library, as time goes by, and I learn more. The first few changes will be adding more configuration options, such as activation functions, cost functions, etc. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
 ##### Long term
 Keeping the same level of ease of use in mind, I will add Conv and Pool layers.
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some harcore optimisations.
+Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some hardcore optimisations.
 
 ## Contributing
 ---

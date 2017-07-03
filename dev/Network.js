@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -27,16 +27,39 @@ class Network {
                 break
 
             default:
-                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
+
+                if(this.learningRate==undefined){
+                    switch(activation) {
+                        case "relu":
+                        case "lrelu":
+                        case "rrelu":
+                        case "elu":
+                            this.learningRate = 0.01
+                            break
+                        case "tanh":
+                        case "lecuntanh":
+                            this.learningRate = 0.001
+                            break
+                        default:
+                            this.learningRate = 0.2
+                    }
+                }
         }
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
-        this.activation = NetMath[activation]
+        this.activation = NetMath[activation].bind(this)
+        this.activationConfig = activation
         this.cost = NetMath[cost]
 
         if(this.adaptiveLR=="RMSProp"){
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
+        }
+
+        if(activation=="lrelu"){
+            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        }else if(activation=="elu") {
+            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
         if(layers.length) {
@@ -75,6 +98,7 @@ class Network {
 
             case "defined":
                 this.layers = this.definedLayers.map((layer, li) => {
+                    
                     if(!li)
                         return new layer(input)
 
@@ -106,9 +130,14 @@ class Network {
 
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
+        layer.activationConfig = this.activationConfig
 
         if(this.rho!=undefined){
             layer.rho = this.rho
+        }
+        
+        if(this.eluAlpha!=undefined){
+            layer.eluAlpha = this.eluAlpha
         }
 
         if(layerIndex){
@@ -296,4 +325,4 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (global.Network = Network) 
+typeof window=="undefined" && (global.Network = Network)

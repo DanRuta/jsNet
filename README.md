@@ -1,7 +1,7 @@
 # Network.js
 [![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
 
-Network.js is promise based implementation of a (currently) really basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
+Network.js is promise based implementation of a (currently) basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
@@ -110,6 +110,7 @@ const normalizedResults = NetMath.softmax(netResult)
 | rho | Momentum for Adadelta | Any number | 0.95 |
 | lreluSlope | Slope for lrelu | Any number | 0.99 |
 | eluAlpha | Alpha value for ELU | Any number | 1 |
+| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
 
 Learning rate is 0.2 by default, except when using the following configurations:
 

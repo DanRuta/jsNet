@@ -1,3 +1,8 @@
+# Upcoming
+---
+#### Network
+- Added dropout, with dropout configuration
+
 # v1.2.0 - Activation functions (Part 1)
 ---
 #### Network

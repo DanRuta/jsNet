@@ -2,11 +2,12 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
+        this.dropout = dropout==false ? 1 : dropout
 
         if(learningRate!=null){    
             this.learningRate = learningRate
@@ -131,6 +132,7 @@ class Network {
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
         layer.activationConfig = this.activationConfig
+        layer.dropout = this.dropout
 
         if(this.rho!=undefined){
             layer.rho = this.rho
@@ -192,6 +194,8 @@ class Network {
                 this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
             }
 
+            this.layers.forEach(layer => layer.state = "training")
+
             let iterationIndex = 0
             let epochsCounter = 0
             let error = 0
@@ -241,7 +245,10 @@ class Network {
 
                     if(epochsCounter < epochs){
                         doEpoch()
-                    }else resolve()
+                    }else {
+                        this.layers.forEach(layer => layer.state = "initialised")
+                        resolve()
+                    }
                 }
             }
 

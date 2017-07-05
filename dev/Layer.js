@@ -5,6 +5,7 @@ class Layer {
     constructor (size, importedData) {
         this.size = size
         this.neurons = [...new Array(size)].map((n, ni) => new Neuron(importedData ? importedData[ni] : undefined))
+        this.state = "not-initialised"
     }
 
     assignNext (layer) {
@@ -18,34 +19,44 @@ class Layer {
             activationConfig: this.activationConfig,
             eluAlpha: this.eluAlpha
         }))
+        this.state = "initialised"
     }
 
     forward (data) {
 
         this.neurons.forEach((neuron, ni) => {
 
-            neuron.sum = neuron.bias
-            this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
-            neuron.activation = this.activation(neuron.sum, false, neuron)
+            if(this.state=="training" && (neuron.dropped = Math.random() > this.dropout)) {
+                neuron.activation = 0
+            }else {
+                neuron.sum = neuron.bias
+                this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
+                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.dropout|1)
+            }
         })
     }
 
     backward (expected) {
         this.neurons.forEach((neuron, ni) => {
 
-            if(typeof expected !== "undefined") {
-                neuron.error = expected[ni] - neuron.activation
+            if(neuron.dropped) {
+                neuron.error = 0
+                neuron.deltaBias = 0
             }else {
-                neuron.derivative = this.activation(neuron.sum, true, neuron)
-                neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * n.weights[ni])
-                                                                         .reduce((p,c) => p+c, 0)
-            }
+                if(typeof expected !== "undefined") {
+                    neuron.error = expected[ni] - neuron.activation
+                }else {
+                    neuron.derivative = this.activation(neuron.sum, true, neuron)
+                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]|0))
+                                                                             .reduce((p,c) => p+c, 0)
+                }
 
-            neuron.weights.forEach((weight, wi) => {
-                neuron.deltaWeights[wi] += neuron.error * this.prevLayer.neurons[wi].activation
-            })
+                neuron.weights.forEach((weight, wi) => {
+                    neuron.deltaWeights[wi] += neuron.error * this.prevLayer.neurons[wi].activation
+                })
 
-            neuron.deltaBias = neuron.error
+                neuron.deltaBias = neuron.error
+            }            
         })
     }
 }

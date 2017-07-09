@@ -52,7 +52,8 @@ class Layer {
                 }
 
                 neuron.weights.forEach((weight, wi) => {
-                    neuron.deltaWeights[wi] += neuron.error * this.prevLayer.neurons[wi].activation
+                    neuron.deltaWeights[wi] += (neuron.error * this.prevLayer.neurons[wi].activation) * 
+                                               (1 + (this.l2||0) * neuron.deltaWeights[wi])
                 })
 
                 neuron.deltaBias = neuron.error

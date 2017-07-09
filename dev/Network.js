@@ -2,15 +2,21 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
+        this.error = 0
 
         if(learningRate!=null){    
             this.learningRate = learningRate
+        }
+
+        if(l2){
+            this.l2 = typeof l2=="boolean" && l2 ? 0.001 : l2
+            this.l2Error = 0
         }
 
         switch(true) {
@@ -134,15 +140,19 @@ class Network {
         layer.activationConfig = this.activationConfig
         layer.dropout = this.dropout
 
-        if(this.rho!=undefined){
+        if(this.rho!=undefined) {
             layer.rho = this.rho
         }
         
-        if(this.eluAlpha!=undefined){
+        if(this.eluAlpha!=undefined) {
             layer.eluAlpha = this.eluAlpha
         }
 
-        if(layerIndex){
+        if(this.l2!=undefined) {
+            layer.l2 = this.l2
+        }
+
+        if(layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }
@@ -198,11 +208,15 @@ class Network {
 
             let iterationIndex = 0
             let epochsCounter = 0
-            let error = 0
 
             const doEpoch = () => {
                 this.epochs++
+                this.error = 0
                 iterationIndex = 0
+
+                if(this.l2Error!=undefined){
+                    this.l2Error = 0
+                }
 
                 doIteration()               
             }
@@ -223,7 +237,7 @@ class Network {
                 this.applyDeltaWeights()
 
                 const iterationError = this.cost(target, output)
-                error += iterationError
+                this.error += iterationError
 
                 if(typeof callback=="function") {
                     callback({
@@ -241,7 +255,7 @@ class Network {
                 }else {
 
                     epochsCounter++
-                    console.log(`Epoch: ${epochsCounter} Error: ${error/100}`)
+                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`)
 
                     if(epochsCounter < epochs){
                         doEpoch()
@@ -268,12 +282,12 @@ class Network {
 
             const testInput = () => {
 
-                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
-
                 const output = this.forward(testSet[testIteration].input)
                 const target = testSet[testIteration].expected || testSet[testIteration].output
 
                 totalError += this.cost(target, output)
+
+                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
 
                 testIteration++
 
@@ -298,6 +312,11 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
+
+                    if(this.l2!=undefined) {
+                        this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
+                    }
+
                     neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
                 })
                 neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()

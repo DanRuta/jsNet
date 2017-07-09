@@ -228,6 +228,20 @@ describe("Network", () => {
                 const net = new Network({l2: true})
                 expect(net.l2).to.equal(0.001)
             })
+
+            it("Sets the net.l1 value to the l1 value given as parameter", () => {
+                const net = new Network({l1: 0.0005})
+                expect(net.l1).to.equal(0.0005)
+            })
+
+            it("Doesn't set the net.l1 to anything if the l1 parameter is missing", () => {
+                expect(net.l1).to.be.undefined
+            })
+
+            it("Sets the l1 value to 0.005 if the configuration given is boolean true", () => {
+                const net = new Network({l1: true})
+                expect(net.l1).to.equal(0.005)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -250,6 +264,16 @@ describe("Network", () => {
         it("Doesn't set the net.l2Error if l2 is not configured", () => {
             const net = new Network()
             expect(net.l2Error).to.be.undefined
+        })
+
+        it("Sets the initial net.l1Error to 0 if l1 is configured", () => {
+            const net = new Network({l1: true})
+            expect(net.l1Error).to.equal(0)
+        })
+
+        it("Doesn't set the net.l1Error if l1 is not configured", () => {
+            const net = new Network()
+            expect(net.l1Error).to.be.undefined
         })
 
         it("Assigns a list of constructed layers as the net's layers", () => {
@@ -459,6 +483,20 @@ describe("Network", () => {
             net.joinLayer(layer1)
             expect(layer1.l2).to.be.undefined
         })
+
+        it("Sets the layer l1 to the net.l1, if it was configured", () => {
+            net.layers = [layer1]
+            net.l1 = 0.001
+            net.joinLayer(layer1)
+            expect(layer1.l1).to.equal(0.001)
+        })
+
+        it("Does not set the layer.l1 to anything if the net.l1 was not configured", () => {
+            net.layers = [layer1]
+            net.l1 = undefined
+            net.joinLayer(layer1)
+            expect(layer1.l1).to.be.undefined
+        })
     })
 
     describe("forward", () => {
@@ -596,7 +634,6 @@ describe("Network", () => {
             expect(layer2.neurons[2].bias).to.equal(0.75)
         })
 
-
         it("Increments the net.l2Error by each weight, applied to the L2 formula", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(1)
@@ -609,6 +646,22 @@ describe("Network", () => {
             net.applyDeltaWeights()
 
             expect(net.l2Error).to.equal(0.0000625)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.l1Error by each weight, applied to the L1 formula", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(1)
+            const net = new Network({activation: "sigmoid", learningRate: 0.2, l1: 0.005, layers: [layer1, layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            sinon.stub(net, "weightUpdateFn")
+            net.applyDeltaWeights()
+
+            expect(net.l1Error).to.equal(0.0025)
 
             net.weightUpdateFn.restore()
         })
@@ -896,6 +949,22 @@ describe("Network", () => {
             net.l2Error = undefined
             return net.train(testData).then(() => {
                 expect(net.l2Error).to.be.undefined
+            })
+        })
+
+        it("Resets the net.l1Error if it's configured", () => {
+            const net = new Network({l1: true})
+            sinon.stub(net, "applyDeltaWeights")
+            net.l1Error = 999
+            return net.train(testData).then(() => {
+                expect(net.l1Error).to.equal(0)
+            })
+        })
+
+        it("Does not set net.l1Error to anything if it wasn't configured", () => {
+            net.l1Error = undefined
+            return net.train(testData).then(() => {
+                expect(net.l1Error).to.be.undefined
             })
         })
     })
@@ -1243,7 +1312,19 @@ describe("Layer", () => {
             layer3.l2 = 0.001
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006") // 0.25 + 0.025 * 1.0001 * 0.25
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006")
+        })
+
+        it("Sets weight deltas to the normal delta + the l1 value", () => {
+            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
+                neuron.activation = 0.25
+            })
+            layer3.l1 = 0.005
+
+            layer3.backward([0.3, 0.3, 0.3, 0.3])
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275031")
         })
     })
 })

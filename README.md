@@ -112,7 +112,9 @@ const normalizedResults = NetMath.softmax(netResult)
 | eluAlpha | Alpha value for ELU | Any number | 1 |
 | dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
 | l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
 
+You can do elastic net regularization by including both l1 and l2 regularization configs.
 Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value| 

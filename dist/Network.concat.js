@@ -53,7 +53,7 @@ class Layer {
 
                 neuron.weights.forEach((weight, wi) => {
                     neuron.deltaWeights[wi] += (neuron.error * this.prevLayer.neurons[wi].activation) * 
-                                               (1 + (this.l2||0) * neuron.deltaWeights[wi])
+                                               (1 + ((this.l2||0)+(this.l1||0)) * neuron.deltaWeights[wi])
                 })
 
                 neuron.deltaBias = neuron.error
@@ -201,7 +201,7 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -216,6 +216,11 @@ class Network {
         if(l2){
             this.l2 = typeof l2=="boolean" && l2 ? 0.001 : l2
             this.l2Error = 0
+        }
+
+        if(l1){
+            this.l1 = typeof l1=="boolean" && l1 ? 0.005 : l1
+            this.l1Error = 0
         }
 
         switch(true) {
@@ -351,6 +356,10 @@ class Network {
             layer.l2 = this.l2
         }
 
+        if(this.l1!=undefined) {
+            layer.l1 = this.l1
+        }
+
         if(layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
@@ -415,6 +424,10 @@ class Network {
 
                 if(this.l2Error!=undefined){
                     this.l2Error = 0
+                }
+
+                if(this.l1Error!=undefined){
+                    this.l1Error = 0
                 }
 
                 doIteration()               
@@ -514,6 +527,10 @@ class Network {
 
                     if(this.l2!=undefined) {
                         this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
+                    }
+
+                    if(this.l1!=undefined) {
+                        this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
                     }
 
                     neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()

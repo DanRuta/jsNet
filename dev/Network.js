@@ -2,7 +2,8 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -22,6 +23,11 @@ class Network {
         if(l1){
             this.l1 = typeof l1=="boolean" && l1 ? 0.005 : l1
             this.l1Error = 0
+        }
+
+        if(maxNorm){
+            this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
+            this.maxNormTotal = 0
         }
 
         switch(true) {
@@ -312,7 +318,6 @@ class Network {
         })
     }
 
-
     resetDeltaWeights () {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
@@ -335,10 +340,19 @@ class Network {
                     }
 
                     neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
+
+                    if(this.maxNorm!=undefined) {
+                        this.maxNormTotal += neuron.weights[dwi]**2
+                    }
                 })
                 neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
             })
         })
+
+        if(this.maxNorm!=undefined) {
+            this.maxNormTotal = Math.sqrt(this.maxNormTotal)
+            NetMath.maxNorm.bind(this)()
+        }
     }
 
     toJSON () {
@@ -358,7 +372,7 @@ class Network {
 
     fromJSON (data) {
 
-        if(data === undefined || data === null){
+        if(data === undefined || data === null) {
             throw new Error("No JSON data given to import.")
         }
 

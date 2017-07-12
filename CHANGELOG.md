@@ -1,9 +1,10 @@
-# Upcoming
+# Upcoming - Regularization
 ---
 #### Network
 - Added dropout, with dropout configuration
 - Added L2 regularization, via l2 strength config
 - Added L1 regularization, via l1 strength config
+- Added max norm regularization, via the maxNorm threshold value config
 
 #### Bug Fixes
 - Fixed error value logged accumulating across epochs, instead of resetting to 0

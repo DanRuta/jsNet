@@ -129,6 +129,24 @@ class NetMath {
     static sech (value) {
         return (2*Math.exp(-value))/(1+Math.exp(-2*value))
     }
+
+    static maxNorm () {
+
+        if(this.maxNormTotal > this.maxNorm) {
+
+            const multiplier = this.maxNorm / (1e-18 + this.maxNormTotal)
+
+            this.layers.forEach((layer, li) => {
+                li && layer.neurons.forEach(neuron => {
+                    neuron.weights.forEach((w, wi) => {
+                        neuron.weights[wi] *= multiplier
+                    })
+                })
+            })
+        }
+
+        this.maxNormTotal = 0
+    }
 }
 
 typeof window=="undefined" && (global.NetMath = NetMath)

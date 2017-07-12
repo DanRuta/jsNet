@@ -242,6 +242,21 @@ describe("Network", () => {
                 const net = new Network({l1: true})
                 expect(net.l1).to.equal(0.005)
             })
+
+            it("Sets the net.maxNorm value to the value given as configuration, if given", () => {
+                const net = new Network({maxNorm: 1000})
+                expect(net.maxNorm).to.equal(1000)
+            })
+
+            it("Sets the net.maxNorm value to 1000 if maxNorm is configured as 'true'", () => {
+                const net = new Network({maxNorm: true})
+                expect(net.maxNorm).to.equal(1000)
+            })
+
+            it("Sets the net.maxNormTotal to 0 when maxNorm configuration is given", () => {
+                const net = new Network({maxNorm: true})
+                expect(net.maxNormTotal).to.equal(0)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -662,6 +677,37 @@ describe("Network", () => {
             net.applyDeltaWeights()
 
             expect(net.l1Error).to.equal(0.0025)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.maxNormTotal if the net.maxNorm is configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({maxNorm: 3, layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            sinon.stub(NetMath, "maxNorm").callsFake(x => x)
+            net.applyDeltaWeights()
+
+            expect(NetMath.maxNorm).to.be.called
+            expect(net.maxNormTotal).to.equal(0.3535533905932738) // sqrt ( 2 * 0.25**2 )
+ 
+            NetMath.maxNorm.restore()
+            net.weightUpdateFn.restore()
+        })
+
+        it("Does not increment net.maxNormTotal if the net.maxNorm is not configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            net.applyDeltaWeights()
+
+            expect(net.maxNormTotal).to.be.undefined
 
             net.weightUpdateFn.restore()
         })
@@ -1887,6 +1933,41 @@ describe("Netmath", () => {
             NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron, 1)()
             expect(neuron.adadeltaCache[0]).to.equal(0.097) // 0.95 * 0.1 + (1-0.95) * 0.2*0.2
             expect(neuron.adadeltaCache[1]).to.equal(0.192)
+        })
+    })
+
+    describe("maxNorm", () => {
+
+        let net
+
+        beforeEach(() => net = new Network())
+
+        it("Sets the net.maxNormTotal to 0", () => {
+            net.maxNormTotal = 1
+            NetMath.maxNorm.bind(net)()
+            expect(net.maxNormTotal).to.equal(0)
+        })
+
+        it("Scales weights if their L2 exceeds the configured max norm threshold", () => {
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1})
+
+            layer2.neurons[0].weights = [2, 2] 
+            net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
+
+            NetMath.maxNorm.bind(net)()
+            expect(layer2.neurons[0].weights).to.deep.equal([0.7071067811865475, 0.7071067811865475])
+        })
+
+        it("Does not scale weights if their L2 does not exceed the configured max norm threshold", () => {
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1000})
+
+            layer2.neurons[0].weights = [2, 2] 
+            net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
+
+            NetMath.maxNorm.bind(net)()
+            expect(layer2.neurons[0].weights).to.deep.equal([2, 2])
         })
     })
 })

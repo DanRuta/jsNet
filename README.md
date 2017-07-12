@@ -113,6 +113,7 @@ const normalizedResults = NetMath.softmax(netResult)
 | dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
 | l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
 | l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
+| maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
 You can do elastic net regularization by including both l1 and l2 regularization configs.
 Learning rate is 0.2 by default, except when using the following configurations:
@@ -135,5 +136,6 @@ Once that is done, and there is a decent selection of configurations, and featur
 
 ## Contributing
 ---
-Pull requests are always welcome, as long as the tests all pass and coverage is at (or nearly) at 100%.
+Always looking for feedback, suggestions and ideas.
+Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.

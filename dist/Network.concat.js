@@ -5,6 +5,7 @@ class Layer {
     constructor (size, importedData) {
         this.size = size
         this.neurons = [...new Array(size)].map((n, ni) => new Neuron(importedData ? importedData[ni] : undefined))
+        this.state = "not-initialised"
     }
 
     assignNext (layer) {
@@ -18,34 +19,45 @@ class Layer {
             activationConfig: this.activationConfig,
             eluAlpha: this.eluAlpha
         }))
+        this.state = "initialised"
     }
 
     forward (data) {
 
         this.neurons.forEach((neuron, ni) => {
 
-            neuron.sum = neuron.bias
-            this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
-            neuron.activation = this.activation(neuron.sum, false, neuron)
+            if(this.state=="training" && (neuron.dropped = Math.random() > this.dropout)) {
+                neuron.activation = 0
+            }else {
+                neuron.sum = neuron.bias
+                this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
+                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.dropout|1)
+            }
         })
     }
 
     backward (expected) {
         this.neurons.forEach((neuron, ni) => {
 
-            if(typeof expected !== "undefined") {
-                neuron.error = expected[ni] - neuron.activation
+            if(neuron.dropped) {
+                neuron.error = 0
+                neuron.deltaBias = 0
             }else {
-                neuron.derivative = this.activation(neuron.sum, true, neuron)
-                neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * n.weights[ni])
-                                                                         .reduce((p,c) => p+c, 0)
-            }
+                if(typeof expected !== "undefined") {
+                    neuron.error = expected[ni] - neuron.activation
+                }else {
+                    neuron.derivative = this.activation(neuron.sum, true, neuron)
+                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]|0))
+                                                                             .reduce((p,c) => p+c, 0)
+                }
 
-            neuron.weights.forEach((weight, wi) => {
-                neuron.deltaWeights[wi] += neuron.error * this.prevLayer.neurons[wi].activation
-            })
+                neuron.weights.forEach((weight, wi) => {
+                    neuron.deltaWeights[wi] += (neuron.error * this.prevLayer.neurons[wi].activation) * 
+                                               (1 + ((this.l2||0)+(this.l1||0)) * neuron.deltaWeights[wi])
+                })
 
-            neuron.deltaBias = neuron.error
+                neuron.deltaBias = neuron.error
+            }            
         })
     }
 }
@@ -182,6 +194,24 @@ class NetMath {
     static sech (value) {
         return (2*Math.exp(-value))/(1+Math.exp(-2*value))
     }
+
+    static maxNorm () {
+
+        if(this.maxNormTotal > this.maxNorm) {
+
+            const multiplier = this.maxNorm / (1e-18 + this.maxNormTotal)
+
+            this.layers.forEach((layer, li) => {
+                li && layer.neurons.forEach(neuron => {
+                    neuron.weights.forEach((w, wi) => {
+                        neuron.weights[wi] *= multiplier
+                    })
+                })
+            })
+        }
+
+        this.maxNormTotal = 0
+    }
 }
 
 typeof window=="undefined" && (global.NetMath = NetMath)
@@ -189,14 +219,32 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", rmsDecay, rho, lreluSlope, eluAlpha}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
+        this.dropout = dropout==false ? 1 : dropout
+        this.error = 0
 
         if(learningRate!=null){    
             this.learningRate = learningRate
+        }
+
+        if(l2){
+            this.l2 = typeof l2=="boolean" && l2 ? 0.001 : l2
+            this.l2Error = 0
+        }
+
+        if(l1){
+            this.l1 = typeof l1=="boolean" && l1 ? 0.005 : l1
+            this.l1Error = 0
+        }
+
+        if(maxNorm){
+            this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
+            this.maxNormTotal = 0
         }
 
         switch(true) {
@@ -318,16 +366,25 @@ class Network {
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
         layer.activationConfig = this.activationConfig
+        layer.dropout = this.dropout
 
-        if(this.rho!=undefined){
+        if(this.rho!=undefined) {
             layer.rho = this.rho
         }
         
-        if(this.eluAlpha!=undefined){
+        if(this.eluAlpha!=undefined) {
             layer.eluAlpha = this.eluAlpha
         }
 
-        if(layerIndex){
+        if(this.l2!=undefined) {
+            layer.l2 = this.l2
+        }
+
+        if(this.l1!=undefined) {
+            layer.l1 = this.l1
+        }
+
+        if(layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }
@@ -379,13 +436,23 @@ class Network {
                 this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
             }
 
+            this.layers.forEach(layer => layer.state = "training")
+
             let iterationIndex = 0
             let epochsCounter = 0
-            let error = 0
 
             const doEpoch = () => {
                 this.epochs++
+                this.error = 0
                 iterationIndex = 0
+
+                if(this.l2Error!=undefined){
+                    this.l2Error = 0
+                }
+
+                if(this.l1Error!=undefined){
+                    this.l1Error = 0
+                }
 
                 doIteration()               
             }
@@ -406,7 +473,7 @@ class Network {
                 this.applyDeltaWeights()
 
                 const iterationError = this.cost(target, output)
-                error += iterationError
+                this.error += iterationError
 
                 if(typeof callback=="function") {
                     callback({
@@ -424,11 +491,14 @@ class Network {
                 }else {
 
                     epochsCounter++
-                    console.log(`Epoch: ${epochsCounter} Error: ${error/100}`)
+                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`)
 
                     if(epochsCounter < epochs){
                         doEpoch()
-                    }else resolve()
+                    }else {
+                        this.layers.forEach(layer => layer.state = "initialised")
+                        resolve()
+                    }
                 }
             }
 
@@ -448,12 +518,12 @@ class Network {
 
             const testInput = () => {
 
-                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
-
                 const output = this.forward(testSet[testIteration].input)
                 const target = testSet[testIteration].expected || testSet[testIteration].output
 
                 totalError += this.cost(target, output)
+
+                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
 
                 testIteration++
 
@@ -464,7 +534,6 @@ class Network {
             testInput()
         })
     }
-
 
     resetDeltaWeights () {
         this.layers.forEach((layer, li) => {
@@ -478,11 +547,29 @@ class Network {
         this.layers.forEach((layer, li) => {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
+
+                    if(this.l2!=undefined) {
+                        this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
+                    }
+
+                    if(this.l1!=undefined) {
+                        this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
+                    }
+
                     neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
+
+                    if(this.maxNorm!=undefined) {
+                        this.maxNormTotal += neuron.weights[dwi]**2
+                    }
                 })
                 neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
             })
         })
+
+        if(this.maxNorm!=undefined) {
+            this.maxNormTotal = Math.sqrt(this.maxNormTotal)
+            NetMath.maxNorm.bind(this)()
+        }
     }
 
     toJSON () {
@@ -502,7 +589,7 @@ class Network {
 
     fromJSON (data) {
 
-        if(data === undefined || data === null){
+        if(data === undefined || data === null) {
             throw new Error("No JSON data given to import.")
         }
 

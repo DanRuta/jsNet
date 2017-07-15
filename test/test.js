@@ -200,6 +200,63 @@ describe("Network", () => {
                 const net = new Network({activation: "elu", eluAlpha: 2})
                 expect(net.eluAlpha).to.equal(2)
             })
+
+            it("Defaults the dropout to 0.5", () => {
+                expect(net.dropout).to.equal(0.5)
+            })
+
+            it("Allows custom dropout value", () => {
+                const net = new Network({dropout: 0.9})
+                expect(net.dropout).to.equal(0.9)
+            })
+
+            it("Allows disabling dropout by setting the config to false (setting the value to 1)", () => {
+                const net = new Network({dropout: false})
+                expect(net.dropout).to.equal(1)
+            })
+
+            it("Sets the net.l2 value to the l2 value given as parameter", () => {
+                const net = new Network({l2: 0.0005})
+                expect(net.l2).to.equal(0.0005)
+            })
+
+            it("Doesn't set the net.l2 to anything if the l2 parameter is missing", () => {
+                expect(net.l2).to.be.undefined
+            })
+
+            it("Sets the l2 value to 0.001 if the configuration given is boolean true", () => {
+                const net = new Network({l2: true})
+                expect(net.l2).to.equal(0.001)
+            })
+
+            it("Sets the net.l1 value to the l1 value given as parameter", () => {
+                const net = new Network({l1: 0.0005})
+                expect(net.l1).to.equal(0.0005)
+            })
+
+            it("Doesn't set the net.l1 to anything if the l1 parameter is missing", () => {
+                expect(net.l1).to.be.undefined
+            })
+
+            it("Sets the l1 value to 0.005 if the configuration given is boolean true", () => {
+                const net = new Network({l1: true})
+                expect(net.l1).to.equal(0.005)
+            })
+
+            it("Sets the net.maxNorm value to the value given as configuration, if given", () => {
+                const net = new Network({maxNorm: 1000})
+                expect(net.maxNorm).to.equal(1000)
+            })
+
+            it("Sets the net.maxNorm value to 1000 if maxNorm is configured as 'true'", () => {
+                const net = new Network({maxNorm: true})
+                expect(net.maxNorm).to.equal(1000)
+            })
+
+            it("Sets the net.maxNormTotal to 0 when maxNorm configuration is given", () => {
+                const net = new Network({maxNorm: true})
+                expect(net.maxNormTotal).to.equal(0)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -207,6 +264,31 @@ describe("Network", () => {
         it("Sets the network state to not-defined when defining with no layers parameter", () => {
             const net = new Network()
             expect(net.state).to.equal("not-defined")
+        })
+
+        it("Sets the initial net.error to 0", () => {
+            const net = new Network()
+            expect(net.error).to.equal(0)
+        })
+
+        it("Sets the initial net.l2Error to 0 if l2 is configured", () => {
+            const net = new Network({l2: true})
+            expect(net.l2Error).to.equal(0)
+        })
+
+        it("Doesn't set the net.l2Error if l2 is not configured", () => {
+            const net = new Network()
+            expect(net.l2Error).to.be.undefined
+        })
+
+        it("Sets the initial net.l1Error to 0 if l1 is configured", () => {
+            const net = new Network({l1: true})
+            expect(net.l1Error).to.equal(0)
+        })
+
+        it("Doesn't set the net.l1Error if l1 is not configured", () => {
+            const net = new Network()
+            expect(net.l1Error).to.be.undefined
         })
 
         it("Assigns a list of constructed layers as the net's layers", () => {
@@ -395,6 +477,41 @@ describe("Network", () => {
             net.joinLayer(layer1)
             expect(layer1.eluAlpha).to.be.undefined
         })
+
+        it("Assigns the network dropout value to the layer", () => {
+            net.layers = [layer1]
+            net.dropout = 0.5
+            net.joinLayer(layer1)
+            expect(layer1.dropout).to.equal(0.5)
+        })
+
+        it("Sets the layer l2 to the net.l2, if it was configured", () => {
+            net.layers = [layer1]
+            net.l2 = 0.001
+            net.joinLayer(layer1)
+            expect(layer1.l2).to.equal(0.001)
+        })
+
+        it("Does not set the layer.l2 to anything if the net.l2 was not configured", () => {
+            net.layers = [layer1]
+            net.l2 = undefined
+            net.joinLayer(layer1)
+            expect(layer1.l2).to.be.undefined
+        })
+
+        it("Sets the layer l1 to the net.l1, if it was configured", () => {
+            net.layers = [layer1]
+            net.l1 = 0.001
+            net.joinLayer(layer1)
+            expect(layer1.l1).to.equal(0.001)
+        })
+
+        it("Does not set the layer.l1 to anything if the net.l1 was not configured", () => {
+            net.layers = [layer1]
+            net.l1 = undefined
+            net.joinLayer(layer1)
+            expect(layer1.l1).to.be.undefined
+        })
     })
 
     describe("forward", () => {
@@ -530,6 +647,69 @@ describe("Network", () => {
             expect(layer2.neurons[0].bias).to.equal(0.75)
             expect(layer2.neurons[1].bias).to.equal(0.75)
             expect(layer2.neurons[2].bias).to.equal(0.75)
+        })
+
+        it("Increments the net.l2Error by each weight, applied to the L2 formula", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(1)
+            const net = new Network({activation: "sigmoid", learningRate: 0.2, l2: 0.001, layers: [layer1, layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            sinon.stub(net, "weightUpdateFn")
+            net.applyDeltaWeights()
+
+            expect(net.l2Error).to.equal(0.0000625)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.l1Error by each weight, applied to the L1 formula", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(1)
+            const net = new Network({activation: "sigmoid", learningRate: 0.2, l1: 0.005, layers: [layer1, layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            sinon.stub(net, "weightUpdateFn")
+            net.applyDeltaWeights()
+
+            expect(net.l1Error).to.equal(0.0025)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.maxNormTotal if the net.maxNorm is configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({maxNorm: 3, layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            sinon.stub(NetMath, "maxNorm").callsFake(x => x)
+            net.applyDeltaWeights()
+
+            expect(NetMath.maxNorm).to.be.called
+            expect(net.maxNormTotal).to.equal(0.3535533905932738) // sqrt ( 2 * 0.25**2 )
+ 
+            NetMath.maxNorm.restore()
+            net.weightUpdateFn.restore()
+        })
+
+        it("Does not increment net.maxNormTotal if the net.maxNorm is not configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            net.applyDeltaWeights()
+
+            expect(net.maxNormTotal).to.be.undefined
+
+            net.weightUpdateFn.restore()
         })
     })
 
@@ -785,6 +965,54 @@ describe("Network", () => {
                 expect(console.log.callCount).to.equal(3)
             })
         })
+
+        it("Sets all layer states to training during training", () => {
+            return net.train(testData, {epochs: 1, callback: () => {
+                expect(net.layers[0].state).to.equal("training")
+                expect(net.layers[1].state).to.equal("training")
+                expect(net.layers[2].state).to.equal("training")
+            }})
+        })
+
+        it("Returns all layer states to initialised after training is stopped", () => {
+            return net.train(testData).then(() => {
+                expect(net.layers[0].state).to.equal("initialised")
+                expect(net.layers[1].state).to.equal("initialised")
+                expect(net.layers[2].state).to.equal("initialised")
+            })
+        })
+
+        it("Resets the net.l2Error if it's configured", () => {
+            const net = new Network({l2: true})
+            sinon.stub(net, "applyDeltaWeights")
+            net.l2Error = 999
+            return net.train(testData).then(() => {
+                expect(net.l2Error).to.equal(0)
+            })
+        })
+
+        it("Does not set net.l2Error to anything if it wasn't configured", () => {
+            net.l2Error = undefined
+            return net.train(testData).then(() => {
+                expect(net.l2Error).to.be.undefined
+            })
+        })
+
+        it("Resets the net.l1Error if it's configured", () => {
+            const net = new Network({l1: true})
+            sinon.stub(net, "applyDeltaWeights")
+            net.l1Error = 999
+            return net.train(testData).then(() => {
+                expect(net.l1Error).to.equal(0)
+            })
+        })
+
+        it("Does not set net.l1Error to anything if it wasn't configured", () => {
+            net.l1Error = undefined
+            return net.train(testData).then(() => {
+                expect(net.l1Error).to.be.undefined
+            })
+        })
     })
 
     describe("test", () => {
@@ -869,6 +1097,11 @@ describe("Layer", () => {
             expect(layer.neurons).to.not.be.undefined
             expect(layer.neurons.length).to.equal(10)
         })
+
+        it("Sets the layer state to not-initialised", () => {
+            const layer = new Layer(10)
+            expect(layer.state).to.equal("not-initialised")
+        })
     })
 
     describe("assignNext", () => {
@@ -934,6 +1167,11 @@ describe("Layer", () => {
             expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
             expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
         })
+
+        it("Sets the layer state to initialised", () => {
+            layer2.assignPrev(layer1)
+            expect(layer2.state).to.equal("initialised")
+        })
     })
 
     describe("forward", () => {
@@ -946,7 +1184,7 @@ describe("Layer", () => {
         })
 
         it("Sets the sum of each neuron to the bias, when all the weights are 0", () => {
-            const net = new Network({layers: [layer1, layer2]})
+            const net = new Network({layers: [layer1, layer2], dropout: 1})
 
             layer1.neurons.forEach(neuron => neuron.activation = Math.random())
             layer2.neurons.forEach(neuron => neuron.weights = [0,0,0])
@@ -957,7 +1195,7 @@ describe("Layer", () => {
         })
 
         it("Sets the sum of each neuron to the bias + previous layer's activations when weights are 1", () => {
-            const net = new Network({layers: [layer1, layer2]})
+            const net = new Network({layers: [layer1, layer2], dropout: 1})
 
             layer1.neurons.forEach(neuron => neuron.activation = 2)
             layer2.neurons.forEach(neuron => neuron.weights = [1,1,1])
@@ -970,13 +1208,43 @@ describe("Layer", () => {
         it("Sets the neurons' activation to the sigmoid of their sums when the config activation function is sigmoid", () => {
             const net = new Network({
                 activation: "sigmoid",
-                layers: [layer1, layer2]
+                layers: [layer1, layer2],
+                dropout: 1
             })
 
             net.forward([1,2])
             expect(layer2.neurons[0].activation).to.equal(NetMath.sigmoid(layer2.neurons[0].sum))
             expect(layer2.neurons[1].activation).to.equal(NetMath.sigmoid(layer2.neurons[1].sum))
             expect(layer2.neurons[2].activation).to.equal(NetMath.sigmoid(layer2.neurons[2].sum))
+        })
+
+        it("Sets some neurons's .dropped value to true", () => {
+            const net = new Network({layers: [new Layer(5), new Layer(15)], dropout: 0.5})
+            net.layers[0].neurons.forEach(neuron => neuron.activation = Math.random())
+            net.layers[1].state = "training"
+            net.layers[1].neurons.forEach(neuron => neuron.weights = [0,0,0,0,0])
+            net.layers[1].forward([1,2,3,4,5])
+
+            expect(net.layers[1].neurons.filter(n => n.dropped).length).to.be.at.least(1)
+        })
+
+        it("Doesn't apply the dropout if the layer state is not training", () => {
+            const net = new Network({layers: [new Layer(5), new Layer(15)], dropout: 0.5})
+            net.layers[0].neurons.forEach(neuron => neuron.activation = Math.random())
+            net.layers[1].state = "initialised"
+            net.layers[1].neurons.forEach(neuron => neuron.weights = [0,0,0,0,0])
+            net.layers[1].forward([1,2,3,4,5])
+
+            expect(net.layers[1].neurons.filter(n => n.dropped).length).to.equal(0)
+        })
+
+        it("Sets dropped neurons' activations to 0", () => {
+            const net = new Network({layers: [new Layer(5), new Layer(15)], dropout: 0.5})
+            net.layers[0].neurons.forEach(neuron => neuron.activation = Math.random())
+            net.layers[1].neurons.forEach(neuron => neuron.weights = [0,0,0,0,0])
+            net.layers[1].state = "training"
+            net.layers[1].forward([1,2,3,4,5])
+            expect(net.layers[1].neurons.find(n => n.dropped).activation).to.equal(0)
         })
     })
 
@@ -988,7 +1256,7 @@ describe("Layer", () => {
             layer1 = new Layer(2)
             layer2 = new Layer(3)
             layer3 = new Layer(4)
-            net = new Network({layers: [layer1, layer2, layer3], activation: "sigmoid"})
+            net = new Network({layers: [layer1, layer2, layer3], activation: "sigmoid", dropout: 0})
         })
 
         it("Sets each neurons' error to expected - their activation, in output layer", () => {
@@ -1021,7 +1289,7 @@ describe("Layer", () => {
         })
 
         it("For each neuron, it increments each of its delta weights with the respective weight's neuron's activation * this neuron's error", () => {
-            layer2.neurons.forEach(neuron =>neuron.activation = 0.5)
+            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.backward([1,2,3,4])
             expect(layer3.neurons[0].deltaWeights).to.deep.equal([0.25, 0.25, 0.25])
@@ -1033,6 +1301,77 @@ describe("Layer", () => {
             expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([0.5, 1.5, 2.5, 3.5])
         })
 
+        it("Sets the neuron error to 0 if dropped", () => {
+            layer3.neurons.forEach(neuron => {
+                neuron.error = 0.5
+                neuron.weights = neuron.weights.map(w => 1)
+            })
+            layer2.neurons.forEach(neuron => neuron.sum = 0.5)
+            layer2.neurons[0].dropped = true
+            layer2.neurons[0].error = 1
+            layer2.backward()
+
+            expect(layer2.neurons[0].error).to.equal(0)
+            expect(layer2.neurons[1].error).to.not.equal(0)
+        })
+
+        it("Does not increment weight deltas for neurons in prev layer that are dropped", () => {
+            layer3.neurons.forEach(neuron => {
+                neuron.error = 0.5
+                neuron.weights = neuron.weights.map(w => 1)
+            })
+            layer2.neurons.forEach(neuron => neuron.sum = 0.5)
+            layer2.neurons[0].dropped = true
+            layer3.neurons[0].deltaWeights[0] = 0
+
+            layer2.backward()
+
+            expect(layer3.neurons[0].deltaWeights[0]).to.equal(0)
+        })
+
+        it("Skips doing backward pass for dropped neurons", () => {
+            layer3.neurons.forEach(neuron => {
+                neuron.error = 0.5
+                neuron.weights = neuron.weights.map(w => 1)
+            })
+            layer2.neurons.forEach(neuron => neuron.sum = 0.5)
+            layer2.neurons[0].dropped = true
+            layer3.neurons[0].deltaWeights[0] = 0
+
+            layer2.neurons[0].deltaBias = "test"
+            layer2.neurons[0].deltaWeights = ["test", "test"]
+            layer2.neurons[0].derivative = "test"
+
+            layer2.backward()
+
+            expect(layer2.neurons[0].deltaBias).to.equal(0)
+            expect(layer2.neurons[0].deltaWeights).to.deep.equal(["test", "test"])
+            expect(layer2.neurons[0].derivative).to.equal("test")
+        })
+
+        it("Sets weight deltas to the normal delta + the l2 value", () => {
+            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
+                neuron.activation = 0.25
+            })
+            layer3.l2 = 0.001
+
+            layer3.backward([0.3, 0.3, 0.3, 0.3])
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006")
+        })
+
+        it("Sets weight deltas to the normal delta + the l1 value", () => {
+            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
+                neuron.activation = 0.25
+            })
+            layer3.l1 = 0.005
+
+            layer3.backward([0.3, 0.3, 0.3, 0.3])
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275031")
+        })
     })
 })
 
@@ -1596,5 +1935,39 @@ describe("Netmath", () => {
             expect(neuron.adadeltaCache[1]).to.equal(0.192)
         })
     })
-})
 
+    describe("maxNorm", () => {
+
+        let net
+
+        beforeEach(() => net = new Network())
+
+        it("Sets the net.maxNormTotal to 0", () => {
+            net.maxNormTotal = 1
+            NetMath.maxNorm.bind(net)()
+            expect(net.maxNormTotal).to.equal(0)
+        })
+
+        it("Scales weights if their L2 exceeds the configured max norm threshold", () => {
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1})
+
+            layer2.neurons[0].weights = [2, 2] 
+            net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
+
+            NetMath.maxNorm.bind(net)()
+            expect(layer2.neurons[0].weights).to.deep.equal([0.7071067811865475, 0.7071067811865475])
+        })
+
+        it("Does not scale weights if their L2 does not exceed the configured max norm threshold", () => {
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1000})
+
+            layer2.neurons[0].weights = [2, 2] 
+            net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
+
+            NetMath.maxNorm.bind(net)()
+            expect(layer2.neurons[0].weights).to.deep.equal([2, 2])
+        })
+    })
+})

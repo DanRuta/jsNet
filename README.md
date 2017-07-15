@@ -1,13 +1,16 @@
 # Network.js
 [![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
 
-Network.js is promise based implementation of a (currently) really basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
+Network.js is promise based implementation of a (currently) basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
 ##  Usage
 
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
+
+## Demo
+https://ai.danruta.co.uk - Interactive MNIST Digit classifier
 
 ### Constructing
 ---
@@ -110,7 +113,12 @@ const normalizedResults = NetMath.softmax(netResult)
 | rho | Momentum for Adadelta | Any number | 0.95 |
 | lreluSlope | Slope for lrelu | Any number | 0.99 |
 | eluAlpha | Alpha value for ELU | Any number | 1 |
+| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
+| maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
+You can do elastic net regularization by including both l1 and l2 regularization configs.
 Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value| 
@@ -123,15 +131,18 @@ Learning rate is 0.2 by default, except when using the following configurations:
 
 ## Future plans
 ---
+More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+
 ##### Short term
-More and more features will be added to this little library, as time goes by, and I learn more. The first few changes will be adding more configuration options, such as activation functions, cost functions, etc. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, etc. Check the changelog for details. Next up is proper weights initialization, batch norm, mini batch SGD.
+
 ##### Long term
 Keeping the same level of ease of use in mind, I will add Conv and Pool layers.
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some hardcore optimisations.
+
+Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
 
 ## Contributing
 ---
-Pull requests are always welcome, as long as the tests all pass and coverage is at (or nearly) at 100%.
+Always looking for feedback, suggestions and ideas.
+Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.
-
-

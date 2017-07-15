@@ -1,4 +1,4 @@
-# Upcoming - Regularization
+# v1.3.0 - Regularization
 ---
 #### Network
 - Added dropout, with dropout configuration

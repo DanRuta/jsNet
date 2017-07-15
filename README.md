@@ -9,6 +9,9 @@ This project is in its infancy, and more features and optimisations will periodi
 
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
+## Demo
+https://ai.danruta.co.uk - Interactive MNIST Digit classifier
+
 ### Constructing
 ---
 A network can be built in a few different ways: 
@@ -128,11 +131,15 @@ Learning rate is 0.2 by default, except when using the following configurations:
 
 ## Future plans
 ---
+More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+
 ##### Short term
-More and more features will be added to this little library, as time goes by, and I learn more. The first few changes will be adding more configuration options, such as activation functions, cost functions, etc. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, etc. Check the changelog for details. Next up is proper weights initialization, batch norm, mini batch SGD.
+
 ##### Long term
 Keeping the same level of ease of use in mind, I will add Conv and Pool layers.
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some hardcore optimisations.
+
+Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
 
 ## Contributing
 ---

@@ -1,3 +1,9 @@
+# Upcoming
+---
+#### Network
+- Reworked current weights initialization to be configurable
+- Set old weights init to uniform distribution, with additional limit config
+
 # v1.3.0 - Regularization
 ---
 #### Network

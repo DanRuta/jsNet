@@ -257,6 +257,40 @@ describe("Network", () => {
                 const net = new Network({maxNorm: true})
                 expect(net.maxNormTotal).to.equal(0)
             })
+
+            it("Defaults the net.weightsConfig.distribution to uniform", () => {
+                const net = new Network({weightsConfig: {limit: 1}})
+                expect(net.weightsConfig).to.not.be.undefined
+                expect(net.weightsConfig.distribution).to.equal("uniform")
+            })
+
+            it("Allows setting the net.weightsConfig.distribution to different config", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian"}})
+                expect(net.weightsConfig.distribution).to.equal("gaussian")
+            })
+
+            it("Defaults the net.weightsConfig.limit to 0.1 if distribution is uniform", () => {
+                const net = new Network({weightsConfig: {distribution: "uniform"}})
+                expect(net.weightsConfig.limit).to.not.be.undefined
+                expect(net.weightsConfig.limit).to.equal(0.1)
+            })
+
+            it("Defaults the net.weightsConfig.limit to 0.1 if no weightsConfig is given and distribution is defaulted to uniform", () => {
+                const net = new Network()
+                expect(net.weightsConfig.distribution).to.equal("uniform")
+                expect(net.weightsConfig.limit).to.not.be.undefined
+                expect(net.weightsConfig.limit).to.equal(0.1)
+            })
+
+            it("Does not set the net.weightsConfig.limit to anything if distribution is not of uniform type", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian"}})
+                expect(net.weightsConfig.limit).to.be.undefined
+            })
+
+            it("Allows setting net.weightsConfig.limit to own config", () => {
+                const net = new Network({weightsConfig: {distribution: "uniform", limit: 2}})
+                expect(net.weightsConfig.limit).to.equal(2)
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -330,7 +364,7 @@ describe("Network", () => {
         const netThis = {} 
         const net = new Network()
 
-        beforeEach(() => sinon.spy(net, "joinLayer"))
+        beforeEach(() => sinon.stub(net, "joinLayer"))
         afterEach(() => net.joinLayer.restore())
 
         it("Does nothing when the net's state is already initialised", () => {
@@ -401,7 +435,7 @@ describe("Network", () => {
         let net, layer1, layer2
 
         beforeEach(() => {
-            net = new Network()
+            net = new Network({weightsConfig: {distribution: "uniform"}})
             layer1 = new Layer(2)
             layer2 = new Layer(3)
         }) 
@@ -511,6 +545,20 @@ describe("Network", () => {
             net.l1 = undefined
             net.joinLayer(layer1)
             expect(layer1.l1).to.be.undefined
+        })
+
+        it("Sets the layer.weightsConfig to the net.weightsConfig", () => {
+            net.layers = [layer1]
+            net.weightsConfig = "test"
+            net.joinLayer(layer1)
+            expect(layer1.weightsConfig).to.equal("test")
+        })
+
+        it("Sets the layer.weightsInitFn to NetMath[weightsConfig.distribution]", () => {
+            net.layers = [layer1]
+            net.weightsConfig = {distribution: "uniform"}
+            net.joinLayer(layer1)
+            expect(layer1.weightsInitFn).to.equal(NetMath.uniform)
         })
     })
 
@@ -1124,6 +1172,8 @@ describe("Layer", () => {
         beforeEach(() => {
             layer1 = new Layer(2)
             layer2 = new Layer(2)
+            layer2.weightsInitFn = NetMath.uniform
+            layer2.weightsConfig = {limit: 0.1}
             sinon.stub(layer2.neurons[0], "init") 
             sinon.stub(layer2.neurons[1], "init")
         })
@@ -1134,9 +1184,34 @@ describe("Layer", () => {
         })
 
         it("Adds a reference to a layer to its prevLayer property", () => {
-            const layer2 = new Layer()
             layer2.assignPrev(layer)
             expect(layer2.prevLayer).to.equal(layer)
+        })
+
+        it("Creates the neuron its weights array, with .length the same as given parameter", () => {
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].weights.length).to.equal(2)
+        })
+
+        it("Does not change the weights when the neuron is marked as imported", () => {
+            layer2.neurons[0].imported = true
+            layer2.neurons[0].weights = ["test"]
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].weights).to.deep.equal(["test"])
+        })
+
+        it("Gives the neuron a bias value between -0.1 and +0.1", () => {
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].bias).to.not.be.undefined
+            expect(layer2.neurons[0].bias).to.be.at.most(0.1)
+            expect(layer2.neurons[0].bias).to.be.at.least(-0.1)
+        })
+
+        it("Does not change the bias when the neuron is marked as imported", () => {
+            layer2.neurons[0].imported = true
+            layer2.neurons[0].bias = "test"
+            layer2.assignPrev(layer1)
+            expect(layer2.neurons[0].bias).to.equal("test")
         })
 
         it("Inits all the neurons in the layer's neurons array", () => {
@@ -1172,6 +1247,13 @@ describe("Layer", () => {
             layer2.assignPrev(layer1)
             expect(layer2.state).to.equal("initialised")
         })
+
+        it("Calls the NetMath.uniform function when the weightsInitFn is uniform", () => {
+            sinon.stub(layer2, "weightsInitFn")
+            layer2.assignPrev(layer1)
+            expect(layer2.weightsInitFn).to.be.called
+            layer2.weightsInitFn.restore()
+        })
     })
 
     describe("forward", () => {
@@ -1181,6 +1263,9 @@ describe("Layer", () => {
         beforeEach(() => {
             layer1 = new Layer(2)
             layer2 = new Layer(3)
+            layer1.weightsInitFn = NetMath.uniform
+            layer2.weightsInitFn = NetMath.uniform
+            layer2.weightsConfig = {limit: 0.1}
         })
 
         it("Sets the sum of each neuron to the bias, when all the weights are 0", () => {
@@ -1209,6 +1294,7 @@ describe("Layer", () => {
             const net = new Network({
                 activation: "sigmoid",
                 layers: [layer1, layer2],
+                weightsConfig: {limit: 0.1},
                 dropout: 1
             })
 
@@ -1377,7 +1463,7 @@ describe("Layer", () => {
 
 describe("Neuron", () => {
 
-    describe("Constructor", () => {
+    describe("constructor", () => {
 
         let neuron
 
@@ -1407,25 +1493,14 @@ describe("Neuron", () => {
 
     describe("init", () => {
   
-        let neuron
+        let neuron, neuron2
 
-        beforeEach(() => neuron = new Neuron())
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [...new Array(5)].map(v => Math.random()*0.2-0.1)
 
-        it("Creates a weights array, of length the same as given parameter", () => {
-            neuron.init(5)
-            expect(neuron.weights.length).to.equal(5)
-        })
-
-        it("Weights are all between -0.1 and +0.1", () => {
-            neuron.init(5)
-            expect(neuron.weights.every(w => w>=-0.1 && w<=0.1)).to.be.true
-        })
-
-        it("Creates a bias value between -0.1 and +0.1", () => {
-            neuron.init(5)
-            expect(neuron.bias).to.not.be.undefined
-            expect(neuron.bias).to.be.at.most(0.1)
-            expect(neuron.bias).to.be.at.least(-0.1)
+            neuron2 = new Neuron()
+            neuron2.weights = [...new Array(3)].map(v => Math.random()*0.2-0.1)
         })
 
         it("Creates an array of delta weights with the same length as the weights array", () => {
@@ -1439,132 +1514,118 @@ describe("Neuron", () => {
             expect(neuron.deltaWeights).to.deep.equal([0,0,0,0,0])
         })
 
-        it("Does not change the weights when the neuron is marked as imported", () => {
-            neuron.imported = true
-            neuron.weights = ["test"]
-            neuron.init()
-            expect(neuron.weights).to.deep.equal(["test"])
-        })
-
-        it("Does not change the bias when the neuron is marked as imported", () => {
-            neuron.imported = true
-            neuron.weights = ["test"]
-            neuron.bias = "test"
-            neuron.init()
-            expect(neuron.bias).to.equal("test")
-        })
-
         it("Creates a weightGains array if the adaptiveLR parameter is gain, with same size as weights, with 1 values", () => {
-            neuron.init(3, {adaptiveLR: "gain"})
-            expect(neuron.weightGains).to.not.be.undefined
-            expect(neuron.weightGains).to.have.lengthOf(3)
-            expect(neuron.weightGains).to.deep.equal([1,1,1])
+            neuron2.init(3, {adaptiveLR: "gain"})
+            expect(neuron2.weightGains).to.not.be.undefined
+            expect(neuron2.weightGains).to.have.lengthOf(3)
+            expect(neuron2.weightGains).to.deep.equal([1,1,1])
         })
 
         it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
-            neuron.init(3, {adaptiveLR: "gain"})
-            expect(neuron.biasGain).to.equal(1)
+            neuron2.init(3, {adaptiveLR: "gain"})
+            expect(neuron2.biasGain).to.equal(1)
         })
 
         it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
-            neuron.init(3, {adaptiveLR: "not gain"})
-            expect(neuron.weightGains).to.be.undefined
-            expect(neuron.biasGain).to.be.undefined
+            neuron2.init(3, {adaptiveLR: "not gain"})
+            expect(neuron2.weightGains).to.be.undefined
+            expect(neuron2.biasGain).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adagrad, with 0 values", () => {
-            neuron.init(3, {adaptiveLR: "adagrad"})
-            expect(neuron.weightsCache).to.not.be.undefined
-            expect(neuron.weightsCache).to.have.lengthOf(3)
-            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+            neuron2.init(3, {adaptiveLR: "adagrad"})
+            expect(neuron2.weightsCache).to.not.be.undefined
+            expect(neuron2.weightsCache).to.have.lengthOf(3)
+            expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is RMSProp, with 0 values", () => {
-            neuron.init(3, {adaptiveLR: "RMSProp"})
-            expect(neuron.weightsCache).to.not.be.undefined
-            expect(neuron.weightsCache).to.have.lengthOf(3)
-            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+            neuron2.init(3, {adaptiveLR: "RMSProp"})
+            expect(neuron2.weightsCache).to.not.be.undefined
+            expect(neuron2.weightsCache).to.have.lengthOf(3)
+            expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
-            neuron.init(3, {adaptiveLR: "adagrad"})
-            expect(neuron.biasCache).to.equal(0)
+            neuron2.init(3, {adaptiveLR: "adagrad"})
+            expect(neuron2.biasCache).to.equal(0)
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is RMSProp", () => {
-            neuron.init(3, {adaptiveLR: "adagrad"})
-            expect(neuron.biasCache).to.equal(0)
+            neuron2.init(3, {adaptiveLR: "adagrad"})
+            expect(neuron2.biasCache).to.equal(0)
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not adagrad", () => {
-            neuron.init(3, {adaptiveLR: "not adagrad"})
-            expect(neuron.weightsCache).to.be.undefined
-            expect(neuron.biasCache).to.be.undefined
+            neuron2.init(3, {adaptiveLR: "not adagrad"})
+            expect(neuron2.weightsCache).to.be.undefined
+            expect(neuron2.biasCache).to.be.undefined
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not RMSProp", () => {
-            neuron.init(3, {adaptiveLR: "not RMSProp"})
-            expect(neuron.weightsCache).to.be.undefined
-            expect(neuron.biasCache).to.be.undefined
+            neuron2.init(3, {adaptiveLR: "not RMSProp"})
+            expect(neuron2.weightsCache).to.be.undefined
+            expect(neuron2.biasCache).to.be.undefined
         })
 
         it("Creates and sets neuron.m to 0 if the adaptiveLR parameter is adam", () => {
-            neuron.init(3, {adaptiveLR: "adam"})
-            expect(neuron.m).to.not.be.undefined
-            expect(neuron.m).to.equal(0)
+            neuron2.init(3, {adaptiveLR: "adam"})
+            expect(neuron2.m).to.not.be.undefined
+            expect(neuron2.m).to.equal(0)
         })
 
         it("Creates and sets neuron.v to 0 if the adaptiveLR parameter is adam", () => {
-            neuron.init(3, {adaptiveLR: "adam"})
-            expect(neuron.v).to.not.be.undefined
-            expect(neuron.v).to.equal(0)
+            neuron2.init(3, {adaptiveLR: "adam"})
+            expect(neuron2.v).to.not.be.undefined
+            expect(neuron2.v).to.equal(0)
         })
 
         it("Does not create neuron.m or neuron.v when the adaptiveLR parameter is not adam", () => {
-            neuron.init(3, {adaptiveLR: "not adam"})
-            expect(neuron.m).to.be.undefined
-            expect(neuron.v).to.be.undefined
+            neuron2.init(3, {adaptiveLR: "not adam"})
+            expect(neuron2.m).to.be.undefined
+            expect(neuron2.v).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron.init(3, {adaptiveLR: "adadelta"})
-            expect(neuron.weightsCache).to.not.be.undefined
-            expect(neuron.weightsCache).to.have.lengthOf(3)
-            expect(neuron.weightsCache).to.deep.equal([0,0,0])
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            expect(neuron2.weightsCache).to.not.be.undefined
+            expect(neuron2.weightsCache).to.have.lengthOf(3)
+            expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-            neuron.init(3, {adaptiveLR: "adadelta"})
-            expect(neuron.adadeltaBiasCache).to.equal(0)
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            expect(neuron2.adadeltaBiasCache).to.equal(0)
         })
 
         it("Creates a adadeltaCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron.init(3, {adaptiveLR: "adadelta"})
-            expect(neuron.adadeltaCache).to.not.be.undefined
-            expect(neuron.adadeltaCache).to.have.lengthOf(3)
-            expect(neuron.adadeltaCache).to.deep.equal([0,0,0])
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            expect(neuron2.adadeltaCache).to.not.be.undefined
+            expect(neuron2.adadeltaCache).to.have.lengthOf(3)
+            expect(neuron2.adadeltaCache).to.deep.equal([0,0,0])
         })
 
         it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or RMSProp", () => {
-            neuron.init(3, {adaptiveLR: "adagrad"})
-            expect(neuron.adadeltaCache).to.be.undefined
-            expect(neuron.adadeltaBiasCache).to.be.undefined
-            const neuron2 = new Neuron()
-            neuron2.init(3, {adaptiveLR: "RMSProp"})
+            neuron2.init(3, {adaptiveLR: "adagrad"})
             expect(neuron2.adadeltaCache).to.be.undefined
             expect(neuron2.adadeltaBiasCache).to.be.undefined
+            const neuron3 = new Neuron()
+            neuron3.weights = [...new Array(3)].map(v => Math.random()*0.2-0.1)
+            neuron3.init(3, {adaptiveLR: "RMSProp"})
+            expect(neuron3.adadeltaCache).to.be.undefined
+            expect(neuron3.adadeltaBiasCache).to.be.undefined
         })
 
         it("Creates a random neuron.rreluSlope number if the activationConfig value is rrelu", () => {
-            neuron.init(3, {activationConfig: "rrelu"})
-            expect(neuron.rreluSlope).to.not.be.undefined
-            expect(neuron.rreluSlope).to.be.a.number
-            expect(neuron.rreluSlope).to.be.at.most(0.0011)
+            neuron2.init(3, {activationConfig: "rrelu"})
+            expect(neuron2.rreluSlope).to.not.be.undefined
+            expect(neuron2.rreluSlope).to.be.a.number
+            expect(neuron2.rreluSlope).to.be.at.most(0.0011)
         })
 
         it("Sets the neuron.eluAlpha to the given value, if given a value", () => {
-            neuron.init(3, {activationConfig: "elu", eluAlpha: 0.5})
-            expect(neuron.eluAlpha).to.equal(0.5)
+            neuron2.init(3, {activationConfig: "elu", eluAlpha: 0.5})
+            expect(neuron2.eluAlpha).to.equal(0.5)
         })
     })
 })
@@ -1968,6 +2029,32 @@ describe("Netmath", () => {
 
             NetMath.maxNorm.bind(net)()
             expect(layer2.neurons[0].weights).to.deep.equal([2, 2])
+        })
+    })
+
+    describe("uniform", () => {
+        it("Returns the same number of values as the size value given", () => {
+            const result = NetMath.uniform(10, {limit: 0.1})
+            expect(result.length).to.equal(10)
+        })
+
+        it("Weights are all between -0.1 and +0.1 when weightsConfig.limit is 0.1", () => {
+            const result = NetMath.uniform(10, {limit: 0.1})
+            expect(result.every(w => w>=-0.1 && w<=0.1)).to.be.true
+        })
+
+        it("Inits some weights at values bigger |0.1| when weightsConfig.limit is 1000", () => {
+            const result = NetMath.uniform(10, {limit: 1000})
+            expect(result.some(w => w<=-0.1 || w>=0.1)).to.be.true
+        })
+
+        it("Creates weights that are more or less uniform", () => {
+            const result = NetMath.uniform(10000, {limit: 1})
+
+            const decData = {}
+            result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
+            const sorted = Object.keys(decData).map(k=>decData[k]).sort((a,b) => a<b)
+            expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
         })
     })
 })

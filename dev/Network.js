@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -80,6 +80,18 @@ class Network {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
+        this.weightsConfig = {distribution: "uniform"}
+
+        if(weightsConfig != undefined) {
+            if(weightsConfig.distribution) {
+                this.weightsConfig.distribution = weightsConfig.distribution 
+            }
+        }
+
+        if(["uniform"].includes(this.weightsConfig.distribution)) {
+            this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+        }
+
         if(layers.length) {
 
             switch(true) {
@@ -150,6 +162,8 @@ class Network {
         layer.adaptiveLR = this.adaptiveLR
         layer.activationConfig = this.activationConfig
         layer.dropout = this.dropout
+        layer.weightsConfig = this.weightsConfig
+        layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
 
         if(this.rho!=undefined) {
             layer.rho = this.rho

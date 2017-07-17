@@ -11,11 +11,6 @@ class Neuron {
     }
 
     init (size, {adaptiveLR, activationConfig, eluAlpha}={}) {
-        
-        if(!this.imported){
-            this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
-            this.bias = Math.random()*0.2-0.1
-        }
 
         this.deltaWeights = this.weights.map(v => 0)
 

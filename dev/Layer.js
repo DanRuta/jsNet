@@ -13,12 +13,21 @@ class Layer {
     }
 
     assignPrev (layer) {
+
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size, {
-            adaptiveLR: this.adaptiveLR,
-            activationConfig: this.activationConfig,
-            eluAlpha: this.eluAlpha
-        }))
+        this.neurons.forEach(neuron => {
+
+            if(!neuron.imported) {
+                neuron.weights = this.weightsInitFn(layer.size, this.weightsConfig)
+                neuron.bias = Math.random()*0.2-0.1
+            }
+
+            neuron.init(layer.size, {
+                adaptiveLR: this.adaptiveLR,
+                activationConfig: this.activationConfig,
+                eluAlpha: this.eluAlpha
+            })
+        }) 
         this.state = "initialised"
     }
 

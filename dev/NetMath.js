@@ -120,6 +120,11 @@ class NetMath {
         }
     }
 
+    // Weights init
+    static uniform (size, {limit}) {
+        return [...new Array(size)].map(v => Math.random()*2*limit-limit)
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)

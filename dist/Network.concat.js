@@ -218,6 +218,10 @@ class NetMath {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 
+    static lecunUniform (size, {fanIn}) {
+        return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)

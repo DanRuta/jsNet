@@ -2155,4 +2155,30 @@ describe("Netmath", () => {
             expect(mean).to.be.at.least(-0.1)
         })
     })
+
+    describe("lecunUniform", () => {
+        it("Returns the same number of values as the size value given", () => {
+            const result = NetMath.lecunUniform(10, {fanIn: 5})
+            expect(result.length).to.equal(10)
+        })
+
+        it("Weights are all between -0.5 and +0.5 when fanIn is 12", () => {
+            const result = NetMath.lecunUniform(10, {fanIn: 12})
+            expect(result.every(w => w>=-0.5 && w<=0.5)).to.be.true
+        })
+
+        it("Inits some weights at values bigger |0.5| when fanIn is smaller (8)", () => {
+            const result = NetMath.lecunUniform(10, {fanIn: 8})
+            expect(result.some(w => w<=-0.05 || w>=0.05)).to.be.true
+        })
+
+        it("Creates weights that are more or less uniform", () => {
+            const result = NetMath.lecunUniform(10000, {fanIn: 12})
+
+            const decData = {}
+            result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
+            const sorted = Object.keys(decData).map(k=>decData[k]).sort((a,b) => a<b)
+            expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
+        })
+    })
 })

@@ -199,6 +199,21 @@ class NetMath {
         return [...new Array(size)].map(v => Math.random()*2*limit-limit)
     }
 
+    static gaussian (size, {mean, stdDeviation}) {
+        return [...new Array(size)].map(() => {
+
+            let x1, x2, r, y
+
+            do {
+                x1 = 2 * Math.random() -1
+                x2 = 2 * Math.random() -1
+                r = x1**2 + x2**2
+            } while (r >= 1 || !r)
+
+            return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
+        })
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
@@ -207,6 +222,12 @@ class NetMath {
 
     static sech (value) {
         return (2*Math.exp(-value))/(1+Math.exp(-2*value))
+    }
+
+    static standardDeviation (arr) {
+        const avg = arr.reduce((p,c) => p+c) / arr.length
+        const diffs = arr.map(v => v - avg).map(v => v**2)
+        return Math.sqrt(diffs.reduce((p,c) => p+c) / diffs.length)
     }
 
     static maxNorm () {
@@ -261,6 +282,7 @@ class Network {
             this.maxNormTotal = 0
         }
 
+        // Activation function / Learning Rate
         switch(true) {
 
             case adaptiveLR=="RMSProp":
@@ -311,6 +333,7 @@ class Network {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
+        // Weights distributiom
         this.weightsConfig = {distribution: "uniform"}
 
         if(weightsConfig != undefined) {
@@ -321,8 +344,14 @@ class Network {
 
         if(["uniform"].includes(this.weightsConfig.distribution)) {
             this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+
+        } else if(this.weightsConfig.distribution == "gaussian") {
+
+            this.weightsConfig.mean = weightsConfig.mean || 0
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 1          
         }
 
+        // Status
         if(layers.length) {
 
             switch(true) {

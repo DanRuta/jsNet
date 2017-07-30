@@ -30,6 +30,7 @@ class Network {
             this.maxNormTotal = 0
         }
 
+        // Activation function / Learning Rate
         switch(true) {
 
             case adaptiveLR=="RMSProp":
@@ -80,6 +81,7 @@ class Network {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
+        // Weights distributiom
         this.weightsConfig = {distribution: "uniform"}
 
         if(weightsConfig != undefined) {
@@ -90,8 +92,14 @@ class Network {
 
         if(["uniform"].includes(this.weightsConfig.distribution)) {
             this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+
+        } else if(this.weightsConfig.distribution == "gaussian") {
+
+            this.weightsConfig.mean = weightsConfig.mean || 0
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 1          
         }
 
+        // Status
         if(layers.length) {
 
             switch(true) {

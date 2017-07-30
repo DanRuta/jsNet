@@ -291,6 +291,36 @@ describe("Network", () => {
                 const net = new Network({weightsConfig: {distribution: "uniform", limit: 2}})
                 expect(net.weightsConfig.limit).to.equal(2)
             })
+
+            it("Defaults the net.weightsConfig.mean to 0 when distribution is gaussian", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian"}})
+                expect(net.weightsConfig.mean).to.equal(0)
+            })
+
+            it("Sets the net.weightsConfig.mean to the given weightsConfig.mean, if provided", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian", mean: 1}})
+                expect(net.weightsConfig.mean).to.equal(1)
+            })
+
+            it("Does not set the net.weightsConfig.mean if the distribution is not gaussian", () => {
+                const net = new Network({weightsConfig: {distribution: "not gaussian", mean: 1}})
+                expect(net.weightsConfig.mean).to.be.undefined
+            })
+
+            it("Defaults the net.weightsConfig.stdDeviation to 1 when distribution is gaussian", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian"}})
+                expect(net.weightsConfig.stdDeviation).to.equal(1)
+            })
+
+            it("Sets the net.weightsConfig.stdDeviation to the given weightsConfig.stdDeviation, if provided", () => {
+                const net = new Network({weightsConfig: {distribution: "gaussian", stdDeviation: 2}})
+                expect(net.weightsConfig.stdDeviation).to.equal(2)
+            })
+
+            it("Does not set the net.weightsConfig.stdDeviation if the distribution is not gaussian", () => {
+                const net = new Network({weightsConfig: {distribution: "not gaussian", stdDeviation: 2}})
+                expect(net.weightsConfig.stdDeviation).to.be.undefined
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -2055,6 +2085,47 @@ describe("Netmath", () => {
             result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
             const sorted = Object.keys(decData).map(k=>decData[k]).sort((a,b) => a<b)
             expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
+        })
+    })
+
+    describe("standardDeviation", () => {
+        it("Returns 6.603739470936145 for [3,5,7,8,5,25,8,4]", () => {
+            expect(NetMath.standardDeviation([3,5,7,8,5,25,8,4])).to.equal(6.603739470936145)
+        })
+    })
+
+    describe("gaussian", () => {
+        it("Returns the same number of values as the size value given", () => {
+            const result = NetMath.gaussian(10, {mean: 0, stdDeviation: 1})
+            expect(result.length).to.equal(10)
+        })
+
+        it("The standard deviation of the weights is roughly 1 when set to 1", () => {
+            const result = NetMath.gaussian(1000, {mean: 0, stdDeviation: 1})
+            const std = NetMath.standardDeviation(result)
+            expect(Math.round(std*10)/10).to.be.at.most(1.15)
+            expect(Math.round(std*10)/10).to.be.at.least(0.85)
+        })
+
+        it("The standard deviation of the weights is roughly 5 when set to 5", () => {
+            const result = NetMath.gaussian(1000, {mean: 0, stdDeviation: 5})
+            const std = NetMath.standardDeviation(result)
+            expect(Math.round(std*10)/10).to.be.at.most(1.15 * 5)
+            expect(Math.round(std*10)/10).to.be.at.least(0.885 * 5)
+        })
+
+        it("The mean of the weights is roughly 0 when set to 0", () => {
+            const result = NetMath.gaussian(1000, {mean: 0, stdDeviation: 1})
+            const mean = result.reduce((p,c) => p+c) / 1000
+            expect(mean).to.be.at.most(0.1)
+            expect(mean).to.be.at.least(-0.1)
+        })
+
+        it("The mean of the weights is roughly 10 when set to 10", () => {
+            const result = NetMath.gaussian(1000, {mean: 10, stdDeviation: 1})
+            const mean = result.reduce((p,c) => p+c) / 1000
+            expect(mean).to.be.at.most(10.1)
+            expect(mean).to.be.at.least(9.9)
         })
     })
 })

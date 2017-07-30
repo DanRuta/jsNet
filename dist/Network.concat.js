@@ -201,7 +201,7 @@ class NetMath {
 
     static gaussian (size, {mean, stdDeviation}) {
         return [...new Array(size)].map(() => {
-
+            // Polar Box Muller
             let x1, x2, r, y
 
             do {
@@ -212,6 +212,10 @@ class NetMath {
 
             return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
         })
+    }
+
+    static xavierNormal (size, {fanIn}) {
+        return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 
     // Other
@@ -342,13 +346,13 @@ class Network {
             }
         }
 
-        if(["uniform"].includes(this.weightsConfig.distribution)) {
+        if(this.weightsConfig.distribution == "uniform") {
             this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
 
         } else if(this.weightsConfig.distribution == "gaussian") {
 
             this.weightsConfig.mean = weightsConfig.mean || 0
-            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 1          
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
         }
 
         // Status
@@ -422,7 +426,9 @@ class Network {
         layer.adaptiveLR = this.adaptiveLR
         layer.activationConfig = this.activationConfig
         layer.dropout = this.dropout
-        layer.weightsConfig = this.weightsConfig
+
+        layer.weightsConfig = {}
+        Object.assign(layer.weightsConfig, this.weightsConfig)
         layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
 
         if(this.rho!=undefined) {
@@ -442,6 +448,7 @@ class Network {
         }
 
         if(layerIndex) {
+            layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }

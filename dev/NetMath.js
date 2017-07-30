@@ -127,7 +127,7 @@ class NetMath {
 
     static gaussian (size, {mean, stdDeviation}) {
         return [...new Array(size)].map(() => {
-
+            // Polar Box Muller
             let x1, x2, r, y
 
             do {
@@ -138,6 +138,10 @@ class NetMath {
 
             return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
         })
+    }
+
+    static xavierNormal (size, {fanIn}) {
+        return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 
     // Other

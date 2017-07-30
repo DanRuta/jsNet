@@ -307,9 +307,9 @@ describe("Network", () => {
                 expect(net.weightsConfig.mean).to.be.undefined
             })
 
-            it("Defaults the net.weightsConfig.stdDeviation to 1 when distribution is gaussian", () => {
+            it("Defaults the net.weightsConfig.stdDeviation to 0.05 when distribution is gaussian", () => {
                 const net = new Network({weightsConfig: {distribution: "gaussian"}})
-                expect(net.weightsConfig.stdDeviation).to.equal(1)
+                expect(net.weightsConfig.stdDeviation).to.equal(0.05)
             })
 
             it("Sets the net.weightsConfig.stdDeviation to the given weightsConfig.stdDeviation, if provided", () => {
@@ -470,7 +470,6 @@ describe("Network", () => {
             layer2 = new Layer(3)
         }) 
 
-
         it("Does nothing to a single layer network", () => {
             net.layers = [layer1]
             net.joinLayer(layer1)
@@ -579,9 +578,9 @@ describe("Network", () => {
 
         it("Sets the layer.weightsConfig to the net.weightsConfig", () => {
             net.layers = [layer1]
-            net.weightsConfig = "test"
+            net.weightsConfig = {test: "stuff"}
             net.joinLayer(layer1)
-            expect(layer1.weightsConfig).to.equal("test")
+            expect(layer1.weightsConfig).to.have.key("test")
         })
 
         it("Sets the layer.weightsInitFn to NetMath[weightsConfig.distribution]", () => {
@@ -589,6 +588,13 @@ describe("Network", () => {
             net.weightsConfig = {distribution: "uniform"}
             net.joinLayer(layer1)
             expect(layer1.weightsInitFn).to.equal(NetMath.uniform)
+        })
+
+        it("Assigns the layer2 weightsConfig.fanIn to the number of neurons in layer1", () => {
+            net.layers = [layer1]
+            layer1.weightsConfig = {}
+            net.joinLayer(layer2, 1)
+            expect(layer2.weightsConfig.fanIn).to.equal(2)
         })
     })
 
@@ -2126,6 +2132,27 @@ describe("Netmath", () => {
             const mean = result.reduce((p,c) => p+c) / 1000
             expect(mean).to.be.at.most(10.1)
             expect(mean).to.be.at.least(9.9)
+        })
+    })
+
+    describe("xavierNormal", () => {
+        it("Returns the same number of values as the size value given", () => {
+            const result = NetMath.xavierNormal(10, {fanIn: 5})
+            expect(result.length).to.equal(10)
+        })
+
+        it("The standard deviation of the weights is roughly 0.05 when the fanIn is 5", () => {
+            const result = NetMath.xavierNormal(1000, {fanIn: 5})
+            const std = NetMath.standardDeviation(result)
+            expect(Math.round(std*1000)/1000).to.be.at.most(0.60)
+            expect(Math.round(std*1000)/1000).to.be.at.least(0.40)
+        })
+
+        it("The mean of the weights is roughly 0", () => {
+            const result = NetMath.xavierNormal(1000, {fanIn: 5})
+            const mean = result.reduce((p,c) => p+c) / 1000
+            expect(mean).to.be.at.most(0.1)
+            expect(mean).to.be.at.least(-0.1)
         })
     })
 })

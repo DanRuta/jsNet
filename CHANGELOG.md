@@ -1,4 +1,4 @@
-# Upcoming
+# Upcoming - Weights Initialization
 ---
 #### Network
 - Reworked current weights initialization to be configurable
@@ -9,6 +9,7 @@
 #### NetMath
 - Added standardDeviation to NetMath
 - Added gaussian weights distribution
+- Added xavierNormal weights distribution
   
 # v1.3.0 - Regularization
 ---

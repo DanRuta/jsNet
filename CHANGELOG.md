@@ -2,9 +2,10 @@
 ---
 #### Network
 - Made string configs (activation, adaptiveLR, cost, distribution) case/underscore/space insensitive.
+- Allow custom activation functions to be configured
 
 #### NetMath
-- Breaking change: Made config functions' names lower case
+- Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case
 
 # 1.4.0 - Weights Initialization
 ---

@@ -447,6 +447,13 @@ describe("Network", () => {
             const net = new Network({weightsConfig: {distribution: "Lecun Uniform"}})
             expect(net.weightsConfig.distribution).to.equal("lecununiform")
         })
+
+        it("Allows setting a custom function as the activation function", () => {
+            const customActivation = x => x
+            const net = new Network({activation: customActivation})
+            expect(net.activation).to.equal(customActivation)
+            expect(net.activation("test")).to.equal("test")
+        })
     })
 
     describe("initLayers", () => {
@@ -1266,6 +1273,12 @@ describe("Network", () => {
             const testString = "_aA_bB_"
             const result = net.format(testString) 
             expect(result).to.equal("aabb")
+        })
+
+        it("Only changes string parameters, returning anything else unchanged", () => {
+            expect(net.format(console.log)).to.equal(console.log)
+            expect(net.format(1)).to.equal(1)
+            expect(net.format(true)).to.equal(true)
         })
     })
 })

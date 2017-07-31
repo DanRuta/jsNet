@@ -151,7 +151,15 @@ net = new Network({adaptiveLR: "adadelta", rho: 0.95})
 net = new Network({activation: "sigmoid"})
 net = new Network({activation: "lrelu", lreluSlope: 0.99})
 net = new Network({activation: "elu", eluAlpha: 1})
+net = new Network({activation: x => x, eluAlpha: 1})
 ```
+You can set your own activation functions. They are given as parameters:
+- The sum of the previous layer's activations and the neuron's bias
+- If the function should calculate the prime (during back prop) - boolean
+- A reference to the neuron being activated. 
+
+The network is bound as the function's scope, meaning you can access its data through ```this```. 
+
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |

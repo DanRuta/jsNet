@@ -70,7 +70,7 @@ class Network {
         
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
-        this.activation = NetMath[activation].bind(this)
+        this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = NetMath[cost]
 
@@ -411,7 +411,7 @@ class Network {
     }
 
     format (string) {
-        return string ? string.replace(/(_|\s)/g, "").toLowerCase() : string
+        return string && typeof string=="string" ? string.replace(/(_|\s)/g, "").toLowerCase() : string
     }
 }
 

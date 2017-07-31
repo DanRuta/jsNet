@@ -11,6 +11,7 @@
 - Added gaussian weights distribution
 - Added xavierNormal weights distribution
 - Added lecunUniform weights distribution
+- Added lecunNormal weights distribution
   
 # v1.3.0 - Regularization
 ---

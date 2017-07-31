@@ -140,7 +140,12 @@ class NetMath {
         })
     }
 
-    static xavierNormal (size, {fanIn}) {
+    static xavierNormal (size, {fanIn, fanOut}) {
+        return fanOut || fanOut==0 ? NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(2/(fanIn+fanOut))})
+                                   : NetMath.lecunNormal(size, {fanIn})
+    }
+
+    static lecunNormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 

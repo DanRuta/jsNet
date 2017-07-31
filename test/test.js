@@ -462,12 +462,13 @@ describe("Network", () => {
 
     describe("joinLayer", () => {
 
-        let net, layer1, layer2
+        let net, layer1, layer2, layer3
 
         beforeEach(() => {
             net = new Network({weightsConfig: {distribution: "uniform"}})
             layer1 = new Layer(2)
             layer2 = new Layer(3)
+            layer3 = new Layer(4)
         }) 
 
         it("Does nothing to a single layer network", () => {
@@ -595,6 +596,14 @@ describe("Network", () => {
             layer1.weightsConfig = {}
             net.joinLayer(layer2, 1)
             expect(layer2.weightsConfig.fanIn).to.equal(2)
+        })
+
+        it("Assigns the layer2 weightsConfig.fanOut to the number of neurons in layer3", () => {
+            net.layers = [layer1, layer2]
+            layer2.weightsConfig = {}
+            layer3.weightsConfig = {}
+            net.joinLayer(layer3, 2)
+            expect(layer2.weightsConfig.fanOut).to.equal(4)
         })
     })
 
@@ -2135,21 +2144,21 @@ describe("Netmath", () => {
         })
     })
 
-    describe("xavierNormal", () => {
+    describe("lecunNormal", () => {
         it("Returns the same number of values as the size value given", () => {
-            const result = NetMath.xavierNormal(10, {fanIn: 5})
+            const result = NetMath.lecunNormal(10, {fanIn: 5})
             expect(result.length).to.equal(10)
         })
 
         it("The standard deviation of the weights is roughly 0.05 when the fanIn is 5", () => {
-            const result = NetMath.xavierNormal(1000, {fanIn: 5})
+            const result = NetMath.lecunNormal(1000, {fanIn: 5})
             const std = NetMath.standardDeviation(result)
             expect(Math.round(std*1000)/1000).to.be.at.most(0.60)
             expect(Math.round(std*1000)/1000).to.be.at.least(0.40)
         })
 
         it("The mean of the weights is roughly 0", () => {
-            const result = NetMath.xavierNormal(1000, {fanIn: 5})
+            const result = NetMath.lecunNormal(1000, {fanIn: 5})
             const mean = result.reduce((p,c) => p+c) / 1000
             expect(mean).to.be.at.most(0.1)
             expect(mean).to.be.at.least(-0.1)
@@ -2179,6 +2188,34 @@ describe("Netmath", () => {
             result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
             const sorted = Object.keys(decData).map(k=>decData[k]).sort((a,b) => a<b)
             expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
+        })
+    })
+
+    describe("xavierNormal", () => {
+        it("Returns the same number of values as the size value given", () => {
+            const result = NetMath.xavierNormal(10, {fanIn: 5, fanOut: 10})
+            expect(result.length).to.equal(10)
+        })
+
+        it("The standard deviation of the weights is roughly 0.25 when the fanIn is 5 and fanOut is 25", () => {
+            const result = NetMath.xavierNormal(1000, {fanIn: 5, fanOut: 25})
+            const std = NetMath.standardDeviation(result)
+            expect(Math.round(std*1000)/1000).to.be.at.most(0.3)
+            expect(Math.round(std*1000)/1000).to.be.at.least(0.2)
+        })
+
+        it("The mean of the weights is roughly 0", () => {
+            const result = NetMath.xavierNormal(1000, {fanIn: 5, fanOut: 25})
+            const mean = result.reduce((p,c) => p+c) / 1000
+            expect(mean).to.be.at.most(0.1)
+            expect(mean).to.be.at.least(-0.1)
+        })
+
+        it("Falls back to using lecunNormal if there is no fanOut available", () => {
+            sinon.spy(NetMath, "lecunNormal")
+            const result = NetMath.xavierNormal(10, {fanIn: 5})
+            expect(NetMath.lecunNormal).to.have.been.calledWith(10, {fanIn: 5})
+            expect(result.length).to.equal(10)
         })
     })
 })

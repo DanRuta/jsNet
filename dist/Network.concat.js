@@ -214,7 +214,12 @@ class NetMath {
         })
     }
 
-    static xavierNormal (size, {fanIn}) {
+    static xavierNormal (size, {fanIn, fanOut}) {
+        return fanOut || fanOut==0 ? NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(2/(fanIn+fanOut))})
+                                   : NetMath.lecunNormal(size, {fanIn})
+    }
+
+    static lecunNormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 
@@ -453,6 +458,7 @@ class Network {
 
         if(layerIndex) {
             layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
+            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }

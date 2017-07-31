@@ -193,6 +193,7 @@ class Network {
 
         if(layerIndex) {
             layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
+            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }

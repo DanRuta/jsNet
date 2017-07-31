@@ -219,6 +219,11 @@ class NetMath {
                                    : NetMath.lecunNormal(size, {fanIn})
     }
 
+    static xavierUniform (size, {fanIn, fanOut}) {
+        return fanOut || fanOut==0 ? NetMath.uniform(size, {limit: Math.sqrt(6/(fanIn+fanOut))})
+                                   : NetMath.lecunUniform(size, {fanIn})
+    }    
+
     static lecunNormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }

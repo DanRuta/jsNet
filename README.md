@@ -172,7 +172,7 @@ You can specify configuration options for weights initialization via the weights
 
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| distribution | The distribution of the weights values in a neuron | uniform, gaussian, xavierNormal, lecunUniform, lecunNormal | uniform |
+| distribution | The distribution of the weights values in a neuron | uniform, gaussian, xavierNormal, lecunUniform, lecunNormal, xavierUniform | uniform |
 | limit | Used with uniform to dictate the maximum absolute value of the weight. 0 centered. | Any number | 0.1 |
 | mean| Used with gaussian to dictate the center value of the middle of the bell curve distribution | Any number | 0 |
 | stdDeviation | Used with gaussian to dictate the spread of the data. | Any number | 0.05 |

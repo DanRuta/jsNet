@@ -115,18 +115,18 @@ class NetMath {
     }
     
     // Cost functions
-    static crossEntropy (target, output) {
+    static crossentropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
                      .reduce((p,c) => p-c, 0)
     }
 
-    static meanSquaredError (calculated, desired) {
+    static meansquarederror (calculated, desired) {
         return calculated.map((output, index) => Math.pow(output - desired[index], 2))
                          .reduce((prev, curr) => prev+curr, 0) / calculated.length
     }
 
     // Weight updating functions
-    static noAdaptiveLR (value, deltaValue) {
+    static noadaptivelr (value, deltaValue) {
         return value + this.learningRate * deltaValue
     }
 
@@ -157,7 +157,7 @@ class NetMath {
                                                                                         : neuron.biasCache))
     }
 
-    static RMSProp (value, deltaValue, neuron, weightI) {
+    static rmsprop (value, deltaValue, neuron, weightI) {
 
         if(weightI!=null)
              neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
@@ -214,21 +214,21 @@ class NetMath {
         })
     }
 
-    static xavierNormal (size, {fanIn, fanOut}) {
+    static xaviernormal (size, {fanIn, fanOut}) {
         return fanOut || fanOut==0 ? NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(2/(fanIn+fanOut))})
-                                   : NetMath.lecunNormal(size, {fanIn})
+                                   : NetMath.lecunnormal(size, {fanIn})
     }
 
-    static xavierUniform (size, {fanIn, fanOut}) {
+    static xavieruniform (size, {fanIn, fanOut}) {
         return fanOut || fanOut==0 ? NetMath.uniform(size, {limit: Math.sqrt(6/(fanIn+fanOut))})
-                                   : NetMath.lecunUniform(size, {fanIn})
+                                   : NetMath.lecununiform(size, {fanIn})
     }    
 
-    static lecunNormal (size, {fanIn}) {
+    static lecunnormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
     }
 
-    static lecunUniform (size, {fanIn}) {
+    static lecununiform (size, {fanIn}) {
         return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
     }
 
@@ -272,7 +272,7 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
+    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="crossentropy", 
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
         this.state = "not-defined"
         this.layers = []
@@ -280,6 +280,9 @@ class Network {
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
+        activation = this.format(activation)
+        adaptiveLR = this.format(adaptiveLR)
+        cost = this.format(cost)
 
         if(learningRate!=null){    
             this.learningRate = learningRate
@@ -303,7 +306,7 @@ class Network {
         // Activation function / Learning Rate
         switch(true) {
 
-            case adaptiveLR=="RMSProp":
+            case adaptiveLR=="rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
                 break
 
@@ -335,13 +338,13 @@ class Network {
                 }
         }
         
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
+        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = NetMath[cost]
 
-        if(this.adaptiveLR=="RMSProp"){
+        if(this.adaptiveLR=="rmsprop"){
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
@@ -356,7 +359,7 @@ class Network {
 
         if(weightsConfig != undefined) {
             if(weightsConfig.distribution) {
-                this.weightsConfig.distribution = weightsConfig.distribution 
+                this.weightsConfig.distribution = this.format(weightsConfig.distribution) 
             }
         }
 
@@ -676,6 +679,10 @@ class Network {
         this.state = "constructed"
         this.initLayers()
     }
+
+    format (string) {
+        return string ? string.replace(/(_|\s)/g, "").toLowerCase() : string
+    }
 }
 
 typeof window=="undefined" && (global.Network = Network)
@@ -702,7 +709,7 @@ class Neuron {
                 break
 
             case "adagrad":
-            case "RMSProp":
+            case "rmsprop":
             case "adadelta":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)

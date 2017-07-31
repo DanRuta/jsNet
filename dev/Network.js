@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
+    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="crossentropy", 
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
         this.state = "not-defined"
         this.layers = []
@@ -10,6 +10,9 @@ class Network {
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
+        activation = this.format(activation)
+        adaptiveLR = this.format(adaptiveLR)
+        cost = this.format(cost)
 
         if(learningRate!=null){    
             this.learningRate = learningRate
@@ -33,7 +36,7 @@ class Network {
         // Activation function / Learning Rate
         switch(true) {
 
-            case adaptiveLR=="RMSProp":
+            case adaptiveLR=="rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
                 break
 
@@ -65,13 +68,13 @@ class Network {
                 }
         }
         
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
+        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = NetMath[cost]
 
-        if(this.adaptiveLR=="RMSProp"){
+        if(this.adaptiveLR=="rmsprop"){
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
@@ -86,7 +89,7 @@ class Network {
 
         if(weightsConfig != undefined) {
             if(weightsConfig.distribution) {
-                this.weightsConfig.distribution = weightsConfig.distribution 
+                this.weightsConfig.distribution = this.format(weightsConfig.distribution) 
             }
         }
 
@@ -405,6 +408,10 @@ class Network {
         this.layers = data.layers.map(layer => new Layer(layer.neurons.length, layer.neurons))
         this.state = "constructed"
         this.initLayers()
+    }
+
+    format (string) {
+        return string ? string.replace(/(_|\s)/g, "").toLowerCase() : string
     }
 }
 

@@ -43,21 +43,21 @@ describe("Network", () => {
                 expect(net.iterations).to.equal(0)
             })
 
-            it("Defaults the cost function to 'crossEntropy'", () => {
-                expect(net.cost).to.equal(NetMath.crossEntropy)
+            it("Defaults the cost function to 'crossentropy'", () => {
+                expect(net.cost).to.equal(NetMath.crossentropy)
             })
 
-            it("Defaults the adaptiveLR to noAdaptiveLR", () => {
-                expect(net.adaptiveLR).to.equal("noAdaptiveLR")
+            it("Defaults the adaptiveLR to noadaptivelr", () => {
+                expect(net.adaptiveLR).to.equal("noadaptivelr")
             })
 
-            it("Sets the net.weightUpdateFn to NetMath.noAdaptiveLR when setting it to false, null, or 'noAdaptiveLR'", () => {
+            it("Sets the net.weightUpdateFn to NetMath.noadaptivelr when setting it to false, null, or 'noadaptivelr'", () => {
                 const net2 = new Network({adaptiveLR: null})
-                expect(net2.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
+                expect(net2.weightUpdateFn).to.equal(NetMath.noadaptivelr)
                 const net3 = new Network({adaptiveLR: false})
-                expect(net3.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
-                const net4 = new Network({adaptiveLR: "noAdaptiveLR"})
-                expect(net4.weightUpdateFn).to.equal(NetMath.noAdaptiveLR)
+                expect(net3.weightUpdateFn).to.equal(NetMath.noadaptivelr)
+                const net4 = new Network({adaptiveLR: "noadaptivelr"})
+                expect(net4.weightUpdateFn).to.equal(NetMath.noadaptivelr)
             })
 
             it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
@@ -65,28 +65,28 @@ describe("Network", () => {
                 expect(net2.weightUpdateFn).to.equal(NetMath.adagrad)
             })
 
-            it("Defaults the net.rmsDecay to 0.99 if the adaptiveLR is RMSProp", () => {
-                const net2 = new Network({adaptiveLR: "RMSProp"})
+            it("Defaults the net.rmsDecay to 0.99 if the adaptiveLR is rmsprop", () => {
+                const net2 = new Network({adaptiveLR: "rmsprop"})
                 expect(net2.rmsDecay).to.equal(0.99)
             })
 
             it("Sets the net.rmsDecay to use input, if supplied", () => {
-                const net2 = new Network({adaptiveLR: "RMSProp", rmsDecay: 0.9})
+                const net2 = new Network({adaptiveLR: "rmsprop", rmsDecay: 0.9})
                 expect(net2.rmsDecay).to.equal(0.9)
             })
 
-            it("Does not set an rmsDecay, if adaptiveLR is not RMSProp, even if supplied", () => {
+            it("Does not set an rmsDecay, if adaptiveLR is not rmsprop, even if supplied", () => {
                 const net2 = new Network({adaptiveLR: "adagrad", rmsDecay: 0.9})
                 expect(net2.rmsDecay).to.be.undefined
             })
 
-            it("Defaults the learning rate to 0.01 if the adaptiveLR is RMSProp", () => {
-                const net2 = new Network({adaptiveLR: "RMSProp"})
+            it("Defaults the learning rate to 0.01 if the adaptiveLR is rmsprop", () => {
+                const net2 = new Network({adaptiveLR: "rmsprop"})
                 expect(net2.learningRate).to.equal(0.001)
             })
 
-            it("Still allows user learning rates to be set, even if adaptiveLR is RMSProp", () => {
-                const net2 = new Network({adaptiveLR: "RMSProp", learningRate: 0.5})
+            it("Still allows user learning rates to be set, even if adaptiveLR is rmsprop", () => {
+                const net2 = new Network({adaptiveLR: "rmsprop", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
             })
 
@@ -386,6 +386,66 @@ describe("Network", () => {
             const layers = [Layer, Layer]
             const net = new Network({layers})
             expect(net.definedLayers).to.eq(layers)
+        })
+
+        it("Allows uppercase activation function configs (lecuntanh when configuring as LecunTanh)", () => {
+            const net = new Network({activation: "LecunTanh"})
+            expect(net.activation.name).to.equal("bound lecuntanh")
+        })
+
+        it("Allows snake_case activation function configs (lecuntanh when configuring as lecun_tanh)", () => {
+            const net = new Network({activation: "lecun_tanh"})
+            expect(net.activation.name).to.equal("bound lecuntanh")
+        })
+
+        it("Allows white space activation function configs (lecuntanh when configuring as lecun tanh)", () => {
+            const net = new Network({activation: "lecun tanh"})
+            expect(net.activation.name).to.equal("bound lecuntanh")
+        })
+
+        it("Allows uppercase adaptiveLR function configs (rmsprop when configuring as RMSProp)", () => {
+            const net = new Network({adaptiveLR: "RMSProp"})
+            expect(net.adaptiveLR).to.equal("rmsprop")
+        })
+
+        it("Allows snake_case adaptiveLR function configs (rmsprop when configuring as rms_prop)", () => {
+            const net = new Network({adaptiveLR: "rms_prop"})
+            expect(net.adaptiveLR).to.equal("rmsprop")
+        })
+
+        it("Allows white space adaptiveLR function configs (rmsprop when configuring as rms prop)", () => {
+            const net = new Network({adaptiveLR: "rms prop"})
+            expect(net.adaptiveLR).to.equal("rmsprop")
+        })
+
+        it("Allows uppercase cost function configs (crossentropy when configuring as crossEntropy)", () => {
+            const net = new Network({cost: "crossEntropy"})
+            expect(net.cost.name).to.equal("crossentropy")
+        })
+
+        it("Allows snake_case cost function configs (meansquarederror when configuring as mean_squared_error)", () => {
+            const net = new Network({cost: "mean_squared_error"})
+            expect(net.cost.name).to.equal("meansquarederror")
+        })
+
+        it("Allows white space cost function configs (meansquarederror when configuring as mean squared error)", () => {
+            const net = new Network({cost: "mean squared error"})
+            expect(net.cost.name).to.equal("meansquarederror")
+        })
+
+        it("Allows uppercase weights distribution config (xaviernormal when configuring as xavierNormal)", () => {
+            const net = new Network({weightsConfig: {distribution: "xavierNormal"}})
+            expect(net.weightsConfig.distribution).to.equal("xaviernormal")
+        })
+
+        it("Allows snake_case weights distribution config (xaviernormal when configuring as Xavier_Normal)", () => {
+            const net = new Network({weightsConfig: {distribution: "Xavier_Normal"}})
+            expect(net.weightsConfig.distribution).to.equal("xaviernormal")
+        })
+
+        it("Allows white space weights distribution config (lecununiform when configuring as Lecun Uniform)", () => {
+            const net = new Network({weightsConfig: {distribution: "Lecun Uniform"}})
+            expect(net.weightsConfig.distribution).to.equal("lecununiform")
         })
     })
 
@@ -713,7 +773,7 @@ describe("Network", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noAdaptiveLR"})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
@@ -729,7 +789,7 @@ describe("Network", () => {
         it("Increments the bias of all neurons with their deltaBias", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noAdaptiveLR"})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
 
             layer2.neurons.forEach(neuron => neuron.bias = 0.25)
             layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
@@ -897,7 +957,7 @@ describe("Network", () => {
             sinon.stub(net, "resetDeltaWeights")
             sinon.stub(net, "applyDeltaWeights")
             sinon.stub(net, "initLayers")
-            sinon.stub(NetMath, "crossEntropy")
+            sinon.stub(NetMath, "crossentropy")
             sinon.stub(console, "log") // Get rid of output spam
         }) 
 
@@ -907,7 +967,7 @@ describe("Network", () => {
             net.resetDeltaWeights.restore()
             net.applyDeltaWeights.restore()
             net.initLayers.restore()
-            NetMath.crossEntropy.restore()
+            NetMath.crossentropy.restore()
             console.log.restore()
         }) 
 
@@ -1177,6 +1237,35 @@ describe("Network", () => {
                 expect(console.log.callCount).to.equal(4)
                 console.log.restore()
             })
+        })
+    })
+
+    describe("format", () => {
+
+        let net
+
+        before(() => net = new Network())
+
+        it("Returns undefined if passed undefined", () => {
+            expect(net.format(undefined)).to.be.undefined
+        })
+
+        it("Turns a string to lower case", () => {
+            const testString = "aAbB"
+            const result = net.format(testString) 
+            expect(result).to.equal("aabb")
+        })
+
+        it("Removes white spaces", () => {
+            const testString = " aA bB "
+            const result = net.format(testString) 
+            expect(result).to.equal("aabb")
+        })
+
+        it("Removes underscores", () => {
+            const testString = "_aA_bB_"
+            const result = net.format(testString) 
+            expect(result).to.equal("aabb")
         })
     })
 })
@@ -1584,8 +1673,8 @@ describe("Neuron", () => {
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is RMSProp, with 0 values", () => {
-            neuron2.init(3, {adaptiveLR: "RMSProp"})
+        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is rmsprop, with 0 values", () => {
+            neuron2.init(3, {adaptiveLR: "rmsprop"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
@@ -1596,7 +1685,7 @@ describe("Neuron", () => {
             expect(neuron2.biasCache).to.equal(0)
         })
 
-        it("Creates a biasCache value of 0 if the adaptiveLR parameter is RMSProp", () => {
+        it("Creates a biasCache value of 0 if the adaptiveLR parameter is rmsprop", () => {
             neuron2.init(3, {adaptiveLR: "adagrad"})
             expect(neuron2.biasCache).to.equal(0)
         })
@@ -1607,8 +1696,8 @@ describe("Neuron", () => {
             expect(neuron2.biasCache).to.be.undefined
         })
 
-        it("Does not create the weightsCache or biasCache if the adaptiveLR is not RMSProp", () => {
-            neuron2.init(3, {adaptiveLR: "not RMSProp"})
+        it("Does not create the weightsCache or biasCache if the adaptiveLR is not rmsprop", () => {
+            neuron2.init(3, {adaptiveLR: "not rmsprop"})
             expect(neuron2.weightsCache).to.be.undefined
             expect(neuron2.biasCache).to.be.undefined
         })
@@ -1650,13 +1739,13 @@ describe("Neuron", () => {
             expect(neuron2.adadeltaCache).to.deep.equal([0,0,0])
         })
 
-        it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or RMSProp", () => {
+        it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or rmsprop", () => {
             neuron2.init(3, {adaptiveLR: "adagrad"})
             expect(neuron2.adadeltaCache).to.be.undefined
             expect(neuron2.adadeltaBiasCache).to.be.undefined
             const neuron3 = new Neuron()
             neuron3.weights = [...new Array(3)].map(v => Math.random()*0.2-0.1)
-            neuron3.init(3, {adaptiveLR: "RMSProp"})
+            neuron3.init(3, {adaptiveLR: "rmsprop"})
             expect(neuron3.adadeltaCache).to.be.undefined
             expect(neuron3.adadeltaBiasCache).to.be.undefined
         })
@@ -1793,8 +1882,8 @@ describe("Netmath", () => {
     })
 
     describe("Cross Entropy", () => {
-        it("crossEntropy([1,0,0.3], [0,1, 0.8]) == 70.16654147569186", () => {
-            expect(NetMath.crossEntropy([1,0,0.3], [0,1, 0.8])).to.equal(70.16654147569186)
+        it("crossentropy([1,0,0.3], [0,1, 0.8]) == 70.16654147569186", () => {
+            expect(NetMath.crossentropy([1,0,0.3], [0,1, 0.8])).to.equal(70.16654147569186)
         })
     })
 
@@ -1805,14 +1894,14 @@ describe("Netmath", () => {
     })
 
     describe("Mean Squared Error", () => {
-        it("meanSquaredError([13,17,18,20,24], [12,15,20,22,24]) == 2.6", () => {
-            expect(NetMath.meanSquaredError([13,17,18,20,24], [12,15,20,22,24])).to.equal(2.6)
+        it("meansquarederror([13,17,18,20,24], [12,15,20,22,24]) == 2.6", () => {
+            expect(NetMath.meansquarederror([13,17,18,20,24], [12,15,20,22,24])).to.equal(2.6)
         })
     })
 
-    describe("noAdaptiveLR", () => {
+    describe("noadaptivelr", () => {
 
-        const fn = NetMath.noAdaptiveLR.bind({learningRate: 0.5})
+        const fn = NetMath.noadaptivelr.bind({learningRate: 0.5})
 
         it("Increments a weight with half of its delta weight when the learning rate is 0.5", () => {
             expect(fn(10, 10)).to.equal(15)
@@ -1930,28 +2019,28 @@ describe("Netmath", () => {
         })
     })
 
-    describe("RMSProp", () => {
+    describe("rmsprop", () => {
         let neuron
 
         beforeEach(() => neuron = new Neuron())
 
         it("Sets the cache value to the correct formula", () => {
             neuron.biasCache = 10
-            NetMath.RMSProp.bind({learningRate: 2, rmsDecay: 0.99}, 1, 3, neuron)()
+            NetMath.rmsprop.bind({learningRate: 2, rmsDecay: 0.99}, 1, 3, neuron)()
             expect(neuron.biasCache).to.equal(9.99) // 9.9 + 0.01 * 9
         })
 
-        it("Returns a new value matching the formula for RMSProp, using this new cache value", () => {
+        it("Returns a new value matching the formula for rmsprop, using this new cache value", () => {
             neuron.biasCache = 10
-            const result = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron)()
+            const result = NetMath.rmsprop.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron)()
             expect(result.toFixed(2)).to.equal("1.47") // 1 + 0.5 * 3 / 3.1607
         })
 
         it("Updates the weightsCache the same way as the biasCache", () => {
             neuron.weightsCache = [0, 1, 2]
-            const result1 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron, 0)()
-            const result2 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 4, neuron, 1)()
-            const result3 = NetMath.RMSProp.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 2, neuron, 2)()
+            const result1 = NetMath.rmsprop.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 3, neuron, 0)()
+            const result2 = NetMath.rmsprop.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 4, neuron, 1)()
+            const result3 = NetMath.rmsprop.bind({learningRate: 0.5, rmsDecay: 0.99}, 1, 2, neuron, 2)()
             expect(neuron.weightsCache[0].toFixed(2)).to.equal("0.09")
             expect(neuron.weightsCache[1].toFixed(2)).to.equal("1.15")
             expect(neuron.weightsCache[2].toFixed(2)).to.equal("2.02")
@@ -2144,100 +2233,100 @@ describe("Netmath", () => {
         })
     })
 
-    describe("lecunNormal", () => {
+    describe("lecunnormal", () => {
         it("Returns the same number of values as the size value given", () => {
-            const result = NetMath.lecunNormal(10, {fanIn: 5})
+            const result = NetMath.lecunnormal(10, {fanIn: 5})
             expect(result.length).to.equal(10)
         })
 
         it("The standard deviation of the weights is roughly 0.05 when the fanIn is 5", () => {
-            const result = NetMath.lecunNormal(1000, {fanIn: 5})
+            const result = NetMath.lecunnormal(1000, {fanIn: 5})
             const std = NetMath.standardDeviation(result)
             expect(Math.round(std*1000)/1000).to.be.at.most(0.60)
             expect(Math.round(std*1000)/1000).to.be.at.least(0.40)
         })
 
         it("The mean of the weights is roughly 0", () => {
-            const result = NetMath.lecunNormal(1000, {fanIn: 5})
+            const result = NetMath.lecunnormal(1000, {fanIn: 5})
             const mean = result.reduce((p,c) => p+c) / 1000
             expect(mean).to.be.at.most(0.1)
             expect(mean).to.be.at.least(-0.1)
         })
     })
 
-    describe("lecunUniform", () => {
+    describe("lecununiform", () => {
         it("Returns the same number of values as the size value given", () => {
-            const result = NetMath.lecunUniform(10, {fanIn: 5})
+            const result = NetMath.lecununiform(10, {fanIn: 5})
             expect(result.length).to.equal(10)
         })
 
         it("Weights are all between -0.5 and +0.5 when fanIn is 12", () => {
-            const result = NetMath.lecunUniform(1000, {fanIn: 12})
+            const result = NetMath.lecununiform(1000, {fanIn: 12})
             expect(result.every(w => w>=-0.5 && w<=0.5)).to.be.true
         })
 
         it("Inits some weights at values bigger |0.5| when fanIn is smaller (8)", () => {
-            const result = NetMath.lecunUniform(1000, {fanIn: 8})
+            const result = NetMath.lecununiform(1000, {fanIn: 8})
             expect(result.some(w => w<=-0.05 || w>=0.05)).to.be.true
         })
 
         it("Creates weights that are more or less uniform", () => {
-            const result = NetMath.lecunUniform(10000, {fanIn: 12})
+            const result = NetMath.lecununiform(10000, {fanIn: 12})
 
             const decData = {}
             result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
             const sorted = Object.keys(decData).map(k=>decData[k]).sort((a,b) => a<b)
-            expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
+            expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(210)
         })
     })
 
-    describe("xavierNormal", () => {
+    describe("xaviernormal", () => {
         it("Returns the same number of values as the size value given", () => {
-            const result = NetMath.xavierNormal(10, {fanIn: 5, fanOut: 10})
+            const result = NetMath.xaviernormal(10, {fanIn: 5, fanOut: 10})
             expect(result.length).to.equal(10)
         })
 
         it("The standard deviation of the weights is roughly 0.25 when the fanIn is 5 and fanOut is 25", () => {
-            const result = NetMath.xavierNormal(1000, {fanIn: 5, fanOut: 25})
+            const result = NetMath.xaviernormal(1000, {fanIn: 5, fanOut: 25})
             const std = NetMath.standardDeviation(result)
             expect(Math.round(std*1000)/1000).to.be.at.most(0.3)
             expect(Math.round(std*1000)/1000).to.be.at.least(0.2)
         })
 
         it("The mean of the weights is roughly 0", () => {
-            const result = NetMath.xavierNormal(1000, {fanIn: 5, fanOut: 25})
+            const result = NetMath.xaviernormal(1000, {fanIn: 5, fanOut: 25})
             const mean = result.reduce((p,c) => p+c) / 1000
             expect(mean).to.be.at.most(0.1)
             expect(mean).to.be.at.least(-0.1)
         })
 
-        it("Falls back to using lecunNormal if there is no fanOut available", () => {
-            sinon.spy(NetMath, "lecunNormal")
-            const result = NetMath.xavierNormal(10, {fanIn: 5})
-            expect(NetMath.lecunNormal).to.have.been.calledWith(10, {fanIn: 5})
+        it("Falls back to using lecunnormal if there is no fanOut available", () => {
+            sinon.spy(NetMath, "lecunnormal")
+            const result = NetMath.xaviernormal(10, {fanIn: 5})
+            expect(NetMath.lecunnormal).to.have.been.calledWith(10, {fanIn: 5})
             expect(result.length).to.equal(10)
-            NetMath.lecunNormal.restore()
+            NetMath.lecunnormal.restore()
         })
     })
 
-    describe("xavierUniform", () => {
+    describe("xavieruniform", () => {
         it("Returns the same number of values as the size value given", () => {
-            const result = NetMath.xavierUniform(10, {fanIn: 10})
+            const result = NetMath.xavieruniform(10, {fanIn: 10})
             expect(result.length).to.equal(10)
         })
 
         it("Weights are all between -0.5 and +0.5 when fanIn is 10 and fanOut is 15", () => {
-            const result = NetMath.xavierUniform(1000, {fanIn: 10, fanOut: 15})
+            const result = NetMath.xavieruniform(1000, {fanIn: 10, fanOut: 15})
             expect(result.every(w => w>=-0.5 && w<=0.5)).to.be.true
         })
 
         it("Inits some weights at values bigger |0.5| when fanIn+fanOut is smaller (5+5=10)", () => {
-            const result = NetMath.xavierUniform(1000, {fanIn: 5, fanOut: 5})
+            const result = NetMath.xavieruniform(1000, {fanIn: 5, fanOut: 5})
             expect(result.some(w => w<=-0.05 || w>=0.05)).to.be.true
         })
 
         it("Creates weights that are more or less uniform", () => {
-            const result = NetMath.xavierUniform(1000, {fanIn: 5, fanOut: 5})
+            const result = NetMath.xavieruniform(1000, {fanIn: 5, fanOut: 5})
 
             const decData = {}
             result.forEach(w => decData[Math.abs(w*10).toString()[0]] = (decData[Math.abs(w*10).toString()[0]]|0) + 1)
@@ -2245,12 +2334,12 @@ describe("Netmath", () => {
             expect(sorted[0] - sorted[sorted.length-1]).to.be.at.most(200)
         })
 
-        it("Falls back to using lecunNormal if there is no fanOut available", () => {
-            sinon.spy(NetMath, "lecunUniform")
-            const result = NetMath.xavierUniform(10, {fanIn: 5})
-            expect(NetMath.lecunUniform).to.have.been.calledWith(10, {fanIn: 5})
+        it("Falls back to using lecunnormal if there is no fanOut available", () => {
+            sinon.spy(NetMath, "lecununiform")
+            const result = NetMath.xavieruniform(10, {fanIn: 5})
+            expect(NetMath.lecununiform).to.have.been.calledWith(10, {fanIn: 5})
             expect(result.length).to.equal(10)
-            NetMath.lecunUniform.restore()
+            NetMath.lecununiform.restore()
         })
     })
 })

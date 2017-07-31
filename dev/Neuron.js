@@ -21,7 +21,7 @@ class Neuron {
                 break
 
             case "adagrad":
-            case "RMSProp":
+            case "rmsprop":
             case "adadelta":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)

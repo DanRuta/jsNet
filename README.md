@@ -102,6 +102,8 @@ const normalizedResults = NetMath.softmax(netResult)
 
 ## Configurations
 ---
+String configs are case/space/underscore insensitive.
+
 ### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
@@ -133,9 +135,10 @@ Learning rate is 0.2 by default, except when using the following configurations:
 ##### Examples
 ```javascript
 net = new Network({adaptiveLR: "adagrad"})
-net = new Network({adaptiveLR: "RMSProp", rmsDecay: 0.99})
+net = new Network({adaptiveLR: "RMS_Prop", rmsDecay: 0.99})
 net = new Network({adaptiveLR: "adadelta", rho: 0.95})
 ```
+
 ### Activation Function
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |

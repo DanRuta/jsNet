@@ -1,3 +1,11 @@
+# Upcoming
+---
+#### Network
+- Made string configs (activation, adaptiveLR, cost, distribution) case/underscore/space insensitive.
+
+#### NetMath
+- Breaking change: Made config functions' names lower case
+
 # 1.4.0 - Weights Initialization
 ---
 #### Network
@@ -52,6 +60,7 @@
 - Added adagrad as adaptiveLR configuration
 - Added gain as adaptiveLR configuration
 - Added Mean Squared Error cost function
+
 # v1.0.0
 ----
 Initial release

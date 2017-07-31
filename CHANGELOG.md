@@ -1,4 +1,4 @@
-# Upcoming - Weights Initialization
+# 1.4.0 - Weights Initialization
 ---
 #### Network
 - Reworked current weights initialization to be configurable

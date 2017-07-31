@@ -189,21 +189,26 @@ net = new Network({weightsConfig: {
     stdDeviation: 1
 }})
 net = new Network({weightsConfig: {distribution: "xavierNormal"}})
+net = new Network({weightsConfig: {distribution: "lecunUniform"}})
 ```
+
+Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, where there is no fanOut to use.
+
 ## Future plans
 ---
 More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
 
 ##### Short term
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, etc. Check the changelog for details. Next up is proper weights initialization, batch norm, mini batch SGD, etc.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up is mini batch SGD and some general library improvement ideas I've logged along the way.
+
+##### Mid term
+Conv, Pool and BatchNorm layers.
 
 ##### Long term
-Keeping the same level of ease of use in mind, I will add Conv and Pool layers.
-
 Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
 
 ## Contributing
 ---
-Always looking for feedback, suggestions and ideas.
+Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.

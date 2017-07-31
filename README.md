@@ -114,7 +114,11 @@ String configs are case/space/underscore insensitive.
 ```javascript
 net = new Network({learningRate: 0.2})
 net = new Network({cost: "crossEntropy"})
+net = new Network({cost: (target, output) => ...})
 ```
+
+You can set custom cost functions. They are given the iteration's expected output as the first parameter and the actual output as the second parameter, and they need to return a single number.
+
 Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value| 
@@ -158,7 +162,8 @@ You can set your own activation functions. They are given as parameters:
 - If the function should calculate the prime (during back prop) - boolean
 - A reference to the neuron being activated. 
 
-The network is bound as the function's scope, meaning you can access its data through ```this```. 
+The network is bound as the function's scope, meaning you can access its data through ```this```.
+The function needs to return a single number.
 
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |

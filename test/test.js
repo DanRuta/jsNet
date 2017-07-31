@@ -454,6 +454,13 @@ describe("Network", () => {
             expect(net.activation).to.equal(customActivation)
             expect(net.activation("test")).to.equal("test")
         })
+
+        it("Allows setting a custom cost function", () => {
+            const customCost = x => x
+            const net = new Network({cost: customCost})
+            expect(net.cost).to.equal(customCost)
+            expect(net.cost("test")).to.equal("test")
+        })
     })
 
     describe("initLayers", () => {

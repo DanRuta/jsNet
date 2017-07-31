@@ -72,7 +72,7 @@ class Network {
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
-        this.cost = NetMath[cost]
+        this.cost = typeof cost=="function" ? cost : NetMath[cost]
 
         if(this.adaptiveLR=="rmsprop"){
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay

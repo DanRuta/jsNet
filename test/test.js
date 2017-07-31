@@ -461,6 +461,15 @@ describe("Network", () => {
             expect(net.cost).to.equal(customCost)
             expect(net.cost("test")).to.equal("test")
         })
+
+        it("Allows setting a custom weights distribution function", () => {
+            const customWD = x => [...new Array(x)]
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            const net = new Network({weightsConfig: {distribution: customWD}, layers: [layer1, layer2]})
+            expect(layer2.weightsConfig.distribution).to.equal(customWD)
+            expect(layer2.weightsConfig.distribution(10)).to.have.lengthOf(10)
+        })
     })
 
     describe("initLayers", () => {
@@ -2248,8 +2257,8 @@ describe("Netmath", () => {
         it("The mean of the weights is roughly 10 when set to 10", () => {
             const result = NetMath.gaussian(1000, {mean: 10, stdDeviation: 1})
             const mean = result.reduce((p,c) => p+c) / 1000
-            expect(mean).to.be.at.most(10.1)
-            expect(mean).to.be.at.least(9.9)
+            expect(mean).to.be.at.most(10.15)
+            expect(mean).to.be.at.least(9.85)
         })
     })
 

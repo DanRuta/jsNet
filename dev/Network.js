@@ -176,7 +176,12 @@ class Network {
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
-        layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
+
+        if(typeof layer.weightsConfig.distribution=="function") {
+            layer.weightsInitFn = layer.weightsConfig.distribution
+        } else {
+            layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
+        }
 
         if(this.rho!=undefined) {
             layer.rho = this.rho

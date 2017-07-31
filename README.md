@@ -206,9 +206,12 @@ net = new Network({weightsConfig: {
 }})
 net = new Network({weightsConfig: {distribution: "xavierNormal"}})
 net = new Network({weightsConfig: {distribution: "lecunUniform"}})
+net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
 
 Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, where there is no fanOut to use.
+
+You can set custom weights distribution functions. They are given as parameters the number of weights needed and the weightsConfig object, additionally containing a layer's fanIn and/or fanOut. It must return an array of weights.
 
 ## Future plans
 ---

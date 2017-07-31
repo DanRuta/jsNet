@@ -102,23 +102,17 @@ const normalizedResults = NetMath.softmax(netResult)
 
 ## Configurations
 ---
-#### Network
+### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
-| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
 | cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | crossEntropy |
-| rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
-| rho | Momentum for Adadelta | Any number | 0.95 |
-| lreluSlope | Slope for lrelu | Any number | 0.99 |
-| eluAlpha | Alpha value for ELU | Any number | 1 |
-| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
-| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
-| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
-| maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
-You can do elastic net regularization by including both l1 and l2 regularization configs.
+##### Examples
+```javascript
+net = new Network({learningRate: 0.2})
+net = new Network({cost: "crossEntropy"})
+```
 Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value| 
@@ -129,20 +123,92 @@ Learning rate is 0.2 by default, except when using the following configurations:
 | tanh, lecuntanh | activation | 0.001 |
 | relu, lrelu, rrelu, elu | activation | 0.01 |
 
+### Adaptive Learning Rate
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
+| rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
+| rho | Momentum for Adadelta | Any number | 0.95 |
+
+##### Examples
+```javascript
+net = new Network({adaptiveLR: "adagrad"})
+net = new Network({adaptiveLR: "RMSProp", rmsDecay: 0.99})
+net = new Network({adaptiveLR: "adadelta", rho: 0.95})
+```
+### Activation Function
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
+| lreluSlope | Slope for lrelu | Any number | 0.99 |
+| eluAlpha | Alpha value for ELU | Any number | 1 |
+
+##### Examples
+```javascript
+net = new Network({activation: "sigmoid"})
+net = new Network({activation: "lrelu", lreluSlope: 0.99})
+net = new Network({activation: "elu", eluAlpha: 1})
+```
+### Regularization
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
+| maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
+
+##### Examples
+```javascript
+net = new Network({dropout: 0.5})
+net = new Network({l1: 0.005})
+net = new Network({l2: 0.001})
+net = new Network({maxNorm: 1000})
+```
+
+You can do elastic net regularization by including both l1 and l2 regularization configs.
+
+### Weights Initialization
+You can specify configuration options for weights initialization via the weightsConfig object. The values below go in the weightsConfig object.
+
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| distribution | The distribution of the weights values in a neuron | uniform, gaussian, xavierNormal, lecunUniform, lecunNormal, xavierUniform | uniform |
+| limit | Used with uniform to dictate the maximum absolute value of the weight. 0 centered. | Any number | 0.1 |
+| mean| Used with gaussian to dictate the center value of the middle of the bell curve distribution | Any number | 0 |
+| stdDeviation | Used with gaussian to dictate the spread of the data. | Any number | 0.05 |
+
+##### Examples
+```javascript
+net = new Network({weightsConfig: {
+    distribution: "uniform",
+    limit: 0.1
+}})
+net = new Network({weightsConfig: {
+    distribution: "gaussian",
+    mean: 0,
+    stdDeviation: 1
+}})
+net = new Network({weightsConfig: {distribution: "xavierNormal"}})
+net = new Network({weightsConfig: {distribution: "lecunUniform"}})
+```
+
+Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, where there is no fanOut to use.
+
 ## Future plans
 ---
 More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
 
 ##### Short term
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, etc. Check the changelog for details. Next up is proper weights initialization, batch norm, mini batch SGD.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up is mini batch SGD and some general library improvement ideas I've logged along the way.
+
+##### Mid term
+Conv, Pool and BatchNorm layers.
 
 ##### Long term
-Keeping the same level of ease of use in mind, I will add Conv and Pool layers.
-
 Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
 
 ## Contributing
 ---
-Always looking for feedback, suggestions and ideas.
+Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.

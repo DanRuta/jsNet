@@ -13,12 +13,21 @@ class Layer {
     }
 
     assignPrev (layer) {
+
         this.prevLayer = layer
-        this.neurons.forEach(neuron => neuron.init(layer.size, {
-            adaptiveLR: this.adaptiveLR,
-            activationConfig: this.activationConfig,
-            eluAlpha: this.eluAlpha
-        }))
+        this.neurons.forEach(neuron => {
+
+            if(!neuron.imported) {
+                neuron.weights = this.weightsInitFn(layer.size, this.weightsConfig)
+                neuron.bias = Math.random()*0.2-0.1
+            }
+
+            neuron.init(layer.size, {
+                adaptiveLR: this.adaptiveLR,
+                activationConfig: this.activationConfig,
+                eluAlpha: this.eluAlpha
+            })
+        }) 
         this.state = "initialised"
     }
 
@@ -185,6 +194,44 @@ class NetMath {
         }
     }
 
+    // Weights init
+    static uniform (size, {limit}) {
+        return [...new Array(size)].map(v => Math.random()*2*limit-limit)
+    }
+
+    static gaussian (size, {mean, stdDeviation}) {
+        return [...new Array(size)].map(() => {
+            // Polar Box Muller
+            let x1, x2, r, y
+
+            do {
+                x1 = 2 * Math.random() -1
+                x2 = 2 * Math.random() -1
+                r = x1**2 + x2**2
+            } while (r >= 1 || !r)
+
+            return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
+        })
+    }
+
+    static xavierNormal (size, {fanIn, fanOut}) {
+        return fanOut || fanOut==0 ? NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(2/(fanIn+fanOut))})
+                                   : NetMath.lecunNormal(size, {fanIn})
+    }
+
+    static xavierUniform (size, {fanIn, fanOut}) {
+        return fanOut || fanOut==0 ? NetMath.uniform(size, {limit: Math.sqrt(6/(fanIn+fanOut))})
+                                   : NetMath.lecunUniform(size, {fanIn})
+    }    
+
+    static lecunNormal (size, {fanIn}) {
+        return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
+    }
+
+    static lecunUniform (size, {fanIn}) {
+        return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
+    }
+
     // Other
     static softmax (values) {
         const total = values.reduce((prev, curr) => prev+curr, 0)
@@ -193,6 +240,12 @@ class NetMath {
 
     static sech (value) {
         return (2*Math.exp(-value))/(1+Math.exp(-2*value))
+    }
+
+    static standardDeviation (arr) {
+        const avg = arr.reduce((p,c) => p+c) / arr.length
+        const diffs = arr.map(v => v - avg).map(v => v**2)
+        return Math.sqrt(diffs.reduce((p,c) => p+c) / diffs.length)
     }
 
     static maxNorm () {
@@ -220,7 +273,7 @@ typeof window=="undefined" && (global.NetMath = NetMath)
 class Network {
 
     constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -247,6 +300,7 @@ class Network {
             this.maxNormTotal = 0
         }
 
+        // Activation function / Learning Rate
         switch(true) {
 
             case adaptiveLR=="RMSProp":
@@ -297,6 +351,25 @@ class Network {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
+        // Weights distributiom
+        this.weightsConfig = {distribution: "uniform"}
+
+        if(weightsConfig != undefined) {
+            if(weightsConfig.distribution) {
+                this.weightsConfig.distribution = weightsConfig.distribution 
+            }
+        }
+
+        if(this.weightsConfig.distribution == "uniform") {
+            this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+
+        } else if(this.weightsConfig.distribution == "gaussian") {
+
+            this.weightsConfig.mean = weightsConfig.mean || 0
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
+        }
+
+        // Status
         if(layers.length) {
 
             switch(true) {
@@ -368,6 +441,10 @@ class Network {
         layer.activationConfig = this.activationConfig
         layer.dropout = this.dropout
 
+        layer.weightsConfig = {}
+        Object.assign(layer.weightsConfig, this.weightsConfig)
+        layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
+
         if(this.rho!=undefined) {
             layer.rho = this.rho
         }
@@ -385,6 +462,8 @@ class Network {
         }
 
         if(layerIndex) {
+            layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
+            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }
@@ -613,11 +692,6 @@ class Neuron {
     }
 
     init (size, {adaptiveLR, activationConfig, eluAlpha}={}) {
-        
-        if(!this.imported){
-            this.weights = [...new Array(size)].map(v => Math.random()*0.2-0.1)
-            this.bias = Math.random()*0.2-0.1
-        }
 
         this.deltaWeights = this.weights.map(v => 0)
 

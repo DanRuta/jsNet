@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -30,6 +30,7 @@ class Network {
             this.maxNormTotal = 0
         }
 
+        // Activation function / Learning Rate
         switch(true) {
 
             case adaptiveLR=="RMSProp":
@@ -80,6 +81,25 @@ class Network {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
+        // Weights distributiom
+        this.weightsConfig = {distribution: "uniform"}
+
+        if(weightsConfig != undefined) {
+            if(weightsConfig.distribution) {
+                this.weightsConfig.distribution = weightsConfig.distribution 
+            }
+        }
+
+        if(this.weightsConfig.distribution == "uniform") {
+            this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+
+        } else if(this.weightsConfig.distribution == "gaussian") {
+
+            this.weightsConfig.mean = weightsConfig.mean || 0
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
+        }
+
+        // Status
         if(layers.length) {
 
             switch(true) {
@@ -151,6 +171,10 @@ class Network {
         layer.activationConfig = this.activationConfig
         layer.dropout = this.dropout
 
+        layer.weightsConfig = {}
+        Object.assign(layer.weightsConfig, this.weightsConfig)
+        layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
+
         if(this.rho!=undefined) {
             layer.rho = this.rho
         }
@@ -168,6 +192,8 @@ class Network {
         }
 
         if(layerIndex) {
+            layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
+            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
         }

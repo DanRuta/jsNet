@@ -1,3 +1,19 @@
+# 1.4.0 - Weights Initialization
+---
+#### Network
+- Reworked current weights initialization to be configurable
+- Set old weights init to uniform distribution, with additional limit config
+- Added mean as weightsConfig option, for gaussian distribution
+- Added stdDeviation as weightsConfig option, for gaussian distribution
+
+#### NetMath
+- Added standardDeviation to NetMath
+- Added gaussian weights distribution
+- Added xavierNormal weights distribution
+- Added lecunUniform weights distribution
+- Added lecunNormal weights distribution
+- Added xavierUniform weights distribution
+  
 # v1.3.0 - Regularization
 ---
 #### Network

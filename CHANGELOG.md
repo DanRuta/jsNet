@@ -5,6 +5,7 @@
 - Allow custom activation functions to be configured
 - Allow custom cost functions to be configured
 - Allow custom weight distribution functions to be configured
+- Added time elapsed to training/testing logs and elapsed milliseconds to training callback
 
 #### NetMath
 - Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case

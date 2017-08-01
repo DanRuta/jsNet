@@ -1094,7 +1094,7 @@ describe("Network", () => {
             })
         })
 
-        it("Calls a given callback with an object containing keys: 'iterations', 'error' and 'input', for each iteration", () => {
+        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'error' and 'input', for each iteration", () => {
             sinon.stub(console, "warn")
 
             return net.train(testData, {callback: console.warn}).then(() => {
@@ -1103,6 +1103,7 @@ describe("Network", () => {
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("iterations"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("error"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
             })
         })
@@ -1140,9 +1141,9 @@ describe("Network", () => {
             })
         })
 
-        it("Logs to the console once for each epoch", () => {
+        it("Logs to the console once for each epoch, +1 at the end", () => {
             return net.train(testData, {epochs: 3}).then(() => {
-                expect(console.log.callCount).to.equal(3)
+                expect(console.log.callCount).to.equal(4)
             })
         })
 
@@ -1258,10 +1259,10 @@ describe("Network", () => {
             })
         })
 
-        it("Logs to the console once for each iteration", () => {
+        it("Logs to the console once for each iteration, +1 at the end", () => {
             sinon.spy(console, "log")
             return net.test(testData).then(() => {
-                expect(console.log.callCount).to.equal(4)
+                expect(console.log.callCount).to.equal(5)
                 console.log.restore()
             })
         })
@@ -1295,10 +1296,24 @@ describe("Network", () => {
             expect(result).to.equal("aabb")
         })
 
-        it("Only changes string parameters, returning anything else unchanged", () => {
-            expect(net.format(console.log)).to.equal(console.log)
-            expect(net.format(1)).to.equal(1)
-            expect(net.format(true)).to.equal(true)
+        it("Formats given milliseconds to milliseconds only when under a second", () => {
+            const testMils = 100
+            expect(net.format(testMils, "time")).to.equal("100ms")
+        })
+
+        it("Formats given milliseconds to seconds only when under a minute", () => {
+            const testMils = 10000
+            expect(net.format(testMils, "time")).to.equal("10s")
+        })
+
+        it("Formats given milliseconds to minutes and seconds only when under an hour", () => {
+            const testMils = 100000
+            expect(net.format(testMils, "time")).to.equal("1m 40s")
+        })
+
+        it("Formats given milliseconds to hours, minutes and seconds when over an hour", () => {
+            const testMils = 10000000
+            expect(net.format(testMils, "time")).to.equal("2h 46m 40s")
         })
     })
 })
@@ -2387,7 +2402,7 @@ describe("Netmath", () => {
     })
 
     describe("xavieruniform", () => {
-        
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.xavieruniform(10, {fanIn: 10})
             expect(result.length).to.equal(10)

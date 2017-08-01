@@ -4,7 +4,7 @@ class Network {
 
     constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="crossentropy", 
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
-        
+
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
@@ -250,6 +250,7 @@ class Network {
 
             let iterationIndex = 0
             let epochsCounter = 0
+            const startTime = Date.now()
 
             const doEpoch = () => {
                 this.epochs++
@@ -278,13 +279,14 @@ class Network {
                 this.applyDeltaWeights()
 
                 const iterationError = this.cost(target, output)
+                const elapsed = Date.now() - startTime
                 this.error += iterationError
 
                 if (typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
                         error: iterationError,
-                        input
+                        elapsed, input
                     })
                 }
 
@@ -296,12 +298,14 @@ class Network {
 
                 } else {
                     epochsCounter++
-                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`)
+                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
 
                     if (epochsCounter < epochs) {
                         doEpoch()
                     } else {
                         this.layers.forEach(layer => layer.state = "initialised")
+                        console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
                         resolve()
                     }
                 }
@@ -319,22 +323,27 @@ class Network {
             }
 
             let totalError = 0
-            let testIteration = 0
+            let iterationIndex = 0
+            const startTime = Date.now()
 
             const testInput = () => {
 
-                const output = this.forward(testSet[testIteration].input)
-                const target = testSet[testIteration].expected || testSet[testIteration].output
+                const output = this.forward(testSet[iterationIndex].input)
+                const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
 
                 totalError += this.cost(target, output)
 
-                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
+                console.log("Testing iteration", iterationIndex+1, totalError/(iterationIndex+1))
 
-                testIteration++
+                iterationIndex++
 
-                if (testIteration < testSet.length)
+                if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
-                else resolve(totalError/testSet.length)
+                } else {
+                    const elapsed = Date.now() - startTime
+                    console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                    resolve(totalError/testSet.length)
+                }
             }
             testInput()
         })
@@ -395,8 +404,34 @@ class Network {
         this.initLayers()
     }
 
-    format (string) {
-        return string && typeof string=="string" ? string.replace(/(_|\s)/g, "").toLowerCase() : string
+    format (value, type="string") {
+
+        switch (true) {
+
+            case type=="string" && typeof value=="string":
+                value = value.replace(/(_|\s)/g, "").toLowerCase()
+                break
+
+            case type=="time" && typeof value=="number":
+                const date = new Date(value)
+                const formatted = []
+
+                if (value < 1000) {
+                    formatted.push(`${date.getMilliseconds()}ms`)
+
+                } else {
+
+                    if (value >= 3600000) formatted.push(`${date.getHours()}h`)
+                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
+
+                    formatted.push(`${date.getSeconds()}s`)
+                }
+
+                value = formatted.join(" ")
+                break
+        }
+
+        return value
     }
 }
 

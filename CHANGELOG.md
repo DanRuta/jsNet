@@ -7,6 +7,7 @@
 - Allow custom weight distribution functions to be configured
 - Added time elapsed to training/testing logs and elapsed milliseconds to training callback
 - Added log option to training/testing to disable logging for each one
+- Added mini batch SGD training, and miniBatchSize config for .train() as its config
 
 #### NetMath
 - Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case
@@ -44,6 +45,7 @@
 #### Network
 - Added lreluSlope, for lrelu activation
 - Added eluAlpha, for elu activation
+
 #### NetMath
 - Added tanh activation function
 - Added relu activation function
@@ -59,6 +61,7 @@
 - Added rho as a network configuration
 - Added rmsDecay as a network configuration
 - Added adaptiveLR as a network configuration
+
 #### NetMath
 - Added adam as adaptiveLR configuration
 - Added RMSProp as adaptiveLR configuration

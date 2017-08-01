@@ -62,7 +62,7 @@ class Layer {
 
                 neuron.weights.forEach((weight, wi) => {
                     neuron.deltaWeights[wi] += (neuron.error * this.prevLayer.neurons[wi].activation) * 
-                                               (1 + ((this.l2||0)+(this.l1||0)) * neuron.deltaWeights[wi])
+                                               (1 + (((this.l2||0)+(this.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
                 })
 
                 neuron.deltaBias = neuron.error
@@ -448,6 +448,8 @@ class Network {
 
     joinLayer (layer, layerIndex) {
 
+        layer.net = this
+
         layer.activation = this.activation
         layer.adaptiveLR = this.adaptiveLR
         layer.activationConfig = this.activationConfig
@@ -511,7 +513,14 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true}={}) {
+    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1}={}) {
+
+        this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
+
+        if (log) {
+            console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
+        }
+
         return new Promise((resolve, reject) => {
             
             if (dataSet === undefined || dataSet === null) {
@@ -542,17 +551,21 @@ class Network {
             const doIteration = () => {
                 
                 if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
-                    return reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
-
-                this.resetDeltaWeights()
 
                 const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
                 this.backward(target)
-                this.applyDeltaWeights()
+
+                if (++iterationIndex%this.miniBatchSize==0) {
+                    this.applyDeltaWeights()
+                    this.resetDeltaWeights()
+                } else if (iterationIndex >= dataSet.length) {
+                    this.applyDeltaWeights()
+                }
 
                 const iterationError = this.cost(target, output)
                 const elapsed = Date.now() - startTime
@@ -567,7 +580,6 @@ class Network {
                 }
 
                 this.iterations++
-                iterationIndex++
 
                 if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
@@ -593,6 +605,7 @@ class Network {
                 }
             }
 
+            this.resetDeltaWeights()
             doEpoch()
         })
     }
@@ -623,7 +636,7 @@ class Network {
 
                 if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
-                    
+
                 } else {
                     const elapsed = Date.now() - startTime
 

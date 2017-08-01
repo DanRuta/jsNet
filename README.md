@@ -5,12 +5,15 @@ Network.js is promise based implementation of a (currently) basic neural network
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
-##  Usage
-
-I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
-
 ## Demo
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier
+
+##  Usage
+When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
+```javascript
+require("./Network.min.js") // This will put Network, Layer, NetMath and Neuron in global context
+```
+I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ### Constructing
 ---
@@ -78,6 +81,12 @@ net.train(training, {callback: doSomeStuff})
 You can turn off the logging by passing log: false in the options parameter.
 ```javascript
 net.train(training, {log: false})
+```
+###### Mini Batch Size
+You can use mini batch SGD training by specifying a mini batch size to use (changing it from the default, 1). You can set it to true, and it will default to how many classifications there are in the training data.
+
+```javascript
+net.train(training, {miniBatchSize: 10})
 ```
 
 ### Testing

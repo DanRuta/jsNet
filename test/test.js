@@ -688,6 +688,13 @@ describe("Network", () => {
             net.joinLayer(layer3, 2)
             expect(layer2.weightsConfig.fanOut).to.equal(4)
         })
+
+        it("Assigns a reference to the Network class to each layer", () => {
+            net.layers = [layer1]
+            layer1.weightsConfig = {}
+            net.joinLayer(layer2, 1)
+            expect(layer2.net).to.equal(net)
+        })
     })
 
     describe("forward", () => {
@@ -1022,6 +1029,18 @@ describe("Network", () => {
             {input: [1,0], output: [1, 0, 1, 0, 1]},
             {input: [1,1], expected: [1, 1, 0, 0, 1]}
         ]
+        const testDataX10 = [
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [1,1], expected: [1, 1]}
+        ]
 
         it("Returns a promise", () => {
             expect(net.train(testData)).instanceof(Promise)
@@ -1062,9 +1081,9 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the resetDeltaWeights function for each iteration", () => {
+        it("Calls the resetDeltaWeights function for each iteration, +1", () => {
             return net.train(testData).then(() => {
-                expect(net.resetDeltaWeights.callCount).to.equal(4)
+                expect(net.resetDeltaWeights.callCount).to.equal(5)
             })
         })
 
@@ -1141,9 +1160,9 @@ describe("Network", () => {
             })
         })
 
-        it("Logs to the console once for each epoch, +1 at the end", () => {
+        it("Logs to the console once for each epoch, +2 (for start/stop logs)", () => {
             return net.train(testData, {epochs: 3}).then(() => {
-                expect(console.log.callCount).to.equal(4)
+                expect(console.log.callCount).to.equal(5)
             })
         })
 
@@ -1198,6 +1217,32 @@ describe("Network", () => {
             net.l1Error = undefined
             return net.train(testData).then(() => {
                 expect(net.l1Error).to.be.undefined
+            })
+        })
+
+        it("Only applies the weight deltas for half the iterations when miniBatchSize is set to 2", () => {
+            return net.train(testData, {miniBatchSize: 2}).then(() => {
+                expect(net.applyDeltaWeights.callCount).to.equal(2)
+            })
+        })
+
+        it("Only resets weight deltas for half the iterations +1 when miniBatchSize is set to 2", () => {
+            return net.train(testData, {miniBatchSize: 2}).then(() => {
+                expect(net.resetDeltaWeights.callCount).to.equal(3)
+            })
+        })
+
+        it("Applies any left over calculated weights if finishing training part way to a mini batch (10 items, batch size 3)", () => {
+            return net.train(testDataX10, {miniBatchSize: 3}).then(() => {
+                expect(net.applyDeltaWeights.callCount).to.equal(4)
+                expect(net.resetDeltaWeights.callCount).to.equal(4)
+            })
+        })
+
+        it("If miniBatchSize is configured as true, it is defaulted to the number of classifications", () => {
+            return net.train(testData, {miniBatchSize: true}).then(() => {
+                expect(net.miniBatchSize).to.equal(2)
+                expect(console.log).to.be.calledWith(`Training started. Epochs: 1 Batch Size: 2`)
             })
         })
     })
@@ -1574,6 +1619,7 @@ describe("Layer", () => {
         it("For each neuron, it increments each of its delta weights with the respective weight's neuron's activation * this neuron's error", () => {
             layer2.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer3.net = {miniBatchSize: 1}
             layer3.backward([1,2,3,4])
             expect(layer3.neurons[0].deltaWeights).to.deep.equal([0.25, 0.25, 0.25])
         })
@@ -1639,6 +1685,7 @@ describe("Layer", () => {
                 neuron.activation = 0.25
             })
             layer3.l2 = 0.001
+            layer3.net = {miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006")
@@ -1651,9 +1698,32 @@ describe("Layer", () => {
                 neuron.activation = 0.25
             })
             layer3.l1 = 0.005
+            layer3.net = {miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275031")
+        })
+
+        it("Regularizes by a tenth as much when the miniBatchSize is configured as 10", () => {
+            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
+                neuron.activation = 0.25
+            })
+            layer3.l1 = 0.005
+            layer3.net = {miniBatchSize: 10}
+
+            layer3.backward([0.3, 0.3, 0.3, 0.3])
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275003")
+
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
+                neuron.activation = 0.25
+            })
+            layer3.l2 = 0.001
+            layer3.l1 = 0
+            layer3.backward([0.3, 0.3, 0.3, 0.3])
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275001")
         })
     })
 })

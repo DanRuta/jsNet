@@ -60,14 +60,18 @@ class NetMath {
 
         const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.weightGains[weightI])
 
-        if(newVal<=0 && value>0 || newVal>=0 && value<0){
-            if(weightI!=null)
-                 neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
-            else neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
-        }else {
-            if(weightI!=null)
-                 neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
-            else neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
+        if (newVal<=0 && value>0 || newVal>=0 && value<0){
+            if (weightI!=null) {
+                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+            } else {
+                neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
+            }
+        } else {
+            if (weightI!=null) {
+                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+            } else {
+                neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
+            }
         }
 
         return newVal
@@ -75,9 +79,11 @@ class NetMath {
 
     static adagrad (value, deltaValue, neuron, weightI) {
 
-        if(weightI!=null)
-             neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
-        else neuron.biasCache += Math.pow(deltaValue, 2)
+        if (weightI!=null) {
+            neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
+        } else {
+            neuron.biasCache += Math.pow(deltaValue, 2)
+        }
 
         return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
                                                                                         : neuron.biasCache))
@@ -85,9 +91,11 @@ class NetMath {
 
     static rmsprop (value, deltaValue, neuron, weightI) {
 
-        if(weightI!=null)
-             neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
-        else neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+        if (weightI!=null) {
+            neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+        } else {
+            neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+        }
 
         return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
                                                                                         : neuron.biasCache))
@@ -106,13 +114,13 @@ class NetMath {
 
     static adadelta (value, deltaValue, neuron, weightI) {
 
-        if(weightI!=null) {
+        if (weightI!=null) {
             neuron.weightsCache[weightI] = this.rho * neuron.weightsCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
             const newVal = value + Math.sqrt((neuron.adadeltaCache[weightI] + 1e-6)/(neuron.weightsCache[weightI] + 1e-6)) * deltaValue
             neuron.adadeltaCache[weightI] = this.rho * neuron.adadeltaCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
             return newVal
 
-        }else {
+        } else {
             neuron.biasCache = this.rho * neuron.biasCache + (1-this.rho) * Math.pow(deltaValue, 2)
             const newVal = value + Math.sqrt((neuron.adadeltaBiasCache + 1e-6)/(neuron.biasCache + 1e-6)) * deltaValue
             neuron.adadeltaBiasCache = this.rho * neuron.adadeltaBiasCache + (1-this.rho) * Math.pow(deltaValue, 2)
@@ -176,15 +184,13 @@ class NetMath {
 
     static maxNorm () {
 
-        if(this.maxNormTotal > this.maxNorm) {
+        if (this.maxNormTotal > this.maxNorm) {
 
             const multiplier = this.maxNorm / (1e-18 + this.maxNormTotal)
 
             this.layers.forEach((layer, li) => {
                 li && layer.neurons.forEach(neuron => {
-                    neuron.weights.forEach((w, wi) => {
-                        neuron.weights[wi] *= multiplier
-                    })
+                    neuron.weights.forEach((w, wi) => neuron.weights[wi] *= multiplier)
                 })
             })
         }

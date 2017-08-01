@@ -710,7 +710,6 @@ describe("Network", () => {
             console.warn.restore()
         })
 
-
         it("Sets the activation of all input neurons to the value of the input", () => {
             const net = new Network({layers: [new Layer(3)]})
             net.forward([1,2,3])
@@ -749,6 +748,7 @@ describe("Network", () => {
     })
 
     describe("backward", () => {
+
         it("Throws an error if called with no data", () => {
             const net = new Network({layers: [new Layer(3)]})
             expect(net.backward.bind(net)).to.throw("No data passed to Network.backward()")
@@ -780,6 +780,7 @@ describe("Network", () => {
     })
 
     describe("resetDeltaWeights", () => {
+
         it("Sets the delta weights of all neurons to 0", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(2)
@@ -793,6 +794,7 @@ describe("Network", () => {
     })
 
     describe("applyDeltaWeights", () => {
+
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
@@ -890,6 +892,7 @@ describe("Network", () => {
     })
 
     describe("toJSON", () => {
+
         const layer1 = new Layer(2)
         const layer2 = new Layer(3)
         const net = new Network({layers: [layer1, layer2], activation: "sigmoid"})
@@ -923,6 +926,7 @@ describe("Network", () => {
     })
 
     describe("fromJSON", () => {
+
         const testData = {
             layers: [
                 {
@@ -1301,6 +1305,7 @@ describe("Network", () => {
 
 describe("Layer", () => {
     describe("Constructor", () => {
+
         it("Can create a new Layer with no parameters", () => expect(new Layer()).instanceof(Layer))
 
         it("Creates a list of neurons with the size given as parameter", () => {
@@ -1797,27 +1802,34 @@ describe("Neuron", () => {
 describe("Netmath", () => {
 
     describe("Sigmoid", () => {
+
         it("sigmoid(1.681241237) == 0.8430688214048092", () => {
             expect(NetMath.sigmoid(1.681241237)).to.equal(0.8430688214048092)
         })
+
         it("sigmoid(0.8430688214048092, true) == 0.21035474941074114", () => {
             expect(NetMath.sigmoid(0.8430688214048092, true)).to.equal(0.21035474941074114)
         })
     })
 
     describe("Tanh", () => {
+
         it("tanh(1)==0.7615941559557649", () => {
             expect(NetMath.tanh(1)).to.equal(0.7615941559557649)
         })
+
         it("tanh(0.5)==0.46211715726000974", () => {
             expect(NetMath.tanh(0.5)).to.equal(0.46211715726000974)
         })
+
         it("tanh(0.5, true)==0.7864477329659275", () => {
             expect(NetMath.tanh(0.5, true)).to.equal(0.7864477329659275)
         })
+
         it("tanh(1.5, true)==0.18070663892364855", () => {
             expect(NetMath.tanh(1.5, true)).to.equal(0.18070663892364855)
         })
+
         it("Doesn't return NaN if the input value is too high", () => {
             expect(NetMath.tanh(900)).to.not.be.NaN
             expect(NetMath.tanh(900, true)).to.not.be.NaN
@@ -1825,75 +1837,94 @@ describe("Netmath", () => {
     })
 
     describe("relu", () => {
+
         it("relu(2)==2", () => {
             expect(NetMath.relu(2)).to.equal(2)
         })
+
         it("relu(-2)==0", () => {
             expect(NetMath.relu(-2)).to.equal(0)
         })
+
         it("relu(2, true)==1", () => {
             expect(NetMath.relu(2, true)).to.equal(1)
         })
+
         it("relu(-2, true)==0", () => {
             expect(NetMath.relu(-2, true)).to.equal(0)
         })
     })
 
     describe("rrelu", () => {
+
         it("rrelu(2, false, {rreluSlope: 0.0005})==2", () => {
             expect(NetMath.rrelu(2, false, {rreluSlope: 0.0005})).to.equal(2)
         })
+
         it("rrelu(-2, false, {rreluSlope: 0.0005})==0", () => {
             expect(NetMath.rrelu(-2, false, {rreluSlope: 0.0005})).to.equal(0.0005)
         })
+
         it("rrelu(2, true, {rreluSlope: 0.0005})==1", () => {
             expect(NetMath.rrelu(2, true, {rreluSlope: 0.0005})).to.equal(1)
         })
+
         it("rrelu(-2, true, {rreluSlope: 0.0005})==0", () => {
             expect(NetMath.rrelu(-2, true, {rreluSlope: 0.0005})).to.equal(0.0005)
         })
     })
 
     describe("lrelu", () => {
+
         it("lrelu(2)==2", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, 2)()).to.equal(2)
         })
+
         it("lrelu(-2)==-0.001", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2)()).to.equal(-0.001)
         })
+
         it("lrelu(2, true)==1", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, 2, true)()).to.equal(1)
         })
+
         it("lrelu(-2, true)==0", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2, true)()).to.equal(-0.0005)
         })
     })
 
     describe("sech", () => {
+
         it("sech(1)==0.6480542736638853", () => {
             expect(NetMath.sech(1)).to.equal(0.6480542736638853)
         })
+
         it("sech(-0.5)==0.886818883970074", () => {
             expect(NetMath.sech(-0.5)).to.equal(0.886818883970074)
         })
     })
 
     describe("lecuntanh", () => {
+
         it("lecuntanh(2)==1.4929388053842507", () => {
             expect(NetMath.lecuntanh(2)).to.equal(1.4929388053842507)
         })
+
         it("lecuntanh(-2)==-1.4929388053842507", () => {
             expect(NetMath.lecuntanh(-2)).to.equal(-1.4929388053842507)
         })
+
         it("lecuntanh(2, true)==0.2802507761872869", () => {
             expect(NetMath.lecuntanh(2, true)).to.equal(0.2802507761872869)
         })
+
         it("lecuntanh(-2, true)==0.2802507761872869", () => {
             expect(NetMath.lecuntanh(-2, true)).to.equal(0.2802507761872869)
         })
     })
 
     describe("elu", () => {
+
         it("elu(2)==2", () => {
             expect(NetMath.elu.bind(null, 2, false, {eluAlpha: 1})()).to.equal(2)
         })
@@ -1905,24 +1936,28 @@ describe("Netmath", () => {
         it("elu(2, true)==1", () => {
             expect(NetMath.elu.bind(null, 2, true, {eluAlpha: 1})()).to.equal(1)
         })
+
         it("elu(-0.5, true)==0.6065306597126334", () => {
             expect(NetMath.elu.bind(null, -0.5, true, {eluAlpha: 1})()).to.equal(0.6065306597126334)
         })
     })
 
     describe("Cross Entropy", () => {
+
         it("crossentropy([1,0,0.3], [0,1, 0.8]) == 70.16654147569186", () => {
             expect(NetMath.crossentropy([1,0,0.3], [0,1, 0.8])).to.equal(70.16654147569186)
         })
     })
 
     describe("Softmax", () => {
+
         it("softmax([23, 54, 167, 3]) == [0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251]", () => {
             expect(NetMath.softmax([23, 54, 167, 3])).to.deep.equal([0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251])
         })
     })
 
     describe("Mean Squared Error", () => {
+
         it("meansquarederror([13,17,18,20,24], [12,15,20,22,24]) == 2.6", () => {
             expect(NetMath.meansquarederror([13,17,18,20,24], [12,15,20,22,24])).to.equal(2.6)
         })
@@ -1950,11 +1985,13 @@ describe("Netmath", () => {
             const result = NetMath.gain.bind({learningRate: 1}, 10, 5, neuron)()
             expect(result).to.equal(20)
         })
+
         it("Halves a value when the learning rate is 0.1 and gain is -5", () => {
             neuron.biasGain = -5
             const result = NetMath.gain.bind({learningRate: 0.1}, 5, 5, neuron)()
             expect(result).to.equal(2.5)
         })
+
         it("Increments a neuron's bias gain by 0.05 when the bias value doesn't change sign", () => {
             const fakeThis = {
                 learningRate: 1
@@ -1964,6 +2001,7 @@ describe("Netmath", () => {
             NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(1.05)
         })
+
         it("Does not increase the gain to more than 5", () => {
             const fakeThis = {
                 learningRate: 1
@@ -1973,6 +2011,7 @@ describe("Netmath", () => {
             NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(5)
         })
+
         it("Multiplies a neuron's bias gain by 0.95 when the value changes sign", () => {
             const fakeThis = {
                 learningRate: -10
@@ -1982,6 +2021,7 @@ describe("Netmath", () => {
             NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(0.95)
         })
+
         it("Does not reduce the bias gain to less than 0.5", () => {
             const fakeThis = {
                 learningRate: -10
@@ -1991,6 +2031,7 @@ describe("Netmath", () => {
             NetMath.gain.bind(fakeThis, 0.1, 1, neuron)()
             expect(neuron.biasGain).to.equal(0.5)
         })
+
         it("Increases weight gain the same way as the bias gain", () => {
             const fakeThis = {
                 learningRate: 1
@@ -2002,6 +2043,7 @@ describe("Netmath", () => {
             expect(neuron.weightGains[0]).to.equal(1.05)
             expect(neuron.weightGains[1]).to.equal(5)
         })
+
         it("Decreases weight gain the same way as the bias gain", () => {
             const fakeThis = {
                 learningRate: -10
@@ -2196,6 +2238,7 @@ describe("Netmath", () => {
     })
 
     describe("uniform", () => {
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.uniform(10, {limit: 0.1})
             expect(result.length).to.equal(10)
@@ -2222,12 +2265,14 @@ describe("Netmath", () => {
     })
 
     describe("standardDeviation", () => {
+
         it("Returns 6.603739470936145 for [3,5,7,8,5,25,8,4]", () => {
             expect(NetMath.standardDeviation([3,5,7,8,5,25,8,4])).to.equal(6.603739470936145)
         })
     })
 
     describe("gaussian", () => {
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.gaussian(10, {mean: 0, stdDeviation: 1})
             expect(result.length).to.equal(10)
@@ -2263,6 +2308,7 @@ describe("Netmath", () => {
     })
 
     describe("lecunnormal", () => {
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.lecunnormal(10, {fanIn: 5})
             expect(result.length).to.equal(10)
@@ -2284,6 +2330,7 @@ describe("Netmath", () => {
     })
 
     describe("lecununiform", () => {
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.lecununiform(10, {fanIn: 5})
             expect(result.length).to.equal(10)
@@ -2310,6 +2357,7 @@ describe("Netmath", () => {
     })
 
     describe("xaviernormal", () => {
+
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.xaviernormal(10, {fanIn: 5, fanOut: 10})
             expect(result.length).to.equal(10)
@@ -2339,6 +2387,7 @@ describe("Netmath", () => {
     })
 
     describe("xavieruniform", () => {
+        
         it("Returns the same number of values as the size value given", () => {
             const result = NetMath.xavieruniform(10, {fanIn: 10})
             expect(result.length).to.equal(10)

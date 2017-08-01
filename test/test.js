@@ -1147,6 +1147,12 @@ describe("Network", () => {
             })
         })
 
+        it("Does not log anything to the console if the log option is set to false", () => {
+            return net.train(testData, {log: false}).then(() => {
+                expect(console.log).to.not.be.called
+            })
+        })
+
         it("Sets all layer states to training during training", () => {
             return net.train(testData, {epochs: 1, callback: () => {
                 expect(net.layers[0].state).to.equal("training")
@@ -1263,6 +1269,14 @@ describe("Network", () => {
             sinon.spy(console, "log")
             return net.test(testData).then(() => {
                 expect(console.log.callCount).to.equal(5)
+                console.log.restore()
+            })
+        })
+
+        it("Does not log anything to the console if the log option is set to false", () => {
+            sinon.spy(console, "log")
+            return net.test(testData, {log: false}).then(() => {
+                expect(console.log).to.not.be.called
                 console.log.restore()
             })
         })

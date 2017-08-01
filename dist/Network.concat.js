@@ -511,7 +511,7 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback}={}) {
+    train (dataSet, {epochs=1, callback, log=true}={}) {
         return new Promise((resolve, reject) => {
             
             if (dataSet === undefined || dataSet === null) {
@@ -574,14 +574,20 @@ class Network {
 
                 } else {
                     epochsCounter++
-                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
+
+                    if (log) {
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                    `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
+                    }
 
                     if (epochsCounter < epochs) {
                         doEpoch()
                     } else {
                         this.layers.forEach(layer => layer.state = "initialised")
-                        console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+
+                        if (log) {
+                            console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                        }
                         resolve()
                     }
                 }
@@ -591,7 +597,7 @@ class Network {
         })
     }
 
-    test (testSet) {
+    test (testSet, {log=true}={}) {
         return new Promise((resolve, reject) => {
 
             if (testSet === undefined || testSet === null) {
@@ -609,15 +615,22 @@ class Network {
 
                 totalError += this.cost(target, output)
 
-                console.log("Testing iteration", iterationIndex+1, totalError/(iterationIndex+1))
+                if (log) {
+                    console.log("Testing iteration", iterationIndex+1, totalError/(iterationIndex+1))
+                }
 
                 iterationIndex++
 
                 if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
+                    
                 } else {
                     const elapsed = Date.now() - startTime
-                    console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+
+                    if (log) {
+                        console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                    }
+
                     resolve(totalError/testSet.length)
                 }
             }

@@ -49,7 +49,7 @@ The default values are values I have found produced good results in the datasets
 ----
 
 
-The data structure must (currently) be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
+The data structure must be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
 ```javascript
 {input: [1,0,0.2], expected: [1, 2]}
 {input: [1,0,0.2], output: [1, 2]}
@@ -62,7 +62,23 @@ const net = new Network()
 net.train(training) // This on its own is enough
 .then(() => console.log("done")) // This resolves a promise, meaning you can add further code here (eg testing)
 ```
-You can also provide a callback, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, and the input data for that iteration. 
+##### Options
+###### Epochs
+By default, this is ```1``` and represents how many times the data passed will be used.
+```javascript
+net.train(training, {epochs: 5}) // This will run through the training data 5 times
+```
+###### Callback
+You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+```javascript
+const doSomeStuff = ({iterations, error, elapsed, input}) => ....
+net.train(training, {callback: doSomeStuff})
+```
+###### Log
+You can turn off the logging by passing log: false in the options parameter.
+```javascript
+net.train(training, {log: false})
+```
 
 ### Testing
 ---
@@ -73,6 +89,13 @@ net.train(training).then(() => net.test(test))
 ```
 The network will log the testing iteration and the error. This also resolves a promise, with the average test error percentage.
 
+##### Options
+###### Log
+You can turn off the logging by passing log: false in the options parameter.
+```javascript
+const {training, test} = mnist.set(800, 200)
+net.train(training).then(() => net.test(test, {log: false}))
+```
 ### Exporting
 ---
 Layer and weights data is exported as a JSON object.

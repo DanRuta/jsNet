@@ -18,14 +18,14 @@ class Layer {
         this.neurons.forEach(neuron => {
 
             if (!neuron.imported) {
-                neuron.weights = this.weightsInitFn(layer.size, this.weightsConfig)
+                neuron.weights = this.net.weightsInitFn(layer.size, this.weightsConfig)
                 neuron.bias = Math.random()*0.2-0.1
             }
 
             neuron.init(layer.size, {
-                adaptiveLR: this.adaptiveLR,
-                activationConfig: this.activationConfig,
-                eluAlpha: this.eluAlpha
+                adaptiveLR: this.net.adaptiveLR,
+                activationConfig: this.net.activationConfig,
+                eluAlpha: this.net.eluAlpha
             })
         }) 
         this.state = "initialised"
@@ -35,12 +35,12 @@ class Layer {
 
         this.neurons.forEach((neuron, ni) => {
 
-            if (this.state=="training" && (neuron.dropped = Math.random() > this.dropout)) {
+            if (this.state=="training" && (neuron.dropped = Math.random() > this.net.dropout)) {
                 neuron.activation = 0
             } else {
                 neuron.sum = neuron.bias
                 this.prevLayer.neurons.forEach((pNeuron, pni) => neuron.sum += pNeuron.activation * neuron.weights[pni])
-                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.dropout|1)
+                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.net.dropout|1)
             }
         })
     }
@@ -62,7 +62,7 @@ class Layer {
 
                 neuron.weights.forEach((weight, wi) => {
                     neuron.deltaWeights[wi] += (neuron.error * this.prevLayer.neurons[wi].activation) * 
-                                               (1 + (((this.l2||0)+(this.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
+                                               (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
                 })
 
                 neuron.deltaBias = neuron.error

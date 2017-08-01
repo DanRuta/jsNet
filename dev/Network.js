@@ -105,6 +105,12 @@ class Network {
             this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
         }
 
+        if (typeof this.weightsConfig.distribution=="function") {
+            this.weightsInitFn = this.weightsConfig.distribution
+        } else {
+            this.weightsInitFn = NetMath[this.weightsConfig.distribution]
+        }
+
         // Status
         if (layers.length) {
 
@@ -173,25 +179,10 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-
         layer.activation = this.activation
-        layer.adaptiveLR = this.adaptiveLR
-        layer.activationConfig = this.activationConfig
-        layer.dropout = this.dropout
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
-
-        if (typeof layer.weightsConfig.distribution=="function") {
-            layer.weightsInitFn = layer.weightsConfig.distribution
-        } else {
-            layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
-        }
-
-        if (this.rho!=undefined)      layer.rho = this.rho
-        if (this.eluAlpha!=undefined) layer.eluAlpha = this.eluAlpha
-        if (this.l2!=undefined)       layer.l2 = this.l2
-        if (this.l1!=undefined)       layer.l1 = this.l1
 
         if (layerIndex) {
             layer.weightsConfig.fanIn = this.layers[layerIndex-1].size

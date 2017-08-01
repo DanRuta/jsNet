@@ -569,13 +569,6 @@ describe("Network", () => {
             expect(layer1.activation).to.equal("test")
         })
 
-        it("Assigns the network's adaptiveLR config string to the layer", () => {
-            net.layers = [layer1]
-            net.adaptiveLR = "test"
-            net.joinLayer(layer1)
-            expect(layer1.adaptiveLR).to.equal("test")
-        })
-
         it("Assigns layer2 to layer1's next layer", () => {
             net.layers = [layer1, layer2]
             net.joinLayer(layer1, 0)
@@ -590,13 +583,6 @@ describe("Network", () => {
             expect(layer2.prevLayer).to.equal(layer1)
         })
 
-        it("Assigns the network's rho value to the layer, if it exists", () => {
-            net.layers = [layer1]
-            net.rho = "test"
-            net.joinLayer(layer1)
-            expect(layer1.rho).to.equal("test")
-        })
-
         it("Does not set the network's rho value to the layer if it does not exist", () => {
             net.layers = [layer1]
             net.rho = undefined
@@ -604,74 +590,11 @@ describe("Network", () => {
             expect(layer1.rho).to.be.undefined
         })
 
-        it("Sets the layer's activationConfig to the net.activationConfig", () => {
-            net.layers = [layer1]
-            net.activationConfig = "test"
-            net.joinLayer(layer1)
-            expect(layer1.activationConfig).to.equal("test")
-        })
-
-        it("Assigns the network's eluAlpha value to the layer, if it exists", () => {
-            net.layers = [layer1]
-            net.eluAlpha = "test"
-            net.joinLayer(layer1)
-            expect(layer1.eluAlpha).to.equal("test")
-        })
-
-        it("Does not set the network's eluAlpha value to the layer if it does not exist", () => {
-            net.layers = [layer1]
-            net.eluAlpha = undefined
-            net.joinLayer(layer1)
-            expect(layer1.eluAlpha).to.be.undefined
-        })
-
-        it("Assigns the network dropout value to the layer", () => {
-            net.layers = [layer1]
-            net.dropout = 0.5
-            net.joinLayer(layer1)
-            expect(layer1.dropout).to.equal(0.5)
-        })
-
-        it("Sets the layer l2 to the net.l2, if it was configured", () => {
-            net.layers = [layer1]
-            net.l2 = 0.001
-            net.joinLayer(layer1)
-            expect(layer1.l2).to.equal(0.001)
-        })
-
-        it("Does not set the layer.l2 to anything if the net.l2 was not configured", () => {
-            net.layers = [layer1]
-            net.l2 = undefined
-            net.joinLayer(layer1)
-            expect(layer1.l2).to.be.undefined
-        })
-
-        it("Sets the layer l1 to the net.l1, if it was configured", () => {
-            net.layers = [layer1]
-            net.l1 = 0.001
-            net.joinLayer(layer1)
-            expect(layer1.l1).to.equal(0.001)
-        })
-
-        it("Does not set the layer.l1 to anything if the net.l1 was not configured", () => {
-            net.layers = [layer1]
-            net.l1 = undefined
-            net.joinLayer(layer1)
-            expect(layer1.l1).to.be.undefined
-        })
-
         it("Sets the layer.weightsConfig to the net.weightsConfig", () => {
             net.layers = [layer1]
             net.weightsConfig = {test: "stuff"}
             net.joinLayer(layer1)
             expect(layer1.weightsConfig).to.have.key("test")
-        })
-
-        it("Sets the layer.weightsInitFn to NetMath[weightsConfig.distribution]", () => {
-            net.layers = [layer1]
-            net.weightsConfig = {distribution: "uniform"}
-            net.joinLayer(layer1)
-            expect(layer1.weightsInitFn).to.equal(NetMath.uniform)
         })
 
         it("Assigns the layer2 weightsConfig.fanIn to the number of neurons in layer1", () => {
@@ -1414,8 +1337,8 @@ describe("Layer", () => {
         beforeEach(() => {
             layer1 = new Layer(2)
             layer2 = new Layer(2)
-            layer2.weightsInitFn = NetMath.uniform
             layer2.weightsConfig = {limit: 0.1}
+            layer2.net = {weightsInitFn: NetMath.uniform}
             sinon.stub(layer2.neurons[0], "init") 
             sinon.stub(layer2.neurons[1], "init")
         })
@@ -1468,9 +1391,9 @@ describe("Layer", () => {
             expect(layer2.neurons[1].init).to.have.been.calledWith(2)
         })
 
-        it("Calls the neuron's init function with this layer's adaptiveLR and activationConfig", () => {
-            layer2.adaptiveLR = "test"
-            layer2.activationConfig = "stuff"
+        it("Calls the neuron's init function with adaptiveLR and activationConfig", () => {
+            layer2.net.adaptiveLR = "test"
+            layer2.net.activationConfig = "stuff"
             layer2.assignPrev(layer1)
             expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"adaptiveLR": "test"}))
             expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
@@ -1478,8 +1401,8 @@ describe("Layer", () => {
             expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
         })
 
-        it("Calls the neuron's init function with this layer's eluAlpha", () => {
-            layer2.eluAlpha = 1
+        it("Calls the neuron's init function with eluAlpha", () => {
+            layer2.net.eluAlpha = 1
             layer2.assignPrev(layer1)
             expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
             expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
@@ -1491,10 +1414,10 @@ describe("Layer", () => {
         })
 
         it("Calls the NetMath.uniform function when the weightsInitFn is uniform", () => {
-            sinon.stub(layer2, "weightsInitFn")
+            sinon.stub(layer2.net, "weightsInitFn")
             layer2.assignPrev(layer1)
-            expect(layer2.weightsInitFn).to.be.called
-            layer2.weightsInitFn.restore()
+            expect(layer2.net.weightsInitFn).to.be.called
+            layer2.net.weightsInitFn.restore()
         })
     })
 
@@ -1584,6 +1507,9 @@ describe("Layer", () => {
             layer1 = new Layer(2)
             layer2 = new Layer(3)
             layer3 = new Layer(4)
+            layer1.net = {}
+            layer2.net = {}
+            layer3.net = {}
             net = new Network({layers: [layer1, layer2, layer3], activation: "sigmoid", dropout: 0})
         })
 
@@ -1684,8 +1610,7 @@ describe("Layer", () => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
                 neuron.activation = 0.25
             })
-            layer3.l2 = 0.001
-            layer3.net = {miniBatchSize: 1}
+            layer3.net = {l2: 0.001, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006")
@@ -1697,8 +1622,7 @@ describe("Layer", () => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
                 neuron.activation = 0.25
             })
-            layer3.l1 = 0.005
-            layer3.net = {miniBatchSize: 1}
+            layer3.net = {l1: 0.005, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275031")
@@ -1710,8 +1634,7 @@ describe("Layer", () => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
                 neuron.activation = 0.25
             })
-            layer3.l1 = 0.005
-            layer3.net = {miniBatchSize: 10}
+            layer3.net = {l1: 0.005, miniBatchSize: 10}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275003")
@@ -1720,8 +1643,8 @@ describe("Layer", () => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
                 neuron.activation = 0.25
             })
-            layer3.l2 = 0.001
-            layer3.l1 = 0
+            layer3.net.l2 = 0.001
+            layer3.net.l1 = 0
             layer3.backward([0.3, 0.3, 0.3, 0.3])
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275001")
         })

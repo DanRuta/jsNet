@@ -1168,6 +1168,14 @@ describe("Network", () => {
                 expect(console.log).to.be.calledWith(`Training started. Epochs: 1 Batch Size: 2`)
             })
         })
+
+        it("Shuffles the input data if the shuffle option is set to true", () => {
+            sinon.stub(net, "shuffle")
+            return net.train(testData, {shuffle: true}).then(() => {
+                expect(net.shuffle).to.be.calledWith(testData)
+                net.shuffle.restore()
+            })
+        })
     })
 
     describe("test", () => {
@@ -1296,6 +1304,30 @@ describe("Network", () => {
         it("Formats given milliseconds to hours, minutes and seconds when over an hour", () => {
             const testMils = 10000000
             expect(net.format(testMils, "time")).to.equal("2h 46m 40s")
+        })
+    })
+
+    describe("shuffle", () => {
+
+        const testArr = [1,2,3,4,5, "a", "b", "c"]
+        const original = testArr.slice(0) 
+        const net = new Network()
+        net.shuffle(testArr)
+
+        it("Keeps the same number of elements", () => {
+            expect(testArr).to.have.lengthOf(8)
+        })
+
+        it("Changes the order of the elements", () => {
+            expect(testArr).to.not.deep.equal(original)
+        })
+
+        it("Does not include any new elements", () => {
+            expect(testArr.every(elem => original.includes(elem))).to.be.true
+        })
+
+        it("Still includes all original elements", () => {
+            expect(original.every(elem => testArr.includes(elem))).to.be.true
         })
     })
 })

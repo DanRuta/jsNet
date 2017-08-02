@@ -228,9 +228,13 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1}={}) {
+    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
+
+        if (shuffle) {
+            this.shuffle(dataSet)
+        }
 
         if (log) {
             console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
@@ -449,6 +453,15 @@ class Network {
         }
 
         return value
+    }
+
+    shuffle (arr) {
+        for (let i=arr.length; i; i--) {
+            const j = Math.floor(Math.random() * i)
+            const x = arr[i-1]
+            arr[i-1] = arr[j]
+            arr[j] = x
+        }
     }
 }
 

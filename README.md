@@ -5,6 +5,8 @@ Network.js is promise based implementation of a (currently) basic neural network
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
+*Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
+
 ## Demo
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier
 
@@ -57,13 +59,13 @@ The data structure must be an object with key ```input``` having an array of num
 {input: [1,0,0.2], expected: [1, 2]}
 {input: [1,0,0.2], output: [1, 2]}
 ```
-You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch.
+You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch, as well as time elapsed and average epoch duration.
 ```javascript
 const {training} = mnist.set(800, 200) // Get the training data from the mnist library, linked above
 
 const net = new Network()
 net.train(training) // This on its own is enough
-.then(() => console.log("done")) // This resolves a promise, meaning you can add further code here (eg testing)
+.then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
 ##### Options
 ###### Epochs
@@ -87,6 +89,12 @@ You can use mini batch SGD training by specifying a mini batch size to use (chan
 
 ```javascript
 net.train(training, {miniBatchSize: 10})
+```
+
+###### Shuffle
+You can randomly shuffle the training data before it is used by setting the shuffle option to true
+```javascript
+net.train(training, {shuffle: true})
 ```
 
 ### Testing
@@ -114,6 +122,7 @@ const data = trainedNet.toJSON()
 
 ### Importing
 ---
+Only the weights are exported. You still need to build the net with the same configs, eg activation function.
 ```javascript
 const freshNetwork = new Network()
 freshNetwork.fromJSON(data)
@@ -180,7 +189,7 @@ net = new Network({adaptiveLR: "adadelta", rho: 0.95})
 |:-------------:| :-----:| :-----:| :---: |
 | activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
 | lreluSlope | Slope for lrelu | Any number | 0.99 |
-| eluAlpha | Alpha value for ELU | Any number | 1 |
+| eluAlpha | Alpha value for elu | Any number | 1 |
 
 ##### Examples
 ```javascript
@@ -241,6 +250,18 @@ net = new Network({weightsConfig: {distribution: "lecunUniform"}})
 net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
 
+###### Xavier Normal
+This samples weights from a gaussian distribution with variance: ``` 2 / (fanIn + fanOut)```
+
+###### Xavier Uniform
+This samples weights from a uniform distribution with limit: ``` sqrt(6 / (fanIn+fanOut)) ```
+
+###### Lecun Normal
+This samples weights from a gaussian distribution with variance: ``` 1 / fanIn```
+
+###### Lecun Uniform
+This samples weights from a uniform distribution with limit: ``` sqrt(3 / fanIn) ```
+
 Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, where there is no fanOut to use.
 
 You can set custom weights distribution functions. They are given as parameters the number of weights needed and the weightsConfig object, additionally containing a layer's fanIn and/or fanOut. It must return an array of weights.
@@ -249,17 +270,17 @@ You can set custom weights distribution functions. They are given as parameters 
 ---
 More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
 
-##### Short term
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up is mini batch SGD and some general library improvement ideas I've logged along the way.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up are Conv layers, in version 2.0.  I'll likely also think of a better name for the library, by then.
 
-##### Mid term
+##### Short term
 Conv, Pool and BatchNorm layers.
 
 ##### Long term
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
+Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types.
 
 ## Contributing
 ---
 Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
+
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.

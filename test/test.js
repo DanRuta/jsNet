@@ -1256,6 +1256,20 @@ describe("Network", () => {
                 console.log.restore()
             })
         })
+
+        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'error' and 'input', for each iteration", () => {
+            sinon.stub(console, "warn")
+
+            return net.test(testData, {callback: console.warn}).then(() => {
+                expect(console.warn).to.have.been.called
+                expect(console.warn.callCount).to.equal(4)
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("iterations"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("error"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
+                console.warn.restore()
+            })
+        })
     })
 
     describe("format", () => {

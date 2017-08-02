@@ -113,6 +113,13 @@ You can turn off the logging by passing log: false in the options parameter.
 const {training, test} = mnist.set(800, 200)
 net.train(training).then(() => net.test(test, {log: false}))
 ```
+###### Callback
+Like with training, you can provide a callback for testing, which will get called after each iteration. The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+```javascript
+const doSomeStuff = ({iterations, error, elapsed, input}) => ....
+net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
+```
+
 ### Exporting
 ---
 Layer and weights data is exported as a JSON object.

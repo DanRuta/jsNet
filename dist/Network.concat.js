@@ -605,7 +605,7 @@ class Network {
         })
     }
 
-    test (testSet, {log=true}={}) {
+    test (testSet, {log=true, callback}={}) {
         return new Promise((resolve, reject) => {
 
             if (testSet === undefined || testSet === null) {
@@ -618,22 +618,31 @@ class Network {
 
             const testInput = () => {
 
-                const output = this.forward(testSet[iterationIndex].input)
+                const input = testSet[iterationIndex].input
+                const output = this.forward(input)
                 const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
+                const elapsed = Date.now() - startTime
 
-                totalError += this.cost(target, output)
-
-                if (log) {
-                    console.log("Testing iteration", iterationIndex+1, totalError/(iterationIndex+1))
-                }
-
+                const iterationError = this.cost(target, output)
+                totalError += iterationError
                 iterationIndex++
 
+                if (log) {
+                    console.log("Testing iteration", iterationIndex, iterationError)
+                }
+
+                if (typeof callback=="function") {
+                    callback({
+                        iterations: iterationIndex,
+                        error: iterationError,
+                        elapsed, input
+                    })
+                }
+                
                 if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
 
                 } else {
-                    const elapsed = Date.now() - startTime
 
                     if (log) {
                         console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)

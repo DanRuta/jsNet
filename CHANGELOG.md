@@ -9,9 +9,14 @@
 - Added log option to training/testing to disable logging for each one
 - Added mini batch SGD training, and miniBatchSize config for .train() as its config
 - Breaking change: classes are no longer required straight into global context. See readme.
+- Added shuffle .train() option
+- Added callback .test() option
 
 #### NetMath
 - Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case
+
+#### Bug Fixes
+- Fixed iteration error logged when testing being the averaged total at that point
 
 # 1.4.0 - Weights Initialization
 ---

@@ -5,12 +5,17 @@ Network.js is promise based implementation of a (currently) basic neural network
 
 This project is in its infancy, and more features and optimisations will periodically be added.
 
-##  Usage
-
-I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
+*Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
 ## Demo
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier
+
+##  Usage
+When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
+```javascript
+const {Network, Layer, Neuron, NetMath} = require("./Network.min.js")
+```
+I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ### Constructing
 ---
@@ -49,20 +54,48 @@ The default values are values I have found produced good results in the datasets
 ----
 
 
-The data structure must (currently) be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
+The data structure must be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
 ```javascript
 {input: [1,0,0.2], expected: [1, 2]}
 {input: [1,0,0.2], output: [1, 2]}
 ```
-You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch.
+You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch, as well as time elapsed and average epoch duration.
 ```javascript
 const {training} = mnist.set(800, 200) // Get the training data from the mnist library, linked above
 
 const net = new Network()
 net.train(training) // This on its own is enough
-.then(() => console.log("done")) // This resolves a promise, meaning you can add further code here (eg testing)
+.then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
-You can also provide a callback, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, and the input data for that iteration. 
+##### Options
+###### Epochs
+By default, this is ```1``` and represents how many times the data passed will be used.
+```javascript
+net.train(training, {epochs: 5}) // This will run through the training data 5 times
+```
+###### Callback
+You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+```javascript
+const doSomeStuff = ({iterations, error, elapsed, input}) => ....
+net.train(training, {callback: doSomeStuff})
+```
+###### Log
+You can turn off the logging by passing log: false in the options parameter.
+```javascript
+net.train(training, {log: false})
+```
+###### Mini Batch Size
+You can use mini batch SGD training by specifying a mini batch size to use (changing it from the default, 1). You can set it to true, and it will default to how many classifications there are in the training data.
+
+```javascript
+net.train(training, {miniBatchSize: 10})
+```
+
+###### Shuffle
+You can randomly shuffle the training data before it is used by setting the shuffle option to true
+```javascript
+net.train(training, {shuffle: true})
+```
 
 ### Testing
 ---
@@ -73,6 +106,20 @@ net.train(training).then(() => net.test(test))
 ```
 The network will log the testing iteration and the error. This also resolves a promise, with the average test error percentage.
 
+##### Options
+###### Log
+You can turn off the logging by passing log: false in the options parameter.
+```javascript
+const {training, test} = mnist.set(800, 200)
+net.train(training).then(() => net.test(test, {log: false}))
+```
+###### Callback
+Like with training, you can provide a callback for testing, which will get called after each iteration. The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+```javascript
+const doSomeStuff = ({iterations, error, elapsed, input}) => ....
+net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
+```
+
 ### Exporting
 ---
 Layer and weights data is exported as a JSON object.
@@ -82,6 +129,7 @@ const data = trainedNet.toJSON()
 
 ### Importing
 ---
+Only the weights are exported. You still need to build the net with the same configs, eg activation function.
 ```javascript
 const freshNetwork = new Network()
 freshNetwork.fromJSON(data)
@@ -102,17 +150,41 @@ const normalizedResults = NetMath.softmax(netResult)
 
 ## Configurations
 ---
+String configs are case/space/underscore insensitive.
+
+Without setting any configs, the default values are equivalent to the following configuration:
+```javascript
+const net = new Network()
+// is equivalent to
+const net = new Network({
+    activation: "sigmoid",
+    learningRate: 0.2,
+    cost: "meansquarederror",
+    dropout: 1,
+    l2: 0.001,
+    l1: 0.005,
+    adaptiveLR: "noadaptivelr",
+    weightsConfig: {
+        distribution: "xavieruniform"
+    }
+})
+```
+
 ### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
-| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | crossEntropy |
+| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | meansquarederror |
 
 ##### Examples
 ```javascript
 net = new Network({learningRate: 0.2})
 net = new Network({cost: "crossEntropy"})
+net = new Network({cost: (target, output) => ...})
 ```
+
+You can set custom cost functions. They are given the iteration's expected output as the first parameter and the actual output as the second parameter, and they need to return a single number.
+
 Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value| 
@@ -126,35 +198,45 @@ Learning rate is 0.2 by default, except when using the following configurations:
 ### Adaptive Learning Rate
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
-| rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
-| rho | Momentum for Adadelta | Any number | 0.95 |
+| adaptiveLR | The function used for updating the weights/bias. The noadaptivelr option just sets the network to update the weights without any changes to learning rate. | noadaptivelr, gain, adagrad, RMSProp, adam , adadelta| noadaptivelr |
+| rmsDecay | The decay rate for RMSProp, when used | Any number | 0.99 |
+| rho | Momentum for Adadelta, when used | Any number | 0.95 |
 
 ##### Examples
 ```javascript
 net = new Network({adaptiveLR: "adagrad"})
-net = new Network({adaptiveLR: "RMSProp", rmsDecay: 0.99})
+net = new Network({adaptiveLR: "RMS_Prop", rmsDecay: 0.99})
 net = new Network({adaptiveLR: "adadelta", rho: 0.95})
 ```
+
 ### Activation Function
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
-| lreluSlope | Slope for lrelu | Any number | 0.99 |
-| eluAlpha | Alpha value for ELU | Any number | 1 |
+| lreluSlope | Slope for lrelu, when used | Any number | 0.99 |
+| eluAlpha | Alpha value for elu, when used | Any number | 1 |
 
 ##### Examples
 ```javascript
 net = new Network({activation: "sigmoid"})
 net = new Network({activation: "lrelu", lreluSlope: 0.99})
 net = new Network({activation: "elu", eluAlpha: 1})
+net = new Network({activation: x => x, eluAlpha: 1})
 ```
+You can set your own activation functions. They are given as parameters:
+- The sum of the previous layer's activations and the neuron's bias
+- If the function should calculate the prime (during back prop) - boolean
+- A reference to the neuron being activated. 
+
+The network is bound as the function's scope, meaning you can access its data through ```this```.
+The function needs to return a single number.
+
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
-| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
-| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
+| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 1 |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | 0.001 |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | 0.005 |
 | maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
 ##### Examples
@@ -190,25 +272,40 @@ net = new Network({weightsConfig: {
 }})
 net = new Network({weightsConfig: {distribution: "xavierNormal"}})
 net = new Network({weightsConfig: {distribution: "lecunUniform"}})
+net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
+
+###### Xavier Normal
+This samples weights from a gaussian distribution with variance: ``` 2 / (fanIn + fanOut)```
+
+###### Xavier Uniform
+This samples weights from a uniform distribution with limit: ``` sqrt(6 / (fanIn+fanOut)) ```
+
+###### Lecun Normal
+This samples weights from a gaussian distribution with variance: ``` 1 / fanIn```
+
+###### Lecun Uniform
+This samples weights from a uniform distribution with limit: ``` sqrt(3 / fanIn) ```
 
 Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, where there is no fanOut to use.
 
+You can set custom weights distribution functions. They are given as parameters the number of weights needed and the weightsConfig object, additionally containing a layer's fanIn and/or fanOut. It must return an array of weights.
+
 ## Future plans
 ---
-More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+More and more features will be added to this library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up are Conv layers, in version 2.0.  I'll likely also think of a better name for the library, by then.
 
 ##### Short term
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up is mini batch SGD and some general library improvement ideas I've logged along the way.
-
-##### Mid term
 Conv, Pool and BatchNorm layers.
 
 ##### Long term
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types, eg LSTM networks.
+Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types.
 
 ## Contributing
 ---
 Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
+
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.

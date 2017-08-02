@@ -2,107 +2,119 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noAdaptiveLR", activation="sigmoid", cost="crossEntropy", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror", 
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}={}) {
+
         this.state = "not-defined"
         this.layers = []
         this.epochs = 0
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
+        activation = this.format(activation)
+        adaptiveLR = this.format(adaptiveLR)
+        cost = this.format(cost)
 
-        if(learningRate!=null){    
+        if (learningRate!=null) {    
             this.learningRate = learningRate
         }
 
-        if(l2){
-            this.l2 = typeof l2=="boolean" && l2 ? 0.001 : l2
+        if (l2) {
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
             this.l2Error = 0
         }
 
-        if(l1){
-            this.l1 = typeof l1=="boolean" && l1 ? 0.005 : l1
+        if (l1) {
+            this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
         }
 
-        if(maxNorm){
+        if (maxNorm) {
             this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
             this.maxNormTotal = 0
         }
 
         // Activation function / Learning Rate
-        switch(true) {
+        switch (adaptiveLR) {
 
-            case adaptiveLR=="RMSProp":
+            case "rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
                 break
 
-            case adaptiveLR=="adam":
+            case "adam":
                 this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
                 break
 
-            case adaptiveLR=="adadelta":
+            case "adadelta":
                 this.rho = rho==null ? 0.95 : rho
                 break
 
             default:
 
-                if(this.learningRate==undefined){
-                    switch(activation) {
+                if (this.learningRate==undefined) {
+
+                    switch (activation) {
+
                         case "relu":
                         case "lrelu":
                         case "rrelu":
                         case "elu":
                             this.learningRate = 0.01
                             break
+
                         case "tanh":
                         case "lecuntanh":
                             this.learningRate = 0.001
                             break
+
                         default:
                             this.learningRate = 0.2
                     }
                 }
         }
         
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noAdaptiveLR" : adaptiveLR
+        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
-        this.activation = NetMath[activation].bind(this)
+        this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
-        this.cost = NetMath[cost]
+        this.cost = typeof cost=="function" ? cost : NetMath[cost]
 
-        if(this.adaptiveLR=="RMSProp"){
+        if (this.adaptiveLR=="rmsprop") {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
-        if(activation=="lrelu"){
+        if (activation=="lrelu") {
             this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
-        }else if(activation=="elu") {
+
+        } else if (activation=="elu") {
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
         // Weights distributiom
-        this.weightsConfig = {distribution: "uniform"}
+        this.weightsConfig = {distribution: "xavieruniform"}
 
-        if(weightsConfig != undefined) {
-            if(weightsConfig.distribution) {
-                this.weightsConfig.distribution = weightsConfig.distribution 
-            }
+        if (weightsConfig != undefined && weightsConfig.distribution) {
+            this.weightsConfig.distribution = this.format(weightsConfig.distribution) 
         }
 
-        if(this.weightsConfig.distribution == "uniform") {
+        if (this.weightsConfig.distribution == "uniform") {
             this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
 
-        } else if(this.weightsConfig.distribution == "gaussian") {
-
+        } else if (this.weightsConfig.distribution == "gaussian") {
             this.weightsConfig.mean = weightsConfig.mean || 0
             this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
         }
 
-        // Status
-        if(layers.length) {
+        if (typeof this.weightsConfig.distribution=="function") {
+            this.weightsInitFn = this.weightsConfig.distribution
+        } else {
+            this.weightsInitFn = NetMath[this.weightsConfig.distribution]
+        }
 
-            switch(true) {
+        // Status
+        if (layers.length) {
+
+            switch (true) {
 
                 case layers.every(item => Number.isInteger(item)):
                     this.layers = layers.map(size => new Layer(size))
@@ -129,7 +141,7 @@ class Network {
 
     initLayers (input, expected) {
 
-        switch(this.state){
+        switch (this.state) {
 
             case "initialised":
                 return
@@ -137,10 +149,10 @@ class Network {
             case "defined":
                 this.layers = this.definedLayers.map((layer, li) => {
                     
-                    if(!li)
+                    if (!li)
                         return new layer(input)
 
-                    if(li==this.definedLayers.length-1) 
+                    if (li==this.definedLayers.length-1) 
                         return new layer(expected)
 
                     const hidden = this.definedLayers.length-2
@@ -166,32 +178,13 @@ class Network {
 
     joinLayer (layer, layerIndex) {
 
+        layer.net = this
         layer.activation = this.activation
-        layer.adaptiveLR = this.adaptiveLR
-        layer.activationConfig = this.activationConfig
-        layer.dropout = this.dropout
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
-        layer.weightsInitFn = NetMath[layer.weightsConfig.distribution]
 
-        if(this.rho!=undefined) {
-            layer.rho = this.rho
-        }
-        
-        if(this.eluAlpha!=undefined) {
-            layer.eluAlpha = this.eluAlpha
-        }
-
-        if(this.l2!=undefined) {
-            layer.l2 = this.l2
-        }
-
-        if(this.l1!=undefined) {
-            layer.l1 = this.l1
-        }
-
-        if(layerIndex) {
+        if (layerIndex) {
             layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
             this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
@@ -201,15 +194,15 @@ class Network {
 
     forward (data) {
 
-        if(this.state!="initialised"){
+        if (this.state!="initialised") {
             throw new Error("The network layers have not been initialised.")
         }
 
-        if(data === undefined){
+        if (data === undefined) {
             throw new Error("No data passed to Network.forward()")
         }
 
-        if(data.length != this.layers[0].neurons.length){
+        if (data.length != this.layers[0].neurons.length) {
             console.warn("Input data length did not match input layer neurons count.")
         }
 
@@ -219,29 +212,41 @@ class Network {
     }
 
     backward (expected) {
-        if(expected === undefined){
+
+        if (expected === undefined) {
             throw new Error("No data passed to Network.backward()")
         }
 
-        if(expected.length != this.layers[this.layers.length-1].neurons.length){
+        if (expected.length != this.layers[this.layers.length-1].neurons.length) {
             console.warn("Expected data length did not match output layer neurons count.")
         }
 
         this.layers[this.layers.length-1].backward(expected)
 
-        for(let layerIndex=this.layers.length-2; layerIndex>0; layerIndex--){
+        for (let layerIndex=this.layers.length-2; layerIndex>0; layerIndex--) {
             this.layers[layerIndex].backward()
         }
     }
 
-    train (dataSet, {epochs=1, callback}={}) {
+    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false}={}) {
+
+        this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
+
+        if (shuffle) {
+            this.shuffle(dataSet)
+        }
+
+        if (log) {
+            console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
+        }
+
         return new Promise((resolve, reject) => {
             
-            if(dataSet === undefined || dataSet === null) {
-                reject("No data provided")
+            if (dataSet === undefined || dataSet === null) {
+                return void reject("No data provided")
             }
 
-            if(this.state != "initialised"){
+            if (this.state != "initialised") {
                 this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
             }
 
@@ -249,96 +254,126 @@ class Network {
 
             let iterationIndex = 0
             let epochsCounter = 0
+            const startTime = Date.now()
 
             const doEpoch = () => {
                 this.epochs++
                 this.error = 0
                 iterationIndex = 0
 
-                if(this.l2Error!=undefined){
-                    this.l2Error = 0
-                }
+                if (this.l2Error!=undefined) this.l2Error = 0
+                if (this.l1Error!=undefined) this.l1Error = 0
 
-                if(this.l1Error!=undefined){
-                    this.l1Error = 0
-                }
-
-                doIteration()               
+                doIteration()  
             }
 
             const doIteration = () => {
                 
-                if(!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))){
-                    return reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+                if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
-
-                this.resetDeltaWeights()
 
                 const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
                 this.backward(target)
-                this.applyDeltaWeights()
+
+                if (++iterationIndex%this.miniBatchSize==0) {
+                    this.applyDeltaWeights()
+                    this.resetDeltaWeights()
+                } else if (iterationIndex >= dataSet.length) {
+                    this.applyDeltaWeights()
+                }
 
                 const iterationError = this.cost(target, output)
+                const elapsed = Date.now() - startTime
                 this.error += iterationError
 
-                if(typeof callback=="function") {
+                if (typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
                         error: iterationError,
-                        input
+                        elapsed, input
                     })
                 }
 
                 this.iterations++
-                iterationIndex++
 
-                if(iterationIndex < dataSet.length){
+                if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
-                }else {
 
+                } else {
                     epochsCounter++
-                    console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`)
 
-                    if(epochsCounter < epochs){
+                    if (log) {
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                    `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
+                    }
+
+                    if (epochsCounter < epochs) {
                         doEpoch()
-                    }else {
+                    } else {
                         this.layers.forEach(layer => layer.state = "initialised")
+
+                        if (log) {
+                            console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                        }
                         resolve()
                     }
                 }
             }
 
+            this.resetDeltaWeights()
             doEpoch()
         })
     }
 
-    test (testSet) {
+    test (testSet, {log=true, callback}={}) {
         return new Promise((resolve, reject) => {
 
-            if(testSet === undefined || testSet === null) {
+            if (testSet === undefined || testSet === null) {
                 reject("No data provided")
             }
 
             let totalError = 0
-            let testIteration = 0
+            let iterationIndex = 0
+            const startTime = Date.now()
 
             const testInput = () => {
 
-                const output = this.forward(testSet[testIteration].input)
-                const target = testSet[testIteration].expected || testSet[testIteration].output
+                const input = testSet[iterationIndex].input
+                const output = this.forward(input)
+                const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
+                const elapsed = Date.now() - startTime
 
-                totalError += this.cost(target, output)
+                const iterationError = this.cost(target, output)
+                totalError += iterationError
+                iterationIndex++
 
-                console.log("Testing iteration", testIteration+1, totalError/(testIteration+1))
+                if (log) {
+                    console.log("Testing iteration", iterationIndex, iterationError)
+                }
 
-                testIteration++
-
-                if(testIteration < testSet.length)
+                if (typeof callback=="function") {
+                    callback({
+                        iterations: iterationIndex,
+                        error: iterationError,
+                        elapsed, input
+                    })
+                }
+                
+                if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
-                else resolve(totalError/testSet.length)
+
+                } else {
+
+                    if (log) {
+                        console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                    }
+
+                    resolve(totalError/testSet.length)
+                }
             }
             testInput()
         })
@@ -346,9 +381,7 @@ class Network {
 
     resetDeltaWeights () {
         this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => {
-                neuron.deltaWeights = neuron.weights.map(dw => 0)
-            })
+            li && layer.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
         })
     }
 
@@ -357,25 +390,19 @@ class Network {
             li && layer.neurons.forEach(neuron => {
                 neuron.deltaWeights.forEach((dw, dwi) => {
 
-                    if(this.l2!=undefined) {
-                        this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
-                    }
-
-                    if(this.l1!=undefined) {
-                        this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
-                    }
+                    if (this.l2!=undefined) this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
+                    if (this.l1!=undefined) this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
 
                     neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
 
-                    if(this.maxNorm!=undefined) {
-                        this.maxNormTotal += neuron.weights[dwi]**2
-                    }
+                    if (this.maxNorm!=undefined) this.maxNormTotal += neuron.weights[dwi]**2
                 })
+
                 neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
             })
         })
 
-        if(this.maxNorm!=undefined) {
+        if (this.maxNorm!=undefined) {
             this.maxNormTotal = Math.sqrt(this.maxNormTotal)
             NetMath.maxNorm.bind(this)()
         }
@@ -398,7 +425,7 @@ class Network {
 
     fromJSON (data) {
 
-        if(data === undefined || data === null) {
+        if (data === undefined || data === null) {
             throw new Error("No JSON data given to import.")
         }
 
@@ -406,6 +433,45 @@ class Network {
         this.state = "constructed"
         this.initLayers()
     }
+
+    format (value, type="string") {
+
+        switch (true) {
+
+            case type=="string" && typeof value=="string":
+                value = value.replace(/(_|\s)/g, "").toLowerCase()
+                break
+
+            case type=="time" && typeof value=="number":
+                const date = new Date(value)
+                const formatted = []
+
+                if (value < 1000) {
+                    formatted.push(`${date.getMilliseconds()}ms`)
+
+                } else {
+
+                    if (value >= 3600000) formatted.push(`${date.getHours()}h`)
+                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
+
+                    formatted.push(`${date.getSeconds()}s`)
+                }
+
+                value = formatted.join(" ")
+                break
+        }
+
+        return value
+    }
+
+    shuffle (arr) {
+        for (let i=arr.length; i; i--) {
+            const j = Math.floor(Math.random() * i)
+            const x = arr[i-1]
+            arr[i-1] = arr[j]
+            arr[j] = x
+        }
+    }
 }
 
-typeof window=="undefined" && (global.Network = Network)
+typeof window=="undefined" && (exports.Network = Network)

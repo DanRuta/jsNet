@@ -71,7 +71,7 @@ class Layer {
     }
 }
 
-typeof window=="undefined" && (global.Layer = Layer) 
+typeof window=="undefined" && (exports.Layer = Layer)
 "use strict"
 
 class NetMath {
@@ -273,7 +273,7 @@ class NetMath {
     }
 }
 
-typeof window=="undefined" && (global.NetMath = NetMath)
+typeof window=="undefined" && (exports.NetMath = NetMath)
 "use strict"
 
 class Network {
@@ -728,7 +728,7 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (global.Network = Network)
+typeof window=="undefined" && (exports.Network = Network)
 "use strict"
 
 class Neuron {
@@ -779,5 +779,5 @@ class Neuron {
     }
 }
 
-typeof window=="undefined" && (global.Neuron = Neuron)
+typeof window=="undefined" && (exports.Neuron = Neuron)
 //# sourceMappingURL=Network.concat.js.map

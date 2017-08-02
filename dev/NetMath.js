@@ -199,4 +199,4 @@ class NetMath {
     }
 }
 
-typeof window=="undefined" && (global.NetMath = NetMath)
+typeof window=="undefined" && (exports.NetMath = NetMath)

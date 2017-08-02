@@ -8,6 +8,7 @@
 - Added time elapsed to training/testing logs and elapsed milliseconds to training callback
 - Added log option to training/testing to disable logging for each one
 - Added mini batch SGD training, and miniBatchSize config for .train() as its config
+- Breaking change: classes are no longer required straight into global context. See readme.
 
 #### NetMath
 - Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case

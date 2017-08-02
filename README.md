@@ -11,7 +11,7 @@ https://ai.danruta.co.uk - Interactive MNIST Digit classifier
 ##  Usage
 When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
 ```javascript
-require("./Network.min.js") // This will put Network, Layer, NetMath and Neuron in global context
+const {Network, Layer, Neuron, NetMath} = require("./Network.min.js")
 ```
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 

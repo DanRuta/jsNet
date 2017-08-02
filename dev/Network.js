@@ -452,4 +452,4 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (global.Network = Network)
+typeof window=="undefined" && (exports.Network = Network)

@@ -48,4 +48,4 @@ class Neuron {
     }
 }
 
-typeof window=="undefined" && (global.Neuron = Neuron)
+typeof window=="undefined" && (exports.Neuron = Neuron)

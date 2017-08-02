@@ -71,4 +71,4 @@ class Layer {
     }
 }
 
-typeof window=="undefined" && (global.Layer = Layer) 
+typeof window=="undefined" && (exports.Layer = Layer)

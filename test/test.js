@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-require("../dist/Network.concat.js")
+const {Network, Layer, Neuron, NetMath} = require("../dist/Network.concat.js")
 
 describe("Tests", () => {
     it("Network is loaded", () => expect(Network).to.not.be.undefined)

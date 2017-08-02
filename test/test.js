@@ -1165,10 +1165,10 @@ describe("Network", () => {
         })
 
         it("Shuffles the input data if the shuffle option is set to true", () => {
-            sinon.stub(net, "shuffle")
+            sinon.stub(NetUtil, "shuffle")
             return net.train(testData, {shuffle: true}).then(() => {
-                expect(net.shuffle).to.be.calledWith(testData)
-                net.shuffle.restore()
+                expect(NetUtil.shuffle).to.be.calledWith(testData)
+                NetUtil.shuffle.restore()
             })
         })
     })
@@ -1264,79 +1264,6 @@ describe("Network", () => {
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
             })
-        })
-    })
-
-    describe("format", () => {
-
-        let net
-
-        before(() => net = new Network())
-
-        it("Returns undefined if passed undefined", () => {
-            expect(net.format(undefined)).to.be.undefined
-        })
-
-        it("Turns a string to lower case", () => {
-            const testString = "aAbB"
-            const result = net.format(testString) 
-            expect(result).to.equal("aabb")
-        })
-
-        it("Removes white spaces", () => {
-            const testString = " aA bB "
-            const result = net.format(testString) 
-            expect(result).to.equal("aabb")
-        })
-
-        it("Removes underscores", () => {
-            const testString = "_aA_bB_"
-            const result = net.format(testString) 
-            expect(result).to.equal("aabb")
-        })
-
-        it("Formats given milliseconds to milliseconds only when under a second", () => {
-            const testMils = 100
-            expect(net.format(testMils, "time")).to.equal("100ms")
-        })
-
-        it("Formats given milliseconds to seconds only when under a minute", () => {
-            const testMils = 10000
-            expect(net.format(testMils, "time")).to.equal("10s")
-        })
-
-        it("Formats given milliseconds to minutes and seconds only when under an hour", () => {
-            const testMils = 100000
-            expect(net.format(testMils, "time")).to.equal("1m 40s")
-        })
-
-        it("Formats given milliseconds to hours, minutes and seconds when over an hour", () => {
-            const testMils = 10000000
-            expect(net.format(testMils, "time")).to.equal("2h 46m 40s")
-        })
-    })
-
-    describe("shuffle", () => {
-
-        const testArr = [1,2,3,4,5, "a", "b", "c"]
-        const original = testArr.slice(0) 
-        const net = new Network()
-        net.shuffle(testArr)
-
-        it("Keeps the same number of elements", () => {
-            expect(testArr).to.have.lengthOf(8)
-        })
-
-        it("Changes the order of the elements", () => {
-            expect(testArr).to.not.deep.equal(original)
-        })
-
-        it("Does not include any new elements", () => {
-            expect(testArr.every(elem => original.includes(elem))).to.be.true
-        })
-
-        it("Still includes all original elements", () => {
-            expect(original.every(elem => testArr.includes(elem))).to.be.true
         })
     })
 })
@@ -2486,6 +2413,74 @@ describe("Netmath", () => {
 })
 
 describe("NetUtil", () => {
+
+    describe("format", () => {
+
+        it("Returns undefined if passed undefined", () => {
+            expect(NetUtil.format(undefined)).to.be.undefined
+        })
+
+        it("Turns a string to lower case", () => {
+            const testString = "aAbB"
+            const result = NetUtil.format(testString) 
+            expect(result).to.equal("aabb")
+        })
+
+        it("Removes white spaces", () => {
+            const testString = " aA bB "
+            const result = NetUtil.format(testString) 
+            expect(result).to.equal("aabb")
+        })
+
+        it("Removes underscores", () => {
+            const testString = "_aA_bB_"
+            const result = NetUtil.format(testString) 
+            expect(result).to.equal("aabb")
+        })
+
+        it("Formats given milliseconds to milliseconds only when under a second", () => {
+            const testMils = 100
+            expect(NetUtil.format(testMils, "time")).to.equal("100ms")
+        })
+
+        it("Formats given milliseconds to seconds only when under a minute", () => {
+            const testMils = 10000
+            expect(NetUtil.format(testMils, "time")).to.equal("10s")
+        })
+
+        it("Formats given milliseconds to minutes and seconds only when under an hour", () => {
+            const testMils = 100000
+            expect(NetUtil.format(testMils, "time")).to.equal("1m 40s")
+        })
+
+        it("Formats given milliseconds to hours, minutes and seconds when over an hour", () => {
+            const testMils = 10000000
+            expect(NetUtil.format(testMils, "time")).to.equal("2h 46m 40s")
+        })
+    })
+
+    describe("shuffle", () => {
+
+        const testArr = [1,2,3,4,5, "a", "b", "c"]
+        const original = testArr.slice(0) 
+        NetUtil.shuffle(testArr)
+
+        it("Keeps the same number of elements", () => {
+            expect(testArr).to.have.lengthOf(8)
+        })
+
+        it("Changes the order of the elements", () => {
+            expect(testArr).to.not.deep.equal(original)
+        })
+
+        it("Does not include any new elements", () => {
+            expect(testArr.every(elem => original.includes(elem))).to.be.true
+        })
+
+        it("Still includes all original elements", () => {
+            expect(original.every(elem => testArr.includes(elem))).to.be.true
+        })
+    })
 
     describe("addZeroPadding", () => {
 

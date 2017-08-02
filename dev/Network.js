@@ -11,9 +11,9 @@ class Network {
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
-        activation = this.format(activation)
-        adaptiveLR = this.format(adaptiveLR)
-        cost = this.format(cost)
+        activation = NetUtil.format(activation)
+        adaptiveLR = NetUtil.format(adaptiveLR)
+        cost = NetUtil.format(cost)
 
         if (learningRate!=null) {    
             this.learningRate = learningRate
@@ -94,7 +94,7 @@ class Network {
         this.weightsConfig = {distribution: "xavieruniform"}
 
         if (weightsConfig != undefined && weightsConfig.distribution) {
-            this.weightsConfig.distribution = this.format(weightsConfig.distribution) 
+            this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution) 
         }
 
         if (this.weightsConfig.distribution == "uniform") {
@@ -233,7 +233,7 @@ class Network {
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
 
         if (shuffle) {
-            this.shuffle(dataSet)
+            NetUtil.shuffle(dataSet)
         }
 
         if (log) {
@@ -308,7 +308,7 @@ class Network {
 
                     if (log) {
                         console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
+                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {
@@ -317,7 +317,7 @@ class Network {
                         this.layers.forEach(layer => layer.state = "initialised")
 
                         if (log) {
-                            console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
                         }
                         resolve()
                     }
@@ -369,7 +369,7 @@ class Network {
                 } else {
 
                     if (log) {
-                        console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                        console.log(`Testing finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
                     }
 
                     resolve(totalError/testSet.length)
@@ -432,45 +432,6 @@ class Network {
         this.layers = data.layers.map(layer => new Layer(layer.neurons.length, layer.neurons))
         this.state = "constructed"
         this.initLayers()
-    }
-
-    format (value, type="string") {
-
-        switch (true) {
-
-            case type=="string" && typeof value=="string":
-                value = value.replace(/(_|\s)/g, "").toLowerCase()
-                break
-
-            case type=="time" && typeof value=="number":
-                const date = new Date(value)
-                const formatted = []
-
-                if (value < 1000) {
-                    formatted.push(`${date.getMilliseconds()}ms`)
-
-                } else {
-
-                    if (value >= 3600000) formatted.push(`${date.getHours()}h`)
-                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
-
-                    formatted.push(`${date.getSeconds()}s`)
-                }
-
-                value = formatted.join(" ")
-                break
-        }
-
-        return value
-    }
-
-    shuffle (arr) {
-        for (let i=arr.length; i; i--) {
-            const j = Math.floor(Math.random() * i)
-            const x = arr[i-1]
-            arr[i-1] = arr[j]
-            arr[j] = x
-        }
     }
 }
 

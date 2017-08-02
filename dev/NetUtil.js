@@ -1,7 +1,45 @@
 "use strict"
 
 class NetUtil {
-    
+
+    static format (value, type="string") {
+        switch (true) {
+
+            case type=="string" && typeof value=="string":
+                value = value.replace(/(_|\s)/g, "").toLowerCase()
+                break
+
+            case type=="time" && typeof value=="number":
+                const date = new Date(value)
+                const formatted = []
+
+                if (value < 1000) {
+                    formatted.push(`${date.getMilliseconds()}ms`)
+
+                } else {
+
+                    if (value >= 3600000) formatted.push(`${date.getHours()}h`)
+                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
+
+                    formatted.push(`${date.getSeconds()}s`)
+                }
+
+                value = formatted.join(" ")
+                break
+        }
+
+        return value
+    }
+
+    static shuffle (arr) {
+        for (let i=arr.length; i; i--) {
+            const j = Math.floor(Math.random() * i)
+            const x = arr[i-1]
+            arr[i-1] = arr[j]
+            arr[j] = x
+        }
+    }
+
     static addZeroPadding (map, zP) {
         const extraColumns = [...new Array(zP)].map(v => 0)
         map = map.map(row => [...extraColumns, ...row, ...extraColumns])

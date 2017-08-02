@@ -1,5 +1,8 @@
 # Upcoming - Conv Layers
 ---
+#### Network
+- Moved the format and shuffle functions to NetUtil
+
 #### NetUtil
 - Created new file to store util functions
 - Added addZeroPadding

@@ -1,4 +1,4 @@
-# Upcoming
+# 1.5.0 - Training, Misc
 ---
 #### Network
 - Made string configs (activation, adaptiveLR, cost, distribution) case/underscore/space insensitive.
@@ -11,6 +11,7 @@
 - Breaking change: classes are no longer required straight into global context. See readme.
 - Added shuffle .train() option
 - Added callback .test() option
+- Breaking change: Updated default values
 
 #### NetMath
 - Breaking change (if you were using the NetMath functions directly): Made config functions' names lower case

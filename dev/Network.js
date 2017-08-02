@@ -2,8 +2,8 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="crossentropy", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=0.5, l2, l1, maxNorm, weightsConfig}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror", 
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}={}) {
 
         this.state = "not-defined"
         this.layers = []
@@ -20,12 +20,12 @@ class Network {
         }
 
         if (l2) {
-            this.l2 = typeof l2=="boolean" && l2 ? 0.001 : l2
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
             this.l2Error = 0
         }
 
         if (l1) {
-            this.l1 = typeof l1=="boolean" && l1 ? 0.005 : l1
+            this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
         }
 
@@ -91,7 +91,7 @@ class Network {
         }
 
         // Weights distributiom
-        this.weightsConfig = {distribution: "uniform"}
+        this.weightsConfig = {distribution: "xavieruniform"}
 
         if (weightsConfig != undefined && weightsConfig.distribution) {
             this.weightsConfig.distribution = this.format(weightsConfig.distribution) 

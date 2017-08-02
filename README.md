@@ -152,11 +152,29 @@ const normalizedResults = NetMath.softmax(netResult)
 ---
 String configs are case/space/underscore insensitive.
 
+Without setting any configs, the default values are equivalent to the following configuration:
+```javascript
+const net = new Network()
+// is equivalent to
+const net = new Network({
+    activation: "sigmoid",
+    learningRate: 0.2,
+    cost: "meansquarederror",
+    dropout: 1,
+    l2: 0.001,
+    l1: 0.005,
+    adaptiveLR: "noadaptivelr",
+    weightsConfig: {
+        distribution: "xavieruniform"
+    }
+})
+```
+
 ### Network
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
-| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | crossEntropy |
+| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | meansquarederror |
 
 ##### Examples
 ```javascript
@@ -180,9 +198,9 @@ Learning rate is 0.2 by default, except when using the following configurations:
 ### Adaptive Learning Rate
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| adaptiveLR | The function used for updating the weights/bias. Null just sets the network to update the weights without any changes to learning rate. | null, gain, adagrad, RMSProp, adam , adadelta| null |
-| rmsDecay | The decay rate for RMSProp | Any number | 0.99 |
-| rho | Momentum for Adadelta | Any number | 0.95 |
+| adaptiveLR | The function used for updating the weights/bias. The noadaptivelr option just sets the network to update the weights without any changes to learning rate. | noadaptivelr, gain, adagrad, RMSProp, adam , adadelta| noadaptivelr |
+| rmsDecay | The decay rate for RMSProp, when used | Any number | 0.99 |
+| rho | Momentum for Adadelta, when used | Any number | 0.95 |
 
 ##### Examples
 ```javascript
@@ -195,8 +213,8 @@ net = new Network({adaptiveLR: "adadelta", rho: 0.95})
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
-| lreluSlope | Slope for lrelu | Any number | 0.99 |
-| eluAlpha | Alpha value for elu | Any number | 1 |
+| lreluSlope | Slope for lrelu, when used | Any number | 0.99 |
+| eluAlpha | Alpha value for elu, when used | Any number | 1 |
 
 ##### Examples
 ```javascript
@@ -216,9 +234,9 @@ The function needs to return a single number.
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 0.5 |
-| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
-| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
+| dropout | Probability a neuron will be dropped | Any number, or false to disable (equivalent to 1) | 1 |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | 0.001 |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | 0.005 |
 | maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
 ##### Examples
@@ -275,7 +293,7 @@ You can set custom weights distribution functions. They are given as parameters 
 
 ## Future plans
 ---
-More and more features will be added to this little library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+More and more features will be added to this library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
 
  The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up are Conv layers, in version 2.0.  I'll likely also think of a better name for the library, by then.
 

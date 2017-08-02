@@ -43,8 +43,8 @@ describe("Network", () => {
                 expect(net.iterations).to.equal(0)
             })
 
-            it("Defaults the cost function to 'crossentropy'", () => {
-                expect(net.cost).to.equal(NetMath.crossentropy)
+            it("Defaults the cost function to 'meansquarederror'", () => {
+                expect(net.cost).to.equal(NetMath.meansquarederror)
             })
 
             it("Defaults the adaptiveLR to noadaptivelr", () => {
@@ -201,8 +201,8 @@ describe("Network", () => {
                 expect(net.eluAlpha).to.equal(2)
             })
 
-            it("Defaults the dropout to 0.5", () => {
-                expect(net.dropout).to.equal(0.5)
+            it("Defaults the dropout to 1", () => {
+                expect(net.dropout).to.equal(1)
             })
 
             it("Allows custom dropout value", () => {
@@ -220,7 +220,8 @@ describe("Network", () => {
                 expect(net.l2).to.equal(0.0005)
             })
 
-            it("Doesn't set the net.l2 to anything if the l2 parameter is missing", () => {
+            it("Doesn't set the net.l2 to anything if the l2 parameter is set to false", () => {
+                const net = new Network({l2: false})
                 expect(net.l2).to.be.undefined
             })
 
@@ -234,7 +235,8 @@ describe("Network", () => {
                 expect(net.l1).to.equal(0.0005)
             })
 
-            it("Doesn't set the net.l1 to anything if the l1 parameter is missing", () => {
+            it("Doesn't set the net.l1 to anything if the l1 parameter is set to false", () => {
+                const net = new Network({l1: false})
                 expect(net.l1).to.be.undefined
             })
 
@@ -258,10 +260,10 @@ describe("Network", () => {
                 expect(net.maxNormTotal).to.equal(0)
             })
 
-            it("Defaults the net.weightsConfig.distribution to uniform", () => {
+            it("Defaults the net.weightsConfig.distribution to xavieruniform", () => {
                 const net = new Network({weightsConfig: {limit: 1}})
                 expect(net.weightsConfig).to.not.be.undefined
-                expect(net.weightsConfig.distribution).to.equal("uniform")
+                expect(net.weightsConfig.distribution).to.equal("xavieruniform")
             })
 
             it("Allows setting the net.weightsConfig.distribution to different config", () => {
@@ -271,13 +273,6 @@ describe("Network", () => {
 
             it("Defaults the net.weightsConfig.limit to 0.1 if distribution is uniform", () => {
                 const net = new Network({weightsConfig: {distribution: "uniform"}})
-                expect(net.weightsConfig.limit).to.not.be.undefined
-                expect(net.weightsConfig.limit).to.equal(0.1)
-            })
-
-            it("Defaults the net.weightsConfig.limit to 0.1 if no weightsConfig is given and distribution is defaulted to uniform", () => {
-                const net = new Network()
-                expect(net.weightsConfig.distribution).to.equal("uniform")
                 expect(net.weightsConfig.limit).to.not.be.undefined
                 expect(net.weightsConfig.limit).to.equal(0.1)
             })
@@ -341,7 +336,7 @@ describe("Network", () => {
         })
 
         it("Doesn't set the net.l2Error if l2 is not configured", () => {
-            const net = new Network()
+            const net = new Network({l2: false})
             expect(net.l2Error).to.be.undefined
         })
 
@@ -351,7 +346,7 @@ describe("Network", () => {
         })
 
         it("Doesn't set the net.l1Error if l1 is not configured", () => {
-            const net = new Network()
+            const net = new Network({l1: false})
             expect(net.l1Error).to.be.undefined
         })
 
@@ -728,7 +723,7 @@ describe("Network", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
@@ -908,13 +903,13 @@ describe("Network", () => {
         let net
 
         beforeEach(() => {
-            net = new Network({layers: [2, 3, 2], adaptiveLR: null})
+            net = new Network({layers: [2, 3, 2], adaptiveLR: null, l2: false})
             sinon.stub(net, "forward").callsFake(() => [1,1])
             sinon.stub(net, "backward")
             sinon.stub(net, "resetDeltaWeights")
             sinon.stub(net, "applyDeltaWeights")
             sinon.stub(net, "initLayers")
-            sinon.stub(NetMath, "crossentropy")
+            sinon.stub(NetMath, "meansquarederror")
             sinon.stub(console, "log") // Get rid of output spam
         }) 
 
@@ -924,7 +919,7 @@ describe("Network", () => {
             net.resetDeltaWeights.restore()
             net.applyDeltaWeights.restore()
             net.initLayers.restore()
-            NetMath.crossentropy.restore()
+            NetMath.meansquarederror.restore()
             console.log.restore()
         }) 
 
@@ -1384,7 +1379,7 @@ describe("Layer", () => {
             layer1 = new Layer(2)
             layer2 = new Layer(2)
             layer2.weightsConfig = {limit: 0.1}
-            layer2.net = {weightsInitFn: NetMath.uniform}
+            layer2.net = {weightsInitFn: NetMath.xavieruniform}
             sinon.stub(layer2.neurons[0], "init") 
             sinon.stub(layer2.neurons[1], "init")
         })
@@ -1459,7 +1454,7 @@ describe("Layer", () => {
             expect(layer2.state).to.equal("initialised")
         })
 
-        it("Calls the NetMath.uniform function when the weightsInitFn is uniform", () => {
+        it("Calls the NetMath.xavieruniform function when the weightsInitFn is xavieruniform", () => {
             sinon.stub(layer2.net, "weightsInitFn")
             layer2.assignPrev(layer1)
             expect(layer2.net.weightsInitFn).to.be.called

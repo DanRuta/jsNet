@@ -1,6 +1,6 @@
 "use strict"
 
-class Layer {
+class FCLayer {
     
     constructor (size, importedData) {
         this.size = size
@@ -71,7 +71,14 @@ class Layer {
     }
 }
 
-typeof window=="undefined" && (exports.Layer = Layer)
+class Layer extends FCLayer {
+
+    constructor (...args) {
+        super(args)
+    }
+}
+
+typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)
 "use strict"
 
 class NetMath {
@@ -324,7 +331,7 @@ class NetUtil {
         return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
     }
 
-    static build2DPrefixSAMap (square) {
+    static build2DPrefixSA (square) {
 
         const l = square.length
         let map = [...new Array(l+1)].map(row => [...new Array(l+1)].map(v => 0))
@@ -344,7 +351,7 @@ class NetUtil {
         return map
     }
 
-    static sum2DPSAMap (map, zP, fS) {
+    static sum2DPSA (map, zP, fS) {
 
         const l = map.length
         const sumMap = [...new Array(l-1-(zP*2))].map(row => [...new Array(l-1-(zP*2))].map(v => 0))
@@ -488,13 +495,13 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(item => item instanceof Layer):
+                case layers.every(item => item instanceof Layer || item instanceof FCLayer):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()
                     break
 
-                case layers.every(item => item === Layer):
+                case layers.every(item => item === Layer || item === FCLayer):
                     this.state = "defined"
                     this.definedLayers = layers
                     break
@@ -531,10 +538,10 @@ class Network {
                 break
 
             case "not-defined":
-                this.layers[0] = new Layer(input)
-                this.layers[1] = new Layer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
+                this.layers[0] = new FCLayer(input)
+                this.layers[1] = new FCLayer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
                                                                         : input + expected))
-                this.layers[2] = new Layer(Math.ceil(expected))
+                this.layers[2] = new FCLayer(Math.ceil(expected))
                 break
         }
 
@@ -795,7 +802,7 @@ class Network {
             throw new Error("No JSON data given to import.")
         }
 
-        this.layers = data.layers.map(layer => new Layer(layer.neurons.length, layer.neurons))
+        this.layers = data.layers.map(layer => new FCLayer(layer.neurons.length, layer.neurons))
         this.state = "constructed"
         this.initLayers()
     }

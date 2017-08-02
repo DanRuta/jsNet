@@ -48,7 +48,7 @@ class NetUtil {
         return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
     }
 
-    static build2DPrefixSAMap (square) {
+    static build2DPrefixSA (square) {
 
         const l = square.length
         let map = [...new Array(l+1)].map(row => [...new Array(l+1)].map(v => 0))
@@ -68,7 +68,7 @@ class NetUtil {
         return map
     }
 
-    static sum2DPSAMap (map, zP, fS) {
+    static sum2DPSA (map, zP, fS) {
 
         const l = map.length
         const sumMap = [...new Array(l-1-(zP*2))].map(row => [...new Array(l-1-(zP*2))].map(v => 0))

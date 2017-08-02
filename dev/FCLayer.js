@@ -1,6 +1,6 @@
 "use strict"
 
-class Layer {
+class FCLayer {
     
     constructor (size, importedData) {
         this.size = size
@@ -71,4 +71,11 @@ class Layer {
     }
 }
 
-typeof window=="undefined" && (exports.Layer = Layer)
+class Layer extends FCLayer {
+
+    constructor (...args) {
+        super(args)
+    }
+}
+
+typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)

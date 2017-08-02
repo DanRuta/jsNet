@@ -13,8 +13,11 @@ https://ai.danruta.co.uk - Interactive MNIST Digit classifier
 ##  Usage
 When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
 ```javascript
-const {Network, Layer, Neuron, NetMath, NetUtil} = require("./Network.min.js")
+const {Network, FCLayer, Layer, Neuron, NetMath, NetUtil} = require("./Network.min.js")
+// Get just what you need.
 ```
+Layer is an alias for FCLayer, for people not using the library for convolutional networks.
+
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ### Constructing

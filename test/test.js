@@ -9,13 +9,25 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-const {Network, Layer, Neuron, NetMath, NetUtil} = require("../dist/Network.concat.js")
+const {Network, Layer, FCLayer, Neuron, NetMath, NetUtil} = require("../dist/Network.concat.js")
 
-describe("Tests", () => {
+describe("Loading", () => {
+
     it("Network is loaded", () => expect(Network).to.not.be.undefined)
     it("Layer is loaded", () => expect(Layer).to.not.be.undefined)
     it("Neuron is loaded", () => expect(Neuron).to.not.be.undefined)
     it("NetMath is loaded", () => expect(NetMath).to.not.be.undefined)
+    it("NetUtil is loaded", () => expect(NetUtil).to.not.be.undefined)
+    it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
+
+    it("Loads Layer as an alias of FCLayer", () => {
+        
+        const layer = new Layer()
+        const fclayer = new FCLayer()
+
+        expect(Layer).to.equal(FCLayer)
+        expect(layer).to.deep.equal(fclayer)
+    })
 })
 
 describe("Network", () => {
@@ -2518,7 +2530,7 @@ describe("NetUtil", () => {
         })
     })
 
-    describe("build2DPrefixSAMap", () => {
+    describe("build2DPrefixSA", () => {
 
         const testData = [[3,5,2,6,8],
                           [9,6,4,3,2],
@@ -2526,7 +2538,7 @@ describe("NetUtil", () => {
                           [5,8,1,3,7],
                           [4,8,6,4,3]]
 
-        const result = NetUtil.build2DPrefixSAMap(testData)
+        const result = NetUtil.build2DPrefixSA(testData)
 
         it("Returns a map with 1 extra row and column", () => {
             expect(result.length).to.equal(6)
@@ -2554,7 +2566,7 @@ describe("NetUtil", () => {
         })
     })
 
-    describe("sum2DPSAMap", () => {
+    describe("sum2DPSA", () => {
 
         const testData = [[3,5,2,6,8],
                           [9,6,4,3,2],
@@ -2563,8 +2575,8 @@ describe("NetUtil", () => {
                           [4,8,6,4,3]]
 
         const padded = NetUtil.addZeroPadding(testData, 1)
-        const prefixed = NetUtil.build2DPrefixSAMap(padded)
-        const result = NetUtil.sum2DPSAMap(prefixed, 1, 3)
+        const prefixed = NetUtil.build2DPrefixSA(padded)
+        const result = NetUtil.sum2DPSA(prefixed, 1, 3)
 
         it("Returns a map with the same dimensions as the original input", () => {
             expect(result.length).to.equal(5)

@@ -1,3 +1,11 @@
+# Upcoming - Conv Layers
+---
+#### NetUtil
+- Created new file to store util functions
+- Added addZeroPadding
+- Added build2DPrefixSAMap
+- Added sum2DPSAMap
+
 # 1.5.0 - Training, Misc
 ---
 #### Network

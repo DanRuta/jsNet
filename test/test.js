@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-const {Network, Layer, Neuron, NetMath} = require("../dist/Network.concat.js")
+const {Network, Layer, Neuron, NetMath, NetUtil} = require("../dist/Network.concat.js")
 
 describe("Tests", () => {
     it("Network is loaded", () => expect(Network).to.not.be.undefined)
@@ -2481,6 +2481,111 @@ describe("Netmath", () => {
             expect(NetMath.lecununiform).to.have.been.calledWith(10, {fanIn: 5})
             expect(result.length).to.equal(10)
             NetMath.lecununiform.restore()
+        })
+    })
+})
+
+describe("NetUtil", () => {
+
+    describe("addZeroPadding", () => {
+
+        const testData = [[3,5,2,6,8],
+                          [9,6,4,3,2],
+                          [2,9,3,4,2],
+                          [5,8,1,3,7],
+                          [4,8,6,4,3]]
+
+
+        it("Returns the same data when zero padding of 0 is given", () => {
+            const result = NetUtil.addZeroPadding(testData, 0)
+            expect(result).to.deep.equal(testData)
+        })
+
+        it("Returns a map with 1 level of zeroes padded on the edges when zero padding of 1 is given", () => {
+            const result = NetUtil.addZeroPadding(testData, 1)
+            expect(result.length).to.equal(7)
+            expect(result[0].length).to.equal(7)
+            expect(result[0]).to.deep.equal([0,0,0,0,0,0,0])
+        })
+
+        it("Returns a map with 3 level of zeroes padded on the edges when zero padding of 3 is given", () => {
+            const result = NetUtil.addZeroPadding(testData, 3)
+            expect(result.length).to.equal(11)
+            expect(result[0].length).to.equal(11)
+            expect(result[0]).to.deep.equal([0,0,0,0,0,0,0,0,0,0,0])
+        })
+
+        it("Keeps the same data, apart from the zeroes", () => {
+            let result = NetUtil.addZeroPadding(testData, 1)
+            result = result.splice(1, 5)
+            result.forEach((row, ri) => result[ri] = result[ri].splice(1, 5))
+            expect(result).to.deep.equal(testData)
+        })
+    })
+
+    describe("build2DPrefixSAMap", () => {
+
+        const testData = [[3,5,2,6,8],
+                          [9,6,4,3,2],
+                          [2,9,3,4,2],
+                          [5,8,1,3,7],
+                          [4,8,6,4,3]]
+
+        const result = NetUtil.build2DPrefixSAMap(testData)
+
+        it("Returns a map with 1 extra row and column", () => {
+            expect(result.length).to.equal(6)
+            expect(result[0].length).to.equal(6)
+        })
+
+        it("Has only zeroes in the first row", () => {
+            expect(result[0]).to.deep.equal([0,0,0,0,0,0])
+        })
+
+        it("Has only zeroes in the first column", () => {
+            expect(result.map(row => row[0])).to.deep.equal([0,0,0,0,0,0])
+        })
+
+        it("Sums the single top left value to itself", () => {
+            expect(result[1][1]).to.equal(3)
+        })
+
+        it("Sums the four top left values to their sum, 23", () => {
+            expect(result[2][2]).to.equal(23)
+        })
+
+        it("Sets the bottom right value to the combined sum of the previous values", () => {
+            expect(result[5][5]).to.equal(117)
+        })
+    })
+
+    describe("sum2DPSAMap", () => {
+
+        const testData = [[3,5,2,6,8],
+                          [9,6,4,3,2],
+                          [2,9,3,4,2],
+                          [5,8,1,3,7],
+                          [4,8,6,4,3]]
+
+        const padded = NetUtil.addZeroPadding(testData, 1)
+        const prefixed = NetUtil.build2DPrefixSAMap(padded)
+        const result = NetUtil.sum2DPSAMap(prefixed, 1, 3)
+
+        it("Returns a map with the same dimensions as the original input", () => {
+            expect(result.length).to.equal(5)
+            expect(result[0].length).to.equal(5)
+        })
+
+        it("Sets the top left value to the sum of the first 4 values", () => {
+            expect(result[0][0]).to.equal(23)
+        })
+
+        it("Sets the middle value to the sum of the original middle and the 8 values around it", () => {
+            expect(result[2][2]).to.equal(41)
+        })
+
+        it("Sets the bottom right value to the combined sum of the last 4 corner values", () => {
+            expect(result[4][4]).to.equal(17)
         })
     })
 })

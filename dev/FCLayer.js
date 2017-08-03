@@ -69,13 +69,28 @@ class FCLayer {
             }            
         })
     }
-}
 
-class Layer extends FCLayer {
+    resetDeltaWeights () {
+        this.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
+    }
 
-    constructor (...args) {
-        super(args)
+    applyDeltaWeights () {
+        this.neurons.forEach(neuron => {
+            neuron.deltaWeights.forEach((dw, dwi) => {
+
+                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], dw, neuron, dwi)()
+
+                if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
+            })
+
+            neuron.bias = this.net.weightUpdateFn.bind(this.net, neuron.bias, neuron.deltaBias, neuron)()
+        })
     }
 }
+
+const Layer = FCLayer
 
 typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)

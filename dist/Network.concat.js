@@ -69,14 +69,29 @@ class FCLayer {
             }            
         })
     }
-}
 
-class Layer extends FCLayer {
+    resetDeltaWeights () {
+        this.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
+    }
 
-    constructor (...args) {
-        super(args)
+    applyDeltaWeights () {
+        this.neurons.forEach(neuron => {
+            neuron.deltaWeights.forEach((dw, dwi) => {
+
+                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], dw, neuron, dwi)()
+
+                if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
+            })
+
+            neuron.bias = this.net.weightUpdateFn.bind(this.net, neuron.bias, neuron.deltaBias, neuron)()
+        })
     }
 }
+
+const Layer = FCLayer
 
 typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)
 "use strict"
@@ -139,17 +154,17 @@ class NetMath {
 
     static gain (value, deltaValue, neuron, weightI) {
 
-        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.weightGains[weightI])
+        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.getWeightGain(weightI))
 
         if (newVal<=0 && value>0 || newVal>=0 && value<0){
             if (weightI!=null) {
-                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+                neuron.setWeightGain(weightI, Math.max(neuron.getWeightGain(weightI)*0.95, 0.5))
             } else {
                 neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
             }
         } else {
             if (weightI!=null) {
-                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+                neuron.setWeightGain(weightI, Math.min(neuron.getWeightGain(weightI)+0.05, 5))
             } else {
                 neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
             }
@@ -161,24 +176,25 @@ class NetMath {
     static adagrad (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, weightI+Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache += Math.pow(deltaValue, 2)
         }
 
-        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.getWeightsCache(weightI)
                                                                                         : neuron.biasCache))
     }
 
     static rmsprop (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+            // neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, this.rmsDecay * neuron.getWeightsCache(weightI) + (1 - this.rmsDecay) * Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
         }
 
-        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.getWeightsCache(weightI)
                                                                                         : neuron.biasCache))
     }
 
@@ -196,9 +212,9 @@ class NetMath {
     static adadelta (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] = this.rho * neuron.weightsCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
-            const newVal = value + Math.sqrt((neuron.adadeltaCache[weightI] + 1e-6)/(neuron.weightsCache[weightI] + 1e-6)) * deltaValue
-            neuron.adadeltaCache[weightI] = this.rho * neuron.adadeltaCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, this.rho * neuron.getWeightsCache(weightI) + (1-this.rho) * Math.pow(deltaValue, 2))
+            const newVal = value + Math.sqrt((neuron.getAdadeltaCache(weightI) + 1e-6)/(neuron.getWeightsCache(weightI) + 1e-6)) * deltaValue
+            neuron.setAdadeltaCache(weightI, this.rho * neuron.getAdadeltaCache(weightI) + (1-this.rho) * Math.pow(deltaValue, 2))
             return newVal
 
         } else {
@@ -271,7 +287,7 @@ class NetMath {
 
             this.layers.forEach((layer, li) => {
                 li && layer.neurons.forEach(neuron => {
-                    neuron.weights.forEach((w, wi) => neuron.weights[wi] *= multiplier)
+                    neuron.weights.forEach((w, wi) => neuron.setWeight(wi, neuron.getWeight(wi) * multiplier))
                 })
             })
         }
@@ -331,7 +347,8 @@ class NetUtil {
         return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
     }
 
-    static build2DPrefixSA (square) {
+    // 2D Prefix Sum Array
+    static build2DPSA (square) {
 
         const l = square.length
         let map = [...new Array(l+1)].map(row => [...new Array(l+1)].map(v => 0))
@@ -591,7 +608,7 @@ class Network {
         }
 
         if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.")
+            console.warn("Expected data length did not match output layer neurons count.", expected)
         }
 
         this.layers[this.layers.length-1].backward(expected)
@@ -662,6 +679,7 @@ class Network {
                 const iterationError = this.cost(target, output)
                 const elapsed = Date.now() - startTime
                 this.error += iterationError
+                this.iterations++
 
                 if (typeof callback=="function") {
                     callback({
@@ -670,8 +688,6 @@ class Network {
                         elapsed, input
                     })
                 }
-
-                this.iterations++
 
                 if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
@@ -753,27 +769,12 @@ class Network {
     }
 
     resetDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
-        })
+        this.layers.forEach((layer, li) => li && layer.resetDeltaWeights())
     }
 
     applyDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => {
-                neuron.deltaWeights.forEach((dw, dwi) => {
 
-                    if (this.l2!=undefined) this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
-                    if (this.l1!=undefined) this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
-
-                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
-
-                    if (this.maxNorm!=undefined) this.maxNormTotal += neuron.weights[dwi]**2
-                })
-
-                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
-            })
-        })
+        this.layers.forEach((layer, li) => li && layer.applyDeltaWeights())
 
         if (this.maxNorm!=undefined) {
             this.maxNormTotal = Math.sqrt(this.maxNormTotal)
@@ -828,8 +829,10 @@ class Neuron {
         switch (adaptiveLR) {
             
             case "gain":
-                this.weightGains = [...new Array(size)].map(v => 1)
                 this.biasGain = 1
+                this.weightGains = [...new Array(size)].map(v => 1)
+                this.getWeightGain = i => this.weightGains[i]
+                this.setWeightGain = (i,v) => this.weightGains[i] = v
                 break
 
             case "adagrad":
@@ -837,10 +840,14 @@ class Neuron {
             case "adadelta":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)
+                this.getWeightsCache = i => this.weightsCache[i]
+                this.setWeightsCache = (i,v) => this.weightsCache[i] = v
 
                 if (adaptiveLR=="adadelta") {
-                    this.adadeltaCache = [...new Array(size)].map(v => 0)
                     this.adadeltaBiasCache = 0
+                    this.adadeltaCache = [...new Array(size)].map(v => 0)
+                    this.getAdadeltaCache = i => this.adadeltaCache[i]
+                    this.setAdadeltaCache = (i,v) => this.adadeltaCache[i] = v
                 }
                 break
 
@@ -856,6 +863,22 @@ class Neuron {
         } else if (activationConfig=="elu") {
             this.eluAlpha = eluAlpha
         }
+    }
+
+    getWeight (i) {
+        return this.weights[i]
+    }
+
+    setWeight (i,v) {
+        this.weights[i] = v
+    }
+
+    getDeltaWeight (i) {
+        return this.deltaWeights[i]
+    }
+
+    setDeltaWeight (i,v) {
+        this.deltaWeights[i] = v
     }
 }
 

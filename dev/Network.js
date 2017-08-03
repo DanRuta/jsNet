@@ -218,7 +218,7 @@ class Network {
         }
 
         if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.")
+            console.warn("Expected data length did not match output layer neurons count.", expected)
         }
 
         this.layers[this.layers.length-1].backward(expected)
@@ -289,6 +289,7 @@ class Network {
                 const iterationError = this.cost(target, output)
                 const elapsed = Date.now() - startTime
                 this.error += iterationError
+                this.iterations++
 
                 if (typeof callback=="function") {
                     callback({
@@ -297,8 +298,6 @@ class Network {
                         elapsed, input
                     })
                 }
-
-                this.iterations++
 
                 if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
@@ -380,27 +379,12 @@ class Network {
     }
 
     resetDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
-        })
+        this.layers.forEach((layer, li) => li && layer.resetDeltaWeights())
     }
 
     applyDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => {
-                neuron.deltaWeights.forEach((dw, dwi) => {
 
-                    if (this.l2!=undefined) this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
-                    if (this.l1!=undefined) this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
-
-                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
-
-                    if (this.maxNorm!=undefined) this.maxNormTotal += neuron.weights[dwi]**2
-                })
-
-                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
-            })
-        })
+        this.layers.forEach((layer, li) => li && layer.applyDeltaWeights())
 
         if (this.maxNorm!=undefined) {
             this.maxNormTotal = Math.sqrt(this.maxNormTotal)

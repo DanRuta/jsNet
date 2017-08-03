@@ -6,11 +6,14 @@
 #### NetUtil
 - Created new file to store util functions
 - Added addZeroPadding
-- Added build2DPrefixSA
+- Added build2DPSA
 - Added sum2DPSA
 
 #### FCLayer
 - Renamed Layer.js to FCLayer.js. The Layer class still exists as an alias to what is now FCLayer
+
+#### Bug Fixes
+- Fixed training callback giving iteration index, not count (-1)
 
 # 1.5.0 - Training, Misc
 ---

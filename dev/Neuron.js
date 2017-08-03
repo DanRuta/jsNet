@@ -17,8 +17,10 @@ class Neuron {
         switch (adaptiveLR) {
             
             case "gain":
-                this.weightGains = [...new Array(size)].map(v => 1)
                 this.biasGain = 1
+                this.weightGains = [...new Array(size)].map(v => 1)
+                this.getWeightGain = i => this.weightGains[i]
+                this.setWeightGain = (i,v) => this.weightGains[i] = v
                 break
 
             case "adagrad":
@@ -26,10 +28,14 @@ class Neuron {
             case "adadelta":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)
+                this.getWeightsCache = i => this.weightsCache[i]
+                this.setWeightsCache = (i,v) => this.weightsCache[i] = v
 
                 if (adaptiveLR=="adadelta") {
-                    this.adadeltaCache = [...new Array(size)].map(v => 0)
                     this.adadeltaBiasCache = 0
+                    this.adadeltaCache = [...new Array(size)].map(v => 0)
+                    this.getAdadeltaCache = i => this.adadeltaCache[i]
+                    this.setAdadeltaCache = (i,v) => this.adadeltaCache[i] = v
                 }
                 break
 
@@ -45,6 +51,22 @@ class Neuron {
         } else if (activationConfig=="elu") {
             this.eluAlpha = eluAlpha
         }
+    }
+
+    getWeight (i) {
+        return this.weights[i]
+    }
+
+    setWeight (i,v) {
+        this.weights[i] = v
+    }
+
+    getDeltaWeight (i) {
+        return this.deltaWeights[i]
+    }
+
+    setDeltaWeight (i,v) {
+        this.deltaWeights[i] = v
     }
 }
 

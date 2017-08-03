@@ -48,7 +48,8 @@ class NetUtil {
         return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
     }
 
-    static build2DPrefixSA (square) {
+    // 2D Prefix Sum Array
+    static build2DPSA (square) {
 
         const l = square.length
         let map = [...new Array(l+1)].map(row => [...new Array(l+1)].map(v => 0))

@@ -718,82 +718,41 @@ describe("Network", () => {
 
     describe("resetDeltaWeights", () => {
 
-        it("Sets the delta weights of all neurons to 0", () => {
-            const layer1 = new Layer(2)
-            const layer2 = new Layer(2)
-            const net = new Network({layers: [layer1, layer2]})
-            layer2.neurons.forEach(neuron => neuron.deltaWeights = [1,1])
+        it("Calls the every layer except the first's resetDeltaWeights() function", () => {
+            const layer1 = new FCLayer(2)
+            const layer2 = new FCLayer(2)
+            const layer3 = new FCLayer(2)
+            const net = new Network({layers: [layer1, layer2, layer3]})
+            
+            sinon.spy(layer1, "resetDeltaWeights")
+            sinon.spy(layer2, "resetDeltaWeights")
+            sinon.spy(layer3, "resetDeltaWeights")
 
             net.resetDeltaWeights()
-            expect(layer2.neurons[0].deltaWeights).to.deep.equal([0,0])
-            expect(layer2.neurons[1].deltaWeights).to.deep.equal([0,0])
+
+            expect(layer1.resetDeltaWeights).to.not.be.called
+            expect(layer2.resetDeltaWeights).to.be.called
+            expect(layer3.resetDeltaWeights).to.be.called
         })
     })
 
     describe("applyDeltaWeights", () => {
 
-        it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
+        it("Calls ever layer except the first's applyDeltaWeights() function", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+            const layer3 = new Layer(4)
 
-            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
-            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+            const net = new Network({layers: [layer1, layer2, layer3]})
 
-            net.applyDeltaWeights()
-            
-            expect(layer1.weights).to.be.undefined
-            expect(layer2.neurons[0].weights).to.deep.equal([0.75, 0.75])
-            expect(layer2.neurons[1].weights).to.deep.equal([0.75, 0.75])
-            expect(layer2.neurons[2].weights).to.deep.equal([0.75, 0.75])
-        })
-
-        it("Increments the bias of all neurons with their deltaBias", () => {
-            const layer1 = new Layer(2)
-            const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
-
-            layer2.neurons.forEach(neuron => neuron.bias = 0.25)
-            layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
+            sinon.spy(layer1, "applyDeltaWeights")
+            sinon.spy(layer2, "applyDeltaWeights")
+            sinon.spy(layer3, "applyDeltaWeights")
 
             net.applyDeltaWeights()
-
-            expect(layer1.bias).to.be.undefined
-            expect(layer2.neurons[0].bias).to.equal(0.75)
-            expect(layer2.neurons[1].bias).to.equal(0.75)
-            expect(layer2.neurons[2].bias).to.equal(0.75)
-        })
-
-        it("Increments the net.l2Error by each weight, applied to the L2 formula", () => {
-            const layer1 = new Layer(2)
-            const layer2 = new Layer(1)
-            const net = new Network({activation: "sigmoid", learningRate: 0.2, l2: 0.001, layers: [layer1, layer2]})
-
-            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
-            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
-
-            sinon.stub(net, "weightUpdateFn")
-            net.applyDeltaWeights()
-
-            expect(net.l2Error).to.equal(0.0000625)
-
-            net.weightUpdateFn.restore()
-        })
-
-        it("Increments the net.l1Error by each weight, applied to the L1 formula", () => {
-            const layer1 = new Layer(2)
-            const layer2 = new Layer(1)
-            const net = new Network({activation: "sigmoid", learningRate: 0.2, l1: 0.005, layers: [layer1, layer2]})
-
-            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
-            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
-
-            sinon.stub(net, "weightUpdateFn")
-            net.applyDeltaWeights()
-
-            expect(net.l1Error).to.equal(0.0025)
-
-            net.weightUpdateFn.restore()
+            expect(layer1.applyDeltaWeights).to.not.be.called
+            expect(layer2.applyDeltaWeights).to.be.called
+            expect(layer3.applyDeltaWeights).to.be.called
         })
 
         it("Increments the net.maxNormTotal if the net.maxNorm is configured", () => {
@@ -1280,7 +1239,8 @@ describe("Network", () => {
     })
 })
 
-describe("Layer", () => {
+describe("FCLayer", () => {
+
     describe("Constructor", () => {
 
         it("Can create a new Layer with no parameters", () => expect(new Layer()).instanceof(Layer))
@@ -1629,6 +1589,114 @@ describe("Layer", () => {
             expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275001")
         })
     })
+
+    describe("resetDeltaWeights", () => {
+
+        it("Sets the delta weights of all neurons to 0", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [layer1, layer2]})
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [1,1])
+
+            layer2.resetDeltaWeights()
+            expect(layer2.neurons[0].deltaWeights).to.deep.equal([0,0])
+            expect(layer2.neurons[1].deltaWeights).to.deep.equal([0,0])
+        })
+    })
+
+    describe("applyDeltaWeights", () => {
+
+        it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            layer2.applyDeltaWeights()
+            
+            expect(layer2.neurons[0].weights).to.deep.equal([0.75, 0.75])
+            expect(layer2.neurons[1].weights).to.deep.equal([0.75, 0.75])
+            expect(layer2.neurons[2].weights).to.deep.equal([0.75, 0.75])
+        })
+
+        it("Increments the bias of all neurons with their deltaBias", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+
+            layer2.neurons.forEach(neuron => neuron.bias = 0.25)
+            layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
+
+            layer2.applyDeltaWeights()
+
+            expect(layer2.neurons[0].bias).to.equal(0.75)
+            expect(layer2.neurons[1].bias).to.equal(0.75)
+            expect(layer2.neurons[2].bias).to.equal(0.75)
+        })
+
+        it("Increments the net.l2Error by each weight, applied to the L2 formula", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(1)
+            const net = new Network({activation: "sigmoid", learningRate: 0.2, l2: 0.001, layers: [layer1, layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            sinon.stub(net, "weightUpdateFn")
+            layer2.applyDeltaWeights()
+
+            expect(net.l2Error).to.equal(0.0000625)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.l1Error by each weight, applied to the L1 formula", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(1)
+            const net = new Network({activation: "sigmoid", learningRate: 0.2, l1: 0.005, layers: [layer1, layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+            layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
+
+            sinon.stub(net, "weightUpdateFn")
+            layer2.applyDeltaWeights()
+
+            expect(net.l1Error).to.equal(0.0025)
+
+            net.weightUpdateFn.restore()
+        })
+
+        it("Increments the net.maxNormTotal if the net.maxNorm is configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({maxNorm: 3, layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            sinon.stub(NetMath, "maxNorm").callsFake(x => x)
+            layer2.applyDeltaWeights()
+
+            expect(net.maxNormTotal).to.equal(0.125) // sqrt ( 2 * 0.25**2 )        
+            net.weightUpdateFn.restore()
+            NetMath.maxNorm.restore()
+        })
+
+        it("Does not increment net.maxNormTotal if the net.maxNorm is not configured", () => {
+            const layer2 = new Layer(1)
+            const net = new Network({layers: [new Layer(2), layer2]})
+
+            layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
+
+            sinon.stub(net, "weightUpdateFn").callsFake(x => x)
+            layer2.applyDeltaWeights()
+
+            expect(net.maxNormTotal).to.be.undefined
+
+            net.weightUpdateFn.restore()
+        })        
+    })
 })
 
 describe("Neuron", () => {
@@ -1796,6 +1864,165 @@ describe("Neuron", () => {
         it("Sets the neuron.eluAlpha to the given value, if given a value", () => {
             neuron2.init(3, {activationConfig: "elu", eluAlpha: 0.5})
             expect(neuron2.eluAlpha).to.equal(0.5)
+        })
+
+        it("Creates the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is gain", () => {
+            neuron2.init(3, {adaptiveLR: "gain"})
+            expect(neuron2.getWeightGain).to.not.be.undefined
+            expect(neuron2.setWeightGain).to.not.be.undefined
+        })
+
+        it("Does not create the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is not gain", () => {
+            neuron2.init(3, {adaptiveLR: "not gain"})
+            expect(neuron2.getWeightGain).to.be.undefined
+            expect(neuron2.setWeightGain).to.be.undefined
+        })
+
+        it("getWeightGain() returns the neuron.weightGains weight at the given index", () => {
+            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.weightGains = [1,2,3]
+            expect(neuron2.getWeightGain(0)).to.equal(1)
+            expect(neuron2.getWeightGain(1)).to.equal(2)
+            expect(neuron2.getWeightGain(2)).to.equal(3)
+        })
+
+        it("setWeightGain() changes the neuron.weightGains weight at the given index", () => {
+            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.weightGains = [1,2,3]
+            neuron2.setWeightGain(0, 4)
+            neuron2.setWeightGain(1, 5)
+            neuron2.setWeightGain(2, 6)
+            expect(neuron2.weightGains[0]).to.equal(4)
+            expect(neuron2.weightGains[1]).to.equal(5)
+            expect(neuron2.weightGains[2]).to.equal(6)
+        })
+
+        it("Creates the neuron.getWeightsCache() and neuron.setWeightsCache() function when adaptiveLR is adagrad", () => {
+            neuron2.init(3, {adaptiveLR: "adagrad"})
+            expect(neuron2.getWeightsCache).to.not.be.undefined
+            expect(neuron2.setWeightsCache).to.not.be.undefined
+        })
+
+        it("Creates the neuron.getWeightsCache() function when adaptiveLR is rmsprop", () => {
+            neuron2.init(3, {adaptiveLR: "rmsprop"})
+            expect(neuron2.getWeightsCache).to.not.be.undefined
+            expect(neuron2.setWeightsCache).to.not.be.undefined
+        })
+
+        it("Creates the neuron.getWeightsCache() function when adaptiveLR is adadelta", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            expect(neuron2.getWeightsCache).to.not.be.undefined
+            expect(neuron2.setWeightsCache).to.not.be.undefined
+        })
+
+        it("Does not create the neuron.getWeightsCache() and neuron.setWeightsCache() functions when adaptiveLR is something else", () => {
+            neuron2.init(3, {adaptiveLR: "something else"})
+            expect(neuron2.getWeightsCache).to.be.undefined
+            expect(neuron2.setWeightsCache).to.be.undefined
+        })
+
+        it("getWeightsCache() returns the neuron.weightsCache weight at the given index", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.weightsCache = [1,2,3]
+            expect(neuron2.getWeightsCache(0)).to.equal(1)
+            expect(neuron2.getWeightsCache(1)).to.equal(2)
+            expect(neuron2.getWeightsCache(2)).to.equal(3)
+        })
+
+        it("setWeightsCache() changes the neuron.weightsCache weight at the given index", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.weightsCache = [1,2,3]
+            neuron2.setWeightsCache(0, 4)
+            neuron2.setWeightsCache(1, 5)
+            neuron2.setWeightsCache(2, 6)
+            expect(neuron2.weightsCache[0]).to.equal(4)
+            expect(neuron2.weightsCache[1]).to.equal(5)
+            expect(neuron2.weightsCache[2]).to.equal(6)
+        })
+
+        it("Creates the neuron.getAdadeltaCache() and neuron.setAdadeltaCache() functions when adaptiveLR is adadelta", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            expect(neuron2.getAdadeltaCache).to.not.be.undefined
+            expect(neuron2.setAdadeltaCache).to.not.be.undefined
+        })
+
+        it("Does not create the neuron.getAdadeltaCache() function when adaptiveLR is not adadelta", () => {
+            neuron2.init(3, {adaptiveLR: "not adadelta"})
+            expect(neuron2.getAdadeltaCache).to.be.undefined
+            expect(neuron2.setAdadeltaCache).to.be.undefined
+        })
+
+        it("getAdadeltaCache() returns the neuron.adadeltaCache value at the index given", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.adadeltaCache = [1,2,3]
+            expect(neuron2.getAdadeltaCache(0)).to.equal(1)
+            expect(neuron2.getAdadeltaCache(1)).to.equal(2)
+            expect(neuron2.getAdadeltaCache(2)).to.equal(3)
+        })
+
+        it("setAdadeltaCache() changes the neuron.adadeltaCache weight at the given index", () => {
+            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.adadeltaCache = [1,2,3]
+            neuron2.setAdadeltaCache(0, 4)
+            neuron2.setAdadeltaCache(1, 5)
+            neuron2.setAdadeltaCache(2, 6)
+            expect(neuron2.adadeltaCache[0]).to.equal(4)
+            expect(neuron2.adadeltaCache[1]).to.equal(5)
+            expect(neuron2.adadeltaCache[2]).to.equal(6)
+        })
+    })
+
+    describe("getWeight", () => {
+
+        const neuron = new Neuron()
+        neuron.weights = [1,2,3]
+
+        it("Returns the neuron's weight at that index", () => {
+            expect(neuron.getWeight(0)).to.equal(1)
+            expect(neuron.getWeight(1)).to.equal(2)
+            expect(neuron.getWeight(2)).to.equal(3)
+        })
+    })
+
+    describe("setWeight", () => {
+
+        const neuron = new Neuron()
+        neuron.weights = [1,2,3]
+
+        it("Sets the neuron's weight at that index to the given value", () => {
+            neuron.setWeight(0, 4)
+            neuron.setWeight(1, 5)
+            neuron.setWeight(2, 6)
+            expect(neuron.weights[0]).to.equal(4)
+            expect(neuron.weights[1]).to.equal(5)
+            expect(neuron.weights[2]).to.equal(6)
+        })
+    })
+
+    describe("getDeltaWeight", () => {
+
+        const neuron = new Neuron()
+        neuron.deltaWeights = [4,5,6]
+
+        it("Returns the neuron's weight at that index", () => {
+            expect(neuron.getDeltaWeight(0)).to.equal(4)
+            expect(neuron.getDeltaWeight(1)).to.equal(5)
+            expect(neuron.getDeltaWeight(2)).to.equal(6)
+        })
+    })
+
+    describe("setDeltaWeight", () => {
+
+        const neuron = new Neuron()
+        neuron.deltaWeights = [4,5,6]
+
+        it("Sets the neuron's deltaWeight at that index to the given value", () => {
+            neuron.setDeltaWeight(0, 7)
+            neuron.setDeltaWeight(1, 8)
+            neuron.setDeltaWeight(2, 9)
+            expect(neuron.deltaWeights[0]).to.equal(7)
+            expect(neuron.deltaWeights[1]).to.equal(8)
+            expect(neuron.deltaWeights[2]).to.equal(9)
         })
     })
 })
@@ -1980,7 +2207,11 @@ describe("Netmath", () => {
 
         let neuron
 
-        beforeEach(() => neuron = new Neuron())
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init(5, {adaptiveLR: "gain"})
+        })
 
         it("Doubles a value when the gain is 2 and learningRate 1", () => {
             neuron.biasGain = 2
@@ -2063,7 +2294,11 @@ describe("Netmath", () => {
 
         let neuron
 
-        beforeEach(() => neuron = new Neuron())
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init(5, {adaptiveLR: "adagrad"})
+        })
 
         it("Increments the neuron's biasCache by the square of its deltaBias", () => {
             neuron.biasCache = 0
@@ -2095,7 +2330,11 @@ describe("Netmath", () => {
     describe("rmsprop", () => {
         let neuron
 
-        beforeEach(() => neuron = new Neuron())
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init(5, {adaptiveLR: "rmsprop"})
+        })
 
         it("Sets the cache value to the correct formula", () => {
             neuron.biasCache = 10
@@ -2154,7 +2393,11 @@ describe("Netmath", () => {
 
         let neuron
 
-        beforeEach(() => neuron = new Neuron())
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init(5, {adaptiveLR: "adadelta"})
+        })
 
         it("Sets the neuron.biasCache to the correct value, following the adadelta formula", () => {
             neuron.biasCache = 0.5
@@ -2530,7 +2773,7 @@ describe("NetUtil", () => {
         })
     })
 
-    describe("build2DPrefixSA", () => {
+    describe("build2DPSA", () => {
 
         const testData = [[3,5,2,6,8],
                           [9,6,4,3,2],
@@ -2538,7 +2781,7 @@ describe("NetUtil", () => {
                           [5,8,1,3,7],
                           [4,8,6,4,3]]
 
-        const result = NetUtil.build2DPrefixSA(testData)
+        const result = NetUtil.build2DPSA(testData)
 
         it("Returns a map with 1 extra row and column", () => {
             expect(result.length).to.equal(6)
@@ -2575,7 +2818,7 @@ describe("NetUtil", () => {
                           [4,8,6,4,3]]
 
         const padded = NetUtil.addZeroPadding(testData, 1)
-        const prefixed = NetUtil.build2DPrefixSA(padded)
+        const prefixed = NetUtil.build2DPSA(padded)
         const result = NetUtil.sum2DPSA(prefixed, 1, 3)
 
         it("Returns a map with the same dimensions as the original input", () => {

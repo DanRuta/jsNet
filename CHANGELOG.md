@@ -10,6 +10,7 @@
 #### ConvLayer
 - Created ConvLayer 🎉
 - Added filterCount, filterSize, zeroPadding and stride configs
+- Added activation config
 
 #### Filter
 - Created Filter

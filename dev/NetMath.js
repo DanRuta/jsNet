@@ -3,6 +3,10 @@
 class NetMath {
 
     // Activation functions
+    static noactivation (value, prime) {
+        return prime ? 1 : value
+    }
+
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
         return prime ? val*(1-val)

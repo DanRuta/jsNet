@@ -605,6 +605,14 @@ describe("Network", () => {
             expect(layer1.activation).to.equal("test")
         })
 
+        it("Does not change a layer's activation function if it already has one", () => {
+            layer1.activation = "something"
+            net.layers = [layer1]
+            net.activation = "something else"
+            net.joinLayer(layer1)
+            expect(layer1.activation).to.equal("something")
+        })
+
         it("Assigns layer2 to layer1's next layer", () => {
             net.layers = [layer1, layer2]
             net.joinLayer(layer1, 0)
@@ -1939,15 +1947,15 @@ describe("Neuron", () => {
             expect(neuron3.adadeltaBiasCache).to.be.undefined
         })
 
-        it("Creates a random neuron.rreluSlope number if the activationConfig value is rrelu", () => {
-            neuron2.init({activationConfig: "rrelu"})
+        it("Creates a random neuron.rreluSlope number if the activation is rrelu", () => {
+            neuron2.init({activation: "rrelu"})
             expect(neuron2.rreluSlope).to.not.be.undefined
             expect(neuron2.rreluSlope).to.be.a.number
             expect(neuron2.rreluSlope).to.be.at.most(0.0011)
         })
 
         it("Sets the neuron.eluAlpha to the given value, if given a value", () => {
-            neuron2.init({activationConfig: "elu", eluAlpha: 0.5})
+            neuron2.init({activation: "elu", eluAlpha: 0.5})
             expect(neuron2.eluAlpha).to.equal(0.5)
         })
 
@@ -2366,15 +2374,15 @@ describe("Filter", () => {
             expect(filter.v).to.be.undefined
         })
 
-        it("Creates a random filter.rreluSlope number if the activationConfig value is rrelu", () => {
-            filter.init({activationConfig: "rrelu"})
+        it("Creates a random filter.rreluSlope number if the activation is rrelu", () => {
+            filter.init({activation: "rrelu"})
             expect(filter.rreluSlope).to.not.be.undefined
             expect(filter.rreluSlope).to.be.a.number
             expect(filter.rreluSlope).to.be.at.most(0.0011)
         })
 
         it("Sets the filter.eluAlpha to the given value, if given a value", () => {
-            filter.init({activationConfig: "elu", eluAlpha: 0.5})
+            filter.init({activation: "elu", eluAlpha: 0.5})
             expect(filter.eluAlpha).to.equal(0.5)
         })
     })
@@ -2493,6 +2501,27 @@ describe("ConvLayer", () => {
         it("Sets the state to not-initialised", () => {
             const layer = new ConvLayer()
             expect(layer.state).to.equal("not-initialised")
+        })
+
+        it("Doesn't set the layer activation to anything if nothing is provided", () => {
+            const layer = new ConvLayer()
+            expect(layer.activation).to.be.undefined
+        })
+
+        it("Allows setting the activation function to a custom function", () => {
+            const customFn = x => x
+            const layer = new ConvLayer(2, {activation: customFn})
+            expect(layer.activation).to.equal(customFn)
+        })
+
+        it("Allows setting the activation function to noactivation by setting it to false", () => {
+            const layer = new ConvLayer(5, {activation: false})
+            expect(layer.activation.name).to.equal("noactivation")
+        })
+
+        it("Allows setting the activation function to a function from NetMath using a string", () => {
+            const layer = new ConvLayer(5, {activation: "relu"})
+            expect(layer.activation.name).to.equal("bound relu")
         })
     })
 
@@ -2832,7 +2861,7 @@ describe("ConvLayer", () => {
             expect(layer2.filters[1].bias).to.be.at.most(0.1)
         })
 
-        it("Calls the filter's init function with adaptiveLR and activationConfig", () => {
+        it("Calls the filter's init function with adaptiveLR and activation", () => {
             layer2.net.adaptiveLR = "test"
             layer2.net.activationConfig = "stuff"
             sinon.stub(layer2.filters[0], "init")
@@ -2840,9 +2869,9 @@ describe("ConvLayer", () => {
             layer2.init()
 
             expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
-            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
+            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"activation": "stuff"}))
             expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
-            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
+            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"activation": "stuff"}))
         })
 
         it("Calls the filter's init function with eluAlpha", () => {
@@ -3255,6 +3284,24 @@ describe("ConvLayer", () => {
 })
 
 describe("Netmath", () => {
+
+    describe("No Activation", () => {
+
+        it("Returns the same value when doing the forward pass", () => {
+            expect(NetMath.noactivation(2)).to.equal(2)
+            expect(NetMath.noactivation(3)).to.equal(3)
+            expect(NetMath.noactivation("a")).to.equal("a")
+            expect(NetMath.noactivation(false)).to.equal(false)
+        })
+
+        it("Returns the value 1 for the prime calculation", () => {
+            expect(NetMath.noactivation(2, true)).to.equal(1)
+            expect(NetMath.noactivation(3, true)).to.equal(1)
+            expect(NetMath.noactivation("a", true)).to.equal(1)
+            expect(NetMath.noactivation(false, true)).to.equal(1)
+        })
+
+    })
 
     describe("Sigmoid", () => {
 

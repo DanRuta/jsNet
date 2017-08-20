@@ -2,13 +2,23 @@
 
 class ConvLayer {
 
-    constructor (size, {filterSize, zeroPadding, stride}={}) {
+    constructor (size, {filterSize, zeroPadding, stride, activation}={}) {
 
         if (filterSize)     this.filterSize = filterSize
         if (stride)         this.stride = stride
         if (size)           this.size = size
 
         this.zeroPadding = zeroPadding
+
+        if (activation!=undefined) {
+
+            if (typeof activation=="boolean" && !activation) {
+                this.activation = NetMath.noactivation
+            } else {
+                this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+            }
+        }
+
         this.state = "not-initialised"
     }
 
@@ -54,7 +64,7 @@ class ConvLayer {
 
             filter.init({
                 adaptiveLR: this.net.adaptiveLR,
-                activationConfig: this.net.activationConfig,
+                activation: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
         })
@@ -347,7 +357,7 @@ class Filter {
 
     constructor () {}
 
-    init ({adaptiveLR, activationConfig, eluAlpha}={}) {
+    init ({adaptiveLR, activation, eluAlpha}={}) {
 
         const size = this.weights.length
 
@@ -384,10 +394,10 @@ class Filter {
                 this.v = 0
         }
 
-        if (activationConfig=="rrelu") {
+        if (activation=="rrelu") {
             this.rreluSlope = Math.random() * 0.001
 
-        } else if (activationConfig=="elu") {
+        } else if (activation=="elu") {
             this.eluAlpha = eluAlpha
         }
     }
@@ -418,6 +428,10 @@ typeof window=="undefined" && (exports.Filter = Filter)
 class NetMath {
 
     // Activation functions
+    static noactivation (value, prime) {
+        return prime ? 1 : value
+    }
+
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
         return prime ? val*(1-val)
@@ -994,12 +1008,8 @@ class Network {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
-        if (activation=="lrelu") {
-            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
-
-        } else if (activation=="elu") {
-            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
-        }
+        this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom
         this.weightsConfig = {distribution: "xavieruniform"}
@@ -1067,7 +1077,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-        layer.activation = this.activation
+        layer.activation = layer.activation || this.activation
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
@@ -1316,7 +1326,7 @@ class Neuron {
 
     constructor () {}
 
-    init ({adaptiveLR, activationConfig, eluAlpha}={}) {
+    init ({adaptiveLR, activation, eluAlpha}={}) {
 
         const size = this.weights.length
         this.deltaWeights = this.weights.map(v => 0)
@@ -1352,10 +1362,10 @@ class Neuron {
                 break
         }
 
-        if (activationConfig=="rrelu") {
+        if (activation=="rrelu") {
             this.rreluSlope = Math.random() * 0.001
 
-        } else if (activationConfig=="elu") {
+        } else if (activation=="elu") {
             this.eluAlpha = eluAlpha
         }
     }

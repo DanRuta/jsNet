@@ -2,13 +2,23 @@
 
 class ConvLayer {
 
-    constructor (size, {filterSize, zeroPadding, stride}={}) {
+    constructor (size, {filterSize, zeroPadding, stride, activation}={}) {
 
         if (filterSize)     this.filterSize = filterSize
         if (stride)         this.stride = stride
         if (size)           this.size = size
 
         this.zeroPadding = zeroPadding
+
+        if (activation!=undefined) {
+
+            if (typeof activation=="boolean" && !activation) {
+                this.activation = NetMath.noactivation
+            } else {
+                this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+            }
+        }
+
         this.state = "not-initialised"
     }
 
@@ -54,7 +64,7 @@ class ConvLayer {
 
             filter.init({
                 adaptiveLR: this.net.adaptiveLR,
-                activationConfig: this.net.activationConfig,
+                activation: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
         })

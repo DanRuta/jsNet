@@ -87,12 +87,8 @@ class Network {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
-        if (activation=="lrelu") {
-            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
-
-        } else if (activation=="elu") {
-            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
-        }
+        this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom
         this.weightsConfig = {distribution: "xavieruniform"}
@@ -160,7 +156,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-        layer.activation = this.activation
+        layer.activation = layer.activation || this.activation
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)

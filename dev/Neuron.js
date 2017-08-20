@@ -4,7 +4,7 @@ class Neuron {
 
     constructor () {}
 
-    init ({adaptiveLR, activationConfig, eluAlpha}={}) {
+    init ({adaptiveLR, activation, eluAlpha}={}) {
 
         const size = this.weights.length
         this.deltaWeights = this.weights.map(v => 0)
@@ -40,10 +40,10 @@ class Neuron {
                 break
         }
 
-        if (activationConfig=="rrelu") {
+        if (activation=="rrelu") {
             this.rreluSlope = Math.random() * 0.001
 
-        } else if (activationConfig=="elu") {
+        } else if (activation=="elu") {
             this.eluAlpha = eluAlpha
         }
     }

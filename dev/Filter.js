@@ -4,7 +4,7 @@ class Filter {
 
     constructor () {}
 
-    init ({adaptiveLR, activationConfig, eluAlpha}={}) {
+    init ({adaptiveLR, activation, eluAlpha}={}) {
 
         const size = this.weights.length
 
@@ -41,10 +41,10 @@ class Filter {
                 this.v = 0
         }
 
-        if (activationConfig=="rrelu") {
+        if (activation=="rrelu") {
             this.rreluSlope = Math.random() * 0.001
 
-        } else if (activationConfig=="elu") {
+        } else if (activation=="elu") {
             this.eluAlpha = eluAlpha
         }
     }

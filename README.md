@@ -304,13 +304,36 @@ The first parameter, an integer is for how many filters to use in the layer. The
 
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any number | 3 |
+| filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
 | zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
 | stride | How many pixels to move between convolutions | Any number | 1 |
+| activation | Activation function to uses (see below notes) | false, string, function | undefined |
 
-### About the activation function
-Normally, you read about ReLU layers being used, and such, though, it made much more sense in the implementation to just do the activation in the ConvLayer, as it would be more efficient than using a dedicated layer. Therefore there are no such 'activation' layers, as you just specify the activation in the network configs.
+You need to make sure you configure the hyperparameters correctly, to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions. You can calculate the spacial dimensions of a convolution layer's outgoing activation volume with the following formula:
+```
+size out = (size in - filter size + 2 * zero padding) / stride + 1
+```
 
+#### About the activation function
+Sometimes, you may read about ReLU layers being used, and such. However, it made much more sense in the implementation to just do the activation in the ConvLayer, as it would be more computationally efficient than using a dedicated layer. Therefore there are no such 'activation' layers, as you just specify the activation in the network configs.
+
+By default, the Conv layer will use the activation configured with the network. However, you can set it to ```false``` or ```"noactivation"``` to disable activations on a particular Conv layer. Or you can provide a custom function, or use a string, the same as configuring the network activation.
+
+##### Examples
+```javascript
+net = new Network({
+    activation: "relu",
+    layers: [..., new ConvLayer(8, {filterSize: 3, activation: false}, ...)] // Conv layer will use no activation
+})
+net = new Network({
+    activation: "relu",
+    layers: [..., new ConvLayer(8, {zeroPadding: 0, stride: 2}), ....] // Conv layer will use ReLU activation
+})
+net = new Network({
+    activation: "relu",
+    layers: [..., new ConvLayer(8, {filterSize: 5, activation: "elu"}), ....] // Conv layer will use eLU
+})
+```
 ## Future plans
 ---
 More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented.

@@ -2533,9 +2533,10 @@ describe("ConvLayer", () => {
 
         beforeEach(() => {
             layer1 = new ConvLayer()
+            layer1.outMapSize = 16
             layer1.size = 10
             layer1.neurons = {length: 10}
-            layer2 = new ConvLayer()
+            layer2 = new ConvLayer(3, {filterSize: 3, stride: 1})
             layer2.net = {}
         })
 
@@ -2546,17 +2547,19 @@ describe("ConvLayer", () => {
         })
 
         it("Defaults the layer.filterSize to the net.filterSize value, if there's no layer.filterSize, but there is one for net", () => {
+            const layer = new ConvLayer(3)
             const net = new Network({conv: {filterSize: 5}})
-            layer2.net = net
-            layer2.assignPrev(layer1)
-            expect(layer2.filterSize).to.equal(5)
+            layer.net = net
+            layer.assignPrev(layer1)
+            expect(layer.filterSize).to.equal(5)
         })
 
         it("Defaults the layer.filterSize to 3 if there is no filterSize value for either layer or net", () => {
+            const layer = new ConvLayer(3)
             const net = new Network()
-            layer2.net = net
-            layer2.assignPrev(layer1)
-            expect(layer2.filterSize).to.equal(3)
+            layer.net = net
+            layer.assignPrev(layer1)
+            expect(layer.filterSize).to.equal(3)
         })
 
         it("Keeps the same filterSize value if it has already been assigned to layer", () => {
@@ -2608,10 +2611,11 @@ describe("ConvLayer", () => {
         })
 
         it("Defaults the layer.stride to the net.stride value, if there's no layer.stride, but there is one for net", () => {
+            const layer = new ConvLayer(3)
             const net = new Network({conv: {stride: 5}})
-            layer2.net = net
-            layer2.assignPrev(layer1)
-            expect(layer2.stride).to.equal(5)
+            layer.net = net
+            layer.assignPrev(layer1)
+            expect(layer.stride).to.equal(5)
         })
 
         it("Defaults the layer.stride to 1 if there is no stride value for either layer or net", () => {
@@ -2623,17 +2627,18 @@ describe("ConvLayer", () => {
 
         it("Keeps the same stride value if it has already been assigned to layer", () => {
             const net = new Network()
-            layer2.stride = 7
+            layer2.stride = 3
             layer2.net = net
             layer2.assignPrev(layer1)
-            expect(layer2.stride).to.equal(7)
+            expect(layer2.stride).to.equal(3)
         })
 
-        it("Defaults the layer.size to 4 if there is no size value for either layer or filterCount for net", () => {
+        it("Defaults the layer.size to 4 if there is no size value for layer", () => {
+            const layer = new ConvLayer()
             const net = new Network()
-            layer2.net = net
-            layer2.assignPrev(layer1)
-            expect(layer2.size).to.equal(4)
+            layer.net = net
+            layer.assignPrev(layer1)
+            expect(layer.size).to.equal(4)
         })
 
         it("Keeps the same size value if it has already been assigned to layer", () => {
@@ -2769,6 +2774,13 @@ describe("ConvLayer", () => {
             layer1.outMapSize = 100
             layer2.assignPrev(layer1)
             expect(layer2.inMapValuesCount).to.equal(10000)
+        })
+
+        it("Throws an error if the hyperparameters don't match the input map properly", () => {
+            const layer1 = new ConvLayer(3)
+            const layer2 = new ConvLayer(4, {filterSize: 3, stride: 2, zeroPadding: 1})
+            layer1.outMapSize = 16
+            expect(layer2.assignPrev.bind(layer2, layer1)).to.throw("Misconfigured hyperparameters. Activation volume dimensions would be ")
         })
     })
 

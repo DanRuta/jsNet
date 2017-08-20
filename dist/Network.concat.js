@@ -26,7 +26,7 @@ class ConvLayer {
         this.nextLayer = layer
     }
 
-    assignPrev (layer) {
+    assignPrev (layer, layerIndex) {
 
         this.prevLayer = layer
 
@@ -46,6 +46,10 @@ class ConvLayer {
         this.inMapValuesCount = Math.pow(prevLayerMapWidth, 2)
         this.inZPMapValuesCount = Math.pow(prevLayerMapWidth + this.zeroPadding*2, 2)
         this.outMapSize = (prevLayerMapWidth - this.filterSize + 2*this.zeroPadding) / this.stride + 1
+
+        if (this.outMapSize%1!=0) {
+            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in conv layer[${layerIndex}]`)
+        }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
     }
@@ -1085,7 +1089,7 @@ class Network {
 
         if (layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
-            layer.assignPrev(this.layers[layerIndex-1])
+            layer.assignPrev(this.layers[layerIndex-1], layerIndex)
 
             layer.weightsConfig.fanIn = layer.prevLayer.size
             layer.prevLayer.weightsConfig.fanOut = layer.size

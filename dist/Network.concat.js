@@ -63,7 +63,7 @@ class ConvLayer {
             filter.bias = Math.random()*0.2-0.1
 
             filter.init({
-                adaptiveLR: this.net.adaptiveLR,
+                updateFn: this.net.updateFn,
                 activation: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
@@ -252,7 +252,7 @@ class FCLayer {
             neuron.bias = Math.random()*0.2-0.1
 
             neuron.init({
-                adaptiveLR: this.net.adaptiveLR,
+                updateFn: this.net.updateFn,
                 activationConfig: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
@@ -357,14 +357,14 @@ class Filter {
 
     constructor () {}
 
-    init ({adaptiveLR, activation, eluAlpha}={}) {
+    init ({updateFn, activation, eluAlpha}={}) {
 
         const size = this.weights.length
 
         this.deltaWeights = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
         this.deltaBias = 0
 
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "gain":
                 this.biasGain = 1
@@ -381,7 +381,7 @@ class Filter {
                 this.getWeightsCache = ([channel, row, column]) => this.weightsCache[channel][row][column]
                 this.setWeightsCache = ([channel, row, column], v) => this.weightsCache[channel][row][column] = v
 
-                if (adaptiveLR=="adadelta") {
+                if (updateFn=="adadelta") {
                     this.adadeltaBiasCache = 0
                     this.adadeltaCache = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
                     this.getAdadeltaCache = ([channel, row, column]) => this.adadeltaCache[channel][row][column]
@@ -481,7 +481,7 @@ class NetMath {
     }
 
     // Weight updating functions
-    static noadaptivelr (value, deltaValue) {
+    static vanillaupdatefn (value, deltaValue) {
         return value + this.learningRate * deltaValue
     }
 
@@ -923,7 +923,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, filterSize,
         zeroPadding, stride, channels, filterCount}={}) {
 
@@ -934,7 +934,7 @@ class Network {
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
         activation = NetUtil.format(activation)
-        adaptiveLR = NetUtil.format(adaptiveLR)
+        updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
 
         if (l2) {
@@ -960,7 +960,7 @@ class Network {
         if (filterCount)    this.filterCount = filterCount
 
         // Activation function / Learning Rate
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
@@ -998,13 +998,13 @@ class Network {
                 }
         }
 
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
-        this.weightUpdateFn = NetMath[this.adaptiveLR]
+        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillaupdatefn" : updateFn
+        this.weightUpdateFn = NetMath[this.updateFn]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = typeof cost=="function" ? cost : NetMath[cost]
 
-        if (this.adaptiveLR=="rmsprop") {
+        if (this.updateFn=="rmsprop") {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
@@ -1326,12 +1326,12 @@ class Neuron {
 
     constructor () {}
 
-    init ({adaptiveLR, activation, eluAlpha}={}) {
+    init ({updateFn, activation, eluAlpha}={}) {
 
         const size = this.weights.length
         this.deltaWeights = this.weights.map(v => 0)
 
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "gain":
                 this.biasGain = 1
@@ -1348,7 +1348,7 @@ class Neuron {
                 this.getWeightsCache = i => this.weightsCache[i]
                 this.setWeightsCache = (i,v) => this.weightsCache[i] = v
 
-                if (adaptiveLR=="adadelta") {
+                if (updateFn=="adadelta") {
                     this.adadeltaBiasCache = 0
                     this.adadeltaCache = [...new Array(size)].map(v => 0)
                     this.getAdadeltaCache = i => this.adadeltaCache[i]

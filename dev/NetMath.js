@@ -56,7 +56,7 @@ class NetMath {
     }
 
     // Weight updating functions
-    static noadaptivelr (value, deltaValue) {
+    static vanillaupdatefn (value, deltaValue) {
         return value + this.learningRate * deltaValue
     }
 

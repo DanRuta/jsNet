@@ -65,71 +65,71 @@ describe("Network", () => {
                 expect(net.cost).to.equal(NetMath.meansquarederror)
             })
 
-            it("Defaults the adaptiveLR to noadaptivelr", () => {
-                expect(net.adaptiveLR).to.equal("noadaptivelr")
+            it("Defaults the updateFn to vanillaupdatefn", () => {
+                expect(net.updateFn).to.equal("vanillaupdatefn")
             })
 
-            it("Sets the net.weightUpdateFn to NetMath.noadaptivelr when setting it to false, null, or 'noadaptivelr'", () => {
-                const net2 = new Network({adaptiveLR: null})
-                expect(net2.weightUpdateFn).to.equal(NetMath.noadaptivelr)
-                const net3 = new Network({adaptiveLR: false})
-                expect(net3.weightUpdateFn).to.equal(NetMath.noadaptivelr)
-                const net4 = new Network({adaptiveLR: "noadaptivelr"})
-                expect(net4.weightUpdateFn).to.equal(NetMath.noadaptivelr)
+            it("Sets the net.weightUpdateFn to NetMath.vanillaupdatefn when setting it to false, null, or 'vanillaupdatefn'", () => {
+                const net2 = new Network({updateFn: null})
+                expect(net2.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                const net3 = new Network({updateFn: false})
+                expect(net3.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                const net4 = new Network({updateFn: "vanillaupdatefn"})
+                expect(net4.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
             })
 
             it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
-                const net2 = new Network({adaptiveLR: "adagrad"})
+                const net2 = new Network({updateFn: "adagrad"})
                 expect(net2.weightUpdateFn).to.equal(NetMath.adagrad)
             })
 
-            it("Defaults the net.rmsDecay to 0.99 if the adaptiveLR is rmsprop", () => {
-                const net2 = new Network({adaptiveLR: "rmsprop"})
+            it("Defaults the net.rmsDecay to 0.99 if the updateFn is rmsprop", () => {
+                const net2 = new Network({updateFn: "rmsprop"})
                 expect(net2.rmsDecay).to.equal(0.99)
             })
 
             it("Sets the net.rmsDecay to use input, if supplied", () => {
-                const net2 = new Network({adaptiveLR: "rmsprop", rmsDecay: 0.9})
+                const net2 = new Network({updateFn: "rmsprop", rmsDecay: 0.9})
                 expect(net2.rmsDecay).to.equal(0.9)
             })
 
-            it("Does not set an rmsDecay, if adaptiveLR is not rmsprop, even if supplied", () => {
-                const net2 = new Network({adaptiveLR: "adagrad", rmsDecay: 0.9})
+            it("Does not set an rmsDecay, if updateFn is not rmsprop, even if supplied", () => {
+                const net2 = new Network({updateFn: "adagrad", rmsDecay: 0.9})
                 expect(net2.rmsDecay).to.be.undefined
             })
 
-            it("Defaults the learning rate to 0.01 if the adaptiveLR is rmsprop", () => {
-                const net2 = new Network({adaptiveLR: "rmsprop"})
+            it("Defaults the learning rate to 0.01 if the updateFn is rmsprop", () => {
+                const net2 = new Network({updateFn: "rmsprop"})
                 expect(net2.learningRate).to.equal(0.001)
             })
 
-            it("Still allows user learning rates to be set, even if adaptiveLR is rmsprop", () => {
-                const net2 = new Network({adaptiveLR: "rmsprop", learningRate: 0.5})
+            it("Still allows user learning rates to be set, even if updateFn is rmsprop", () => {
+                const net2 = new Network({updateFn: "rmsprop", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
             })
 
-            it("Defaults the learning rate to 0.01 if the adaptiveLR is adam", () => {
-                const net2 = new Network({adaptiveLR: "adam"})
+            it("Defaults the learning rate to 0.01 if the updateFn is adam", () => {
+                const net2 = new Network({updateFn: "adam"})
                 expect(net2.learningRate).to.equal(0.01)
             })
 
-            it("Still allows user learning rates to be set, even if adaptiveLR is adam", () => {
-                const net2 = new Network({adaptiveLR: "adam", learningRate: 0.5})
+            it("Still allows user learning rates to be set, even if updateFn is adam", () => {
+                const net2 = new Network({updateFn: "adam", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
             })
 
-            it("Defaults the net.rho to 0.95 if the adaptiveLR is adadelta", () => {
-                const net2 = new Network({adaptiveLR: "adadelta"})
+            it("Defaults the net.rho to 0.95 if the updateFn is adadelta", () => {
+                const net2 = new Network({updateFn: "adadelta"})
                 expect(net2.rho).to.equal(0.95)
             })
 
             it("Still allows user rho values to be set", () => {
-                const net2 = new Network({adaptiveLR: "adadelta", rho: 0.5})
+                const net2 = new Network({updateFn: "adadelta", rho: 0.5})
                 expect(net2.rho).to.equal(0.5)
             })
 
             it("Still sets a rho value, even if a learning rate is given", () => {
-                const net2 = new Network({adaptiveLR: "adadelta", rho: 0.9, learningRate: 0.01})
+                const net2 = new Network({updateFn: "adadelta", rho: 0.9, learningRate: 0.01})
                 expect(net2.rho).to.equal(0.9)
                 expect(net2.learningRate).to.equal(0.01)
             })
@@ -455,19 +455,19 @@ describe("Network", () => {
             expect(net.activation.name).to.equal("bound lecuntanh")
         })
 
-        it("Allows uppercase adaptiveLR function configs (rmsprop when configuring as RMSProp)", () => {
-            const net = new Network({adaptiveLR: "RMSProp"})
-            expect(net.adaptiveLR).to.equal("rmsprop")
+        it("Allows uppercase updateFn function configs (rmsprop when configuring as RMSProp)", () => {
+            const net = new Network({updateFn: "RMSProp"})
+            expect(net.updateFn).to.equal("rmsprop")
         })
 
-        it("Allows snake_case adaptiveLR function configs (rmsprop when configuring as rms_prop)", () => {
-            const net = new Network({adaptiveLR: "rms_prop"})
-            expect(net.adaptiveLR).to.equal("rmsprop")
+        it("Allows snake_case updateFn function configs (rmsprop when configuring as rms_prop)", () => {
+            const net = new Network({updateFn: "rms_prop"})
+            expect(net.updateFn).to.equal("rmsprop")
         })
 
-        it("Allows white space adaptiveLR function configs (rmsprop when configuring as rms prop)", () => {
-            const net = new Network({adaptiveLR: "rms prop"})
-            expect(net.adaptiveLR).to.equal("rmsprop")
+        it("Allows white space updateFn function configs (rmsprop when configuring as rms prop)", () => {
+            const net = new Network({updateFn: "rms prop"})
+            expect(net.updateFn).to.equal("rmsprop")
         })
 
         it("Allows uppercase cost function configs (crossentropy when configuring as crossEntropy)", () => {
@@ -980,7 +980,7 @@ describe("Network", () => {
         let net
 
         beforeEach(() => {
-            net = new Network({layers: [2, 3, 2], adaptiveLR: null, l2: false})
+            net = new Network({layers: [2, 3, 2], updateFn: null, l2: false})
             sinon.stub(net, "forward").callsFake(() => [1,1])
             sinon.stub(net, "backward")
             sinon.stub(net, "resetDeltaWeights")
@@ -1123,7 +1123,7 @@ describe("Network", () => {
         })
 
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
-            const network = new Network({adaptiveLR: null})
+            const network = new Network({updateFn: null})
             sinon.stub(network, "forward")
             sinon.spy(network, "initLayers")
 
@@ -1133,7 +1133,7 @@ describe("Network", () => {
         })
 
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
-            const network = new Network({adaptiveLR: null})
+            const network = new Network({updateFn: null})
             sinon.stub(network, "forward")
             sinon.spy(network, "initLayers")
 
@@ -1143,7 +1143,7 @@ describe("Network", () => {
         })
 
         it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
-            const network = new Network({adaptiveLR: null})
+            const network = new Network({updateFn: null})
             sinon.stub(network, "forward")
             sinon.spy(network, "initLayers")
 
@@ -1423,14 +1423,14 @@ describe("FCLayer", () => {
             expect(layer2.neurons[1].init).to.have.been.called
         })
 
-        it("Calls the neuron's init function with adaptiveLR and activationConfig", () => {
-            layer2.net.adaptiveLR = "test"
+        it("Calls the neuron's init function with updateFn and activationConfig", () => {
+            layer2.net.updateFn = "test"
             layer2.net.activationConfig = "stuff"
             layer2.assignPrev(layer1)
             layer2.init()
-            expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"updateFn": "test"}))
             expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
-            expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"updateFn": "test"}))
             expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
         })
 
@@ -1722,7 +1722,7 @@ describe("FCLayer", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
@@ -1737,7 +1737,7 @@ describe("FCLayer", () => {
         it("Increments the bias of all neurons with their deltaBias", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], adaptiveLR: "noadaptivelr"})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
 
             layer2.neurons.forEach(neuron => neuron.bias = 0.25)
             layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
@@ -1845,104 +1845,104 @@ describe("Neuron", () => {
             expect(neuron.deltaWeights).to.deep.equal([0,0,0,0,0])
         })
 
-        it("Creates a weightGains array if the adaptiveLR parameter is gain, with same size as weights, with 1 values", () => {
-            neuron2.init({adaptiveLR: "gain"})
+        it("Creates a weightGains array if the updateFn parameter is gain, with same size as weights, with 1 values", () => {
+            neuron2.init({updateFn: "gain"})
             expect(neuron2.weightGains).to.not.be.undefined
             expect(neuron2.weightGains).to.have.lengthOf(3)
             expect(neuron2.weightGains).to.deep.equal([1,1,1])
         })
 
-        it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
-            neuron2.init({adaptiveLR: "gain"})
+        it("Creates a biasGain value of 1 if the updateFn parameter is gain", () => {
+            neuron2.init({updateFn: "gain"})
             expect(neuron2.biasGain).to.equal(1)
         })
 
-        it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
-            neuron2.init({adaptiveLR: "not gain"})
+        it("Does not create the weightGains and biasGain when the updateFn is not gain", () => {
+            neuron2.init({updateFn: "not gain"})
             expect(neuron2.weightGains).to.be.undefined
             expect(neuron2.biasGain).to.be.undefined
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adagrad, with 0 values", () => {
-            neuron2.init({adaptiveLR: "adagrad"})
+        it("Creates a weightsCache array, with same dimension as weights, if the updateFn is adagrad, with 0 values", () => {
+            neuron2.init({updateFn: "adagrad"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is rmsprop, with 0 values", () => {
-            neuron2.init({adaptiveLR: "rmsprop"})
+        it("Creates a weightsCache array, with same dimension as weights, if the updateFn is rmsprop, with 0 values", () => {
+            neuron2.init({updateFn: "rmsprop"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
-            neuron2.init({adaptiveLR: "adagrad"})
+        it("Creates a biasCache value of 0 if the updateFn parameter is adagrad", () => {
+            neuron2.init({updateFn: "adagrad"})
             expect(neuron2.biasCache).to.equal(0)
         })
 
-        it("Creates a biasCache value of 0 if the adaptiveLR parameter is rmsprop", () => {
-            neuron2.init({adaptiveLR: "adagrad"})
+        it("Creates a biasCache value of 0 if the updateFn parameter is rmsprop", () => {
+            neuron2.init({updateFn: "adagrad"})
             expect(neuron2.biasCache).to.equal(0)
         })
 
-        it("Does not create the weightsCache or biasCache if the adaptiveLR is not adagrad", () => {
-            neuron2.init({adaptiveLR: "not adagrad"})
+        it("Does not create the weightsCache or biasCache if the updateFn is not adagrad", () => {
+            neuron2.init({updateFn: "not adagrad"})
             expect(neuron2.weightsCache).to.be.undefined
             expect(neuron2.biasCache).to.be.undefined
         })
 
-        it("Does not create the weightsCache or biasCache if the adaptiveLR is not rmsprop", () => {
-            neuron2.init({adaptiveLR: "not rmsprop"})
+        it("Does not create the weightsCache or biasCache if the updateFn is not rmsprop", () => {
+            neuron2.init({updateFn: "not rmsprop"})
             expect(neuron2.weightsCache).to.be.undefined
             expect(neuron2.biasCache).to.be.undefined
         })
 
-        it("Creates and sets neuron.m to 0 if the adaptiveLR parameter is adam", () => {
-            neuron2.init({adaptiveLR: "adam"})
+        it("Creates and sets neuron.m to 0 if the updateFn parameter is adam", () => {
+            neuron2.init({updateFn: "adam"})
             expect(neuron2.m).to.not.be.undefined
             expect(neuron2.m).to.equal(0)
         })
 
-        it("Creates and sets neuron.v to 0 if the adaptiveLR parameter is adam", () => {
-            neuron2.init({adaptiveLR: "adam"})
+        it("Creates and sets neuron.v to 0 if the updateFn parameter is adam", () => {
+            neuron2.init({updateFn: "adam"})
             expect(neuron2.v).to.not.be.undefined
             expect(neuron2.v).to.equal(0)
         })
 
-        it("Does not create neuron.m or neuron.v when the adaptiveLR parameter is not adam", () => {
-            neuron2.init({adaptiveLR: "not adam"})
+        it("Does not create neuron.m or neuron.v when the updateFn parameter is not adam", () => {
+            neuron2.init({updateFn: "not adam"})
             expect(neuron2.m).to.be.undefined
             expect(neuron2.v).to.be.undefined
         })
 
-        it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+        it("Creates a weightsCache array, with same dimension as weights, if the updateFn is adadelta, with 0 values", () => {
+            neuron2.init({updateFn: "adadelta"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
-        it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+        it("Creates a adadeltaBiasCache value of 0 if the updateFn parameter is adadelta", () => {
+            neuron2.init({updateFn: "adadelta"})
             expect(neuron2.adadeltaBiasCache).to.equal(0)
         })
 
-        it("Creates a adadeltaCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+        it("Creates a adadeltaCache array, with same dimension as weights, if the updateFn is adadelta, with 0 values", () => {
+            neuron2.init({updateFn: "adadelta"})
             expect(neuron2.adadeltaCache).to.not.be.undefined
             expect(neuron2.adadeltaCache).to.have.lengthOf(3)
             expect(neuron2.adadeltaCache).to.deep.equal([0,0,0])
         })
 
-        it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or rmsprop", () => {
-            neuron2.init({adaptiveLR: "adagrad"})
+        it("Does not create adadeltaBiasCache or adadeltaCache when the updateFn is adagrad or rmsprop", () => {
+            neuron2.init({updateFn: "adagrad"})
             expect(neuron2.adadeltaCache).to.be.undefined
             expect(neuron2.adadeltaBiasCache).to.be.undefined
             const neuron3 = new Neuron()
             neuron3.weights = [...new Array(3)].map(v => Math.random()*0.2-0.1)
-            neuron3.init({adaptiveLR: "rmsprop"})
+            neuron3.init({updateFn: "rmsprop"})
             expect(neuron3.adadeltaCache).to.be.undefined
             expect(neuron3.adadeltaBiasCache).to.be.undefined
         })
@@ -1959,20 +1959,20 @@ describe("Neuron", () => {
             expect(neuron2.eluAlpha).to.equal(0.5)
         })
 
-        it("Creates the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is gain", () => {
-            neuron2.init({adaptiveLR: "gain"})
+        it("Creates the neuron.getWeightGain() and neuron.setWeightGain() functions when updateFn is gain", () => {
+            neuron2.init({updateFn: "gain"})
             expect(neuron2.getWeightGain).to.not.be.undefined
             expect(neuron2.setWeightGain).to.not.be.undefined
         })
 
-        it("Does not create the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is not gain", () => {
-            neuron2.init({adaptiveLR: "not gain"})
+        it("Does not create the neuron.getWeightGain() and neuron.setWeightGain() functions when updateFn is not gain", () => {
+            neuron2.init({updateFn: "not gain"})
             expect(neuron2.getWeightGain).to.be.undefined
             expect(neuron2.setWeightGain).to.be.undefined
         })
 
         it("getWeightGain() returns the neuron.weightGains weight at the given index", () => {
-            neuron2.init({adaptiveLR: "gain"})
+            neuron2.init({updateFn: "gain"})
             neuron2.weightGains = [1,2,3]
             expect(neuron2.getWeightGain(0)).to.equal(1)
             expect(neuron2.getWeightGain(1)).to.equal(2)
@@ -1980,7 +1980,7 @@ describe("Neuron", () => {
         })
 
         it("setWeightGain() changes the neuron.weightGains weight at the given index", () => {
-            neuron2.init({adaptiveLR: "gain"})
+            neuron2.init({updateFn: "gain"})
             neuron2.weightGains = [1,2,3]
             neuron2.setWeightGain(0, 4)
             neuron2.setWeightGain(1, 5)
@@ -1990,32 +1990,32 @@ describe("Neuron", () => {
             expect(neuron2.weightGains[2]).to.equal(6)
         })
 
-        it("Creates the neuron.getWeightsCache() and neuron.setWeightsCache() function when adaptiveLR is adagrad", () => {
-            neuron2.init({adaptiveLR: "adagrad"})
+        it("Creates the neuron.getWeightsCache() and neuron.setWeightsCache() function when updateFn is adagrad", () => {
+            neuron2.init({updateFn: "adagrad"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
-        it("Creates the neuron.getWeightsCache() function when adaptiveLR is rmsprop", () => {
-            neuron2.init({adaptiveLR: "rmsprop"})
+        it("Creates the neuron.getWeightsCache() function when updateFn is rmsprop", () => {
+            neuron2.init({updateFn: "rmsprop"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
-        it("Creates the neuron.getWeightsCache() function when adaptiveLR is adadelta", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+        it("Creates the neuron.getWeightsCache() function when updateFn is adadelta", () => {
+            neuron2.init({updateFn: "adadelta"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
-        it("Does not create the neuron.getWeightsCache() and neuron.setWeightsCache() functions when adaptiveLR is something else", () => {
-            neuron2.init({adaptiveLR: "something else"})
+        it("Does not create the neuron.getWeightsCache() and neuron.setWeightsCache() functions when updateFn is something else", () => {
+            neuron2.init({updateFn: "something else"})
             expect(neuron2.getWeightsCache).to.be.undefined
             expect(neuron2.setWeightsCache).to.be.undefined
         })
 
         it("getWeightsCache() returns the neuron.weightsCache weight at the given index", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+            neuron2.init({updateFn: "adadelta"})
             neuron2.weightsCache = [1,2,3]
             expect(neuron2.getWeightsCache(0)).to.equal(1)
             expect(neuron2.getWeightsCache(1)).to.equal(2)
@@ -2023,7 +2023,7 @@ describe("Neuron", () => {
         })
 
         it("setWeightsCache() changes the neuron.weightsCache weight at the given index", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+            neuron2.init({updateFn: "adadelta"})
             neuron2.weightsCache = [1,2,3]
             neuron2.setWeightsCache(0, 4)
             neuron2.setWeightsCache(1, 5)
@@ -2033,20 +2033,20 @@ describe("Neuron", () => {
             expect(neuron2.weightsCache[2]).to.equal(6)
         })
 
-        it("Creates the neuron.getAdadeltaCache() and neuron.setAdadeltaCache() functions when adaptiveLR is adadelta", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+        it("Creates the neuron.getAdadeltaCache() and neuron.setAdadeltaCache() functions when updateFn is adadelta", () => {
+            neuron2.init({updateFn: "adadelta"})
             expect(neuron2.getAdadeltaCache).to.not.be.undefined
             expect(neuron2.setAdadeltaCache).to.not.be.undefined
         })
 
-        it("Does not create the neuron.getAdadeltaCache() function when adaptiveLR is not adadelta", () => {
-            neuron2.init({adaptiveLR: "not adadelta"})
+        it("Does not create the neuron.getAdadeltaCache() function when updateFn is not adadelta", () => {
+            neuron2.init({updateFn: "not adadelta"})
             expect(neuron2.getAdadeltaCache).to.be.undefined
             expect(neuron2.setAdadeltaCache).to.be.undefined
         })
 
         it("getAdadeltaCache() returns the neuron.adadeltaCache value at the index given", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+            neuron2.init({updateFn: "adadelta"})
             neuron2.adadeltaCache = [1,2,3]
             expect(neuron2.getAdadeltaCache(0)).to.equal(1)
             expect(neuron2.getAdadeltaCache(1)).to.equal(2)
@@ -2054,7 +2054,7 @@ describe("Neuron", () => {
         })
 
         it("setAdadeltaCache() changes the neuron.adadeltaCache weight at the given index", () => {
-            neuron2.init({adaptiveLR: "adadelta"})
+            neuron2.init({updateFn: "adadelta"})
             neuron2.adadeltaCache = [1,2,3]
             neuron2.setAdadeltaCache(0, 4)
             neuron2.setAdadeltaCache(1, 5)
@@ -2162,37 +2162,37 @@ describe("Filter", () => {
 
         describe("weightGains", () => {
 
-            it("Creates a weightGains map if the adaptiveLR parameter is gain, with the same dimensions as weights, with 1 values", () => {
-                filter.init({adaptiveLR: "gain"})
+            it("Creates a weightGains map if the updateFn parameter is gain, with the same dimensions as weights, with 1 values", () => {
+                filter.init({updateFn: "gain"})
                 expect(filter.weightGains).to.not.be.undefined
                 expect(filter.weightGains).to.deep.equal([[[1,1,1],[1,1,1],[1,1,1]]])
             })
 
-            it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
-                filter.init({adaptiveLR: "gain"})
+            it("Creates a biasGain value of 1 if the updateFn parameter is gain", () => {
+                filter.init({updateFn: "gain"})
                 expect(filter.biasGain).to.equal(1)
             })
 
-            it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
-                filter.init({adaptiveLR: "not gain"})
+            it("Does not create the weightGains and biasGain when the updateFn is not gain", () => {
+                filter.init({updateFn: "not gain"})
                 expect(filter.weightGains).to.be.undefined
                 expect(filter.biasGain).to.be.undefined
             })
 
-            it("Creates the filter.getWeightGain() and filter.setWeightGain() functions when adaptiveLR is gain", () => {
-                filter.init({adaptiveLR: "gain"})
+            it("Creates the filter.getWeightGain() and filter.setWeightGain() functions when updateFn is gain", () => {
+                filter.init({updateFn: "gain"})
                 expect(filter.getWeightGain).to.not.be.undefined
                 expect(filter.setWeightGain).to.not.be.undefined
             })
 
-            it("Does not create the filter.getWeightGain() and filter.setWeightGain() functions when adaptiveLR is not gain", () => {
-                filter.init({adaptiveLR: "not gain"})
+            it("Does not create the filter.getWeightGain() and filter.setWeightGain() functions when updateFn is not gain", () => {
+                filter.init({updateFn: "not gain"})
                 expect(filter.getWeightGain).to.be.undefined
                 expect(filter.setWeightGain).to.be.undefined
             })
 
             it("getWeightGain() returns the filter.weightGains weight at the given index", () => {
-                filter.init({adaptiveLR: "gain"})
+                filter.init({updateFn: "gain"})
                 filter.weightGains = [[[1,2,3],[4,5,6],[7,8,9]]]
                 expect(filter.getWeightGain([0,0,0])).to.equal(1)
                 expect(filter.getWeightGain([0,0,2])).to.equal(3)
@@ -2201,7 +2201,7 @@ describe("Filter", () => {
             })
 
             it("setWeightGain() changes the filter.weightGains weight at the given index", () => {
-                filter.init({adaptiveLR: "gain"})
+                filter.init({updateFn: "gain"})
                 filter.weightGains = [[[1,2,3],[4,5,6],[7,8,9]]]
                 filter.setWeightGain([0,0,0], 4)
                 filter.setWeightGain([0,1,1], 5)
@@ -2218,59 +2218,59 @@ describe("Filter", () => {
 
         describe("weightsCache", () => {
 
-            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adagrad", () => {
-                filter.init({adaptiveLR: "adagrad"})
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the updateFn is adagrad", () => {
+                filter.init({updateFn: "adagrad"})
                 expect(filter.weightsCache).to.not.be.undefined
                 expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
             })
 
-            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is rmsprop", () => {
-                filter.init({adaptiveLR: "rmsprop"})
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the updateFn is rmsprop", () => {
+                filter.init({updateFn: "rmsprop"})
                 expect(filter.weightsCache).to.not.be.undefined
                 expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
             })
 
-            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adadelta", () => {
-                filter.init({adaptiveLR: "adadelta"})
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the updateFn is adadelta", () => {
+                filter.init({updateFn: "adadelta"})
                 expect(filter.weightsCache).to.not.be.undefined
                 expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
             })
 
-            it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
-                filter.init({adaptiveLR: "adagrad"})
+            it("Creates a biasCache value of 0 if the updateFn parameter is adagrad", () => {
+                filter.init({updateFn: "adagrad"})
                 expect(filter.biasCache).to.equal(0)
             })
 
-            it("Creates a biasCache value of 0 if the adaptiveLR parameter is rmsprop", () => {
-                filter.init({adaptiveLR: "rmsprop"})
+            it("Creates a biasCache value of 0 if the updateFn parameter is rmsprop", () => {
+                filter.init({updateFn: "rmsprop"})
                 expect(filter.biasCache).to.equal(0)
             })
 
-            it("Creates a biasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-                filter.init({adaptiveLR: "adadelta"})
+            it("Creates a biasCache value of 0 if the updateFn parameter is adadelta", () => {
+                filter.init({updateFn: "adadelta"})
                 expect(filter.biasCache).to.equal(0)
             })
 
-            it("Does not create them if any other adaptiveLR parameter is given", () => {
-                filter.init({adaptiveLR: "something else"})
+            it("Does not create them if any other updateFn parameter is given", () => {
+                filter.init({updateFn: "something else"})
                 expect(filter.weightsCache).to.be.undefined
                 expect(filter.biasCache).to.be.undefined
             })
 
-            it("Creates the getWeightsCache() and setWeightsCache() functions if the adaptiveLR is adagrad", () => {
-                filter.init({adaptiveLR: "adagrad"})
+            it("Creates the getWeightsCache() and setWeightsCache() functions if the updateFn is adagrad", () => {
+                filter.init({updateFn: "adagrad"})
                 expect(filter.getWeightsCache).to.not.be.undefined
                 expect(filter.setWeightsCache).to.not.be.undefined
             })
 
-            it("Does not create the getWeightsCache and setWeightsCache functions if adaptiveLR is anything else", () => {
-                filter.init({adaptiveLR: "whatever"})
+            it("Does not create the getWeightsCache and setWeightsCache functions if updateFn is anything else", () => {
+                filter.init({updateFn: "whatever"})
                 expect(filter.setWeightsCache).to.be.undefined
                 expect(filter.setWeightsCache).to.be.undefined
             })
 
             it("getWeightsCache() returns the filter.weightsCache weight at the given index", () => {
-                filter.init({adaptiveLR: "adadelta"})
+                filter.init({updateFn: "adadelta"})
                 filter.weightsCache = [[[1,2,3],[4,5,6],[7,8,9]]]
                 expect(filter.getWeightsCache([0,0,0])).to.equal(1)
                 expect(filter.getWeightsCache([0,0,2])).to.equal(3)
@@ -2279,7 +2279,7 @@ describe("Filter", () => {
             })
 
             it("setWeightsCache() changes the filter.weightsCache weight at the given index", () => {
-                filter.init({adaptiveLR: "adadelta"})
+                filter.init({updateFn: "adadelta"})
                 filter.weightsCache = [[[1,2,3],[4,5,6],[7,8,9]]]
                 filter.setWeightsCache([0,0,0], 4)
                 filter.setWeightsCache([0,1,1], 5)
@@ -2296,35 +2296,35 @@ describe("Filter", () => {
 
         describe("adadeltaCache", () => {
 
-            it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-                filter.init({adaptiveLR: "adadelta"})
+            it("Creates a adadeltaBiasCache value of 0 if the updateFn parameter is adadelta", () => {
+                filter.init({updateFn: "adadelta"})
                 expect(filter.adadeltaBiasCache).to.equal(0)
             })
 
-            it("Creates a adadeltaCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adadelta", () => {
-                filter.init({adaptiveLR: "adadelta"})
+            it("Creates a adadeltaCache map, with same dimensions as weights, with 0 values, if the updateFn is adadelta", () => {
+                filter.init({updateFn: "adadelta"})
                 expect(filter.adadeltaCache).to.not.be.undefined
                 expect(filter.adadeltaCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
             })
 
-            it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or rmsprop", () => {
-                filter.init({adaptiveLR: "adagrad"})
+            it("Does not create adadeltaBiasCache or adadeltaCache when the updateFn is adagrad or rmsprop", () => {
+                filter.init({updateFn: "adagrad"})
                 expect(filter.adadeltaCache).to.be.undefined
                 expect(filter.adadeltaBiasCache).to.be.undefined
 
-                filter2.init(3, {adaptiveLR: "rmsprop"})
+                filter2.init(3, {updateFn: "rmsprop"})
                 expect(filter2.adadeltaCache).to.be.undefined
                 expect(filter2.adadeltaBiasCache).to.be.undefined
             })
 
-            it("Creates the filter.getAdadeltaCache() and filter.setAdadeltaCache() functions when adaptiveLR is adadelta", () => {
-                filter.init({adaptiveLR: "adadelta"})
+            it("Creates the filter.getAdadeltaCache() and filter.setAdadeltaCache() functions when updateFn is adadelta", () => {
+                filter.init({updateFn: "adadelta"})
                 expect(filter.getAdadeltaCache).to.not.be.undefined
                 expect(filter.setAdadeltaCache).to.not.be.undefined
             })
 
-            it("Does not create the map, bias or getAdadeltaCache() / setAdadeltaCache() functions when adaptiveLR is not adadelta", () => {
-                filter.init({adaptiveLR: "not adadelta"})
+            it("Does not create the map, bias or getAdadeltaCache() / setAdadeltaCache() functions when updateFn is not adadelta", () => {
+                filter.init({updateFn: "not adadelta"})
                 expect(filter.getAdadeltaCache).to.be.undefined
                 expect(filter.setAdadeltaCache).to.be.undefined
                 expect(filter.adadeltaBiasCache).to.be.undefined
@@ -2332,7 +2332,7 @@ describe("Filter", () => {
             })
 
             it("getAdadeltaCache() returns the filter.adadeltaCache weight at the given index", () => {
-                filter.init({adaptiveLR: "adadelta"})
+                filter.init({updateFn: "adadelta"})
                 filter.adadeltaCache = [[[1,2,3],[4,5,6],[7,8,9]]]
                 expect(filter.getAdadeltaCache([0,0,0])).to.equal(1)
                 expect(filter.getAdadeltaCache([0,0,2])).to.equal(3)
@@ -2341,7 +2341,7 @@ describe("Filter", () => {
             })
 
             it("setAdadeltaCache() changes the filter.adadeltaCache weight at the given index", () => {
-                filter.init({adaptiveLR: "adadelta"})
+                filter.init({updateFn: "adadelta"})
                 filter.adadeltaCache = [[[1,2,3],[4,5,6],[7,8,9]]]
                 filter.setAdadeltaCache([0,0,0], 4)
                 filter.setAdadeltaCache([0,1,1], 5)
@@ -2356,20 +2356,20 @@ describe("Filter", () => {
             })
         })
 
-        it("Creates and sets filter.m to 0 if the adaptiveLR parameter is adam", () => {
-            filter.init({adaptiveLR: "adam"})
+        it("Creates and sets filter.m to 0 if the updateFn parameter is adam", () => {
+            filter.init({updateFn: "adam"})
             expect(filter.m).to.not.be.undefined
             expect(filter.m).to.equal(0)
         })
 
-        it("Creates and sets filter.v to 0 if the adaptiveLR parameter is adam", () => {
-            filter.init({adaptiveLR: "adam"})
+        it("Creates and sets filter.v to 0 if the updateFn parameter is adam", () => {
+            filter.init({updateFn: "adam"})
             expect(filter.v).to.not.be.undefined
             expect(filter.v).to.equal(0)
         })
 
-        it("Does not create filter.m or filter.v when the adaptiveLR parameter is not adam", () => {
-            filter.init({adaptiveLR: "not adam"})
+        it("Does not create filter.m or filter.v when the updateFn parameter is not adam", () => {
+            filter.init({updateFn: "not adam"})
             expect(filter.m).to.be.undefined
             expect(filter.v).to.be.undefined
         })
@@ -2861,16 +2861,16 @@ describe("ConvLayer", () => {
             expect(layer2.filters[1].bias).to.be.at.most(0.1)
         })
 
-        it("Calls the filter's init function with adaptiveLR and activation", () => {
-            layer2.net.adaptiveLR = "test"
+        it("Calls the filter's init function with updateFn and activation", () => {
+            layer2.net.updateFn = "test"
             layer2.net.activationConfig = "stuff"
             sinon.stub(layer2.filters[0], "init")
             sinon.stub(layer2.filters[1], "init")
             layer2.init()
 
-            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"updateFn": "test"}))
             expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"activation": "stuff"}))
-            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"updateFn": "test"}))
             expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"activation": "stuff"}))
         })
 
@@ -3241,7 +3241,7 @@ describe("ConvLayer", () => {
                 filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
             })
 
-            layer.net = {learningRate: 1, weightUpdateFn: NetMath.noadaptivelr}
+            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillaupdatefn}
         })
 
 
@@ -3465,9 +3465,9 @@ describe("Netmath", () => {
         })
     })
 
-    describe("noadaptivelr", () => {
+    describe("vanillaupdatefn", () => {
 
-        const fn = NetMath.noadaptivelr.bind({learningRate: 0.5})
+        const fn = NetMath.vanillaupdatefn.bind({learningRate: 0.5})
 
         it("Increments a weight with half of its delta weight when the learning rate is 0.5", () => {
             expect(fn(10, 10)).to.equal(15)
@@ -3483,7 +3483,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init({adaptiveLR: "gain"})
+            neuron.init({updateFn: "gain"})
         })
 
         it("Doubles a value when the gain is 2 and learningRate 1", () => {
@@ -3570,7 +3570,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init({adaptiveLR: "adagrad"})
+            neuron.init({updateFn: "adagrad"})
         })
 
         it("Increments the neuron's biasCache by the square of its deltaBias", () => {
@@ -3606,7 +3606,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init({adaptiveLR: "rmsprop"})
+            neuron.init({updateFn: "rmsprop"})
         })
 
         it("Sets the cache value to the correct formula", () => {
@@ -3669,7 +3669,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init({adaptiveLR: "adadelta"})
+            neuron.init({updateFn: "adadelta"})
         })
 
         it("Sets the neuron.biasCache to the correct value, following the adadelta formula", () => {

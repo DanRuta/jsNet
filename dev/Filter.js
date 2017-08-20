@@ -4,14 +4,14 @@ class Filter {
 
     constructor () {}
 
-    init ({adaptiveLR, activation, eluAlpha}={}) {
+    init ({updateFn, activation, eluAlpha}={}) {
 
         const size = this.weights.length
 
         this.deltaWeights = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
         this.deltaBias = 0
 
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "gain":
                 this.biasGain = 1
@@ -28,7 +28,7 @@ class Filter {
                 this.getWeightsCache = ([channel, row, column]) => this.weightsCache[channel][row][column]
                 this.setWeightsCache = ([channel, row, column], v) => this.weightsCache[channel][row][column] = v
 
-                if (adaptiveLR=="adadelta") {
+                if (updateFn=="adadelta") {
                     this.adadeltaBiasCache = 0
                     this.adadeltaCache = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
                     this.getAdadeltaCache = ([channel, row, column]) => this.adadeltaCache[channel][row][column]

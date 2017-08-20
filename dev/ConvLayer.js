@@ -63,7 +63,7 @@ class ConvLayer {
             filter.bias = Math.random()*0.2-0.1
 
             filter.init({
-                adaptiveLR: this.net.adaptiveLR,
+                updateFn: this.net.updateFn,
                 activation: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })

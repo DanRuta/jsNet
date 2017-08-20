@@ -26,7 +26,7 @@ class FCLayer {
             neuron.bias = Math.random()*0.2-0.1
 
             neuron.init({
-                adaptiveLR: this.net.adaptiveLR,
+                updateFn: this.net.updateFn,
                 activationConfig: this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })

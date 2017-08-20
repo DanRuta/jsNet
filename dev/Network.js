@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, filterSize,
         zeroPadding, stride, channels, filterCount}={}) {
 
@@ -13,7 +13,7 @@ class Network {
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
         activation = NetUtil.format(activation)
-        adaptiveLR = NetUtil.format(adaptiveLR)
+        updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
 
         if (l2) {
@@ -39,7 +39,7 @@ class Network {
         if (filterCount)    this.filterCount = filterCount
 
         // Activation function / Learning Rate
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
@@ -77,13 +77,13 @@ class Network {
                 }
         }
 
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
-        this.weightUpdateFn = NetMath[this.adaptiveLR]
+        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillaupdatefn" : updateFn
+        this.weightUpdateFn = NetMath[this.updateFn]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = typeof cost=="function" ? cost : NetMath[cost]
 
-        if (this.adaptiveLR=="rmsprop") {
+        if (this.updateFn=="rmsprop") {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 

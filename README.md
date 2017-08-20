@@ -162,7 +162,7 @@ const net = new Network({
     l2: 0.001,
     l1: 0.005,
     layers: [ /* 3 FCLayers */ ]
-    adaptiveLR: "noadaptivelr",
+    updateFn: "vanillaupdatefn",
     weightsConfig: {
         distribution: "xavieruniform"
     }
@@ -196,24 +196,24 @@ Learning rate is 0.2 by default, except when using the following configurations:
 
 | Modifier| Type | Default value|
 |:-------------:| :-----: | :-----: |
-| RMSProp | adaptiveLR | 0.001 |
-| adam | adaptiveLR | 0.01 |
-| adadelta | adaptiveLR | undefined |
+| RMSProp | updateFn | 0.001 |
+| adam | updateFn | 0.01 |
+| adadelta | updateFn | undefined |
 | tanh, lecuntanh | activation | 0.001 |
 | relu, lrelu, rrelu, elu | activation | 0.01 |
 
-### Adaptive Learning Rate
+### Weight update functions
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| adaptiveLR | The function used for updating the weights/bias. The noadaptivelr option just sets the network to update the weights without any changes to learning rate. | noadaptivelr, gain, adagrad, RMSProp, adam , adadelta| noadaptivelr |
+| updateFn | The function used for updating the weights/bias. The vanillaupdatefn option just sets the network to update the weights without any changes to learning rate. | vanillaupdatefn, gain, adagrad, RMSProp, adam , adadelta| vanillaupdatefn |
 | rmsDecay | The decay rate for RMSProp, when used | Any number | 0.99 |
 | rho | Momentum for Adadelta, when used | Any number | 0.95 |
 
 ##### Examples
 ```javascript
-net = new Network({adaptiveLR: "adagrad"})
-net = new Network({adaptiveLR: "RMS_Prop", rmsDecay: 0.99})
-net = new Network({adaptiveLR: "adadelta", rho: 0.95})
+net = new Network({updateFn: "adagrad"})
+net = new Network({updateFn: "RMS_Prop", rmsDecay: 0.99})
+net = new Network({updateFn: "adadelta", rho: 0.95})
 ```
 
 ### Activation Function
@@ -338,7 +338,7 @@ net = new Network({
 ---
 More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented.
 
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, weight updating, weights init, etc. Check the changelog for details.
 
 ##### Short term
 Next up are Pool layers, and a few general improvements.

@@ -6,6 +6,7 @@
 - Re-wrote the JSON import/export. Check README for details on backward compatibility
 - Removed ability to create a network by just giving layer types in the list
 - Can check the version number via Network.version
+- Renamed adaptiveLR to updateFn
 
 #### ConvLayer
 - Created ConvLayer 🎉
@@ -21,6 +22,9 @@
 - Added arrayToMap
 - Added arrayToVolume
 - Added 4 other helper functions
+
+#### NetMath
+- Renamed noadaptivelr to vanillaupdatefn
 
 #### FCLayer
 - Renamed Layer.js to FCLayer.js. The Layer class still exists as an alias to what is now FCLayer

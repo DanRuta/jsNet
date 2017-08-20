@@ -4,12 +4,12 @@ class Neuron {
 
     constructor () {}
 
-    init ({adaptiveLR, activation, eluAlpha}={}) {
+    init ({updateFn, activation, eluAlpha}={}) {
 
         const size = this.weights.length
         this.deltaWeights = this.weights.map(v => 0)
 
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "gain":
                 this.biasGain = 1
@@ -26,7 +26,7 @@ class Neuron {
                 this.getWeightsCache = i => this.weightsCache[i]
                 this.setWeightsCache = (i,v) => this.weightsCache[i] = v
 
-                if (adaptiveLR=="adadelta") {
+                if (updateFn=="adadelta") {
                     this.adadeltaBiasCache = 0
                     this.adadeltaCache = [...new Array(size)].map(v => 0)
                     this.getAdadeltaCache = i => this.adadeltaCache[i]

@@ -9,24 +9,30 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-const {Network, Layer, FCLayer, Neuron, NetMath, NetUtil} = require("../dist/Network.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/Network.concat.js")
 
 describe("Loading", () => {
 
     it("Network is loaded", () => expect(Network).to.not.be.undefined)
     it("Layer is loaded", () => expect(Layer).to.not.be.undefined)
     it("Neuron is loaded", () => expect(Neuron).to.not.be.undefined)
+    it("Filter is loaded", () => expect(Filter).to.not.be.undefined)
     it("NetMath is loaded", () => expect(NetMath).to.not.be.undefined)
     it("NetUtil is loaded", () => expect(NetUtil).to.not.be.undefined)
     it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
+    it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
 
     it("Loads Layer as an alias of FCLayer", () => {
-        
+
         const layer = new Layer()
         const fclayer = new FCLayer()
 
         expect(Layer).to.equal(FCLayer)
         expect(layer).to.deep.equal(fclayer)
+    })
+
+    it("Statically returns the Network version when accessing via .version", () => {
+        expect(Network.version).to.equal("2.0.0")
     })
 })
 
@@ -328,6 +334,51 @@ describe("Network", () => {
                 const net = new Network({weightsConfig: {distribution: "not gaussian", stdDeviation: 2}})
                 expect(net.weightsConfig.stdDeviation).to.be.undefined
             })
+
+            it("Sets the net.filterSize to whatever value is given", () => {
+                const net = new Network({filterSize: 3})
+                expect(net.filterSize).to.equal(3)
+            })
+
+            it("Does not otherwise set net.filterSize to anything", () => {
+                expect(net.filterSize).to.be.undefined
+            })
+
+            it("Sets the net.zeroPadding to whatever value is given", () => {
+                const net = new Network({zeroPadding: 1})
+                expect(net.zeroPadding).to.equal(1)
+            })
+
+            it("Does not otherwise set net.zeroPadding to anything", () => {
+                expect(net.zeroPadding).to.be.undefined
+            })
+
+            it("Sets the net.stride to whatever value is given", () => {
+                const net = new Network({stride: 1})
+                expect(net.stride).to.equal(1)
+            })
+
+            it("Does not otherwise set net.stride to anything", () => {
+                expect(net.stride).to.be.undefined
+            })
+
+            it("Sets the net.channels to whatever value is given", () => {
+                const net = new Network({channels: 3})
+                expect(net.channels).to.equal(3)
+            })
+
+            it("Does not otherwise set net.channels to anything", () => {
+                expect(net.channels).to.be.undefined
+            })
+
+            it("Sets the net.filterCount to whatever value is given", () => {
+                const net = new Network({filterCount: 1})
+                expect(net.filterCount).to.equal(1)
+            })
+
+            it("Does not otherwise set net.filterCount to anything", () => {
+                expect(net.filterCount).to.be.undefined
+            })
         })
 
         it("Can create a new Network with no parameters", () => expect(new Network()).instanceof(Network))
@@ -387,12 +438,6 @@ describe("Network", () => {
         it("Throws an error when mixing constructed and non constructed Layers", () => {
             const layers = [Layer, new Layer()]
             assert.throw(() => new Network({layers}), "There was an error constructing from the layers given.")
-        })
-
-        it("Saves the non-constructed layers in a property definedLayers, when using just layer classes", () => {
-            const layers = [Layer, Layer]
-            const net = new Network({layers})
-            expect(net.definedLayers).to.eq(layers)
         })
 
         it("Allows uppercase activation function configs (lecuntanh when configuring as LecunTanh)", () => {
@@ -481,7 +526,7 @@ describe("Network", () => {
 
     describe("initLayers", () => {
 
-        const netThis = {} 
+        const netThis = {}
         const net = new Network()
 
         beforeEach(() => sinon.stub(net, "joinLayer"))
@@ -505,22 +550,6 @@ describe("Network", () => {
             expect(net.joinLayer).to.have.been.calledTwice
             expect(net.joinLayer).to.have.been.calledWith(layer1)
             expect(net.joinLayer).to.have.been.calledWith(layer2)
-        })
-
-        it("Calculates reasonable sizes for layers, when state is defined (with a small net)", () => {
-            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer], joinLayer: net.joinLayer, activation: NetMath.sigmoid}
-            net.initLayers.bind(netThis, 3, 2)()
-            expect(netThis.layers.map(layer => layer.size)).to.deep.equal([3, 5, 3, 2])
-            expect(net.joinLayer.callCount).to.equal(4)
-        })
-
-        it("Calculates reasonable sizes for layers, when state is defined (with a big net)", () => {
-            const netThis = {state: "defined", definedLayers: [Layer, Layer, Layer, Layer, Layer, Layer], joinLayer: net.joinLayer, activation: NetMath.sigmoid}
-            net.initLayers.bind(netThis, 784, 10)()
-
-            expect(netThis.state).to.equal("initialised")
-            expect(net.joinLayer.callCount).to.equal(6)
-            expect(netThis.layers.map(layer => layer.size)).to.deep.equal([784, 417, 315, 214, 112, 10])
         })
 
         it("Creates three Layers when state is not-defined. First and last layer sizes respective to input/output, middle is in-between", () => {
@@ -559,7 +588,7 @@ describe("Network", () => {
             layer1 = new Layer(2)
             layer2 = new Layer(3)
             layer3 = new Layer(4)
-        }) 
+        })
 
         it("Does nothing to a single layer network", () => {
             net.layers = [layer1]
@@ -624,6 +653,13 @@ describe("Network", () => {
             layer1.weightsConfig = {}
             net.joinLayer(layer2, 1)
             expect(layer2.net).to.equal(net)
+        })
+
+        it("Sets the layer2 state to initialised", () => {
+            net.layers = [layer1]
+            layer1.weightsConfig = {}
+            net.joinLayer(layer2, 1)
+            expect(layer2.state).to.equal("initialised")
         })
     })
 
@@ -723,7 +759,7 @@ describe("Network", () => {
             const layer2 = new FCLayer(2)
             const layer3 = new FCLayer(2)
             const net = new Network({layers: [layer1, layer2, layer3]})
-            
+
             sinon.spy(layer1, "resetDeltaWeights")
             sinon.spy(layer2, "resetDeltaWeights")
             sinon.spy(layer3, "resetDeltaWeights")
@@ -767,7 +803,7 @@ describe("Network", () => {
 
             expect(NetMath.maxNorm).to.be.called
             expect(net.maxNormTotal).to.equal(0.3535533905932738) // sqrt ( 2 * 0.25**2 )
- 
+
             NetMath.maxNorm.restore()
             net.weightUpdateFn.restore()
         })
@@ -792,6 +828,7 @@ describe("Network", () => {
         const layer1 = new Layer(2)
         const layer2 = new Layer(3)
         const net = new Network({layers: [layer1, layer2], activation: "sigmoid"})
+        const convNet = new Network({layers: [new FCLayer(1024), new ConvLayer(2, {filterSize: 3})]})
 
         it("Exports the correct number of layers", () => {
             const json = net.toJSON()
@@ -804,20 +841,44 @@ describe("Network", () => {
             layer2.neurons.forEach(neuron => neuron.weights = neuron.weights.map(w => 1))
 
             const json = net.toJSON()
-            expect(json.layers[1].neurons).to.not.be.undefined
-            expect(json.layers[1].neurons).to.have.lengthOf(3)
-            expect(json.layers[1].neurons[0].weights).to.deep.equal([1,1])
-            expect(json.layers[1].neurons[1].weights).to.deep.equal([1,1])
-            expect(json.layers[1].neurons[2].weights).to.deep.equal([1,1])
+            expect(json.layers[1].weights).to.not.be.undefined
+            expect(json.layers[1].weights).to.have.lengthOf(3)
+            expect(json.layers[1].weights[0].weights).to.deep.equal([1,1])
+            expect(json.layers[1].weights[1].weights).to.deep.equal([1,1])
+            expect(json.layers[1].weights[2].weights).to.deep.equal([1,1])
         })
 
         it("Exports bias correctly", () => {
             layer2.neurons.forEach(neuron => neuron.bias = 1)
 
             const json = net.toJSON()
-            expect(json.layers[1].neurons[0].bias).to.equal(1)
-            expect(json.layers[1].neurons[1].bias).to.equal(1)
-            expect(json.layers[1].neurons[2].bias).to.equal(1)  
+            expect(json.layers[1].weights[0].bias).to.equal(1)
+            expect(json.layers[1].weights[1].bias).to.equal(1)
+            expect(json.layers[1].weights[2].bias).to.equal(1)
+        })
+
+        it("Exports a conv layer's weights correctly", () => {
+
+            convNet.layers[1].filters[0].weights = [[[1,2,3],[4,5,6],[7,8,9]]]
+            convNet.layers[1].filters[1].weights = [[[4,5,6],[7,8,9],[1,2,3]]]
+
+            const convJson = convNet.toJSON()
+            expect(convJson.layers[1].weights).to.not.be.undefined
+            expect(convJson.layers[1].weights).to.have.lengthOf(2)
+            expect(convJson.layers[1].weights[0].weights[0]).to.have.lengthOf(3)
+            expect(convJson.layers[1].weights[0].weights[0][0]).to.have.lengthOf(3)
+            expect(convJson.layers[1].weights[0].weights).to.deep.equal([[[1,2,3],[4,5,6],[7,8,9]]])
+            expect(convJson.layers[1].weights[1].weights).to.deep.equal([[[4,5,6],[7,8,9],[1,2,3]]])
+        })
+
+        it("Exports a conv layer's bias correctly", () => {
+
+            convNet.layers[1].filters[0].bias = 1
+            convNet.layers[1].filters[1].bias = 2
+
+            const convJson = convNet.toJSON()
+            expect(convJson.layers[1].weights[0].bias).to.equal(1)
+            expect(convJson.layers[1].weights[1].bias).to.equal(2)
         })
     })
 
@@ -826,13 +887,27 @@ describe("Network", () => {
         const testData = {
             layers: [
                 {
-                    neurons: [{},{}]
+                    weights: [{},{}]
                 },
                 {
-                    neurons: [
+                    weights: [
                         {bias: 1, weights: [1,1]},
-                        {bias: 1, weights: [1,1]},
-                        {bias: 1, weights: [1,1]}
+                        {bias: 2, weights: [2,2]},
+                        {bias: 3, weights: [3,3]}
+                    ]
+                }
+            ]
+        }
+
+        const testDataConv = {
+            layers: [
+                {
+                    weights: [{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}]
+                },
+                {
+                    weights: [
+                        {bias: 1, weights: [[[1,2],[3,4]],[[5,6],[7,8]],[[9,10],[11,12]],[[13,14],[15,16]]]},
+                        {bias: 2, weights: [[[5,6],[7,8]],[[9,10],[11,12]],[[13,14],[15,16]],[[1,2],[3,4]]]}
                     ]
                 }
             ]
@@ -844,28 +919,51 @@ describe("Network", () => {
             expect(net.fromJSON.bind(net, null)).to.throw("No JSON data given to import.")
         })
 
-        it("Clears out the old layers", () => {
-            const net = new Network({layers: [2,5,3,6]})
-
-            net.fromJSON(testData)
-            expect(net.layers).to.have.lengthOf(2)
+        it("Throws an error if the number of layers in the import data does not match the net's", () => {
+            const net = new Network({layers: [2,3,4,5]})
+            expect(net.fromJSON.bind(net, testData)).to.throw("Mismatched layers (2 layers in import data, but 4 configured)")
         })
 
-        it("Calls the iinitLayers function to join the layers together", () => {
-            const net = new Network()
-            sinon.spy(net, "initLayers")
-
-            net.fromJSON(testData)
-
-            expect(net.initLayers).to.be.called
+        it("Throws an error if the FCLayer weights container shape is mismatched", () => {
+            const net = new Network({layers: [3,3]})
+            expect(net.fromJSON.bind(net, testData)).to.throw("Mismatched weights count. Given: 2 Existing: 3. At layers[1], neurons[0]")
         })
 
-        it("Sets the net state to 'constructed'", () => {
-            const net = new Network()
-            const stub = sinon.stub(net, "initLayers")
-            net.state = "initialised" // just to make sure
+        it("Calls the resetDeltaWeights() function", () => {
+            const net = new Network({layers: [new FCLayer(2), new FCLayer(3)]})
+            sinon.spy(net, "resetDeltaWeights")
             net.fromJSON(testData)
-            expect(net.state).to.equal("constructed")
+            expect(net.resetDeltaWeights).to.be.called
+        })
+
+        it("Sets the weights and biases to the import data values", () => {
+            const net = new Network({layers: [new FCLayer(2), new FCLayer(3)]})
+            net.fromJSON(testData)
+            expect(net.layers[1].neurons[0].bias).to.equal(1)
+            expect(net.layers[1].neurons[1].bias).to.equal(2)
+            expect(net.layers[1].neurons[2].bias).to.equal(3)
+            expect(net.layers[1].neurons[0].weights).to.deep.equal([1,1])
+            expect(net.layers[1].neurons[1].weights).to.deep.equal([2,2])
+            expect(net.layers[1].neurons[2].weights).to.deep.equal([3,3])
+        })
+
+        it("Sets the weights and biases in a conv layer to the import data values", () => {
+            const net = new Network({channels: 4, layers: [new FCLayer(16), new ConvLayer(2, {filterSize: 2})]})
+            net.fromJSON(testDataConv)
+            expect(net.layers[1].filters[0].bias).to.equal(1)
+            expect(net.layers[1].filters[1].bias).to.equal(2)
+            expect(net.layers[1].filters[0].weights).to.deep.equal([[[1,2],[3,4]],[[5,6],[7,8]],[[9,10],[11,12]],[[13,14],[15,16]]])
+            expect(net.layers[1].filters[1].weights).to.deep.equal([[[5,6],[7,8]],[[9,10],[11,12]],[[13,14],[15,16]],[[1,2],[3,4]]])
+        })
+
+        it("Throws an error if the ConvLayer weights depth is mismatched", () => {
+            const net = new Network({channels: 1, layers: [new FCLayer(16), new ConvLayer(2, {filterSize: 2})]})
+            expect(net.fromJSON.bind(net, testDataConv)).to.throw("Mismatched weights depth. Given: 4 Existing: 1. At: layers[1], filters[0]")
+        })
+
+        it("Throws an error if the ConvLayer weights spacial dimension is mismatched", () => {
+            const net = new Network({channels: 4, layers: [new FCLayer(16), new ConvLayer(2, {filterSize: 3})]})
+            expect(net.fromJSON.bind(net, testDataConv)).to.throw("Mismatched weights size. Given: 2 Existing: 3. At: layers[1], filters[0]")
         })
     })
 
@@ -882,7 +980,7 @@ describe("Network", () => {
             sinon.stub(net, "initLayers")
             sinon.stub(NetMath, "meansquarederror")
             sinon.stub(console, "log") // Get rid of output spam
-        }) 
+        })
 
         afterEach(() => {
             net.forward.restore()
@@ -892,7 +990,7 @@ describe("Network", () => {
             net.initLayers.restore()
             NetMath.meansquarederror.restore()
             console.log.restore()
-        }) 
+        })
 
         const testData = [
             {input: [0,0], expected: [0, 0]},
@@ -948,7 +1046,7 @@ describe("Network", () => {
         })
 
         it("Accepts 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.be.fulfilled  
+            return expect(net.train(testDataWithOutput)).to.be.fulfilled
         })
 
         it("Does one iteration when not passing any config data", () => {
@@ -1026,27 +1124,26 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function with the length of the first input and length of first expected", () => {
+        it("Calls the initLayers function when the net state is not 'initialised'", () => {
             const network = new Network({adaptiveLR: null})
             sinon.stub(network, "forward")
             sinon.spy(network, "initLayers")
 
             return network.train(testData).then(() => {
+                expect(network.initLayers).to.have.been.called
+            })
+        })
+
+        it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
+            const network = new Network({adaptiveLR: null})
+            sinon.stub(network, "forward")
+            sinon.spy(network, "initLayers")
+
+            return network.train(testDataWithOutput).then(() => {
                 expect(network.initLayers).to.have.been.calledWith(2, 2)
                 network.initLayers.restore()
             })
 
-        })
-
-        it("Also calls the initLayers function correctly when the first item in the dataSet is named as output", () => {
-            const network = new Network({layers: [Layer, Layer, Layer], adaptiveLR: null})
-            sinon.stub(network, "forward")
-            sinon.spy(network, "initLayers")
-
-            return network.train(testDataWithMixedExpectedOutput).then(() => {
-                expect(network.initLayers).to.have.been.calledWith(2,5)
-                network.initLayers.restore()
-            })
         })
 
         it("Logs to the console once for each epoch, +2 (for start/stop logs)", () => {
@@ -1152,14 +1249,14 @@ describe("Network", () => {
             net.cost = (x,y) => x+y
             sinon.spy(net, "cost")
             sinon.stub(net, "forward")
-        }) 
+        })
 
         afterEach(() => {
             net.cost.restore()
         })
         after(() => {
             net.forward.restore()
-        }) 
+        })
 
         const testData = [
             {input: [0,0], expected: [0, 0]},
@@ -1177,7 +1274,7 @@ describe("Network", () => {
 
         it("Returns a promise", () => {
             expect(net.test(testData)).instanceof(Promise)
-        })  
+        })
 
         it("Rejects the promise when no data is given", () => {
             return expect(net.test()).to.be.rejectedWith("No data provided")
@@ -1207,10 +1304,10 @@ describe("Network", () => {
             })
         })
 
-        it("Logs to the console once for each iteration, +1 at the end", () => {
+        it("Logs to the console twice", () => {
             sinon.spy(console, "log")
             return net.test(testData).then(() => {
-                expect(console.log.callCount).to.equal(5)
+                expect(console.log.callCount).to.equal(2)
                 console.log.restore()
             })
         })
@@ -1269,6 +1366,15 @@ describe("FCLayer", () => {
     })
 
     describe("assignPrev", () => {
+        it("Adds a reference to a layer to its prevLayer property", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            layer2.assignPrev(layer1)
+            expect(layer2.prevLayer).to.equal(layer1)
+        })
+    })
+
+    describe("init", () => {
 
         const layer = new Layer()
         let layer1
@@ -1279,7 +1385,7 @@ describe("FCLayer", () => {
             layer2 = new Layer(2)
             layer2.weightsConfig = {limit: 0.1}
             layer2.net = {weightsInitFn: NetMath.xavieruniform}
-            sinon.stub(layer2.neurons[0], "init") 
+            sinon.stub(layer2.neurons[0], "init")
             sinon.stub(layer2.neurons[1], "init")
         })
 
@@ -1288,76 +1394,61 @@ describe("FCLayer", () => {
             layer2.neurons[1].init.restore()
         })
 
-        it("Adds a reference to a layer to its prevLayer property", () => {
-            layer2.assignPrev(layer)
-            expect(layer2.prevLayer).to.equal(layer)
-        })
-
         it("Creates the neuron its weights array, with .length the same as given parameter", () => {
             layer2.assignPrev(layer1)
+            layer2.init()
             expect(layer2.neurons[0].weights.length).to.equal(2)
-        })
-
-        it("Does not change the weights when the neuron is marked as imported", () => {
-            layer2.neurons[0].imported = true
-            layer2.neurons[0].weights = ["test"]
-            layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].weights).to.deep.equal(["test"])
         })
 
         it("Gives the neuron a bias value between -0.1 and +0.1", () => {
             layer2.assignPrev(layer1)
+            layer2.init()
             expect(layer2.neurons[0].bias).to.not.be.undefined
             expect(layer2.neurons[0].bias).to.be.at.most(0.1)
             expect(layer2.neurons[0].bias).to.be.at.least(-0.1)
         })
 
-        it("Does not change the bias when the neuron is marked as imported", () => {
-            layer2.neurons[0].imported = true
-            layer2.neurons[0].bias = "test"
-            layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].bias).to.equal("test")
-        })
-
         it("Inits all the neurons in the layer's neurons array", () => {
             layer2.assignPrev(layer)
+            layer2.init()
             expect(layer2.neurons[0].init).to.have.been.called
             expect(layer2.neurons[1].init).to.have.been.called
-        })
-
-        it("Calls the neuron's init function with the prev layer's neurons count", () => {
-            layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2)
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2)
         })
 
         it("Calls the neuron's init function with adaptiveLR and activationConfig", () => {
             layer2.net.adaptiveLR = "test"
             layer2.net.activationConfig = "stuff"
             layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"adaptiveLR": "test"}))
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"adaptiveLR": "test"}))
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"activationConfig": "stuff"}))
+            layer2.init()
+            expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
         })
 
         it("Calls the neuron's init function with eluAlpha", () => {
             layer2.net.eluAlpha = 1
             layer2.assignPrev(layer1)
-            expect(layer2.neurons[0].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
-            expect(layer2.neurons[1].init).to.have.been.calledWith(2, sinon.match({"eluAlpha": 1}))
-        })
-
-        it("Sets the layer state to initialised", () => {
-            layer2.assignPrev(layer1)
-            expect(layer2.state).to.equal("initialised")
+            layer2.init()
+            expect(layer2.neurons[0].init).to.have.been.calledWith(sinon.match({"eluAlpha": 1}))
+            expect(layer2.neurons[1].init).to.have.been.calledWith(sinon.match({"eluAlpha": 1}))
         })
 
         it("Calls the NetMath.xavieruniform function when the weightsInitFn is xavieruniform", () => {
             sinon.stub(layer2.net, "weightsInitFn")
             layer2.assignPrev(layer1)
+            layer2.init()
             expect(layer2.net.weightsInitFn).to.be.called
             layer2.net.weightsInitFn.restore()
+        })
+
+        it("When prevLayer is Conv, the number of weights is set to match each activation in the activation maps", () => {
+            const convLayer = new ConvLayer(3)
+            convLayer.filters = [new Filter(),new Filter(),new Filter()]
+            convLayer.outMapSize = 7
+            layer2.assignPrev(convLayer)
+            layer2.init()
+            expect(layer2.neurons[0].weights.length).to.equal(147) // 3 * 7 * 7
         })
     })
 
@@ -1437,6 +1528,20 @@ describe("FCLayer", () => {
             net.layers[1].forward([1,2,3,4,5])
             expect(net.layers[1].neurons.find(n => n.dropped).activation).to.equal(0)
         })
+
+        it("Defaults to dropout value of 1 (and thus, not dropping out any neurons) when net.dropout is not defined", () => {
+            const net = new Network({
+                activation: "sigmoid",
+                layers: [layer1, layer2],
+                weightsConfig: {limit: 0.1}
+            })
+
+            layer2.net.dropout = undefined
+            net.forward([1,2])
+            expect(layer2.neurons[0].activation).to.not.equal(0)
+            expect(layer2.neurons[1].activation).to.not.equal(0)
+            expect(layer2.neurons[2].activation).to.not.equal(0)
+        })
     })
 
     describe("backward", () => {
@@ -1491,7 +1596,7 @@ describe("FCLayer", () => {
         })
 
         it("Increments each neuron's bias with the its error", () => {
-            layer3.neurons.forEach(neuron => neuron.activation = 0.5) 
+            layer3.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.backward([1,2,3,4])
             expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([0.5, 1.5, 2.5, 3.5])
         })
@@ -1615,7 +1720,7 @@ describe("FCLayer", () => {
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
 
             layer2.applyDeltaWeights()
-            
+
             expect(layer2.neurons[0].weights).to.deep.equal([0.75, 0.75])
             expect(layer2.neurons[1].weights).to.deep.equal([0.75, 0.75])
             expect(layer2.neurons[2].weights).to.deep.equal([0.75, 0.75])
@@ -1678,7 +1783,7 @@ describe("FCLayer", () => {
             sinon.stub(NetMath, "maxNorm").callsFake(x => x)
             layer2.applyDeltaWeights()
 
-            expect(net.maxNormTotal).to.equal(0.125) // sqrt ( 2 * 0.25**2 )        
+            expect(net.maxNormTotal).to.equal(0.125) // sqrt ( 2 * 0.25**2 )
             net.weightUpdateFn.restore()
             NetMath.maxNorm.restore()
         })
@@ -1695,42 +1800,22 @@ describe("FCLayer", () => {
             expect(net.maxNormTotal).to.be.undefined
 
             net.weightUpdateFn.restore()
-        })        
+        })
     })
 })
 
 describe("Neuron", () => {
 
     describe("constructor", () => {
-
-        let neuron
-
-        beforeEach(() => neuron = new Neuron({bias: 1, weights: [1,2]}))
-
-        it("Can construct a neuron", () => expect(new Neuron()).instanceof(Neuron))
-
-        it("Sets the imported attribute to true when given import data", () => {
-            expect(neuron.imported).to.be.true
-        })
-
-        it("Sets the neuron weights to the imported weights, when given import data", () => {
-            expect(neuron.weights).to.deep.equal([1,2])
-        })
-
-        it("Sets the neuron bias to the imported bias, when given imported data", () => {
-            expect(neuron.bias).to.equal(1)
-        })
-
-        it("Does nothing when there is no imported data given", () => {
-            const neuron2 = new Neuron()
-            expect(neuron2.imported).to.be.undefined
-            expect(neuron2.weights).to.be.undefined
-            expect(neuron2.bias).to.be.undefined
+        it("Creates a new neuron instance", () => {
+            const neuron = new Neuron()
+            expect(neuron).to.not.be.undefined
+            expect(neuron).instanceof(Neuron)
         })
     })
 
     describe("init", () => {
-  
+
         let neuron, neuron2
 
         beforeEach(() => {
@@ -1742,144 +1827,144 @@ describe("Neuron", () => {
         })
 
         it("Creates an array of delta weights with the same length as the weights array", () => {
-            neuron.init(5)
+            neuron.init()
             expect(neuron.deltaWeights).to.not.be.undefined
             expect(neuron.deltaWeights.length).to.equal(neuron.weights.length)
         })
 
         it("Sets all the delta weights to 0", () => {
-            neuron.init(5)
+            neuron.init()
             expect(neuron.deltaWeights).to.deep.equal([0,0,0,0,0])
         })
 
         it("Creates a weightGains array if the adaptiveLR parameter is gain, with same size as weights, with 1 values", () => {
-            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.init({adaptiveLR: "gain"})
             expect(neuron2.weightGains).to.not.be.undefined
             expect(neuron2.weightGains).to.have.lengthOf(3)
             expect(neuron2.weightGains).to.deep.equal([1,1,1])
         })
 
         it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
-            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.init({adaptiveLR: "gain"})
             expect(neuron2.biasGain).to.equal(1)
         })
 
         it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
-            neuron2.init(3, {adaptiveLR: "not gain"})
+            neuron2.init({adaptiveLR: "not gain"})
             expect(neuron2.weightGains).to.be.undefined
             expect(neuron2.biasGain).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adagrad, with 0 values", () => {
-            neuron2.init(3, {adaptiveLR: "adagrad"})
+            neuron2.init({adaptiveLR: "adagrad"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is rmsprop, with 0 values", () => {
-            neuron2.init(3, {adaptiveLR: "rmsprop"})
+            neuron2.init({adaptiveLR: "rmsprop"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
-            neuron2.init(3, {adaptiveLR: "adagrad"})
+            neuron2.init({adaptiveLR: "adagrad"})
             expect(neuron2.biasCache).to.equal(0)
         })
 
         it("Creates a biasCache value of 0 if the adaptiveLR parameter is rmsprop", () => {
-            neuron2.init(3, {adaptiveLR: "adagrad"})
+            neuron2.init({adaptiveLR: "adagrad"})
             expect(neuron2.biasCache).to.equal(0)
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not adagrad", () => {
-            neuron2.init(3, {adaptiveLR: "not adagrad"})
+            neuron2.init({adaptiveLR: "not adagrad"})
             expect(neuron2.weightsCache).to.be.undefined
             expect(neuron2.biasCache).to.be.undefined
         })
 
         it("Does not create the weightsCache or biasCache if the adaptiveLR is not rmsprop", () => {
-            neuron2.init(3, {adaptiveLR: "not rmsprop"})
+            neuron2.init({adaptiveLR: "not rmsprop"})
             expect(neuron2.weightsCache).to.be.undefined
             expect(neuron2.biasCache).to.be.undefined
         })
 
         it("Creates and sets neuron.m to 0 if the adaptiveLR parameter is adam", () => {
-            neuron2.init(3, {adaptiveLR: "adam"})
+            neuron2.init({adaptiveLR: "adam"})
             expect(neuron2.m).to.not.be.undefined
             expect(neuron2.m).to.equal(0)
         })
 
         it("Creates and sets neuron.v to 0 if the adaptiveLR parameter is adam", () => {
-            neuron2.init(3, {adaptiveLR: "adam"})
+            neuron2.init({adaptiveLR: "adam"})
             expect(neuron2.v).to.not.be.undefined
             expect(neuron2.v).to.equal(0)
         })
 
         it("Does not create neuron.m or neuron.v when the adaptiveLR parameter is not adam", () => {
-            neuron2.init(3, {adaptiveLR: "not adam"})
+            neuron2.init({adaptiveLR: "not adam"})
             expect(neuron2.m).to.be.undefined
             expect(neuron2.v).to.be.undefined
         })
 
         it("Creates a weightsCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             expect(neuron2.weightsCache).to.not.be.undefined
             expect(neuron2.weightsCache).to.have.lengthOf(3)
             expect(neuron2.weightsCache).to.deep.equal([0,0,0])
         })
 
         it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             expect(neuron2.adadeltaBiasCache).to.equal(0)
         })
 
         it("Creates a adadeltaCache array, with same dimension as weights, if the adaptiveLR is adadelta, with 0 values", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             expect(neuron2.adadeltaCache).to.not.be.undefined
             expect(neuron2.adadeltaCache).to.have.lengthOf(3)
             expect(neuron2.adadeltaCache).to.deep.equal([0,0,0])
         })
 
         it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or rmsprop", () => {
-            neuron2.init(3, {adaptiveLR: "adagrad"})
+            neuron2.init({adaptiveLR: "adagrad"})
             expect(neuron2.adadeltaCache).to.be.undefined
             expect(neuron2.adadeltaBiasCache).to.be.undefined
             const neuron3 = new Neuron()
             neuron3.weights = [...new Array(3)].map(v => Math.random()*0.2-0.1)
-            neuron3.init(3, {adaptiveLR: "rmsprop"})
+            neuron3.init({adaptiveLR: "rmsprop"})
             expect(neuron3.adadeltaCache).to.be.undefined
             expect(neuron3.adadeltaBiasCache).to.be.undefined
         })
 
         it("Creates a random neuron.rreluSlope number if the activationConfig value is rrelu", () => {
-            neuron2.init(3, {activationConfig: "rrelu"})
+            neuron2.init({activationConfig: "rrelu"})
             expect(neuron2.rreluSlope).to.not.be.undefined
             expect(neuron2.rreluSlope).to.be.a.number
             expect(neuron2.rreluSlope).to.be.at.most(0.0011)
         })
 
         it("Sets the neuron.eluAlpha to the given value, if given a value", () => {
-            neuron2.init(3, {activationConfig: "elu", eluAlpha: 0.5})
+            neuron2.init({activationConfig: "elu", eluAlpha: 0.5})
             expect(neuron2.eluAlpha).to.equal(0.5)
         })
 
         it("Creates the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is gain", () => {
-            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.init({adaptiveLR: "gain"})
             expect(neuron2.getWeightGain).to.not.be.undefined
             expect(neuron2.setWeightGain).to.not.be.undefined
         })
 
         it("Does not create the neuron.getWeightGain() and neuron.setWeightGain() functions when adaptiveLR is not gain", () => {
-            neuron2.init(3, {adaptiveLR: "not gain"})
+            neuron2.init({adaptiveLR: "not gain"})
             expect(neuron2.getWeightGain).to.be.undefined
             expect(neuron2.setWeightGain).to.be.undefined
         })
 
         it("getWeightGain() returns the neuron.weightGains weight at the given index", () => {
-            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.init({adaptiveLR: "gain"})
             neuron2.weightGains = [1,2,3]
             expect(neuron2.getWeightGain(0)).to.equal(1)
             expect(neuron2.getWeightGain(1)).to.equal(2)
@@ -1887,7 +1972,7 @@ describe("Neuron", () => {
         })
 
         it("setWeightGain() changes the neuron.weightGains weight at the given index", () => {
-            neuron2.init(3, {adaptiveLR: "gain"})
+            neuron2.init({adaptiveLR: "gain"})
             neuron2.weightGains = [1,2,3]
             neuron2.setWeightGain(0, 4)
             neuron2.setWeightGain(1, 5)
@@ -1898,31 +1983,31 @@ describe("Neuron", () => {
         })
 
         it("Creates the neuron.getWeightsCache() and neuron.setWeightsCache() function when adaptiveLR is adagrad", () => {
-            neuron2.init(3, {adaptiveLR: "adagrad"})
+            neuron2.init({adaptiveLR: "adagrad"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
         it("Creates the neuron.getWeightsCache() function when adaptiveLR is rmsprop", () => {
-            neuron2.init(3, {adaptiveLR: "rmsprop"})
+            neuron2.init({adaptiveLR: "rmsprop"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
         it("Creates the neuron.getWeightsCache() function when adaptiveLR is adadelta", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             expect(neuron2.getWeightsCache).to.not.be.undefined
             expect(neuron2.setWeightsCache).to.not.be.undefined
         })
 
         it("Does not create the neuron.getWeightsCache() and neuron.setWeightsCache() functions when adaptiveLR is something else", () => {
-            neuron2.init(3, {adaptiveLR: "something else"})
+            neuron2.init({adaptiveLR: "something else"})
             expect(neuron2.getWeightsCache).to.be.undefined
             expect(neuron2.setWeightsCache).to.be.undefined
         })
 
         it("getWeightsCache() returns the neuron.weightsCache weight at the given index", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             neuron2.weightsCache = [1,2,3]
             expect(neuron2.getWeightsCache(0)).to.equal(1)
             expect(neuron2.getWeightsCache(1)).to.equal(2)
@@ -1930,7 +2015,7 @@ describe("Neuron", () => {
         })
 
         it("setWeightsCache() changes the neuron.weightsCache weight at the given index", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             neuron2.weightsCache = [1,2,3]
             neuron2.setWeightsCache(0, 4)
             neuron2.setWeightsCache(1, 5)
@@ -1941,19 +2026,19 @@ describe("Neuron", () => {
         })
 
         it("Creates the neuron.getAdadeltaCache() and neuron.setAdadeltaCache() functions when adaptiveLR is adadelta", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             expect(neuron2.getAdadeltaCache).to.not.be.undefined
             expect(neuron2.setAdadeltaCache).to.not.be.undefined
         })
 
         it("Does not create the neuron.getAdadeltaCache() function when adaptiveLR is not adadelta", () => {
-            neuron2.init(3, {adaptiveLR: "not adadelta"})
+            neuron2.init({adaptiveLR: "not adadelta"})
             expect(neuron2.getAdadeltaCache).to.be.undefined
             expect(neuron2.setAdadeltaCache).to.be.undefined
         })
 
         it("getAdadeltaCache() returns the neuron.adadeltaCache value at the index given", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             neuron2.adadeltaCache = [1,2,3]
             expect(neuron2.getAdadeltaCache(0)).to.equal(1)
             expect(neuron2.getAdadeltaCache(1)).to.equal(2)
@@ -1961,7 +2046,7 @@ describe("Neuron", () => {
         })
 
         it("setAdadeltaCache() changes the neuron.adadeltaCache weight at the given index", () => {
-            neuron2.init(3, {adaptiveLR: "adadelta"})
+            neuron2.init({adaptiveLR: "adadelta"})
             neuron2.adadeltaCache = [1,2,3]
             neuron2.setAdadeltaCache(0, 4)
             neuron2.setAdadeltaCache(1, 5)
@@ -2027,6 +2112,1147 @@ describe("Neuron", () => {
     })
 })
 
+describe("Filter", () => {
+
+    describe("constructor", () => {
+
+        it("Creates a Filter instance", () => {
+            const filter = new Filter()
+            expect(filter).instanceof(Filter)
+        })
+    })
+
+    describe("init", () => {
+
+        let filter, filter2
+
+        beforeEach(() => {
+            filter = new Filter()
+            filter.weights = [[...new Array(3)].map(r => [...new Array(3)].map(v => Math.random()*0.2-0.1))]
+            filter2 = new Filter()
+            filter2.weights = [[...new Array(3)].map(r => [...new Array(3)].map(v => Math.random()*0.2-0.1))]
+        })
+
+        it("Creates a volume of delta weights with depth==channels and the same spacial dimensions as the weights map", () => {
+            filter.init()
+            expect(filter.deltaWeights).to.not.be.undefined
+            expect(filter.deltaWeights).to.have.lengthOf(1)
+            expect(filter.deltaWeights[0]).to.have.lengthOf(3)
+            expect(filter.deltaWeights[0][0]).to.have.lengthOf(3)
+        })
+
+        it("Sets all the delta weight values to 0", () => {
+            filter.init()
+            expect(filter.deltaWeights[0]).to.deep.equal([[0,0,0], [0,0,0], [0,0,0]])
+        })
+
+        it("Sets the filter.deltaBias value to 0", () => {
+            filter.deltaBias = undefined
+            filter.init()
+            expect(filter.deltaBias).to.equal(0)
+        })
+
+        describe("weightGains", () => {
+
+            it("Creates a weightGains map if the adaptiveLR parameter is gain, with the same dimensions as weights, with 1 values", () => {
+                filter.init({adaptiveLR: "gain"})
+                expect(filter.weightGains).to.not.be.undefined
+                expect(filter.weightGains).to.deep.equal([[[1,1,1],[1,1,1],[1,1,1]]])
+            })
+
+            it("Creates a biasGain value of 1 if the adaptiveLR parameter is gain", () => {
+                filter.init({adaptiveLR: "gain"})
+                expect(filter.biasGain).to.equal(1)
+            })
+
+            it("Does not create the weightGains and biasGain when the adaptiveLR is not gain", () => {
+                filter.init({adaptiveLR: "not gain"})
+                expect(filter.weightGains).to.be.undefined
+                expect(filter.biasGain).to.be.undefined
+            })
+
+            it("Creates the filter.getWeightGain() and filter.setWeightGain() functions when adaptiveLR is gain", () => {
+                filter.init({adaptiveLR: "gain"})
+                expect(filter.getWeightGain).to.not.be.undefined
+                expect(filter.setWeightGain).to.not.be.undefined
+            })
+
+            it("Does not create the filter.getWeightGain() and filter.setWeightGain() functions when adaptiveLR is not gain", () => {
+                filter.init({adaptiveLR: "not gain"})
+                expect(filter.getWeightGain).to.be.undefined
+                expect(filter.setWeightGain).to.be.undefined
+            })
+
+            it("getWeightGain() returns the filter.weightGains weight at the given index", () => {
+                filter.init({adaptiveLR: "gain"})
+                filter.weightGains = [[[1,2,3],[4,5,6],[7,8,9]]]
+                expect(filter.getWeightGain([0,0,0])).to.equal(1)
+                expect(filter.getWeightGain([0,0,2])).to.equal(3)
+                expect(filter.getWeightGain([0,2,0])).to.equal(7)
+                expect(filter.getWeightGain([0,2,2])).to.equal(9)
+            })
+
+            it("setWeightGain() changes the filter.weightGains weight at the given index", () => {
+                filter.init({adaptiveLR: "gain"})
+                filter.weightGains = [[[1,2,3],[4,5,6],[7,8,9]]]
+                filter.setWeightGain([0,0,0], 4)
+                filter.setWeightGain([0,1,1], 5)
+                filter.setWeightGain([0,1,2], "a")
+                filter.setWeightGain([0,2,1], "b")
+                filter.setWeightGain([0,2,2], "c")
+                expect(filter.weightGains[0][0][0]).to.equal(4)
+                expect(filter.weightGains[0][1][1]).to.equal(5)
+                expect(filter.weightGains[0][1][2]).to.equal("a")
+                expect(filter.weightGains[0][2][1]).to.equal("b")
+                expect(filter.weightGains[0][2][2]).to.equal("c")
+            })
+        })
+
+        describe("weightsCache", () => {
+
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adagrad", () => {
+                filter.init({adaptiveLR: "adagrad"})
+                expect(filter.weightsCache).to.not.be.undefined
+                expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
+            })
+
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is rmsprop", () => {
+                filter.init({adaptiveLR: "rmsprop"})
+                expect(filter.weightsCache).to.not.be.undefined
+                expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
+            })
+
+            it("Creates a weightsCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adadelta", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                expect(filter.weightsCache).to.not.be.undefined
+                expect(filter.weightsCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
+            })
+
+            it("Creates a biasCache value of 0 if the adaptiveLR parameter is adagrad", () => {
+                filter.init({adaptiveLR: "adagrad"})
+                expect(filter.biasCache).to.equal(0)
+            })
+
+            it("Creates a biasCache value of 0 if the adaptiveLR parameter is rmsprop", () => {
+                filter.init({adaptiveLR: "rmsprop"})
+                expect(filter.biasCache).to.equal(0)
+            })
+
+            it("Creates a biasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                expect(filter.biasCache).to.equal(0)
+            })
+
+            it("Does not create them if any other adaptiveLR parameter is given", () => {
+                filter.init({adaptiveLR: "something else"})
+                expect(filter.weightsCache).to.be.undefined
+                expect(filter.biasCache).to.be.undefined
+            })
+
+            it("Creates the getWeightsCache() and setWeightsCache() functions if the adaptiveLR is adagrad", () => {
+                filter.init({adaptiveLR: "adagrad"})
+                expect(filter.getWeightsCache).to.not.be.undefined
+                expect(filter.setWeightsCache).to.not.be.undefined
+            })
+
+            it("Does not create the getWeightsCache and setWeightsCache functions if adaptiveLR is anything else", () => {
+                filter.init({adaptiveLR: "whatever"})
+                expect(filter.setWeightsCache).to.be.undefined
+                expect(filter.setWeightsCache).to.be.undefined
+            })
+
+            it("getWeightsCache() returns the filter.weightsCache weight at the given index", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                filter.weightsCache = [[[1,2,3],[4,5,6],[7,8,9]]]
+                expect(filter.getWeightsCache([0,0,0])).to.equal(1)
+                expect(filter.getWeightsCache([0,0,2])).to.equal(3)
+                expect(filter.getWeightsCache([0,2,0])).to.equal(7)
+                expect(filter.getWeightsCache([0,2,2])).to.equal(9)
+            })
+
+            it("setWeightsCache() changes the filter.weightsCache weight at the given index", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                filter.weightsCache = [[[1,2,3],[4,5,6],[7,8,9]]]
+                filter.setWeightsCache([0,0,0], 4)
+                filter.setWeightsCache([0,1,1], 5)
+                filter.setWeightsCache([0,1,2], "a")
+                filter.setWeightsCache([0,2,1], "b")
+                filter.setWeightsCache([0,2,2], "c")
+                expect(filter.weightsCache[0][0][0]).to.equal(4)
+                expect(filter.weightsCache[0][1][1]).to.equal(5)
+                expect(filter.weightsCache[0][1][2]).to.equal("a")
+                expect(filter.weightsCache[0][2][1]).to.equal("b")
+                expect(filter.weightsCache[0][2][2]).to.equal("c")
+            })
+        })
+
+        describe("adadeltaCache", () => {
+
+            it("Creates a adadeltaBiasCache value of 0 if the adaptiveLR parameter is adadelta", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                expect(filter.adadeltaBiasCache).to.equal(0)
+            })
+
+            it("Creates a adadeltaCache map, with same dimensions as weights, with 0 values, if the adaptiveLR is adadelta", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                expect(filter.adadeltaCache).to.not.be.undefined
+                expect(filter.adadeltaCache).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]]])
+            })
+
+            it("Does not create adadeltaBiasCache or adadeltaCache when the adaptiveLR is adagrad or rmsprop", () => {
+                filter.init({adaptiveLR: "adagrad"})
+                expect(filter.adadeltaCache).to.be.undefined
+                expect(filter.adadeltaBiasCache).to.be.undefined
+
+                filter2.init(3, {adaptiveLR: "rmsprop"})
+                expect(filter2.adadeltaCache).to.be.undefined
+                expect(filter2.adadeltaBiasCache).to.be.undefined
+            })
+
+            it("Creates the filter.getAdadeltaCache() and filter.setAdadeltaCache() functions when adaptiveLR is adadelta", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                expect(filter.getAdadeltaCache).to.not.be.undefined
+                expect(filter.setAdadeltaCache).to.not.be.undefined
+            })
+
+            it("Does not create the map, bias or getAdadeltaCache() / setAdadeltaCache() functions when adaptiveLR is not adadelta", () => {
+                filter.init({adaptiveLR: "not adadelta"})
+                expect(filter.getAdadeltaCache).to.be.undefined
+                expect(filter.setAdadeltaCache).to.be.undefined
+                expect(filter.adadeltaBiasCache).to.be.undefined
+                expect(filter.adadeltaCache).to.be.undefined
+            })
+
+            it("getAdadeltaCache() returns the filter.adadeltaCache weight at the given index", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                filter.adadeltaCache = [[[1,2,3],[4,5,6],[7,8,9]]]
+                expect(filter.getAdadeltaCache([0,0,0])).to.equal(1)
+                expect(filter.getAdadeltaCache([0,0,2])).to.equal(3)
+                expect(filter.getAdadeltaCache([0,2,0])).to.equal(7)
+                expect(filter.getAdadeltaCache([0,2,2])).to.equal(9)
+            })
+
+            it("setAdadeltaCache() changes the filter.adadeltaCache weight at the given index", () => {
+                filter.init({adaptiveLR: "adadelta"})
+                filter.adadeltaCache = [[[1,2,3],[4,5,6],[7,8,9]]]
+                filter.setAdadeltaCache([0,0,0], 4)
+                filter.setAdadeltaCache([0,1,1], 5)
+                filter.setAdadeltaCache([0,1,2], "a")
+                filter.setAdadeltaCache([0,2,1], "b")
+                filter.setAdadeltaCache([0,2,2], "c")
+                expect(filter.adadeltaCache[0][0][0]).to.equal(4)
+                expect(filter.adadeltaCache[0][1][1]).to.equal(5)
+                expect(filter.adadeltaCache[0][1][2]).to.equal("a")
+                expect(filter.adadeltaCache[0][2][1]).to.equal("b")
+                expect(filter.adadeltaCache[0][2][2]).to.equal("c")
+            })
+        })
+
+        it("Creates and sets filter.m to 0 if the adaptiveLR parameter is adam", () => {
+            filter.init({adaptiveLR: "adam"})
+            expect(filter.m).to.not.be.undefined
+            expect(filter.m).to.equal(0)
+        })
+
+        it("Creates and sets filter.v to 0 if the adaptiveLR parameter is adam", () => {
+            filter.init({adaptiveLR: "adam"})
+            expect(filter.v).to.not.be.undefined
+            expect(filter.v).to.equal(0)
+        })
+
+        it("Does not create filter.m or filter.v when the adaptiveLR parameter is not adam", () => {
+            filter.init({adaptiveLR: "not adam"})
+            expect(filter.m).to.be.undefined
+            expect(filter.v).to.be.undefined
+        })
+
+        it("Creates a random filter.rreluSlope number if the activationConfig value is rrelu", () => {
+            filter.init({activationConfig: "rrelu"})
+            expect(filter.rreluSlope).to.not.be.undefined
+            expect(filter.rreluSlope).to.be.a.number
+            expect(filter.rreluSlope).to.be.at.most(0.0011)
+        })
+
+        it("Sets the filter.eluAlpha to the given value, if given a value", () => {
+            filter.init({activationConfig: "elu", eluAlpha: 0.5})
+            expect(filter.eluAlpha).to.equal(0.5)
+        })
+    })
+
+    describe("getWeight", () => {
+        it("Gets the weight from the map at given index, as though the map was a 1d array (Example 1)", () => {
+            const filter = new Filter()
+            filter.weights = [[[1,2,3],[4,5,6],[7,8,9]]]
+            expect(filter.getWeight([0,0,0])).to.equal(1)
+            expect(filter.getWeight([0,0,2])).to.equal(3)
+            expect(filter.getWeight([0,2,0])).to.equal(7)
+            expect(filter.getWeight([0,2,2])).to.equal(9)
+        })
+
+        it("Gets the weight from the map at given index, as though the map was a 1d array (Example 2)", () => {
+            const filter = new Filter()
+            filter.weights = [[[1,2],[3,4]],[[5,6],[7,8]],[[9,10],[11,12]]]
+            expect(filter.getWeight([0,0,0])).to.equal(1)
+            expect(filter.getWeight([0,1,0])).to.equal(3)
+            expect(filter.getWeight([1,1,0])).to.equal(7)
+            expect(filter.getWeight([2,0,0])).to.equal(9)
+            expect(filter.getWeight([2,1,0])).to.equal(11)
+        })
+    })
+
+    describe("setWeight", () => {
+        it("Sets the weight from the map at given index, as though the map was a 1d array", () => {
+            const filter = new Filter()
+            filter.weights = [[[1,2,3],[4,5,6],[7,8,9]]]
+            filter.setWeight([0,0,0], 4)
+            filter.setWeight([0,1,1], 5)
+            filter.setWeight([0,1,2], "a")
+            filter.setWeight([0,2,1], "b")
+            filter.setWeight([0,2,2], "c")
+            expect(filter.weights[0][0][0]).to.equal(4)
+            expect(filter.weights[0][1][1]).to.equal(5)
+            expect(filter.weights[0][1][2]).to.equal("a")
+            expect(filter.weights[0][2][1]).to.equal("b")
+            expect(filter.weights[0][2][2]).to.equal("c")
+        })
+    })
+
+    describe("getDeltaWeight", () => {
+        it("Gets the delta weight from the map at given index, as though the map was a 1d array", () => {
+            const filter = new Filter()
+            filter.deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]]]
+            expect(filter.getDeltaWeight([0,0,0])).to.equal(1)
+            expect(filter.getDeltaWeight([0,0,2])).to.equal(3)
+            expect(filter.getDeltaWeight([0,2,0])).to.equal(7)
+            expect(filter.getDeltaWeight([0,2,2])).to.equal(9)
+        })
+    })
+
+    describe("setDeltaWeight", () => {
+        it("Sets the delta weight from the map at given index, as though the map was a 1d array", () => {
+            const filter = new Filter()
+            filter.deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]]]
+            filter.setDeltaWeight([0,0,0], 4)
+            filter.setDeltaWeight([0,1,1], 5)
+            filter.setDeltaWeight([0,1,2], "a")
+            filter.setDeltaWeight([0,2,1], "b")
+            filter.setDeltaWeight([0,2,2], "c")
+            expect(filter.deltaWeights[0][0][0]).to.equal(4)
+            expect(filter.deltaWeights[0][1][1]).to.equal(5)
+            expect(filter.deltaWeights[0][1][2]).to.equal("a")
+            expect(filter.deltaWeights[0][2][1]).to.equal("b")
+            expect(filter.deltaWeights[0][2][2]).to.equal("c")
+        })
+    })
+})
+
+describe("ConvLayer", () => {
+
+    describe("constructor", () => {
+
+        it("Sets the layer.filterSize to the value given", () => {
+            const layer = new ConvLayer(1, {filterSize: 3})
+            expect(layer.filterSize).to.equal(3)
+        })
+
+        it("Does not set the layer.filterSize to anything if no value is given", () => {
+            const layer = new ConvLayer()
+            expect(layer.filterSize).to.be.undefined
+        })
+
+        it("Sets the layer.zeroPadding to the value given", () => {
+            const layer = new ConvLayer(1, {zeroPadding: 1})
+            expect(layer.zeroPadding).to.equal(1)
+        })
+
+        it("Does not set the layer.zeroPadding to anything if no value is given", () => {
+            const layer = new ConvLayer()
+            expect(layer.zeroPadding).to.be.undefined
+        })
+
+        it("Sets the layer.stride to the value given", () => {
+            const layer = new ConvLayer(1, {stride: 1})
+            expect(layer.stride).to.equal(1)
+        })
+
+        it("Does not set the layer.stride to anything if no value is given", () => {
+            const layer = new ConvLayer()
+            expect(layer.stride).to.be.undefined
+        })
+
+        it("Sets the layer.size to the value given", () => {
+            const layer = new ConvLayer(1)
+            expect(layer.size).to.equal(1)
+        })
+
+        it("Does not set the layer.size to anything if no value is given", () => {
+            const layer = new ConvLayer()
+            expect(layer.size).to.be.undefined
+        })
+
+        it("Sets the state to not-initialised", () => {
+            const layer = new ConvLayer()
+            expect(layer.state).to.equal("not-initialised")
+        })
+    })
+
+    describe("assignNext", () => {
+
+        it("Assigns a reference to the given layer as this layer's nextLayer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new ConvLayer()
+            layer1.net = {}
+            layer1.assignNext(layer2)
+            expect(layer1.nextLayer).to.equal(layer2)
+        })
+    })
+
+    describe("assignPrev", () => {
+
+        let layer1, layer2
+
+        beforeEach(() => {
+            layer1 = new ConvLayer()
+            layer1.size = 10
+            layer1.neurons = {length: 10}
+            layer2 = new ConvLayer()
+            layer2.net = {}
+        })
+
+        it("Assigns a reference to the given layer as this layer's prevLayer", () => {
+            layer2.net = {}
+            layer2.assignPrev(layer1)
+            expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Defaults the layer.filterSize to the net.filterSize value, if there's no layer.filterSize, but there is one for net", () => {
+            const net = new Network({filterSize: 5})
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.filterSize).to.equal(5)
+        })
+
+        it("Defaults the layer.filterSize to 3 if there is no filterSize value for either layer or net", () => {
+            const net = new Network()
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.filterSize).to.equal(3)
+        })
+
+        it("Keeps the same filterSize value if it has already been assigned to layer", () => {
+            const net = new Network()
+            layer2.filterSize = 7
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.filterSize).to.equal(7)
+        })
+
+        it("Defaults the layer.zeroPadding to the net.zeroPadding value, if there's no layer.zeroPadding, but there is one for net", () => {
+            const net = new Network({zeroPadding: 3})
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.zeroPadding).to.equal(3)
+        })
+
+        it("Defaults the layer.zeroPadding to rounded down half the filterSize if there is no zeroPadding value for either layer or net", () => {
+            const layer3 = new ConvLayer()
+            const net = new Network()
+            layer2.net = net
+            layer3.net = net
+
+            layer2.filterSize = 3
+            layer2.assignPrev(layer1)
+            expect(layer2.zeroPadding).to.equal(1)
+
+            layer3.filterSize = 5
+            layer3.assignPrev(layer1)
+            expect(layer3.zeroPadding).to.equal(2)
+        })
+
+        it("Keeps the same zeroPadding value if it has already been assigned to layer", () => {
+            layer2.size = 1
+            layer2.zeroPadding = 2
+            const net = new Network()
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.zeroPadding).to.equal(2)
+        })
+
+        it("Allows setting the zero padding to 0", () => {
+            layer2.size = 1
+            layer2.zeroPadding = 0
+            const net = new Network()
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.zeroPadding).to.equal(0)
+        })
+
+        it("Defaults the layer.stride to the net.stride value, if there's no layer.stride, but there is one for net", () => {
+            const net = new Network({stride: 5})
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.stride).to.equal(5)
+        })
+
+        it("Defaults the layer.stride to 1 if there is no stride value for either layer or net", () => {
+            const net = new Network()
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.stride).to.equal(1)
+        })
+
+        it("Keeps the same stride value if it has already been assigned to layer", () => {
+            const net = new Network()
+            layer2.stride = 7
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.stride).to.equal(7)
+        })
+
+        it("Defaults the layer.size to the net.filterCount value, if there's no layer.size, but there is filterCount for net", () => {
+            const net = new Network({filterCount: 5})
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.size).to.equal(5)
+        })
+
+        it("Defaults the layer.size to 4 if there is no size value for either layer or filterCount for net", () => {
+            const net = new Network()
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.size).to.equal(4)
+        })
+
+        it("Keeps the same size value if it has already been assigned to layer", () => {
+            const net = new Network()
+            layer2.size = 7
+            layer2.net = net
+            layer2.assignPrev(layer1)
+            expect(layer2.size).to.equal(7)
+        })
+
+        it("Assigns the layer.channels to the previous layer's size, if it's a Conv Layer", () => {
+            layer1.size = 10
+            layer2.assignPrev(layer1)
+            expect(layer2.channels).to.equal(10)
+        })
+
+        it("Assigns the layer.channels to the net.channels if the previous layer is not Conv", () => {
+            const layer = new FCLayer(10)
+            layer2.net.channels = 69
+            layer2.assignPrev(layer)
+            expect(layer2.channels).to.equal(69)
+        })
+
+        it("Assigns the layer.channels to the net.channels if the previous layer is not Conv and no net.channels is configured", () => {
+            const layer = new FCLayer(10)
+            layer2.net.channels = undefined
+            layer2.assignPrev(layer)
+            expect(layer2.channels).to.equal(1)
+        })
+
+        it("Assigns to layer.inMapValuesCount the size of the input map (Example 1)", () => {
+            const layer1 = new ConvLayer(4)
+            const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 0})
+            layer2.net = {}
+            layer1.outMapSize = 28
+            layer2.assignPrev(layer1)
+            expect(layer2.inMapValuesCount).to.equal(784)
+        })
+
+        it("Assigns to layer.inMapValuesCount the size of the input map (Example 2)", () => {
+            const layer1 = new ConvLayer(4)
+            const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 1})
+            layer2.net = {}
+            layer1.outMapSize = 28
+            layer2.assignPrev(layer1)
+            expect(layer2.inMapValuesCount).to.equal(784)
+        })
+
+        it("Assigns to layer.inMapValuesCount the size of the input map (Example 3)", () => {
+            const layer1 = new FCLayer(75)
+            const layer2 = new ConvLayer(3, {zeroPadding: 1, filterSize: 3})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.inMapValuesCount).to.equal(25)
+        })
+
+        it("Assigns to layer.inZPMapValuesCount the size of the zero padded input map (Example 1)", () => {
+            const layer1 = new ConvLayer(4)
+            const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 0})
+            layer1.outMapSize = 28
+
+            layer2.net = {}
+            layer2.assignPrev(layer1)
+            expect(layer2.inZPMapValuesCount).to.equal(784)
+        })
+
+        it("Assigns to layer.inZPMapValuesCount the size of the zero padded input map (Example 2)", () => {
+            const layer1 = new ConvLayer(4)
+            const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 1})
+            layer1.outMapSize = 28
+            layer2.net = {}
+            layer2.assignPrev(layer1)
+            expect(layer2.inZPMapValuesCount).to.equal(900)
+        })
+
+        it("Assigns to layer.inZPMapValuesCount the size of the zero padded input map (Example 3)", () => {
+            const layer1 = new FCLayer(75)
+            const layer2 = new ConvLayer(3, {zeroPadding: 1, filterSize: 3})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.inZPMapValuesCount).to.equal(49)
+        })
+
+        it("Sets the layer.outMapSize to the spacial dimension of the filter activation/sum/error maps (Example 1)", () => {
+            const layer1 = new FCLayer(2352) // 784 * 3
+            const layer2 = new ConvLayer(4, {filterSize: 3, zeroPadding: 1})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(28)
+        })
+
+        it("Sets the layer.outMapSize to the spacial dimension of the filter activation/sum/error maps (Example 2)", () => {
+            const layer1 = new FCLayer(75)
+            const layer2 = new ConvLayer()
+            layer1.size = 75
+            layer2.size = 4
+            layer2.stride = 2
+            layer2.filterSize = 3
+            layer2.zeroPadding = 1
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(3)
+        })
+
+        it("Sets the layer.outMapSize to the spacial dimension of the filter activation/sum/error maps (Example 3)", () => {
+            const layer1 = new FCLayer(147)
+            const layer2 = new ConvLayer()
+            layer1.size = 147
+            layer2.size = 4
+            layer2.stride = 3
+            layer2.filterSize = 3
+            layer2.zeroPadding = 1
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(3)
+        })
+
+        it("Creates a layer.filters array with as many filters as the size of the layer", () => {
+            const prevLayer = new FCLayer(147)
+            const layer = new ConvLayer(3)
+            layer.net = {channels: 3}
+            layer.assignPrev(layer1)
+            expect(layer.filters).to.not.be.undefined
+            expect(layer.filters).to.have.lengthOf(3)
+            expect(layer.filters[0]).instanceof(Filter)
+            expect(layer.filters[1]).instanceof(Filter)
+            expect(layer.filters[2]).instanceof(Filter)
+        })
+
+        it("Sets the inMapValuesCount to the square of the prev layer's out map size, if prev layer is Conv", () => {
+            const layer1 = new ConvLayer(3)
+            const layer2 = new ConvLayer(4, {filterSize: 3, stride: 1, zeroPadding: 1})
+            layer1.outMapSize = 100
+            layer2.assignPrev(layer1)
+            expect(layer2.inMapValuesCount).to.equal(10000)
+        })
+    })
+
+    describe("init", () => {
+
+        let layer1
+        let layer2
+
+        beforeEach(() => {
+            layer1 = new FCLayer(2)
+            layer2 = new ConvLayer(5, {filterSize: 3})
+            layer2.weightsConfig = {weightsInitFn: NetMath.xavieruniform}
+            layer2.net = {weightsInitFn: NetMath.xavieruniform}
+            layer2.channels = 1
+            layer2.assignPrev(layer1)
+        })
+
+        it("Initialises the filters' weights to a 3d map", () => {
+            layer2.init()
+            expect(layer2.filters[0].weights).instanceof(Array)
+            expect(layer2.filters[0].weights[0]).instanceof(Array)
+            expect(layer2.filters[0].weights[0][0]).instanceof(Array)
+        })
+
+        it("Sets the filter weights map to contain as many maps as there are channels in the filter", () => {
+            layer2.channels = 9
+            layer2.init()
+            expect(layer2.filters[0].weights).to.have.lengthOf(9)
+        })
+
+        it("Sets the number of weights in each filter's channel weights to a 2D map with dimensions==filterSize (Example 1)", () => {
+            layer2.channels = 1
+            layer2.filterSize = 3
+            layer2.init()
+            expect(layer2.filters[0].weights).to.have.lengthOf(1)
+            expect(layer2.filters[0].weights[0]).to.have.lengthOf(3)
+            expect(layer2.filters[0].weights[0][0]).to.have.lengthOf(3)
+        })
+
+        it("Sets the number of weights in each filter's channel weights to a 2D map with dimensions==filterSize (Example 2)", () => {
+            layer2.channels = 3
+            layer2.filterSize = 3
+            layer2.init()
+            expect(layer2.filters[0].weights).to.have.lengthOf(3)
+            expect(layer2.filters[0].weights[0]).to.have.lengthOf(3)
+            expect(layer2.filters[0].weights[0][0]).to.have.lengthOf(3)
+        })
+
+        it("Calls the layer weightsInitFn for each weights row in each channel in each filter (Example 1)", () => {
+            sinon.spy(layer2.net, "weightsInitFn")
+            layer2.channels = 1
+            layer2.filterSize = 3
+            layer2.init()
+            expect(layer2.net.weightsInitFn.callCount).to.equal(15) //5 * 1 * 3
+            layer2.net.weightsInitFn.restore()
+        })
+
+        it("Calls the layer weightsInitFn for each weights row in each channel in each filter (Example 2)", () => {
+            sinon.spy(layer2.net, "weightsInitFn")
+            layer2.channels = 3
+            layer2.filterSize = 3
+            layer2.init()
+            expect(layer2.net.weightsInitFn.callCount).to.equal(45) // 5 * 3 * 3
+            layer2.net.weightsInitFn.restore()
+        })
+
+        it("Sets each filter bias to a number between -0.1 and 0.1", () => {
+            layer2.filters[0].bias = undefined
+            layer2.filters[1].bias = undefined
+            layer2.init()
+            expect(layer2.filters[0].bias).to.be.at.least(-0.1)
+            expect(layer2.filters[0].bias).to.be.at.most(0.1)
+            expect(layer2.filters[1].bias).to.be.at.least(-0.1)
+            expect(layer2.filters[1].bias).to.be.at.most(0.1)
+        })
+
+        it("Calls the filter's init function with adaptiveLR and activationConfig", () => {
+            layer2.net.adaptiveLR = "test"
+            layer2.net.activationConfig = "stuff"
+            sinon.stub(layer2.filters[0], "init")
+            sinon.stub(layer2.filters[1], "init")
+            layer2.init()
+
+            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
+            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"adaptiveLR": "test"}))
+            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"activationConfig": "stuff"}))
+        })
+
+        it("Calls the filter's init function with eluAlpha", () => {
+            layer2.net.eluAlpha = 1
+            sinon.stub(layer2.filters[0], "init")
+            sinon.stub(layer2.filters[1], "init")
+            layer2.init()
+
+            expect(layer2.filters[0].init).to.have.been.calledWith(sinon.match({"eluAlpha": 1}))
+            expect(layer2.filters[1].init).to.have.been.calledWith(sinon.match({"eluAlpha": 1}))
+        })
+
+        it("Sets the filter activationMap with the same dimensions as the expected output size, with 0 values", () => {
+            layer2.outMapSize = 5
+            layer2.init()
+            expect(layer2.filters[0].activationMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[1].activationMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[2].activationMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[3].activationMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[4].activationMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+        })
+
+        it("Sets the filter errorMap with the same dimensions as the expected output size, with 0 values", () => {
+            layer2.outMapSize = 5
+            layer2.init()
+            expect(layer2.filters[0].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[1].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[2].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[3].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer2.filters[4].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+        })
+
+        it("Inits the filter dropoutMap with the same dimensions as the activation map, with only false values", () => {
+            layer2.outMapSize = 3
+            layer2.init()
+            const expected = [[false,false,false], [false,false,false], [false,false,false]]
+            expect(layer2.filters[0].dropoutMap).to.deep.equal(expected)
+        })
+    })
+
+    describe("forward", () => {
+
+        let net, layer, prevLayer
+
+        beforeEach(() => {
+            prevLayer = new FCLayer(75)
+            layer = new ConvLayer(3, {filterSize: 3, zeroPadding: 1, stride: 1})
+            net = new Network({channels: 3, layers: [prevLayer, layer]})
+            sinon.stub(NetUtil, "getActivations").callsFake(x => [...new Array(75)].map(v => Math.random()))
+        })
+
+        afterEach(() => {
+            NetUtil.getActivations.restore()
+        })
+
+        it("Sets the filter.sumMap of each filter to a map with spacial dimension equal to the output volume's (layer.outMapSize)", () => {
+            layer.filters[0].sumMap = undefined
+            layer.filters[1].sumMap = undefined
+            layer.filters[2].sumMap = undefined
+            layer.forward()
+            expect(layer.filters[0].sumMap).to.have.lengthOf(5)
+            expect(layer.filters[0].sumMap[0]).to.have.lengthOf(5)
+        })
+
+        it("Sets the filter.activationMap values to zero if when dropping out", () => {
+            layer.net = {dropout: 0}
+            layer.state = "training"
+            layer.forward()
+            const zeroedOutMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
+            expect(layer.filters[0].activationMap).to.deep.equal(zeroedOutMap)
+            expect(layer.filters[1].activationMap).to.deep.equal(zeroedOutMap)
+            expect(layer.filters[2].activationMap).to.deep.equal(zeroedOutMap)
+        })
+
+        it("Doesn't do any dropout if the layer state is not training", () => {
+            layer.net = {dropout: 0}
+            layer.state = "dfkgjdhflgjk"
+            layer.forward()
+            expect(layer.filters[0].dropoutMap).to.not.include(true)
+            expect(layer.filters[1].dropoutMap).to.not.include(true)
+            expect(layer.filters[2].dropoutMap).to.not.include(true)
+        })
+
+        it("Doesn't do any dropout if the dropout is set to 1", () => {
+            layer.net = {dropout: 1}
+            layer.state = "training"
+            layer.forward()
+            expect(layer.filters[0].dropoutMap).to.not.include(true)
+            expect(layer.filters[1].dropoutMap).to.not.include(true)
+            expect(layer.filters[2].dropoutMap).to.not.include(true)
+        })
+
+        it("Calls the layer activation function with every sum in the sum map, when no dropout is used", () => {
+            const layer1 = new FCLayer(8)
+            const layer2 = new ConvLayer(2)
+            const net = new Network({depth: 2, layers: [layer1, layer2]})
+
+            sinon.stub(NetUtil, "convolve").callsFake(() => [[1,2],[3,4]])
+            sinon.stub(layer2, "activation")
+
+            layer2.net.dropout = 1
+            layer2.forward()
+            NetUtil.convolve.restore()
+            expect(layer2.activation.callCount).to.equal(8)
+            expect(layer2.activation).to.be.calledWith(1)
+            expect(layer2.activation).to.be.calledWith(2)
+            expect(layer2.activation).to.be.calledWith(3)
+            expect(layer2.activation).to.be.calledWith(4)
+        })
+
+        it("And thus gives every neuron an activation value", () => {
+            layer.filters.forEach(filter => filter.activationMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            layer.forward()
+            layer.filters.forEach(filter => {
+                filter.activationMap.forEach(row => {
+                    expect(row).to.not.include(0)
+                })
+            })
+        })
+    })
+
+    describe("backward", () => {
+
+        const prevLayer = new FCLayer(75)
+        const nextLayerA = new FCLayer(100)
+        const nextLayerB = new ConvLayer(2, {filterSize: 3, stride: 1})
+
+        let net, layer
+
+        const testDataDeltaWeights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+
+        beforeEach(() => {
+
+            layer = new ConvLayer(4, {filterSize: 3, zeroPadding: 1})
+            net = new Network({layers: [prevLayer, layer, nextLayerB], channels: 3})
+
+            // Add some test data
+            layer.filters.forEach(filter => {
+                filter.weights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+                filter.sumMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+                filter.errorMap = [[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3]]
+            })
+            prevLayer.neurons.forEach(neuron => neuron.activation = 0.5)
+            layer.net = {l2: 0, l1: 0, miniBatchSize: 1}
+
+            sinon.stub(NetUtil, "buildConvErrorMap").callsFake(() => [[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2]])
+            sinon.spy(NetUtil, "buildConvDWeights")
+            sinon.spy(layer, "activation")
+        })
+
+        afterEach(() => {
+            NetUtil.buildConvErrorMap.restore()
+            NetUtil.buildConvDWeights.restore()
+        })
+
+        it("Calls the NetUtil.buildConvErrorMap() function for each filter in this layer", () => {
+            layer.backward()
+            expect(NetUtil.buildConvErrorMap.callCount).to.equal(4)
+        })
+
+        it("Does not call NetUtil.buildConvErrorMap() if the next layer is an FCLayer", () => {
+            net = new Network({layers: [prevLayer, layer, nextLayerA], channels: 3})
+
+            // Add some test data
+            layer.filters.forEach(filter => {
+                filter.sumMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+                filter.errorMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+            })
+
+            layer.backward()
+            expect(NetUtil.buildConvErrorMap).to.not.be.called
+        })
+
+        it("Calculates the error map correctly when the next layer is an FCLayer", () => {
+
+            // Values were worked out manually
+            const fcLayer = new FCLayer(4)
+
+            const convLayer = new ConvLayer(2, {filterSize: 3, zeroPadding: 0, stride: 1})
+            const net = new Network({layers: [new FCLayer(18), convLayer, fcLayer]})
+            fcLayer.neurons.forEach((neuron, ni) => {
+                neuron.error = (ni+1)/5 // 0.2, 0.4, 0.6, 0.8
+                neuron.weights = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2]
+            })
+
+            const [filter1, filter2] = convLayer.filters
+
+            filter1.sumMap = [[0,0],[0,0]]
+            filter2.sumMap = [[0,0],[0,0]]
+            filter1.errorMap = [[0,0],[0,0]]
+            filter2.errorMap = [[0,0],[0,0]]
+            filter1.activationMap = [[0.1,0.2],[0.3,0.4]]
+            filter2.activationMap = [[0.5,0.6],[0.7,0.8]]
+
+            const expectedFilter1ErrorMap = [[1.8, 1.6], [1.4, 1.2]]
+            const expectedFilter2ErrorMap = [[1.0, 0.8], [0.6, 0.4]]
+            convLayer.outMapSize = 2
+
+            sinon.stub(convLayer, "activation").callsFake(() => 1)
+
+            // Avoid tests failing due to tiny precision differences
+            const roundMapValues = map => map.map(row => row.map(value => Math.round(value*10)/10))
+
+            convLayer.backward()
+            expect(roundMapValues(convLayer.filters[0].errorMap)).to.deep.equal(expectedFilter1ErrorMap)
+            expect(roundMapValues(convLayer.filters[1].errorMap)).to.deep.equal(expectedFilter2ErrorMap)
+
+        })
+
+        // Also need to do the dropout stuffs
+        it("Calls the activation function for each value in the sum maps", () => {
+            layer.backward()
+            expect(layer.activation.callCount).to.equal(100)
+        })
+
+        it("Does not call the activation function if all values are dropped out", () => {
+            layer.filters.forEach(filter => filter.dropoutMap = filter.dropoutMap.map(r => r.map(v => true)))
+            layer.backward()
+            expect(layer.activation).to.not.be.called
+        })
+
+        it("Sets the errorMap values to 0 when dropped out", () => {
+            layer.filters.forEach(filter => filter.dropoutMap = filter.dropoutMap.map(r => r.map(v => true)))
+            layer.backward()
+            expect(layer.filters[0].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer.filters[1].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer.filters[2].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+            expect(layer.filters[3].errorMap).to.deep.equal([[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
+        })
+
+        it("Does not increment the deltaBias when all values are dropped out", () => {
+            layer.filters.forEach(filter => filter.dropoutMap = filter.dropoutMap.map(r => r.map(v => true)))
+            layer.filters[0].deltaBias = 0
+            layer.filters[1].deltaBias = 1
+            layer.filters[2].deltaBias = 2
+            layer.filters[3].deltaBias = 3
+            layer.backward()
+            expect(layer.filters[0].deltaBias).to.equal(0)
+            expect(layer.filters[1].deltaBias).to.equal(1)
+            expect(layer.filters[2].deltaBias).to.equal(2)
+            expect(layer.filters[3].deltaBias).to.equal(3)
+        })
+
+        it("Does not increment the deltaWeights when all values are dropped out", () => {
+            layer.filters.forEach(filter => filter.dropoutMap = filter.dropoutMap.map(r => r.map(v => true)))
+            layer.filters[0].deltaWeights = testDataDeltaWeights
+            layer.filters[1].deltaWeights = testDataDeltaWeights
+            layer.filters[2].deltaWeights = testDataDeltaWeights
+            layer.filters[3].deltaWeights = testDataDeltaWeights
+            layer.backward()
+            expect(layer.filters[0].deltaWeights).to.deep.equal(testDataDeltaWeights)
+            expect(layer.filters[1].deltaWeights).to.deep.equal(testDataDeltaWeights)
+            expect(layer.filters[2].deltaWeights).to.deep.equal(testDataDeltaWeights)
+            expect(layer.filters[3].deltaWeights).to.deep.equal(testDataDeltaWeights)
+        })
+
+        it("Does otherwise change the deltaBias and deltaWeights values", () => {
+            layer.filters.forEach(filter => filter.dropoutMap = filter.dropoutMap.map(r => r.map(v => false)))
+            layer.filters[0].deltaBias = 0
+            layer.filters[1].deltaBias = 1
+            layer.filters[2].deltaBias = 2
+            layer.filters[3].deltaBias = 3
+
+            layer.filters[0].deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+            layer.filters[1].deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+            layer.filters[2].deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+            layer.filters[3].deltaWeights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
+            layer.backward()
+
+            expect(layer.filters[0].deltaBias).to.not.equal(0)
+            expect(layer.filters[1].deltaBias).to.not.equal(1)
+            expect(layer.filters[2].deltaBias).to.not.equal(2)
+            expect(layer.filters[3].deltaBias).to.not.equal(3)
+            expect(layer.filters[0].deltaWeights).to.not.deep.equal([[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]])
+            expect(layer.filters[1].deltaWeights).to.not.deep.equal([[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]])
+            expect(layer.filters[2].deltaWeights).to.not.deep.equal([[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]])
+            expect(layer.filters[3].deltaWeights).to.not.deep.equal([[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]])
+        })
+    })
+
+    describe("resetDeltaWeights", () => {
+
+        let filter1, filter2, filter3, filter1b, filter2b, filter3b, filter4, filter5
+        let layer, layer2
+
+        beforeEach(() => {
+            layer = new ConvLayer(3)
+            filter1 = new Filter()
+            filter2 = new Filter()
+            filter3 = new Filter()
+            layer.filters = [filter1, filter2, filter3]
+
+            layer.filters.forEach(filter => {
+                filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
+                filter.dropoutMap = [[true,true,true],[true,true,true],[true,true,true]]
+            })
+
+            layer2 = new ConvLayer(5)
+            filter1b = new Filter()
+            filter2b = new Filter()
+            filter3b = new Filter()
+            filter4 = new Filter()
+            filter5 = new Filter()
+            layer2.filters = [filter1b, filter2b, filter3b, filter4, filter5]
+
+            layer2.filters.forEach(filter => {
+                filter.deltaWeights = [[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]]
+                filter.dropoutMap = [[true,true,true,true,true],[true,true,true,true,true],
+                [true,true,true,true,true],[true,true,true,true,true],[true,true,true,true,true]]
+            })
+        })
+
+        it("Sets all filters' deltaWeights values to 0", () => {
+            layer.resetDeltaWeights()
+            layer2.resetDeltaWeights()
+
+            expect(filter1.deltaWeights).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]],[[0,0,0],[0,0,0],[0,0,0]]])
+            expect(filter2.deltaWeights).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]],[[0,0,0],[0,0,0],[0,0,0]]])
+            expect(filter3.deltaWeights).to.deep.equal([[[0,0,0],[0,0,0],[0,0,0]],[[0,0,0],[0,0,0],[0,0,0]]])
+
+            expect(filter1b.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+            expect(filter2b.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+            expect(filter3b.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+            expect(filter4.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+            expect(filter5.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+
+        })
+
+        it("Sets all the filters' dropoutMap values to false", () => {
+            layer.resetDeltaWeights()
+            layer2.resetDeltaWeights()
+
+            expect(filter1.dropoutMap).to.deep.equal([[false,false,false],[false,false,false],[false,false,false]])
+            expect(filter2.dropoutMap).to.deep.equal([[false,false,false],[false,false,false],[false,false,false]])
+            expect(filter3.dropoutMap).to.deep.equal([[false,false,false],[false,false,false],[false,false,false]])
+
+            expect(filter1b.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
+                [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
+            expect(filter2b.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
+                [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
+            expect(filter3b.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
+                [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
+            expect(filter4.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
+                [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
+            expect(filter5.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
+                [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
+        })
+    })
+
+    describe("applyDeltaWeights", () => {
+
+        let filter1, filter2, filter3, filter4
+        let layer
+
+        beforeEach(() => {
+            layer = new ConvLayer(5)
+            filter1 = new Filter()
+            filter2 = new Filter()
+            filter3 = new Filter()
+            filter4 = new Filter()
+            layer.filters = [filter1, filter2, filter3, filter4]
+
+            layer.filters.forEach(filter => {
+                filter.weights = [[[0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]],[[0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]]]
+                filter.bias = 0.5
+                filter.deltaBias = 1
+                filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
+            })
+
+            layer.net = {learningRate: 1, weightUpdateFn: NetMath.noadaptivelr}
+        })
+
+
+        it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
+            layer.applyDeltaWeights()
+            expect(layer.filters[0].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[1].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[2].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[3].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+        })
+
+        it("Increments the bias of all filters with their deltaBias", () => {
+            layer.applyDeltaWeights()
+            expect(layer.filters[0].bias).to.equal(1.5)
+        })
+
+        it("Increments the net.l2Error by each weight, applied to the L2 formula", () => {
+            layer.net.l2 = 0.001
+            layer.net.l2Error = 0
+            layer.applyDeltaWeights()
+            expect(Math.round(layer.net.l2Error*1000)/1000).to.equal(0.009) // 4 * 18 * (  0.5 * 0.001 * 0.5*0.5  )
+        })
+
+        it("Increments the net.l1Error by each weight, applied to the L1 formula", () => {
+            layer.net.l1 = 0.005
+            layer.net.l1Error = 0
+            layer.applyDeltaWeights()
+            expect(Math.round(layer.net.l1Error*1000)/1000).to.equal(0.18) // 4 * 18 * ( 0.005 * |0.5|  )
+        })
+
+        it("Increments the net.maxNormTotal if the net.maxNorm is configured", () => {
+
+            sinon.stub(layer.net, "weightUpdateFn").callsFake(() => 0.5) // Return the same weight value
+            layer.net.maxNorm = 3
+            layer.net.maxNormTotal = 0
+            layer.applyDeltaWeights()
+            expect(layer.net.maxNormTotal).to.equal(18) // 4 * 18 * 0.5**2
+        })
+    })
+})
 
 describe("Netmath", () => {
 
@@ -2210,7 +3436,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init(5, {adaptiveLR: "gain"})
+            neuron.init({adaptiveLR: "gain"})
         })
 
         it("Doubles a value when the gain is 2 and learningRate 1", () => {
@@ -2297,7 +3523,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init(5, {adaptiveLR: "adagrad"})
+            neuron.init({adaptiveLR: "adagrad"})
         })
 
         it("Increments the neuron's biasCache by the square of its deltaBias", () => {
@@ -2308,7 +3534,7 @@ describe("Netmath", () => {
 
         it("Returns a new value matching the formula for adagrad", () => {
             neuron.biasCache = 0
-            const result = NetMath.adagrad.bind({learningRate: 0.5}, 1, 3, neuron)() 
+            const result = NetMath.adagrad.bind({learningRate: 0.5}, 1, 3, neuron)()
             expect(result.toFixed(1)).to.equal("1.5")
         })
 
@@ -2333,7 +3559,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init(5, {adaptiveLR: "rmsprop"})
+            neuron.init({adaptiveLR: "rmsprop"})
         })
 
         it("Sets the cache value to the correct formula", () => {
@@ -2385,7 +3611,7 @@ describe("Netmath", () => {
             neuron.m = 0.121
             neuron.v = 0.045
             const result = NetMath.adam.bind({learningRate: 0.01, iterations: 0.2}, -0.3, 0.02, neuron)()
-            expect(result.toFixed(6)).to.equal("-0.298474")            
+            expect(result.toFixed(6)).to.equal("-0.298474")
         })
     })
 
@@ -2396,7 +3622,7 @@ describe("Netmath", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.weights = [1,2,3,4,5]
-            neuron.init(5, {adaptiveLR: "adadelta"})
+            neuron.init({adaptiveLR: "adadelta"})
         })
 
         it("Sets the neuron.biasCache to the correct value, following the adadelta formula", () => {
@@ -2434,7 +3660,7 @@ describe("Netmath", () => {
             neuron.biasCache = 0.5
             neuron.adadeltaBiasCache = 0.25
             NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()
-            expect(neuron.adadeltaBiasCache).to.equal(0.2395) // 0.95 * 0.25 + (1-0.95) * 0.2*0.2 
+            expect(neuron.adadeltaBiasCache).to.equal(0.2395) // 0.95 * 0.25 + (1-0.95) * 0.2*0.2
         })
 
         it("Updates the neuron.adadeltaCache with the correct value, following the formula, same as adadeltaBiasCache", () => {
@@ -2463,7 +3689,7 @@ describe("Netmath", () => {
             const layer2 = new Layer(2)
             const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1})
 
-            layer2.neurons[0].weights = [2, 2] 
+            layer2.neurons[0].weights = [2, 2]
             net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
 
             NetMath.maxNorm.bind(net)()
@@ -2474,7 +3700,7 @@ describe("Netmath", () => {
             const layer2 = new Layer(2)
             const net = new Network({layers: [new Layer(1), layer2], maxNorm: 1000})
 
-            layer2.neurons[0].weights = [2, 2] 
+            layer2.neurons[0].weights = [2, 2]
             net.maxNormTotal = 2.8284271247461903 // maxNormTotal = sqrt (2**2 * 2) = 2.8284271247461903
 
             NetMath.maxNorm.bind(net)()
@@ -2677,19 +3903,19 @@ describe("NetUtil", () => {
 
         it("Turns a string to lower case", () => {
             const testString = "aAbB"
-            const result = NetUtil.format(testString) 
+            const result = NetUtil.format(testString)
             expect(result).to.equal("aabb")
         })
 
         it("Removes white spaces", () => {
             const testString = " aA bB "
-            const result = NetUtil.format(testString) 
+            const result = NetUtil.format(testString)
             expect(result).to.equal("aabb")
         })
 
         it("Removes underscores", () => {
             const testString = "_aA_bB_"
-            const result = NetUtil.format(testString) 
+            const result = NetUtil.format(testString)
             expect(result).to.equal("aabb")
         })
 
@@ -2717,7 +3943,7 @@ describe("NetUtil", () => {
     describe("shuffle", () => {
 
         const testArr = [1,2,3,4,5, "a", "b", "c"]
-        const original = testArr.slice(0) 
+        const original = testArr.slice(0)
         NetUtil.shuffle(testArr)
 
         it("Keeps the same number of elements", () => {
@@ -2773,69 +3999,330 @@ describe("NetUtil", () => {
         })
     })
 
-    describe("build2DPSA", () => {
+    describe("arrayToMap", () => {
 
-        const testData = [[3,5,2,6,8],
-                          [9,6,4,3,2],
-                          [2,9,3,4,2],
-                          [5,8,1,3,7],
-                          [4,8,6,4,3]]
+        const testArray = [1,2,3,4,5,6,7,8,9]
+        const testMap = [[1,2,3],[4,5,6],[7,8,9]]
 
-        const result = NetUtil.build2DPSA(testData)
+        const result = NetUtil.arrayToMap(testArray, 3)
 
-        it("Returns a map with 1 extra row and column", () => {
-            expect(result.length).to.equal(6)
-            expect(result[0].length).to.equal(6)
-        })
-
-        it("Has only zeroes in the first row", () => {
-            expect(result[0]).to.deep.equal([0,0,0,0,0,0])
-        })
-
-        it("Has only zeroes in the first column", () => {
-            expect(result.map(row => row[0])).to.deep.equal([0,0,0,0,0,0])
-        })
-
-        it("Sums the single top left value to itself", () => {
-            expect(result[1][1]).to.equal(3)
-        })
-
-        it("Sums the four top left values to their sum, 23", () => {
-            expect(result[2][2]).to.equal(23)
-        })
-
-        it("Sets the bottom right value to the combined sum of the previous values", () => {
-            expect(result[5][5]).to.equal(117)
+        it("Converts the array correctly", () => {
+            expect(result).to.deep.equal(testMap)
         })
     })
 
-    describe("sum2DPSA", () => {
+    describe("arrayToVolume", () => {
 
-        const testData = [[3,5,2,6,8],
-                          [9,6,4,3,2],
-                          [2,9,3,4,2],
-                          [5,8,1,3,7],
-                          [4,8,6,4,3]]
+        const testArray = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
+                            25,26,27,28,29,30,31,32,33,34,35,36]
 
-        const padded = NetUtil.addZeroPadding(testData, 1)
-        const prefixed = NetUtil.build2DPSA(padded)
-        const result = NetUtil.sum2DPSA(prefixed, 1, 3)
+        const testVol1 = [[[1,2],[3,4]], [[5,6],[7,8]], [[9,10],[11,12]], [[13,14],[15,16]],
+              [[17,18],[19,20]], [[21,22],[23,24]], [[25,26],[27,28]], [[29,30],[31,32]], [[33,34],[35,36]]]
 
-        it("Returns a map with the same dimensions as the original input", () => {
-            expect(result.length).to.equal(5)
-            expect(result[0].length).to.equal(5)
+        const testVol2 = [ [[1,2,3],[4,5,6],[7,8,9]], [[10,11,12],[13,14,15],[16,17,18]],
+                       [[19,20,21],[22,23,24],[25,26,27]], [[28,29,30],[31,32,33],[34,35,36]] ]
+
+        const testVol3 = [[[1,2,3,4,5,6],[7,8,9,10,11,12],[13,14,15,16,17,18],[19,20,21,22,23,24],
+                                    [25,26,27,28,29,30],[31,32,33,34,35,36]]]
+
+        it("Converts the array correctly", () => {
+            expect(NetUtil.arrayToVolume(testArray, 9)).to.deep.equal(testVol1)
         })
 
-        it("Sets the top left value to the sum of the first 4 values", () => {
-            expect(result[0][0]).to.equal(23)
+        it("Converts the array correctly", () => {
+            expect(NetUtil.arrayToVolume(testArray, 4)).to.deep.equal(testVol2)
         })
 
-        it("Sets the middle value to the sum of the original middle and the 8 values around it", () => {
-            expect(result[2][2]).to.equal(41)
+        it("Converts the array correctly", () => {
+            expect(NetUtil.arrayToVolume(testArray, 1)).to.deep.equal(testVol3)
+        })
+    })
+
+    describe("getActivations", () => {
+
+        let layer, layer2, filter, filter2, convLayer, net
+
+        beforeEach(() => {
+
+            layer = new FCLayer(9)
+            layer.neurons = [{activation: 1},{activation: 2},{activation: 3},{activation: 4},
+            {activation: 5},{activation: 6},{activation: 7},{activation: 8},{activation: 9}]
+
+            layer2 = new FCLayer(64)
+            layer2.neurons.forEach((neuron, ni) => neuron.activation = ni+1)
+
+            convLayer = new ConvLayer(2)
+            net = new Network({layers: [layer, convLayer]})
+            filter = convLayer.filters[0]
+            filter2 = convLayer.filters[1]
+            filter.activationMap = [[1,2,3],[4,5,6],[7,8,9]]
+            filter2.activationMap = [[4,5,6],[7,8,9],[1,2,3]]
         })
 
-        it("Sets the bottom right value to the combined sum of the last 4 corner values", () => {
-            expect(result[4][4]).to.equal(17)
+        it("Returns all the neurons' activations in an FCLayer, when called with no index parameters", () => {
+            const activations = NetUtil.getActivations(layer)
+            expect(activations).to.deep.equal([1,2,3,4,5,6,7,8,9])
+        })
+
+        it("Returns the FCLayer neuron activations in a square (map) subset of the neurons, indicated by the map index and map size", () => {
+            const range1 = NetUtil.getActivations(layer2, 0, 4)
+            const range2 = NetUtil.getActivations(layer2, 2, 9)
+            const range3 = NetUtil.getActivations(layer2, 1, 16)
+            expect(range1).to.deep.equal([1,2,3,4])
+            expect(range2).to.deep.equal([19,20,21,22,23,24,25,26,27])
+            expect(range3).to.deep.equal([17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32])
+        })
+
+        it("Returns all the activations from a Conv layer when called with no index parameters", () => {
+            const activations = NetUtil.getActivations(convLayer)
+            expect(activations).to.deep.equal([1,2,3,4,5,6,7,8,9, 4,5,6,7,8,9,1,2,3])
+        })
+
+        it("Returns the activations from a Filter in a ConvLayer if map index is provided as second parameter", () => {
+            const activations1 = NetUtil.getActivations(convLayer, 1)
+            const activations2 = NetUtil.getActivations(convLayer, 0)
+            expect(activations1).to.deep.equal([4,5,6,7,8,9,1,2,3])
+            expect(activations2).to.deep.equal([1,2,3,4,5,6,7,8,9])
+        })
+    })
+
+    describe("convolve", () => {
+
+        // http://cs231n.github.io/convolutional-networks/
+        const testInputa = [0,0,2,2,2,  1,1,0,2,0,  1,2,1,1,2,  0,1,2,2,1,  1,2,0,0,1]
+        const testInputb = [2,2,1,1,2,  1,1,2,0,0,  2,0,0,2,2,  1,2,2,1,1,  1,1,2,0,1]
+        const testInputc = [0,1,1,0,0,  1,2,0,2,0,  2,0,1,2,0,  2,0,1,0,1,  0,1,2,2,1]
+        const testInput = [0,0,2,2,2,  1,1,0,2,0,  1,2,1,1,2,  0,1,2,2,1,  1,2,0,0,1,
+                           2,2,1,1,2,  1,1,2,0,0,  2,0,0,2,2,  1,2,2,1,1,  1,1,2,0,1,
+                           0,1,1,0,0,  1,2,0,2,0,  2,0,1,2,0,  2,0,1,0,1,  0,1,2,2,1]
+
+        const testWeightsa = [[[-1,0,-1],[1,0,1],[1,-1,0]]]
+        const testWeightsb = [[[0,1,1],[1,-1,-1],[-1,1,0]]]
+        const testWeightsc = [[[-1,0,-1],[1,0,0],[1,0,0]]]
+
+        const testWeights1 = [[[-1,0,-1],[1,0,1],[1,-1,0]],   [[0,1,1],[1,-1,-1],[-1,1,0]],  [[-1,0,-1],[1,0,0],[1,0,0]]]
+        const testWeights2 = [[[-1,0,1],[-1,1,1],[1,0,0]],   [[0,-1,1],[1,-1,1],[-1,1,-1]],  [[0,0,0],[0,-1,-1],[0,0,1]]]
+
+        const expecteda = [[0,4,5],[2,0,1],[2,0,-1]]
+        const expectedb = [[-2,2,0],[2,1,1],[2,3,1]]
+        const expectedc = [[1,4,3],[-1,-3,1],[1,2,3]]
+
+        const expected1 = [[-3,8,6],[1,-4,1],[3,3,1]]
+        const expected2 = [[1,9,1],[-1,-2,1],[4,-7,-4]]
+
+        it("Convolves the input correctly (Example a)", () => {
+            expect(NetUtil.convolve({
+                input: testInputa,
+                zeroPadding: 1,
+                weights: testWeightsa,
+                channels: 1,
+                stride: 2,
+                bias: 1
+            })).to.deep.equal(expecteda)
+        })
+
+        it("Convolves the input correctly (Example b)", () => {
+            expect(NetUtil.convolve({
+                input: testInputb,
+                zeroPadding: 1,
+                weights: testWeightsb,
+                channels: 1,
+                stride: 2,
+                bias: 1
+            })).to.deep.equal(expectedb)
+        })
+
+        it("Convolves the input correctly (Example c)", () => {
+            expect(NetUtil.convolve({
+                input: testInputc,
+                zeroPadding: 1,
+                weights: testWeightsc,
+                channels: 1,
+                stride: 2,
+                bias: 1
+            })).to.deep.equal(expectedc)
+        })
+
+        it("Convolves the input correctly (Example 1)", () => {
+            expect(NetUtil.convolve({
+                input: testInput,
+                zeroPadding: 1,
+                weights: testWeights1,
+                channels: 3,
+                stride: 2,
+                bias: 1
+            })).to.deep.equal(expected1)
+        })
+
+        it("Convolves the input correctly (Example 2)", () => {
+            expect(NetUtil.convolve({
+                input: testInput,
+                zeroPadding: 1,
+                weights: testWeights2,
+                channels: 3,
+                stride: 2,
+                bias: 0
+            })).to.deep.equal(expected2)
+        })
+    })
+
+    describe("buildConvDWeights", () => {
+
+        // Following values worked out by hand
+        const layer = new ConvLayer(2, {filterSize: 3, zeroPadding: 1, stride: 2})
+        const prevLayer = new FCLayer(75)
+
+        const net = new Network({
+            channels: 3,
+            layers: [prevLayer, layer]
+        })
+        net.miniBatchSize = 1
+
+        // Set the activation of each neuron to 1,2,3,4,....,74,75
+        prevLayer.neurons.forEach((neuron, ni) => neuron.activation = ni+1)
+
+        const errorMapFilter1 = [[0.1, 0.6, 0.2], [0.7, 0.3, 0.8], [0.4, 0.9, 0.5]]
+        const errorMapFilter2 = [[-0.5, 0, -0.4], [0.1, -0.3, 0.2], [-0.2, 0.3, -0.1]]
+
+        const expectedFilter1Channel1DWeights = [[34.1, 47.2, 31.5], [48.6, 68.1, 45.6], [26.3, 40, 23.7]]
+        const expectedFilter1Channel2DWeights = [[96.6, 137.2, 89], [131.1, 180.6, 120.6], [73.8, 107.5, 66.2]]
+        const expectedFilter1Channel3DWeights = [[159.1, 227.2, 146.5], [213.6, 293.1, 195.6], [121.3, 175, 108.7]]
+
+        const expectedFilter2Channel1DWeights = [[2.9, 0.4, 0.3], [1.8, -2.1, -1.2], [-4.9, -6.8, -7.5]]
+        const expectedFilter2Channel2DWeights = [[5.4, 0.4, -2.2], [-5.7, -24.6, -16.2], [-17.4, -29.3, -25]]
+        const expectedFilter2Channel3DWeights = [[7.9, 0.4, -4.7], [-13.2, -47.1, -31.2], [-29.9, -51.8, -42.5]]
+
+        const expectedFilter1DeltaBias = 4.5
+        const expectedFilter2DeltaBias = -0.9
+
+        const filter1 = layer.filters[0]
+        const filter2 = layer.filters[1]
+
+        filter1.errorMap = errorMapFilter1
+        filter2.errorMap = errorMapFilter2
+
+        // Avoid regularization affecting the results
+        filter1.weights = filter1.weights.map(channel => channel.map(row => row.map(value => 0)))
+        filter2.weights = filter2.weights.map(channel => channel.map(row => row.map(value => 0)))
+
+        // Avoid tests failing due to tiny precision differences
+        const roundMapValues = map => map.map(row => row.map(value => Math.round(value*10)/10))
+
+        NetUtil.buildConvDWeights(layer)
+
+        it("Sets the filter 1 deltaBias to 4.5", () => {
+            expect(filter1.deltaBias).to.equal(4.5)
+        })
+
+        it("Sets the filter 2 deltaBias to -0.9", () => {
+            expect(filter2.deltaBias).to.equal(-0.9)
+        })
+
+        it("Doesn't change the  deltaWeights data structure", () => {
+            expect(filter1.deltaWeights).to.have.lengthOf(3)
+            expect(filter1.deltaWeights[0]).to.have.lengthOf(3)
+            expect(filter1.deltaWeights[1]).to.have.lengthOf(3)
+            expect(filter1.deltaWeights[2]).to.have.lengthOf(3)
+        })
+
+        it("Sets the filter 1 channel 1 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter1.deltaWeights[0])).to.deep.equal(expectedFilter1Channel1DWeights)
+        })
+
+        it("Sets the filter 1 channel 2 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter1.deltaWeights[1])).to.deep.equal(expectedFilter1Channel2DWeights)
+        })
+
+        it("Sets the filter 1 channel 3 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter1.deltaWeights[2])).to.deep.equal(expectedFilter1Channel3DWeights)
+        })
+
+        it("Sets the filter 2 channel 1 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter2.deltaWeights[0])).to.deep.equal(expectedFilter2Channel1DWeights)
+        })
+
+        it("Sets the filter 2 channel 2 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter2.deltaWeights[1])).to.deep.equal(expectedFilter2Channel2DWeights)
+        })
+
+        it("Sets the filter 2 channel 3 deltaWeights to hand worked out values", () => {
+            expect(roundMapValues(filter2.deltaWeights[2])).to.deep.equal(expectedFilter2Channel3DWeights)
+        })
+    })
+
+    describe("buildConvErrorMap", () => {
+
+        // Following values worked out by hand
+        const layer = new ConvLayer(1)
+        const nextLayerA = new ConvLayer(1, {filterSize: 3, zeroPadding: 1, stride: 2})
+        const nextLayerB = new ConvLayer(2, {filterSize: 3, zeroPadding: 1, stride: 2})
+        const nextLayerC = new ConvLayer(1, {filterSize: 3, zeroPadding: 1, stride: 1})
+
+        const filter = new Filter()
+        const nlFilterA = new Filter()
+        const nlFilterB = new Filter()
+        const nlFilterC = new Filter()
+
+        layer.filters = [filter]
+
+        nlFilterA.errorMap = [[0.5, -0.2, 0.1], [0, -0.4, -0.1], [0.2, 0.6, 0.3]]
+        nlFilterA.weights = [[[-1, 0, -1], [1, 0, 1], [1, -1, 0]]]
+
+        nlFilterB.errorMap = [[0.1, 0.4, 0.2], [-0.1,0.2,-0.3], [0, -0.4, 0.5]]
+        nlFilterB.weights = [[[1, 1, 0], [-1, 1, 0], [1, -1, 1]]]
+
+        nlFilterC.errorMap = [[0.1,0.4,-0.2,0.3,0],[0.9,0.2,-0.7,1.1,0.6],[0.4,0,0.3,-0.8,0.1],[0.2,0.3,0.1,-0.1,0.5],[-0.3,0.4,0.5,-0.2,0.3]]
+        nlFilterC.weights = [[[1, 1, 0], [-1, 1, 0], [1, -1, 1]]]
+
+        const expectedA = [[0,0.3,0,-0.1,0],[-0.5,0.2,0.2,0.6,-0.1],[0,-0.4,0,-0.5,0],[0,-1.2,0.4,-1,0.1],[0,0.8,0,0.9,0]]
+        const expectedB = [[0.1,-0.4,0.4,-0.2,0.2],[-0.2,0.7,-0.2,0.3,-0.5],[-0.1,-0.2,0.2,0.3,-0.3],[0.1,-0.3,-0.6,0.4,0.8],[0,0.4,-0.4,-0.5,0.5]]
+        const expectedC = [[0.1,-0.1,0.4,-0.3,0.2],[-0.7,0.9,0,0.9,-0.6],[-0.1,-0.6,0.2,-0.2,-0.3],[0.1,-1.5,-0.2,-0.6,0.9],[0,1.2,-0.4,0.4,0.5]]
+        const expectedD = [[0.8,0.1,-0.1,2.0,0.6],[1.4,0.7,-1.4,-0.7,1],[0.2,0.1,3.1,-1.7,1.1],[-0.4,1.8,-0.6,0.7,-0.1],[-0.6,-0.1,0.8,0.2,-0.3]]
+
+        beforeEach(() => {
+            nextLayerA.filters = []
+            nextLayerB.filters = []
+            nextLayerC.filters = []
+            filter.errorMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
+        })
+
+        // Avoid tests failing due to tiny precision differences
+        const roundMapValues = map => map.map(row => row.map(value => Math.round(value*10)/10))
+
+        it("Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 1)", () => {
+            nextLayerA.filters = [nlFilterA]
+            layer.nextLayer = nextLayerA
+            NetUtil.buildConvErrorMap(layer, filter, 0)
+            expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedA)
+        })
+
+        it("Clears the filter errorMap values first (by getting the same result with different initial errorMap values, using Example 1)", () => {
+            filter.errorMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+            nextLayerA.filters = [nlFilterA]
+            layer.nextLayer = nextLayerA
+            NetUtil.buildConvErrorMap(layer, filter, 0)
+            expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedA)
+        })
+
+        it("Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 2)", () => {
+            nextLayerA.filters = [nlFilterB]
+            layer.nextLayer = nextLayerA
+            NetUtil.buildConvErrorMap(layer, filter, 0)
+            expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedB)
+        })
+
+        it("Calculates an error map correctly, using two channels, from 2 filters in the next layer", () => {
+            nextLayerB.filters = [nlFilterA, nlFilterB]
+            layer.nextLayer = nextLayerB
+            NetUtil.buildConvErrorMap(layer, filter, 0)
+            expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedC)
+        })
+
+        it("Calculates an error map correctly, using 1 channel where the stride is 1, not 2", () => {
+            nextLayerC.filters = [nlFilterC]
+            layer.nextLayer = nextLayerC
+            NetUtil.buildConvErrorMap(layer, filter, 0)
+            expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedD)
         })
     })
 })

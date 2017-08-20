@@ -1,7 +1,7 @@
 "use strict"
 
 class NetMath {
-    
+
     // Activation functions
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
@@ -27,7 +27,7 @@ class NetMath {
 
     static rrelu (value, prime, neuron) {
         return prime ? value > 0 ? 1 : neuron.rreluSlope
-                     : Math.max(neuron.rreluSlope, value)   
+                     : Math.max(neuron.rreluSlope, value)
     }
 
     static lecuntanh (value, prime) {
@@ -39,7 +39,7 @@ class NetMath {
         return prime ? value >=0 ? 1 : NetMath.elu(value, false, neuron) + neuron.eluAlpha
                      : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) - 1)
     }
-    
+
     // Cost functions
     static crossentropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
@@ -80,7 +80,7 @@ class NetMath {
     static adagrad (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.setWeightsCache(weightI, weightI+Math.pow(deltaValue, 2))
+            neuron.setWeightsCache(weightI, neuron.getWeightsCache(weightI) + Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache += Math.pow(deltaValue, 2)
         }
@@ -92,7 +92,6 @@ class NetMath {
     static rmsprop (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            // neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
             neuron.setWeightsCache(weightI, this.rmsDecay * neuron.getWeightsCache(weightI) + (1 - this.rmsDecay) * Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
@@ -157,7 +156,7 @@ class NetMath {
     static xavieruniform (size, {fanIn, fanOut}) {
         return fanOut || fanOut==0 ? NetMath.uniform(size, {limit: Math.sqrt(6/(fanIn+fanOut))})
                                    : NetMath.lecununiform(size, {fanIn})
-    }    
+    }
 
     static lecunnormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})

@@ -1,21 +1,16 @@
 "use strict"
 
 class Neuron {
-    
-    constructor (importedData) {
-        if (importedData) {
-            this.imported = true
-            this.weights = importedData.weights || []
-            this.bias = importedData.bias
-        }
-    }
 
-    init (size, {adaptiveLR, activationConfig, eluAlpha}={}) {
+    constructor () {}
 
+    init ({adaptiveLR, activationConfig, eluAlpha}={}) {
+
+        const size = this.weights.length
         this.deltaWeights = this.weights.map(v => 0)
 
         switch (adaptiveLR) {
-            
+
             case "gain":
                 this.biasGain = 1
                 this.weightGains = [...new Array(size)].map(v => 1)
@@ -47,7 +42,7 @@ class Neuron {
 
         if (activationConfig=="rrelu") {
             this.rreluSlope = Math.random() * 0.001
-            
+
         } else if (activationConfig=="elu") {
             this.eluAlpha = eluAlpha
         }
@@ -57,7 +52,7 @@ class Neuron {
         return this.weights[i]
     }
 
-    setWeight (i,v) {
+    setWeight (i, v) {
         this.weights[i] = v
     }
 
@@ -65,7 +60,7 @@ class Neuron {
         return this.deltaWeights[i]
     }
 
-    setDeltaWeight (i,v) {
+    setDeltaWeight (i, v) {
         this.deltaWeights[i] = v
     }
 }

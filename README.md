@@ -1,19 +1,17 @@
 # Network.js
 [![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
 
-Network.js is promise based implementation of a (currently) basic neural network, functional in nodejs as well as the browser. The focus was end user ease of use. 
-
-This project is in its infancy, and more features and optimisations will periodically be added.
+Network.js is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser, though, for larger convolutional networks, I'd recommend training in node.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
 ## Demo
-https://ai.danruta.co.uk - Interactive MNIST Digit classifier
+https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
 
 ##  Usage
 When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
 ```javascript
-const {Network, FCLayer, Layer, Neuron, NetMath, NetUtil} = require("./Network.min.js")
+const {Network, Layer, FCLayer, ConvLayer, Filter, Neuron, NetMath, NetUtil} = require("./Network.min.js")
 // Get just what you need.
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
@@ -22,40 +20,36 @@ I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples 
 
 ### Constructing
 ---
-A network can be built in a few different ways: 
+A network can be built in three different ways:
 
-##### 1 
-With absolutely no parameters, and it will figure out an appropriate structure once you pass it some data.
+##### 1
+With absolutely no parameters, and it will build a 3 FCLayer net. It will figure out some appropriate sizes for them once you pass it some data.
 ```javascript
 const net = new Network()
 ```
 ##### 2
-By giving a list of numbers, and the network will configure some layers with that many neurons.
+By giving a list of numbers, and the network will configure some FCLayers with that many neurons.
 ```javascript
 const net = new Network({
     layers: [784, 100, 10]
 })
 ```
+
 ##### 3
-By specifying just a list of the type of layer you'd like to use. The number of neurons are calculated from input/output sizes and the hidden layers are then given some appropriate sizes.
-(This will be more useful when more layer types are added. Currently only a fully connected layer is implemented, named "Layer", for now)
+Or you can fully configure the layers by constructing them. Check below what configurations are available for each layer.
 ```javascript
-const net = new Network({
-    layers: [Layer, Layer, Layer]
-})
-```
-##### 4
-Or you can fully configure the layers by constructing them. The layers currently can only have its number of neurons configured.
-```javascript
+// Example 1 - fully connected network
 const net = new Network({
     layers: [new Layer(784), new Layer(100), new Layer(10)]
 })
+// Example 2 - convolutional network
+const net = new Network({
+    layers: [new FCLayer(784), new ConvLayer(8, {filterSize: 5}), new FCLayer(4608), new FCLayer(10)]
+})
 ```
-The default values are values I have found produced good results in the datasets I used for testing. You will, of course, get best results by hand picking configurations appropriate to your own data set.
 
 ### Training
 ----
-
 
 The data structure must be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
 ```javascript
@@ -77,7 +71,7 @@ By default, this is ```1``` and represents how many times the data passed will b
 net.train(training, {epochs: 5}) // This will run through the training data 5 times
 ```
 ###### Callback
-You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration.
 ```javascript
 const doSomeStuff = ({iterations, error, elapsed, input}) => ....
 net.train(training, {callback: doSomeStuff})
@@ -107,7 +101,7 @@ Once the network is trained, you can test it like so:
 const {training, test} = mnist.set(800, 200)
 net.train(training).then(() => net.test(test))
 ```
-The network will log the testing iteration and the error. This also resolves a promise, with the average test error percentage.
+This resolves a promise, with the average test error percentage.
 
 ##### Options
 ###### Log
@@ -117,7 +111,7 @@ const {training, test} = mnist.set(800, 200)
 net.train(training).then(() => net.test(test, {log: false}))
 ```
 ###### Callback
-Like with training, you can provide a callback for testing, which will get called after each iteration. The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration. 
+Like with training, you can provide a callback for testing, which will get called after each iteration. The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration.
 ```javascript
 const doSomeStuff = ({iterations, error, elapsed, input}) => ....
 net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
@@ -125,18 +119,19 @@ net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
 
 ### Exporting
 ---
-Layer and weights data is exported as a JSON object.
+Weights data is exported as a JSON object.
 ```javascript
 const data = trainedNet.toJSON()
 ```
 
 ### Importing
 ---
-Only the weights are exported. You still need to build the net with the same configs, eg activation function.
+Only the weights are exported. You still need to build the net with the same structure and configs, eg activation function.
 ```javascript
-const freshNetwork = new Network()
+const freshNetwork = new Network(...)
 freshNetwork.fromJSON(data)
 ```
+If using exported data from before version 2.0.0, just do a find-replace of "neurons" -> "weights" on the exported data and it will work with the new version.
 
 ### Trained usage
 ---
@@ -166,6 +161,7 @@ const net = new Network({
     dropout: 1,
     l2: 0.001,
     l1: 0.005,
+    layers: [ /* 3 FCLayers */ ]
     adaptiveLR: "noadaptivelr",
     weightsConfig: {
         distribution: "xavieruniform"
@@ -174,10 +170,18 @@ const net = new Network({
 ```
 
 ### Network
+
+You can check the framework version via Network.version (static).
+
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
 | cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | meansquarederror |
+| channels | Specifies the number of channels in the input data. EG, 3 for RGB images. Used by convolutional networks. | Any number | undefined |
+| filterSize | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
+| zeroPadding | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
+| stride | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
+| filterCount | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
 
 ##### Examples
 ```javascript
@@ -190,7 +194,7 @@ You can set custom cost functions. They are given the iteration's expected outpu
 
 Learning rate is 0.2 by default, except when using the following configurations:
 
-| Modifier| Type | Default value| 
+| Modifier| Type | Default value|
 |:-------------:| :-----: | :-----: |
 | RMSProp | adaptiveLR | 0.001 |
 | adam | adaptiveLR | 0.01 |
@@ -229,7 +233,7 @@ net = new Network({activation: x => x, eluAlpha: 1})
 You can set your own activation functions. They are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias
 - If the function should calculate the prime (during back prop) - boolean
-- A reference to the neuron being activated. 
+- A reference to the neuron being activated.
 
 The network is bound as the function's scope, meaning you can access its data through ```this```.
 The function needs to return a single number.
@@ -294,17 +298,30 @@ Xavier Normal/Uniform falls back to Lecun Normal/Uniform on the last layer, wher
 
 You can set custom weights distribution functions. They are given as parameters the number of weights needed and the weightsConfig object, additionally containing a layer's fanIn and/or fanOut. It must return an array of weights.
 
+### ConvLayer
+
+The first parameter, an integer is for how many filters to use in the layer. The second, is an object where the configurations below go.
+
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any number | 3 |
+| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
+| stride | How many pixels to move between convolutions | Any number | 1 |
+
+### About the activation function
+Normally, you read about ReLU layers being used, and such, though, it made much more sense in the implementation to just do the activation in the ConvLayer, as it would be more efficient than using a dedicated layer. Therefore there are no such 'activation' layers, as you just specify the activation in the network configs.
+
 ## Future plans
 ---
-More and more features will be added to this library, as time goes by, and I learn more. General library improvements and optimisations will be added throughout. Breaking changes will be documented.
+More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented.
 
- The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details. Next up are Conv layers, in version 2.0.  I'll likely also think of a better name for the library, by then.
+ The first few changes have been adding more configuration options, such as activation functions, cost functions, regularization, adaptive learning, weights init, etc. Check the changelog for details.
 
 ##### Short term
-Conv, Pool and BatchNorm layers.
+Next up are Pool layers, and a few general improvements.
 
 ##### Long term
-Once that is done, and there is a decent selection of configurations, and features, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to incorporate other network types.
+Once that is done, I will be focusing all my attention to some novel, hardcore optimisations, as part of my final year university project. Afterwards, I plan to explore and implement whatever else I learn.
 
 ## Contributing
 ---

@@ -1,13 +1,25 @@
-# Upcoming - Conv Layers
+# 2.0.0 - Conv Layers
 ---
 #### Network
-- Moved the format and shuffle functions to NetUtil
+- Restructured to allow multiple layer types
+- Added filterSize, zeroPadding, stride, (input) channels and filterCount configs, used by ConvLayers
+- Re-wrote the JSON import/export. Check README for details on backward compatibility
+- Removed ability to create a network by just giving layer types in the list
+- Can check the version number via Network.version
+
+#### ConvLayer
+- Created ConvLayer 🎉
+- Added filterCount, filterSize, zeroPadding and stride configs
+
+#### Filter
+- Created Filter
 
 #### NetUtil
 - Created new file to store util functions
 - Added addZeroPadding
-- Added build2DPSA
-- Added sum2DPSA
+- Added arrayToMap
+- Added arrayToVolume
+- Added 4 other helper functions
 
 #### FCLayer
 - Renamed Layer.js to FCLayer.js. The Layer class still exists as an alias to what is now FCLayer
@@ -51,7 +63,7 @@
 - Added lecunUniform weights distribution
 - Added lecunNormal weights distribution
 - Added xavierUniform weights distribution
-  
+
 # v1.3.0 - Regularization
 ---
 #### Network
@@ -62,7 +74,7 @@
 
 #### Bug Fixes
 - Fixed error value logged accumulating across epochs, instead of resetting to 0
-- Fixed epoch counter logged resetting instead of accumulating across training sessions 
+- Fixed epoch counter logged resetting instead of accumulating across training sessions
 
 # v1.2.0 - Activation functions (Part 1)
 ---

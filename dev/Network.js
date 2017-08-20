@@ -2,8 +2,9 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}={}) {
+    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror",
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, filterSize,
+        zeroPadding, stride, channels, filterCount}={}) {
 
         this.state = "not-defined"
         this.layers = []
@@ -14,10 +15,6 @@ class Network {
         activation = NetUtil.format(activation)
         adaptiveLR = NetUtil.format(adaptiveLR)
         cost = NetUtil.format(cost)
-
-        if (learningRate!=null) {    
-            this.learningRate = learningRate
-        }
 
         if (l2) {
             this.l2 = typeof l2=="boolean" ? 0.001 : l2
@@ -33,6 +30,13 @@ class Network {
             this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
             this.maxNormTotal = 0
         }
+
+        if (learningRate)   this.learningRate = learningRate
+        if (filterSize)     this.filterSize = filterSize
+        if (zeroPadding)    this.zeroPadding = zeroPadding
+        if (stride)         this.stride = stride
+        if (channels)       this.channels = channels
+        if (filterCount)    this.filterCount = filterCount
 
         // Activation function / Learning Rate
         switch (adaptiveLR) {
@@ -72,7 +76,7 @@ class Network {
                     }
                 }
         }
-        
+
         this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
         this.weightUpdateFn = NetMath[this.adaptiveLR]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
@@ -94,7 +98,7 @@ class Network {
         this.weightsConfig = {distribution: "xavieruniform"}
 
         if (weightsConfig != undefined && weightsConfig.distribution) {
-            this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution) 
+            this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution)
         }
 
         if (this.weightsConfig.distribution == "uniform") {
@@ -102,7 +106,7 @@ class Network {
 
         } else if (this.weightsConfig.distribution == "gaussian") {
             this.weightsConfig.mean = weightsConfig.mean || 0
-            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05
         }
 
         if (typeof this.weightsConfig.distribution=="function") {
@@ -117,20 +121,15 @@ class Network {
             switch (true) {
 
                 case layers.every(item => Number.isInteger(item)):
-                    this.layers = layers.map(size => new Layer(size))
+                    this.layers = layers.map(size => new FCLayer(size))
                     this.state = "constructed"
                     this.initLayers()
                     break
 
-                case layers.every(item => item instanceof Layer || item instanceof FCLayer):
+                case layers.every(item => item instanceof FCLayer || item instanceof ConvLayer):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()
-                    break
-
-                case layers.every(item => item === Layer || item === FCLayer):
-                    this.state = "defined"
-                    this.definedLayers = layers
                     break
 
                 default:
@@ -145,24 +144,6 @@ class Network {
 
             case "initialised":
                 return
-
-            case "defined":
-                this.layers = this.definedLayers.map((layer, li) => {
-                    
-                    if (!li)
-                        return new layer(input)
-
-                    if (li==this.definedLayers.length-1) 
-                        return new layer(expected)
-
-                    const hidden = this.definedLayers.length-2
-                    const size = input/expected > 5 ? expected + (expected + (Math.abs(input-expected))/4) * (hidden-li+1)/(hidden/2)
-                                                    : input >= expected ? input + expected * (hidden-li)/(hidden/2)
-                                                                        : expected + input * (hidden-li)/(hidden/2)
-
-                    return new layer(Math.max(Math.round(size), 0))
-                })
-                break
 
             case "not-defined":
                 this.layers[0] = new FCLayer(input)
@@ -185,10 +166,14 @@ class Network {
         Object.assign(layer.weightsConfig, this.weightsConfig)
 
         if (layerIndex) {
-            layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
-            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1])
+
+            layer.weightsConfig.fanIn = layer.prevLayer.size
+            layer.prevLayer.weightsConfig.fanOut = layer.size
+
+            layer.init()
+            layer.state = "initialised"
         }
     }
 
@@ -198,7 +183,7 @@ class Network {
             throw new Error("The network layers have not been initialised.")
         }
 
-        if (data === undefined) {
+        if (data === undefined || data === null) {
             throw new Error("No data passed to Network.forward()")
         }
 
@@ -241,7 +226,7 @@ class Network {
         }
 
         return new Promise((resolve, reject) => {
-            
+
             if (dataSet === undefined || dataSet === null) {
                 return void reject("No data provided")
             }
@@ -264,11 +249,11 @@ class Network {
                 if (this.l2Error!=undefined) this.l2Error = 0
                 if (this.l1Error!=undefined) this.l1Error = 0
 
-                doIteration()  
+                doIteration()
             }
 
             const doIteration = () => {
-                
+
                 if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
                     return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
@@ -335,6 +320,10 @@ class Network {
                 reject("No data provided")
             }
 
+            if (log) {
+                console.log("Testing started")
+            }
+
             let totalError = 0
             let iterationIndex = 0
             const startTime = Date.now()
@@ -350,10 +339,6 @@ class Network {
                 totalError += iterationError
                 iterationIndex++
 
-                if (log) {
-                    console.log("Testing iteration", iterationIndex, iterationError)
-                }
-
                 if (typeof callback=="function") {
                     callback({
                         iterations: iterationIndex,
@@ -361,7 +346,7 @@ class Network {
                         elapsed, input
                     })
                 }
-                
+
                 if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
 
@@ -394,16 +379,7 @@ class Network {
 
     toJSON () {
         return {
-            layers: this.layers.map(layer => {
-                return {
-                    neurons: layer.neurons.map(neuron => {
-                        return {
-                            bias: neuron.bias,
-                            weights: neuron.weights
-                        }
-                    })
-                }
-            })
+            layers: this.layers.map(layer => layer.toJSON())
         }
     }
 
@@ -413,9 +389,16 @@ class Network {
             throw new Error("No JSON data given to import.")
         }
 
-        this.layers = data.layers.map(layer => new FCLayer(layer.neurons.length, layer.neurons))
-        this.state = "constructed"
-        this.initLayers()
+        if (data.layers.length != this.layers.length) {
+            throw new Error(`Mismatched layers (${data.layers.length} layers in import data, but ${this.layers.length} configured)`)
+        }
+
+        this.resetDeltaWeights()
+        this.layers.forEach((layer, li) => li && layer.fromJSON(data.layers[li], li))
+    }
+
+    static get version () {
+        return "2.0.0"
     }
 }
 

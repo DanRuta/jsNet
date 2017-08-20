@@ -178,16 +178,21 @@ You can check the framework version via Network.version (static).
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
 | cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | meansquarederror |
 | channels | Specifies the number of channels in the input data. EG, 3 for RGB images. Used by convolutional networks. | Any number | undefined |
-| filterSize | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
-| zeroPadding | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
-| stride | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
-| filterCount | (See ConvLayer) Set a default value for Conv layers to use. | Any number | undefined |
+| conv | (See ConvLayer) An object where the optional keys filterSize, zeroPadding and stride set values for all Conv layers to default to  | Object | undefined |
 
 ##### Examples
 ```javascript
 net = new Network({learningRate: 0.2})
 net = new Network({cost: "crossEntropy"})
 net = new Network({cost: (target, output) => ...})
+convnet = new Network({
+    layers: [...some fc and conv layers ...],
+    conv: {
+        filterSize: 3,
+        zeroPadding: 1,
+        stride: 1
+    }
+})
 ```
 
 You can set custom cost functions. They are given the iteration's expected output as the first parameter and the actual output as the second parameter, and they need to return a single number.

@@ -336,7 +336,7 @@ describe("Network", () => {
             })
 
             it("Sets the net.filterSize to whatever value is given", () => {
-                const net = new Network({filterSize: 3})
+                const net = new Network({conv: {filterSize: 3}})
                 expect(net.filterSize).to.equal(3)
             })
 
@@ -345,7 +345,7 @@ describe("Network", () => {
             })
 
             it("Sets the net.zeroPadding to whatever value is given", () => {
-                const net = new Network({zeroPadding: 1})
+                const net = new Network({conv: {zeroPadding: 1}})
                 expect(net.zeroPadding).to.equal(1)
             })
 
@@ -354,7 +354,7 @@ describe("Network", () => {
             })
 
             it("Sets the net.stride to whatever value is given", () => {
-                const net = new Network({stride: 1})
+                const net = new Network({conv: {stride: 1}})
                 expect(net.stride).to.equal(1)
             })
 
@@ -369,15 +369,6 @@ describe("Network", () => {
 
             it("Does not otherwise set net.channels to anything", () => {
                 expect(net.channels).to.be.undefined
-            })
-
-            it("Sets the net.filterCount to whatever value is given", () => {
-                const net = new Network({filterCount: 1})
-                expect(net.filterCount).to.equal(1)
-            })
-
-            it("Does not otherwise set net.filterCount to anything", () => {
-                expect(net.filterCount).to.be.undefined
             })
         })
 
@@ -2555,7 +2546,7 @@ describe("ConvLayer", () => {
         })
 
         it("Defaults the layer.filterSize to the net.filterSize value, if there's no layer.filterSize, but there is one for net", () => {
-            const net = new Network({filterSize: 5})
+            const net = new Network({conv: {filterSize: 5}})
             layer2.net = net
             layer2.assignPrev(layer1)
             expect(layer2.filterSize).to.equal(5)
@@ -2577,7 +2568,7 @@ describe("ConvLayer", () => {
         })
 
         it("Defaults the layer.zeroPadding to the net.zeroPadding value, if there's no layer.zeroPadding, but there is one for net", () => {
-            const net = new Network({zeroPadding: 3})
+            const net = new Network({conv: {zeroPadding: 3}})
             layer2.net = net
             layer2.assignPrev(layer1)
             expect(layer2.zeroPadding).to.equal(3)
@@ -2617,7 +2608,7 @@ describe("ConvLayer", () => {
         })
 
         it("Defaults the layer.stride to the net.stride value, if there's no layer.stride, but there is one for net", () => {
-            const net = new Network({stride: 5})
+            const net = new Network({conv: {stride: 5}})
             layer2.net = net
             layer2.assignPrev(layer1)
             expect(layer2.stride).to.equal(5)
@@ -2636,13 +2627,6 @@ describe("ConvLayer", () => {
             layer2.net = net
             layer2.assignPrev(layer1)
             expect(layer2.stride).to.equal(7)
-        })
-
-        it("Defaults the layer.size to the net.filterCount value, if there's no layer.size, but there is filterCount for net", () => {
-            const net = new Network({filterCount: 5})
-            layer2.net = net
-            layer2.assignPrev(layer1)
-            expect(layer2.size).to.equal(5)
         })
 
         it("Defaults the layer.size to 4 if there is no size value for either layer or filterCount for net", () => {

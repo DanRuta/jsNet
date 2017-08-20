@@ -30,9 +30,9 @@ class ConvLayer {
 
         this.prevLayer = layer
 
+        this.size = this.size || 4
         this.filterSize = this.filterSize || this.net.filterSize || 3
         this.stride = this.stride || this.net.stride || 1
-        this.size = this.size || this.net.filterCount || 4
         this.channels = layer instanceof ConvLayer ? layer.size : (this.net.channels || 1)
 
         if (this.zeroPadding==undefined) {
@@ -924,8 +924,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, filterSize,
-        zeroPadding, stride, channels, filterCount}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv}={}) {
 
         this.state = "not-defined"
         this.layers = []
@@ -953,11 +952,13 @@ class Network {
         }
 
         if (learningRate)   this.learningRate = learningRate
-        if (filterSize)     this.filterSize = filterSize
-        if (zeroPadding)    this.zeroPadding = zeroPadding
-        if (stride)         this.stride = stride
         if (channels)       this.channels = channels
-        if (filterCount)    this.filterCount = filterCount
+
+        if (conv) {
+            if (conv.filterSize!=undefined)     this.filterSize = conv.filterSize
+            if (conv.zeroPadding!=undefined)    this.zeroPadding = conv.zeroPadding
+            if (conv.stride!=undefined)         this.stride = conv.stride
+        }
 
         // Activation function / Learning Rate
         switch (updateFn) {

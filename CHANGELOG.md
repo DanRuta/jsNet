@@ -2,22 +2,23 @@
 ---
 #### Network
 - Restructured to allow multiple layer types
-- Added filterSize, zeroPadding, stride, (input) channels and filterCount configs, used by ConvLayers
+- Added conv config for configuring filterSize, zeroPadding, stride ConvLayer default values
+- Added (input) channels config, used by ConvLayers
 - Re-wrote the JSON import/export. Check README for details on backward compatibility
 - Removed ability to create a network by just giving layer types in the list
 - Can check the version number via Network.version
 - Renamed adaptiveLR to updateFn
 
 #### ConvLayer
-- Created ConvLayer 🎉
+- Added ConvLayer.js 🎉
 - Added filterCount, filterSize, zeroPadding and stride configs
 - Added activation config
 
 #### Filter
-- Created Filter
+- Added Filter.js
 
 #### NetUtil
-- Created new file to store util functions
+- Added NetUtil.js
 - Added addZeroPadding
 - Added arrayToMap
 - Added arrayToVolume
@@ -27,7 +28,7 @@
 - Renamed noadaptivelr to vanillaupdatefn
 
 #### FCLayer
-- Renamed Layer.js to FCLayer.js. The Layer class still exists as an alias to what is now FCLayer
+- Renamed Layer.js to FCLayer.js. Layer still exists as an alias to what is now FCLayer
 
 #### Bug Fixes
 - Fixed training callback giving iteration index, not count (-1)

@@ -30,9 +30,9 @@ class ConvLayer {
 
         this.prevLayer = layer
 
+        this.size = this.size || 4
         this.filterSize = this.filterSize || this.net.filterSize || 3
         this.stride = this.stride || this.net.stride || 1
-        this.size = this.size || this.net.filterCount || 4
         this.channels = layer instanceof ConvLayer ? layer.size : (this.net.channels || 1)
 
         if (this.zeroPadding==undefined) {

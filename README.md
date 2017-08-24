@@ -1,6 +1,8 @@
 # jsNet
 [![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master)
 
+[![NPM](https://nodei.co/npm/jsnet.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/cifar10/)
+
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
@@ -9,9 +11,9 @@ jsNet is a javascript based deep learning framework for basic and convolutional 
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
 
 ##  Usage
-When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just require it like so:
+When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just ```npm install jsnet``` and  require it like so:
 ```javascript
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("./jsNet.min.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("jsNet")
 // Get just what you need.
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.

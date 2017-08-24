@@ -2,22 +2,20 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], adaptiveLR="noadaptivelr", activation="sigmoid", cost="meansquarederror", 
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}={}) {
+    constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []
+        this.conv = {}
+        this.pool = {}
         this.epochs = 0
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
-        activation = this.format(activation)
-        adaptiveLR = this.format(adaptiveLR)
-        cost = this.format(cost)
-
-        if (learningRate!=null) {    
-            this.learningRate = learningRate
-        }
+        activation = NetUtil.format(activation)
+        updateFn = NetUtil.format(updateFn)
+        cost = NetUtil.format(cost)
 
         if (l2) {
             this.l2 = typeof l2=="boolean" ? 0.001 : l2
@@ -34,8 +32,22 @@ class Network {
             this.maxNormTotal = 0
         }
 
+        if (learningRate)   this.learningRate = learningRate
+        if (channels)       this.channels = channels
+
+        if (conv) {
+            if (conv.filterSize!=undefined)     this.conv.filterSize = conv.filterSize
+            if (conv.zeroPadding!=undefined)    this.conv.zeroPadding = conv.zeroPadding
+            if (conv.stride!=undefined)         this.conv.stride = conv.stride
+        }
+
+        if (pool) {
+            if (pool.size)      this.pool.size = pool.size
+            if (pool.stride)    this.pool.stride = pool.stride
+        }
+
         // Activation function / Learning Rate
-        switch (adaptiveLR) {
+        switch (updateFn) {
 
             case "rmsprop":
                 this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
@@ -72,29 +84,25 @@ class Network {
                     }
                 }
         }
-        
-        this.adaptiveLR = [false, null, undefined].includes(adaptiveLR) ? "noadaptivelr" : adaptiveLR
-        this.weightUpdateFn = NetMath[this.adaptiveLR]
+
+        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillaupdatefn" : updateFn
+        this.weightUpdateFn = NetMath[this.updateFn]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
         this.cost = typeof cost=="function" ? cost : NetMath[cost]
 
-        if (this.adaptiveLR=="rmsprop") {
+        if (this.updateFn=="rmsprop") {
             this.rmsDecay = rmsDecay==undefined ? 0.99 : rmsDecay
         }
 
-        if (activation=="lrelu") {
-            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
-
-        } else if (activation=="elu") {
-            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
-        }
+        this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom
         this.weightsConfig = {distribution: "xavieruniform"}
 
         if (weightsConfig != undefined && weightsConfig.distribution) {
-            this.weightsConfig.distribution = this.format(weightsConfig.distribution) 
+            this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution)
         }
 
         if (this.weightsConfig.distribution == "uniform") {
@@ -102,7 +110,7 @@ class Network {
 
         } else if (this.weightsConfig.distribution == "gaussian") {
             this.weightsConfig.mean = weightsConfig.mean || 0
-            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05        
+            this.weightsConfig.stdDeviation = weightsConfig.stdDeviation || 0.05
         }
 
         if (typeof this.weightsConfig.distribution=="function") {
@@ -111,26 +119,21 @@ class Network {
             this.weightsInitFn = NetMath[this.weightsConfig.distribution]
         }
 
-        // Status
+        // State
         if (layers.length) {
 
             switch (true) {
 
                 case layers.every(item => Number.isInteger(item)):
-                    this.layers = layers.map(size => new Layer(size))
+                    this.layers = layers.map(size => new FCLayer(size))
                     this.state = "constructed"
                     this.initLayers()
                     break
 
-                case layers.every(item => item instanceof Layer):
+                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()
-                    break
-
-                case layers.every(item => item === Layer):
-                    this.state = "defined"
-                    this.definedLayers = layers
                     break
 
                 default:
@@ -146,29 +149,11 @@ class Network {
             case "initialised":
                 return
 
-            case "defined":
-                this.layers = this.definedLayers.map((layer, li) => {
-                    
-                    if (!li)
-                        return new layer(input)
-
-                    if (li==this.definedLayers.length-1) 
-                        return new layer(expected)
-
-                    const hidden = this.definedLayers.length-2
-                    const size = input/expected > 5 ? expected + (expected + (Math.abs(input-expected))/4) * (hidden-li+1)/(hidden/2)
-                                                    : input >= expected ? input + expected * (hidden-li)/(hidden/2)
-                                                                        : expected + input * (hidden-li)/(hidden/2)
-
-                    return new layer(Math.max(Math.round(size), 0))
-                })
-                break
-
             case "not-defined":
-                this.layers[0] = new Layer(input)
-                this.layers[1] = new Layer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
-                                                                        : input + expected))
-                this.layers[2] = new Layer(Math.ceil(expected))
+                this.layers[0] = new FCLayer(input)
+                this.layers[1] = new FCLayer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
+                                                                          : input + expected))
+                this.layers[2] = new FCLayer(Math.ceil(expected))
                 break
         }
 
@@ -179,16 +164,20 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-        layer.activation = this.activation
+        layer.activation = layer.activation==undefined ? this.activation : layer.activation
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
 
         if (layerIndex) {
-            layer.weightsConfig.fanIn = this.layers[layerIndex-1].size
-            this.layers[layerIndex-1].weightsConfig.fanOut = layer.size
             this.layers[layerIndex-1].assignNext(layer)
-            layer.assignPrev(this.layers[layerIndex-1])
+            layer.assignPrev(this.layers[layerIndex-1], layerIndex)
+
+            layer.weightsConfig.fanIn = layer.prevLayer.size
+            layer.prevLayer.weightsConfig.fanOut = layer.size
+
+            layer.init()
+            layer.state = "initialised"
         }
     }
 
@@ -198,7 +187,7 @@ class Network {
             throw new Error("The network layers have not been initialised.")
         }
 
-        if (data === undefined) {
+        if (data === undefined || data === null) {
             throw new Error("No data passed to Network.forward()")
         }
 
@@ -218,7 +207,7 @@ class Network {
         }
 
         if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.")
+            console.warn("Expected data length did not match output layer neurons count.", expected)
         }
 
         this.layers[this.layers.length-1].backward(expected)
@@ -232,16 +221,16 @@ class Network {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
 
-        if (shuffle) {
-            this.shuffle(dataSet)
-        }
-
-        if (log) {
-            console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
-        }
-
         return new Promise((resolve, reject) => {
-            
+
+            if (shuffle) {
+                NetUtil.shuffle(dataSet)
+            }
+
+            if (log) {
+                console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
+            }
+
             if (dataSet === undefined || dataSet === null) {
                 return void reject("No data provided")
             }
@@ -264,11 +253,11 @@ class Network {
                 if (this.l2Error!=undefined) this.l2Error = 0
                 if (this.l1Error!=undefined) this.l1Error = 0
 
-                doIteration()  
+                doIteration()
             }
 
             const doIteration = () => {
-                
+
                 if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
                     return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
@@ -289,6 +278,7 @@ class Network {
                 const iterationError = this.cost(target, output)
                 const elapsed = Date.now() - startTime
                 this.error += iterationError
+                this.iterations++
 
                 if (typeof callback=="function") {
                     callback({
@@ -298,8 +288,6 @@ class Network {
                     })
                 }
 
-                this.iterations++
-
                 if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
 
@@ -308,7 +296,7 @@ class Network {
 
                     if (log) {
                         console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${this.format(elapsed, "time")} Average Duration: ${this.format(elapsed/epochsCounter, "time")}`)
+                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {
@@ -317,7 +305,7 @@ class Network {
                         this.layers.forEach(layer => layer.state = "initialised")
 
                         if (log) {
-                            console.log(`Training finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
                         }
                         resolve()
                     }
@@ -336,6 +324,10 @@ class Network {
                 reject("No data provided")
             }
 
+            if (log) {
+                console.log("Testing started")
+            }
+
             let totalError = 0
             let iterationIndex = 0
             const startTime = Date.now()
@@ -351,10 +343,6 @@ class Network {
                 totalError += iterationError
                 iterationIndex++
 
-                if (log) {
-                    console.log("Testing iteration", iterationIndex, iterationError)
-                }
-
                 if (typeof callback=="function") {
                     callback({
                         iterations: iterationIndex,
@@ -362,14 +350,14 @@ class Network {
                         elapsed, input
                     })
                 }
-                
+
                 if (iterationIndex < testSet.length) {
                     setTimeout(testInput.bind(this), 0)
 
                 } else {
 
                     if (log) {
-                        console.log(`Testing finished. Total time: ${this.format(elapsed, "time")}  Average iteration time: ${this.format(elapsed/iterationIndex, "time")}`)
+                        console.log(`Testing finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
                     }
 
                     resolve(totalError/testSet.length)
@@ -380,27 +368,12 @@ class Network {
     }
 
     resetDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
-        })
+        this.layers.forEach((layer, li) => li && layer.resetDeltaWeights())
     }
 
     applyDeltaWeights () {
-        this.layers.forEach((layer, li) => {
-            li && layer.neurons.forEach(neuron => {
-                neuron.deltaWeights.forEach((dw, dwi) => {
 
-                    if (this.l2!=undefined) this.l2Error += 0.5 * this.l2 * neuron.weights[dwi]**2
-                    if (this.l1!=undefined) this.l1Error += this.l1 * Math.abs(neuron.weights[dwi])
-
-                    neuron.weights[dwi] = this.weightUpdateFn.bind(this, neuron.weights[dwi], dw, neuron, dwi)()
-
-                    if (this.maxNorm!=undefined) this.maxNormTotal += neuron.weights[dwi]**2
-                })
-
-                neuron.bias = this.weightUpdateFn.bind(this, neuron.bias, neuron.deltaBias, neuron)()
-            })
-        })
+        this.layers.forEach((layer, li) => li && layer.applyDeltaWeights())
 
         if (this.maxNorm!=undefined) {
             this.maxNormTotal = Math.sqrt(this.maxNormTotal)
@@ -410,16 +383,7 @@ class Network {
 
     toJSON () {
         return {
-            layers: this.layers.map(layer => {
-                return {
-                    neurons: layer.neurons.map(neuron => {
-                        return {
-                            bias: neuron.bias,
-                            weights: neuron.weights
-                        }
-                    })
-                }
-            })
+            layers: this.layers.map(layer => layer.toJSON())
         }
     }
 
@@ -429,48 +393,16 @@ class Network {
             throw new Error("No JSON data given to import.")
         }
 
-        this.layers = data.layers.map(layer => new Layer(layer.neurons.length, layer.neurons))
-        this.state = "constructed"
-        this.initLayers()
-    }
-
-    format (value, type="string") {
-
-        switch (true) {
-
-            case type=="string" && typeof value=="string":
-                value = value.replace(/(_|\s)/g, "").toLowerCase()
-                break
-
-            case type=="time" && typeof value=="number":
-                const date = new Date(value)
-                const formatted = []
-
-                if (value < 1000) {
-                    formatted.push(`${date.getMilliseconds()}ms`)
-
-                } else {
-
-                    if (value >= 3600000) formatted.push(`${date.getHours()}h`)
-                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
-
-                    formatted.push(`${date.getSeconds()}s`)
-                }
-
-                value = formatted.join(" ")
-                break
+        if (data.layers.length != this.layers.length) {
+            throw new Error(`Mismatched layers (${data.layers.length} layers in import data, but ${this.layers.length} configured)`)
         }
 
-        return value
+        this.resetDeltaWeights()
+        this.layers.forEach((layer, li) => li && layer.fromJSON(data.layers[li], li))
     }
 
-    shuffle (arr) {
-        for (let i=arr.length; i; i--) {
-            const j = Math.floor(Math.random() * i)
-            const x = arr[i-1]
-            arr[i-1] = arr[j]
-            arr[j] = x
-        }
+    static get version () {
+        return "2.0.0"
     }
 }
 

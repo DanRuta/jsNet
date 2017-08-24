@@ -6,7 +6,7 @@ module.exports = function(grunt){
             },
             js: {
                 src: ["dev/*.js"],
-                dest: "dist/Network.concat.js"
+                dest: "dist/jsNet.concat.js"
             }
         },
 
@@ -17,10 +17,10 @@ module.exports = function(grunt){
             dist: {
                 options: {
                     sourceMap: true,
-                    inputSourceMap: grunt.file.readJSON("./dist/Network.concat.js.map")
+                    inputSourceMap: grunt.file.readJSON("./dist/jsNet.concat.js.map")
                 },
                 files: {
-                    "dist/Network.min.js": ["dist/Network.concat.js"]
+                    "dist/jsNet.min.js": ["dist/jsNet.concat.js"]
                 }
             }
         },
@@ -29,15 +29,15 @@ module.exports = function(grunt){
             my_target: {
                 options: {
                     sourceMap: {
-                        url: "dist/Network.min.js.map",
-                        includeSources: true,  
+                        url: "dist/jsNet.min.js.map",
+                        includeSources: true,
                     },
-                    sourceMapIn: "dist/Network.min.js.map"
+                    sourceMapIn: "dist/jsNet.min.js.map"
                 },
                 files: {
-                    "dist/Network.min.js" : ["dist/Network.min.js"]
+                    "dist/jsNet.min.js" : ["dist/jsNet.min.js"]
                 }
-            }            
+            }
         },
 
         watch: {

@@ -1,7 +1,7 @@
 "use strict"
 
 class NetMath {
-    
+
     // Activation functions
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
@@ -21,13 +21,13 @@ class NetMath {
     }
 
     static lrelu (value, prime) {
-        return prime ? value > 0 ? 1 : this.lreluSlope
-                     : Math.max(this.lreluSlope*Math.abs(value), value)
+        return prime ? value > 0 ? 1 : (this.lreluSlope || -0.0005)
+                     : Math.max((this.lreluSlope || -0.0005)*Math.abs(value), value)
     }
 
     static rrelu (value, prime, neuron) {
         return prime ? value > 0 ? 1 : neuron.rreluSlope
-                     : Math.max(neuron.rreluSlope, value)   
+                     : Math.max(neuron.rreluSlope, value)
     }
 
     static lecuntanh (value, prime) {
@@ -39,7 +39,7 @@ class NetMath {
         return prime ? value >=0 ? 1 : NetMath.elu(value, false, neuron) + neuron.eluAlpha
                      : value >=0 ? value : neuron.eluAlpha * (Math.exp(value) - 1)
     }
-    
+
     // Cost functions
     static crossentropy (target, output) {
         return output.map((value, vi) => target[vi] * Math.log(value+1e-15) + ((1-target[vi]) * Math.log((1+1e-15)-value)))
@@ -52,23 +52,23 @@ class NetMath {
     }
 
     // Weight updating functions
-    static noadaptivelr (value, deltaValue) {
+    static vanillaupdatefn (value, deltaValue) {
         return value + this.learningRate * deltaValue
     }
 
     static gain (value, deltaValue, neuron, weightI) {
 
-        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.weightGains[weightI])
+        const newVal = value + this.learningRate * deltaValue * (weightI==null ? neuron.biasGain : neuron.getWeightGain(weightI))
 
         if (newVal<=0 && value>0 || newVal>=0 && value<0){
             if (weightI!=null) {
-                neuron.weightGains[weightI] = Math.max(neuron.weightGains[weightI]*0.95, 0.5)
+                neuron.setWeightGain(weightI, Math.max(neuron.getWeightGain(weightI)*0.95, 0.5))
             } else {
                 neuron.biasGain = Math.max(neuron.biasGain*0.95, 0.5)
             }
         } else {
             if (weightI!=null) {
-                neuron.weightGains[weightI] = Math.min(neuron.weightGains[weightI]+0.05, 5)
+                neuron.setWeightGain(weightI, Math.min(neuron.getWeightGain(weightI)+0.05, 5))
             } else {
                 neuron.biasGain = Math.min(neuron.biasGain+0.05, 5)
             }
@@ -80,24 +80,24 @@ class NetMath {
     static adagrad (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] += Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, neuron.getWeightsCache(weightI) + Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache += Math.pow(deltaValue, 2)
         }
 
-        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.getWeightsCache(weightI)
                                                                                         : neuron.biasCache))
     }
 
     static rmsprop (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] = this.rmsDecay * neuron.weightsCache[weightI] + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, this.rmsDecay * neuron.getWeightsCache(weightI) + (1 - this.rmsDecay) * Math.pow(deltaValue, 2))
         } else {
             neuron.biasCache = this.rmsDecay * neuron.biasCache + (1 - this.rmsDecay) * Math.pow(deltaValue, 2)
         }
 
-        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.weightsCache[weightI]
+        return value + this.learningRate * deltaValue / (1e-6 + Math.sqrt(weightI!=null ? neuron.getWeightsCache(weightI)
                                                                                         : neuron.biasCache))
     }
 
@@ -115,9 +115,9 @@ class NetMath {
     static adadelta (value, deltaValue, neuron, weightI) {
 
         if (weightI!=null) {
-            neuron.weightsCache[weightI] = this.rho * neuron.weightsCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
-            const newVal = value + Math.sqrt((neuron.adadeltaCache[weightI] + 1e-6)/(neuron.weightsCache[weightI] + 1e-6)) * deltaValue
-            neuron.adadeltaCache[weightI] = this.rho * neuron.adadeltaCache[weightI] + (1-this.rho) * Math.pow(deltaValue, 2)
+            neuron.setWeightsCache(weightI, this.rho * neuron.getWeightsCache(weightI) + (1-this.rho) * Math.pow(deltaValue, 2))
+            const newVal = value + Math.sqrt((neuron.getAdadeltaCache(weightI) + 1e-6)/(neuron.getWeightsCache(weightI) + 1e-6)) * deltaValue
+            neuron.setAdadeltaCache(weightI, this.rho * neuron.getAdadeltaCache(weightI) + (1-this.rho) * Math.pow(deltaValue, 2))
             return newVal
 
         } else {
@@ -156,7 +156,7 @@ class NetMath {
     static xavieruniform (size, {fanIn, fanOut}) {
         return fanOut || fanOut==0 ? NetMath.uniform(size, {limit: Math.sqrt(6/(fanIn+fanOut))})
                                    : NetMath.lecununiform(size, {fanIn})
-    }    
+    }
 
     static lecunnormal (size, {fanIn}) {
         return NetMath.gaussian(size, {mean: 0, stdDeviation: Math.sqrt(1/fanIn)})
@@ -164,6 +164,37 @@ class NetMath {
 
     static lecununiform (size, {fanIn}) {
         return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
+    }
+
+    // Pool
+    static maxPool (layer, channel) {
+
+        const activations = NetUtil.getActivations(layer.prevLayer, channel, layer.inMapValuesCount)
+
+        for (let row=0; row<layer.outMapSize; row++) {
+            for (let col=0; col<layer.outMapSize; col++) {
+
+                const rowStart = row * layer.stride
+                const colStart = col * layer.stride
+
+                // The first value
+                let activation = activations[rowStart*layer.prevLayerOutWidth + colStart]
+
+                for (let filterRow=0; filterRow<layer.size; filterRow++) {
+                    for (let filterCol=0; filterCol<layer.size; filterCol++) {
+
+                        const value = activations[ ((rowStart+filterRow) * layer.prevLayerOutWidth) + (colStart+filterCol) ]
+
+                        if (value > activation) {
+                            activation = value
+                            layer.indeces[channel][row][col] = [filterRow, filterCol]
+                        }
+                    }
+                }
+
+                layer.activations[channel][row][col] = activation
+            }
+        }
     }
 
     // Other
@@ -190,7 +221,7 @@ class NetMath {
 
             this.layers.forEach((layer, li) => {
                 li && layer.neurons.forEach(neuron => {
-                    neuron.weights.forEach((w, wi) => neuron.weights[wi] *= multiplier)
+                    neuron.weights.forEach((w, wi) => neuron.setWeight(wi, neuron.getWeight(wi) * multiplier))
                 })
             })
         }

@@ -1,3 +1,41 @@
+# 2.0.0 - Convolutional Networks
+---
+#### Network
+- New name: jsNet
+- Restructured to allow multiple layer types
+- Added conv config for configuring filterSize, zeroPadding, stride ConvLayer default values
+- Added pool config for configuring size and stride PoolLayer default values
+- Added (input) channels config, used by ConvLayers
+- Re-wrote the JSON import/export. Check README for details on backward compatibility
+- Removed ability to create a network by just giving layer types in the list
+- Can check the version number via Network.version
+- Renamed adaptiveLR to updateFn
+
+#### ConvLayer
+- Added ConvLayer.js 🎉 with activation, filterCount, filterSize, zeroPadding and stride configs
+
+#### Filter
+- Added Filter.js
+
+#### PoolLayer
+- Added PoolLayer, with stride and activation configs
+
+#### NetUtil
+- Added NetUtil.js
+- Added addZeroPadding
+- Added arrayToMap
+- Added arrayToVolume
+- Added 4 other helper functions
+
+#### NetMath
+- Renamed noadaptivelr to vanillaupdatefn
+
+#### FCLayer
+- Renamed Layer.js to FCLayer.js. Layer still exists as an alias to what is now FCLayer
+
+#### Bug Fixes
+- Fixed training callback giving iteration index, not count (-1)
+
 # 1.5.0 - Training, Misc
 ---
 #### Network
@@ -34,7 +72,7 @@
 - Added lecunUniform weights distribution
 - Added lecunNormal weights distribution
 - Added xavierUniform weights distribution
-  
+
 # v1.3.0 - Regularization
 ---
 #### Network
@@ -45,7 +83,7 @@
 
 #### Bug Fixes
 - Fixed error value logged accumulating across epochs, instead of resetting to 0
-- Fixed epoch counter logged resetting instead of accumulating across training sessions 
+- Fixed epoch counter logged resetting instead of accumulating across training sessions
 
 # v1.2.0 - Activation functions (Part 1)
 ---
@@ -62,7 +100,7 @@
 - Added sech to NetMath
 - Added elu activation function
 
-# v1.1.0 - Adaptive learning rates
+# v1.1.0 - Update Functions
 ---
 #### Network
 - Added rho as a network configuration

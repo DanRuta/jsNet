@@ -13,7 +13,7 @@ class ConvLayer {
         if (activation!=undefined) {
 
             if (typeof activation=="boolean" && !activation) {
-                this.activation = NetMath.noactivation
+                this.activation = false
             } else {
                 this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
             }
@@ -31,24 +31,37 @@ class ConvLayer {
         this.prevLayer = layer
 
         this.size = this.size || 4
-        this.filterSize = this.filterSize || this.net.filterSize || 3
-        this.stride = this.stride || this.net.stride || 1
-        this.channels = layer instanceof ConvLayer ? layer.size : (this.net.channels || 1)
+        this.filterSize = this.filterSize || this.net.conv.filterSize || 3
+        this.stride = this.stride || this.net.conv.stride || 1
+
+        switch (layer.constructor.name) {
+            case "FCLayer":
+                this.channels = this.net.channels ||1
+                break
+
+            case "ConvLayer":
+                this.channels = layer.size
+                break
+
+            case "PoolLayer":
+                this.channels = layer.activations.length
+                break
+        }
 
         if (this.zeroPadding==undefined) {
-            this.zeroPadding = this.net.zeroPadding==undefined ? Math.floor(this.filterSize/2) : this.net.zeroPadding
+            this.zeroPadding = this.net.conv.zeroPadding==undefined ? Math.floor(this.filterSize/2) : this.net.conv.zeroPadding
         }
 
         // Caching calculations
-        const prevLayerMapWidth = layer instanceof ConvLayer ? layer.outMapSize
-                                                             : Math.max(Math.floor(Math.sqrt(layer.size/this.channels)), 1)
+        const prevLayerOutWidth = layer instanceof FCLayer ? Math.max(Math.floor(Math.sqrt(layer.size/this.channels)), 1)
+                                                           : layer.outMapSize
 
-        this.inMapValuesCount = Math.pow(prevLayerMapWidth, 2)
-        this.inZPMapValuesCount = Math.pow(prevLayerMapWidth + this.zeroPadding*2, 2)
-        this.outMapSize = (prevLayerMapWidth - this.filterSize + 2*this.zeroPadding) / this.stride + 1
+        this.inMapValuesCount = Math.pow(prevLayerOutWidth, 2)
+        this.inZPMapValuesCount = Math.pow(prevLayerOutWidth + this.zeroPadding*2, 2)
+        this.outMapSize = (prevLayerOutWidth - this.filterSize + 2*this.zeroPadding) / this.stride + 1
 
         if (this.outMapSize%1!=0) {
-            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in conv layer[${layerIndex}]`)
+            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in conv layer at index ${layerIndex}`)
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
@@ -95,8 +108,10 @@ class ConvLayer {
                 for (let sumX=0; sumX<filter.sumMap.length; sumX++) {
                     if (this.state=="training" && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
                         filter.activationMap[sumY][sumX] = 0
-                    } else {
+                    } else if (this.activation) {
                         filter.activationMap[sumY][sumX] = this.activation(filter.sumMap[sumY][sumX], false, filter) / (this.net.dropout||1)
+                    } else {
+                        filter.activationMap[sumY][sumX] = filter.sumMap[sumY][sumX]
                     }
                 }
             }
@@ -127,9 +142,23 @@ class ConvLayer {
                 }
             }
 
-        } else {
+        } else if (this.nextLayer instanceof ConvLayer) {
+
             for (let filterI=0; filterI<this.filters.length; filterI++) {
-                NetUtil.buildConvErrorMap(this, this.filters[filterI], filterI)
+                NetUtil.buildConvErrorMap(this.nextLayer, this.filters[filterI].errorMap, filterI)
+            }
+
+        } else {
+
+            for (let filterI=0; filterI<this.filters.length; filterI++) {
+
+                const filter = this.filters[filterI]
+
+                for (let row=0; row<filter.errorMap.length; row++) {
+                    for (let col=0; col<filter.errorMap.length; col++) {
+                        filter.errorMap[row][col] = this.nextLayer.errors[filterI][row][col]
+                    }
+                }
             }
         }
 
@@ -143,7 +172,7 @@ class ConvLayer {
 
                     if (filter.dropoutMap[row][col]) {
                         filter.errorMap[row][col] = 0
-                    } else {
+                    } else if (this.activation){
                         filter.errorMap[row][col] *= this.activation(filter.sumMap[row][col], true, filter)
                     }
                 }
@@ -249,8 +278,21 @@ class FCLayer {
     init () {
         this.neurons.forEach(neuron => {
 
-            const weightsCount = this.prevLayer instanceof FCLayer ? this.prevLayer.size
-                                   : this.prevLayer.filters.length * this.prevLayer.outMapSize**2
+            let weightsCount
+
+            switch (this.prevLayer.constructor.name) {
+                case "FCLayer":
+                    weightsCount = this.prevLayer.size
+                    break
+
+                case "ConvLayer":
+                    weightsCount = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
+                    break
+
+                case "PoolLayer":
+                    weightsCount = this.prevLayer.activations.length * this.prevLayer.outMapSize**2
+                    break
+            }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
             neuron.bias = Math.random()*0.2-0.1
@@ -432,10 +474,6 @@ typeof window=="undefined" && (exports.Filter = Filter)
 class NetMath {
 
     // Activation functions
-    static noactivation (value, prime) {
-        return prime ? 1 : value
-    }
-
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
         return prime ? val*(1-val)
@@ -454,8 +492,8 @@ class NetMath {
     }
 
     static lrelu (value, prime) {
-        return prime ? value > 0 ? 1 : this.lreluSlope
-                     : Math.max(this.lreluSlope*Math.abs(value), value)
+        return prime ? value > 0 ? 1 : (this.lreluSlope || -0.0005)
+                     : Math.max((this.lreluSlope || -0.0005)*Math.abs(value), value)
     }
 
     static rrelu (value, prime, neuron) {
@@ -597,6 +635,37 @@ class NetMath {
 
     static lecununiform (size, {fanIn}) {
         return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
+    }
+
+    // Pool
+    static maxPool (layer, channel) {
+
+        const activations = NetUtil.getActivations(layer.prevLayer, channel, layer.inMapValuesCount)
+
+        for (let row=0; row<layer.outMapSize; row++) {
+            for (let col=0; col<layer.outMapSize; col++) {
+
+                const rowStart = row * layer.stride
+                const colStart = col * layer.stride
+
+                // The first value
+                let activation = activations[rowStart*layer.prevLayerOutWidth + colStart]
+
+                for (let filterRow=0; filterRow<layer.size; filterRow++) {
+                    for (let filterCol=0; filterCol<layer.size; filterCol++) {
+
+                        const value = activations[ ((rowStart+filterRow) * layer.prevLayerOutWidth) + (colStart+filterCol) ]
+
+                        if (value > activation) {
+                            activation = value
+                            layer.indeces[channel][row][col] = [filterRow, filterCol]
+                        }
+                    }
+                }
+
+                layer.activations[channel][row][col] = activation
+            }
+        }
     }
 
     // Other
@@ -761,40 +830,38 @@ class NetUtil {
         return outputMap
     }
 
-    static buildConvErrorMap (layer, filter, filterI) {
-
-        // Clear the existing error values, first
-        for (let row=0; row<filter.errorMap.length; row++) {
-            for (let col=0; col<filter.errorMap[0].length; col++) {
-                filter.errorMap[row][col] = 0
-            }
-        }
+    static buildConvErrorMap (nextLayer, errorMap, filterI) {
 
         // Cache / convenience
-        const zeroPadding = layer.nextLayer.zeroPadding
+        const zeroPadding = nextLayer.zeroPadding
+        const paddedLength = errorMap.length + zeroPadding*2
+        const fSSpread = Math.floor(nextLayer.filterSize / 2)
 
-        const fSSpread = Math.floor(layer.nextLayer.filterSize / 2)
-        const paddedLength = filter.errorMap.length + zeroPadding*2
+        // Zero pad and clear the error map, to allow easy convoling
+        const paddedRow = []
 
-        // Zero pad the error map, to allow easy convoling
-        // TODO, may be more performant to just use if statements when updating, instead
-        filter.errorMap = NetUtil.addZeroPadding(filter.errorMap, zeroPadding)
+        for (let val=0; val<paddedLength; val++) {
+            paddedRow.push(0)
+        }
+
+        for (let row=0; row<paddedLength; row++) {
+            errorMap[row] = paddedRow.slice(0)
+        }
 
         // For each channel in filter in the next layer which corresponds to this filter
-        for (let nlFilterI=0; nlFilterI<layer.nextLayer.size; nlFilterI++) {
+        for (let nlFilterI=0; nlFilterI<nextLayer.size; nlFilterI++) {
 
-            const weights = layer.nextLayer.filters[nlFilterI].weights[filterI]
-            const errorMap = layer.nextLayer.filters[nlFilterI].errorMap
+            const weights = nextLayer.filters[nlFilterI].weights[filterI]
+            const errMap = nextLayer.filters[nlFilterI].errorMap
 
             // Unconvolve their error map using the weights
-            for (let inputY=fSSpread; inputY<paddedLength - fSSpread; inputY+=layer.nextLayer.stride) {
-                for (let inputX=fSSpread; inputX<paddedLength - fSSpread; inputX+=layer.nextLayer.stride) {
+            for (let inputY=fSSpread; inputY<paddedLength - fSSpread; inputY+=nextLayer.stride) {
+                for (let inputX=fSSpread; inputX<paddedLength - fSSpread; inputX+=nextLayer.stride) {
 
-                    for (let weightsY=0; weightsY<layer.nextLayer.filterSize; weightsY++) {
-                        for (let weightsX=0; weightsX<layer.nextLayer.filterSize; weightsX++) {
-
-                            filter.errorMap[inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] += weights[weightsY][weightsX]
-                                * errorMap[(inputY-fSSpread)/layer.nextLayer.stride][(inputX-fSSpread)/layer.nextLayer.stride]
+                    for (let weightsY=0; weightsY<nextLayer.filterSize; weightsY++) {
+                        for (let weightsX=0; weightsX<nextLayer.filterSize; weightsX++) {
+                            errorMap[inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] += weights[weightsY][weightsX]
+                                * errMap[(inputY-fSSpread)/nextLayer.stride][(inputX-fSSpread)/nextLayer.stride]
                         }
                     }
                 }
@@ -802,11 +869,12 @@ class NetUtil {
         }
 
         // Take out the zero padding. Rows:
-        filter.errorMap = filter.errorMap.splice(zeroPadding, filter.errorMap.length - zeroPadding*2)
+        errorMap.splice(0, zeroPadding)
+        errorMap.splice(errorMap.length-zeroPadding, errorMap.length)
 
         // Columns:
-        for (let emXI=0; emXI<filter.errorMap.length; emXI++) {
-            filter.errorMap[emXI] = filter.errorMap[emXI].splice(zeroPadding, filter.errorMap[emXI].length - zeroPadding*2)
+        for (let emXI=0; emXI<errorMap.length; emXI++) {
+            errorMap[emXI] = errorMap[emXI].splice(zeroPadding, errorMap[emXI].length - zeroPadding*2)
         }
     }
 
@@ -876,19 +944,19 @@ class NetUtil {
         }
     }
 
-
     static getActivations (layer, mapStartI, mapSize){
 
-        if (arguments.length==1) {
+        const returnArr = []
 
-            const returnArr = []
+        if (arguments.length==1) {
 
             if (layer instanceof FCLayer) {
 
                 for (let ni=0; ni<layer.neurons.length; ni++) {
                     returnArr.push(layer.neurons[ni].activation)
                 }
-            } else {
+
+            } else if (layer instanceof ConvLayer) {
 
                 for (let fi=0; fi<layer.filters.length; fi++) {
                     for (let rowI=0; rowI<layer.filters[fi].activationMap.length; rowI++) {
@@ -897,28 +965,45 @@ class NetUtil {
                         }
                     }
                 }
+
+            } else {
+
+                for (let channel=0; channel<layer.activations.length; channel++) {
+                    for (let row=0; row<layer.activations[0].length; row++) {
+                        for (let col=0; col<layer.activations[0].length; col++) {
+                            returnArr.push(layer.activations[channel][row][col])
+                        }
+                    }
+                }
             }
 
-            return returnArr
         } else {
-
-            const returnArr = []
 
             if (layer instanceof FCLayer) {
 
                 for (let i=mapStartI*mapSize; i<(mapStartI+1)*mapSize; i++) {
                     returnArr.push(layer.neurons[i].activation)
                 }
-            } else {
+
+            } else if (layer instanceof ConvLayer) {
 
                 for (let row=0; row<layer.filters[mapStartI].activationMap.length; row++) {
                     for (let col=0; col<layer.filters[mapStartI].activationMap[row].length; col++) {
                         returnArr.push(layer.filters[mapStartI].activationMap[row][col])
                     }
                 }
+
+            } else {
+
+                for (let row=0; row<layer.activations[mapStartI].length; row++) {
+                    for (let col=0; col<layer.activations[mapStartI].length; col++) {
+                        returnArr.push(layer.activations[mapStartI][row][col])
+                    }
+                }
             }
-            return returnArr
         }
+
+        return returnArr
     }
 }
 
@@ -928,10 +1013,12 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []
+        this.conv = {}
+        this.pool = {}
         this.epochs = 0
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
@@ -959,9 +1046,14 @@ class Network {
         if (channels)       this.channels = channels
 
         if (conv) {
-            if (conv.filterSize!=undefined)     this.filterSize = conv.filterSize
-            if (conv.zeroPadding!=undefined)    this.zeroPadding = conv.zeroPadding
-            if (conv.stride!=undefined)         this.stride = conv.stride
+            if (conv.filterSize!=undefined)     this.conv.filterSize = conv.filterSize
+            if (conv.zeroPadding!=undefined)    this.conv.zeroPadding = conv.zeroPadding
+            if (conv.stride!=undefined)         this.conv.stride = conv.stride
+        }
+
+        if (pool) {
+            if (pool.size)      this.pool.size = pool.size
+            if (pool.stride)    this.pool.stride = pool.stride
         }
 
         // Activation function / Learning Rate
@@ -1037,7 +1129,7 @@ class Network {
             this.weightsInitFn = NetMath[this.weightsConfig.distribution]
         }
 
-        // Status
+        // State
         if (layers.length) {
 
             switch (true) {
@@ -1048,7 +1140,7 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(item => item instanceof FCLayer || item instanceof ConvLayer):
+                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()
@@ -1070,7 +1162,7 @@ class Network {
             case "not-defined":
                 this.layers[0] = new FCLayer(input)
                 this.layers[1] = new FCLayer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
-                                                                        : input + expected))
+                                                                          : input + expected))
                 this.layers[2] = new FCLayer(Math.ceil(expected))
                 break
         }
@@ -1082,7 +1174,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-        layer.activation = layer.activation || this.activation
+        layer.activation = layer.activation==undefined ? this.activation : layer.activation
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
@@ -1139,15 +1231,15 @@ class Network {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
 
-        if (shuffle) {
-            NetUtil.shuffle(dataSet)
-        }
-
-        if (log) {
-            console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
-        }
-
         return new Promise((resolve, reject) => {
+
+            if (shuffle) {
+                NetUtil.shuffle(dataSet)
+            }
+
+            if (log) {
+                console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
+            }
 
             if (dataSet === undefined || dataSet === null) {
                 return void reject("No data provided")
@@ -1393,4 +1485,180 @@ class Neuron {
 }
 
 typeof window=="undefined" && (exports.Neuron = Neuron)
+"use strict"
+
+class PoolLayer {
+
+    constructor (size, {stride, activation}={}) {
+
+        if (size)   this.size = size
+        if (stride) this.stride = stride
+
+        if (activation!=undefined && activation!=false) {
+            this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+        } else {
+            this.activation = false
+        }
+    }
+
+    init () {}
+
+    assignNext (layer) {
+        this.nextLayer = layer
+    }
+
+    assignPrev (layer, layerIndex) {
+
+        this.prevLayer = layer
+        this.size = this.size || this.net.pool.size || 2
+        this.stride = this.stride || this.net.pool.stride || this.size
+
+        let prevLayerOutWidth = layer.outMapSize
+
+        switch (layer.constructor.name) {
+
+            case "FCLayer":
+                this.channels = this.net.channels
+                prevLayerOutWidth = Math.max(Math.floor(Math.sqrt(layer.size/this.channels)), 1)
+                break
+
+            case "ConvLayer":
+                this.channels = layer.size
+                break
+
+            case "PoolLayer":
+                this.channels = layer.channels
+                break
+        }
+
+        this.prevLayerOutWidth = prevLayerOutWidth
+        this.outMapSize = (prevLayerOutWidth - this.size) / this.stride + 1
+        this.inMapValuesCount = prevLayerOutWidth ** 2
+
+        if (this.outMapSize%1 != 0) {
+            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in pool layer at index ${layerIndex}`)
+        }
+
+        this.activations = [...new Array(this.channels)].map(channel => {
+            return [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
+        })
+        this.errors = [...new Array(this.channels)].map(channel => {
+            return [...new Array(prevLayerOutWidth)].map(row => [...new Array(prevLayerOutWidth)].map(v => 0))
+        })
+        this.indeces = this.activations.map(channel => channel.map(row => row.map(v => [0,0])))
+    }
+
+    forward () {
+        for (let channel=0; channel<this.channels; channel++) {
+
+            NetMath.maxPool(this, channel)
+
+            // Apply activations
+            if (this.activation) {
+                for (let row=0; row<this.outMapSize; row++) {
+                    for (let col=0; col<this.outMapSize; col++) {
+                        this.activations[channel][row][col] = this.activation(this.activations[channel][row][col], false, this.net)
+                    }
+                }
+            }
+        }
+    }
+
+    backward () {
+
+        // Clear the existing error values, first
+        for (let channel=0; channel<this.channels; channel++) {
+            for (let row=0; row<this.errors[0].length; row++) {
+                for (let col=0; col<this.errors[0].length; col++) {
+                    this.errors[channel][row][col] = 0
+                }
+            }
+        }
+
+        if (this.nextLayer instanceof FCLayer) {
+
+            for (let channel=0; channel<this.channels; channel++) {
+                for (let row=0; row<this.outMapSize; row++) {
+                    for (let col=0; col<this.outMapSize; col++) {
+
+                        const rowI = this.indeces[channel][row][col][0] + row * this.stride
+                        const colI = this.indeces[channel][row][col][1] + col * this.stride
+                        const neuronI = channel * this.outMapSize**2 + row * this.outMapSize + col
+
+                        const weightIndex = channel * this.outMapSize**2 + row * this.outMapSize + col
+
+                        for (let neuron=0; neuron<this.nextLayer.neurons.length; neuron++) {
+                            this.errors[channel][rowI][colI] += this.nextLayer.neurons[neuron].error
+                                                                * this.nextLayer.neurons[neuron].weights[weightIndex]
+                        }
+                    }
+                }
+            }
+
+        } else if (this.nextLayer instanceof ConvLayer) {
+
+            for (let channel=0; channel<this.channels; channel++) {
+
+                const errs = []
+
+                for (let col=0; col<this.outMapSize; col++) {
+                    errs[col] = 0
+                }
+
+                // Convolve on the error map
+                NetUtil.buildConvErrorMap(this.nextLayer, errs, channel)
+
+                for (let row=0; row<this.outMapSize; row++) {
+                    for (let col=0; col<this.outMapSize; col++) {
+
+                        const rowI = this.indeces[channel][row][col][0] + row * this.stride
+                        const colI = this.indeces[channel][row][col][1] + col * this.stride
+
+                        this.errors[channel][rowI][colI] += errs[row][col]
+                    }
+                }
+            }
+
+        } else {
+
+            for (let channel=0; channel<this.channels; channel++) {
+                for (let row=0; row<this.outMapSize; row++) {
+                    for (let col=0; col<this.outMapSize; col++) {
+
+                        const rowI = this.indeces[channel][row][col][0] + row * this.stride
+                        const colI = this.indeces[channel][row][col][1] + col * this.stride
+
+                        this.errors[channel][rowI][colI] += this.nextLayer.errors[channel][row][col]
+                    }
+                }
+            }
+        }
+
+        // Apply derivatives
+        if (this.activation) {
+            for (let channel=0; channel<this.channels; channel++) {
+
+                for (let row=0; row<this.indeces[channel].length; row++) {
+                    for (let col=0; col<this.indeces[channel].length; col++) {
+
+                        const rowI = this.indeces[channel][row][col][0] + row * this.stride
+                        const colI = this.indeces[channel][row][col][1] + col * this.stride
+
+                        this.errors[channel][rowI][colI] *= this.activation(this.errors[channel][rowI][colI], true, this.net)
+                    }
+                }
+            }
+        }
+    }
+
+    resetDeltaWeights () {}
+
+    applyDeltaWeights () {}
+
+    toJSON () {return {}}
+
+    fromJSON () {}
+}
+
+typeof window=="undefined" && (exports.PoolLayer = PoolLayer)
 //# sourceMappingURL=Network.concat.js.map

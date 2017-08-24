@@ -13,7 +13,7 @@ class ConvLayer {
         if (activation!=undefined) {
 
             if (typeof activation=="boolean" && !activation) {
-                this.activation = NetMath.noactivation
+                this.activation = false
             } else {
                 this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
             }
@@ -31,24 +31,37 @@ class ConvLayer {
         this.prevLayer = layer
 
         this.size = this.size || 4
-        this.filterSize = this.filterSize || this.net.filterSize || 3
-        this.stride = this.stride || this.net.stride || 1
-        this.channels = layer instanceof ConvLayer ? layer.size : (this.net.channels || 1)
+        this.filterSize = this.filterSize || this.net.conv.filterSize || 3
+        this.stride = this.stride || this.net.conv.stride || 1
+
+        switch (layer.constructor.name) {
+            case "FCLayer":
+                this.channels = this.net.channels ||1
+                break
+
+            case "ConvLayer":
+                this.channels = layer.size
+                break
+
+            case "PoolLayer":
+                this.channels = layer.activations.length
+                break
+        }
 
         if (this.zeroPadding==undefined) {
-            this.zeroPadding = this.net.zeroPadding==undefined ? Math.floor(this.filterSize/2) : this.net.zeroPadding
+            this.zeroPadding = this.net.conv.zeroPadding==undefined ? Math.floor(this.filterSize/2) : this.net.conv.zeroPadding
         }
 
         // Caching calculations
-        const prevLayerMapWidth = layer instanceof ConvLayer ? layer.outMapSize
-                                                             : Math.max(Math.floor(Math.sqrt(layer.size/this.channels)), 1)
+        const prevLayerOutWidth = layer instanceof FCLayer ? Math.max(Math.floor(Math.sqrt(layer.size/this.channels)), 1)
+                                                           : layer.outMapSize
 
-        this.inMapValuesCount = Math.pow(prevLayerMapWidth, 2)
-        this.inZPMapValuesCount = Math.pow(prevLayerMapWidth + this.zeroPadding*2, 2)
-        this.outMapSize = (prevLayerMapWidth - this.filterSize + 2*this.zeroPadding) / this.stride + 1
+        this.inMapValuesCount = Math.pow(prevLayerOutWidth, 2)
+        this.inZPMapValuesCount = Math.pow(prevLayerOutWidth + this.zeroPadding*2, 2)
+        this.outMapSize = (prevLayerOutWidth - this.filterSize + 2*this.zeroPadding) / this.stride + 1
 
         if (this.outMapSize%1!=0) {
-            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in conv layer[${layerIndex}]`)
+            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${this.outMapSize} in conv layer at index ${layerIndex}`)
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
@@ -95,8 +108,10 @@ class ConvLayer {
                 for (let sumX=0; sumX<filter.sumMap.length; sumX++) {
                     if (this.state=="training" && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
                         filter.activationMap[sumY][sumX] = 0
-                    } else {
+                    } else if (this.activation) {
                         filter.activationMap[sumY][sumX] = this.activation(filter.sumMap[sumY][sumX], false, filter) / (this.net.dropout||1)
+                    } else {
+                        filter.activationMap[sumY][sumX] = filter.sumMap[sumY][sumX]
                     }
                 }
             }
@@ -127,9 +142,23 @@ class ConvLayer {
                 }
             }
 
-        } else {
+        } else if (this.nextLayer instanceof ConvLayer) {
+
             for (let filterI=0; filterI<this.filters.length; filterI++) {
-                NetUtil.buildConvErrorMap(this, this.filters[filterI], filterI)
+                NetUtil.buildConvErrorMap(this.nextLayer, this.filters[filterI].errorMap, filterI)
+            }
+
+        } else {
+
+            for (let filterI=0; filterI<this.filters.length; filterI++) {
+
+                const filter = this.filters[filterI]
+
+                for (let row=0; row<filter.errorMap.length; row++) {
+                    for (let col=0; col<filter.errorMap.length; col++) {
+                        filter.errorMap[row][col] = this.nextLayer.errors[filterI][row][col]
+                    }
+                }
             }
         }
 
@@ -143,7 +172,7 @@ class ConvLayer {
 
                     if (filter.dropoutMap[row][col]) {
                         filter.errorMap[row][col] = 0
-                    } else {
+                    } else if (this.activation){
                         filter.errorMap[row][col] *= this.activation(filter.sumMap[row][col], true, filter)
                     }
                 }

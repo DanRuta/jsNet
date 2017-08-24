@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-const {Network, Layer, FCLayer, ConvLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/Network.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/Network.concat.js")
 
 describe("Loading", () => {
 
@@ -21,6 +21,7 @@ describe("Loading", () => {
     it("NetUtil is loaded", () => expect(NetUtil).to.not.be.undefined)
     it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
+    it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
 
     it("Loads Layer as an alias of FCLayer", () => {
 
@@ -335,31 +336,31 @@ describe("Network", () => {
                 expect(net.weightsConfig.stdDeviation).to.be.undefined
             })
 
-            it("Sets the net.filterSize to whatever value is given", () => {
+            it("Sets the net.conv.filterSize to whatever value is given", () => {
                 const net = new Network({conv: {filterSize: 3}})
-                expect(net.filterSize).to.equal(3)
+                expect(net.conv.filterSize).to.equal(3)
             })
 
-            it("Does not otherwise set net.filterSize to anything", () => {
-                expect(net.filterSize).to.be.undefined
+            it("Does not otherwise set net.conv.filterSize to anything", () => {
+                expect(net.conv.filterSize).to.be.undefined
             })
 
-            it("Sets the net.zeroPadding to whatever value is given", () => {
+            it("Sets the net.conv.zeroPadding to whatever value is given", () => {
                 const net = new Network({conv: {zeroPadding: 1}})
-                expect(net.zeroPadding).to.equal(1)
+                expect(net.conv.zeroPadding).to.equal(1)
             })
 
-            it("Does not otherwise set net.zeroPadding to anything", () => {
-                expect(net.zeroPadding).to.be.undefined
+            it("Does not otherwise set net.conv.zeroPadding to anything", () => {
+                expect(net.conv.zeroPadding).to.be.undefined
             })
 
-            it("Sets the net.stride to whatever value is given", () => {
+            it("Sets the net.conv.stride to whatever value is given", () => {
                 const net = new Network({conv: {stride: 1}})
-                expect(net.stride).to.equal(1)
+                expect(net.conv.stride).to.equal(1)
             })
 
-            it("Does not otherwise set net.stride to anything", () => {
-                expect(net.stride).to.be.undefined
+            it("Does not otherwise set net.conv.stride to anything", () => {
+                expect(net.conv.stride).to.be.undefined
             })
 
             it("Sets the net.channels to whatever value is given", () => {
@@ -369,6 +370,24 @@ describe("Network", () => {
 
             it("Does not otherwise set net.channels to anything", () => {
                 expect(net.channels).to.be.undefined
+            })
+
+            it("Sets the net.pool.size to the value given", () => {
+                const net = new Network({pool: {size: 3}})
+                expect(net.pool.size).to.equal(3)
+            })
+
+            it("Does not otherwise set net.pool.size to anything", () => {
+                expect(net.pool.size).to.be.undefined
+            })
+
+            it("Sets the net.pool.stride to the value given", () => {
+                const net = new Network({pool: {stride: 1}})
+                expect(net.pool.stride).to.equal(1)
+            })
+
+            it("Does not otherwise set net.pool.stride to anything", () => {
+                expect(net.pool.stride).to.be.undefined
             })
         })
 
@@ -2505,9 +2524,9 @@ describe("ConvLayer", () => {
             expect(layer.activation).to.equal(customFn)
         })
 
-        it("Allows setting the activation function to noactivation by setting it to false", () => {
+        it("Allows setting the activation to false by giving the value false", () => {
             const layer = new ConvLayer(5, {activation: false})
-            expect(layer.activation.name).to.equal("noactivation")
+            expect(layer.activation).to.be.false
         })
 
         it("Allows setting the activation function to a function from NetMath using a string", () => {
@@ -2537,11 +2556,10 @@ describe("ConvLayer", () => {
             layer1.size = 10
             layer1.neurons = {length: 10}
             layer2 = new ConvLayer(3, {filterSize: 3, stride: 1})
-            layer2.net = {}
+            layer2.net = {conv: {}}
         })
 
         it("Assigns a reference to the given layer as this layer's prevLayer", () => {
-            layer2.net = {}
             layer2.assignPrev(layer1)
             expect(layer2.prevLayer).to.equal(layer1)
         })
@@ -2669,10 +2687,19 @@ describe("ConvLayer", () => {
             expect(layer2.channels).to.equal(1)
         })
 
+        it("Assigns the layer.channels to the number of channels in the last layer, if it is a PoolLayer", () => {
+            const layer = new PoolLayer(2)
+            layer.activations = [[],[],[]]
+            layer.outMapSize = 28
+            layer2.net.channels = undefined
+            layer2.assignPrev(layer)
+            expect(layer2.channels).to.equal(3)
+        })
+
         it("Assigns to layer.inMapValuesCount the size of the input map (Example 1)", () => {
             const layer1 = new ConvLayer(4)
             const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 0})
-            layer2.net = {}
+            layer2.net = {conv: {}}
             layer1.outMapSize = 28
             layer2.assignPrev(layer1)
             expect(layer2.inMapValuesCount).to.equal(784)
@@ -2681,7 +2708,7 @@ describe("ConvLayer", () => {
         it("Assigns to layer.inMapValuesCount the size of the input map (Example 2)", () => {
             const layer1 = new ConvLayer(4)
             const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 1})
-            layer2.net = {}
+            layer2.net = {conv: {}}
             layer1.outMapSize = 28
             layer2.assignPrev(layer1)
             expect(layer2.inMapValuesCount).to.equal(784)
@@ -2690,7 +2717,7 @@ describe("ConvLayer", () => {
         it("Assigns to layer.inMapValuesCount the size of the input map (Example 3)", () => {
             const layer1 = new FCLayer(75)
             const layer2 = new ConvLayer(3, {zeroPadding: 1, filterSize: 3})
-            layer2.net = {channels: 3}
+            layer2.net = {conv: {}, channels: 3}
             layer2.assignPrev(layer1)
             expect(layer2.inMapValuesCount).to.equal(25)
         })
@@ -2700,7 +2727,7 @@ describe("ConvLayer", () => {
             const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 0})
             layer1.outMapSize = 28
 
-            layer2.net = {}
+            layer2.net = {conv: {}}
             layer2.assignPrev(layer1)
             expect(layer2.inZPMapValuesCount).to.equal(784)
         })
@@ -2709,7 +2736,7 @@ describe("ConvLayer", () => {
             const layer1 = new ConvLayer(4)
             const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 1})
             layer1.outMapSize = 28
-            layer2.net = {}
+            layer2.net = {conv: {}}
             layer2.assignPrev(layer1)
             expect(layer2.inZPMapValuesCount).to.equal(900)
         })
@@ -2717,7 +2744,7 @@ describe("ConvLayer", () => {
         it("Assigns to layer.inZPMapValuesCount the size of the zero padded input map (Example 3)", () => {
             const layer1 = new FCLayer(75)
             const layer2 = new ConvLayer(3, {zeroPadding: 1, filterSize: 3})
-            layer2.net = {channels: 3}
+            layer2.net = {conv: {}, channels: 3}
             layer2.assignPrev(layer1)
             expect(layer2.inZPMapValuesCount).to.equal(49)
         })
@@ -2725,7 +2752,7 @@ describe("ConvLayer", () => {
         it("Sets the layer.outMapSize to the spacial dimension of the filter activation/sum/error maps (Example 1)", () => {
             const layer1 = new FCLayer(2352) // 784 * 3
             const layer2 = new ConvLayer(4, {filterSize: 3, zeroPadding: 1})
-            layer2.net = {channels: 3}
+            layer2.net = {conv: {}, channels: 3}
             layer2.assignPrev(layer1)
             expect(layer2.outMapSize).to.equal(28)
         })
@@ -2738,7 +2765,7 @@ describe("ConvLayer", () => {
             layer2.stride = 2
             layer2.filterSize = 3
             layer2.zeroPadding = 1
-            layer2.net = {channels: 3}
+            layer2.net = {conv: {}, channels: 3}
             layer2.assignPrev(layer1)
             expect(layer2.outMapSize).to.equal(3)
         })
@@ -2751,7 +2778,7 @@ describe("ConvLayer", () => {
             layer2.stride = 3
             layer2.filterSize = 3
             layer2.zeroPadding = 1
-            layer2.net = {channels: 3}
+            layer2.net = {conv: {}, channels: 3}
             layer2.assignPrev(layer1)
             expect(layer2.outMapSize).to.equal(3)
         })
@@ -2759,7 +2786,7 @@ describe("ConvLayer", () => {
         it("Creates a layer.filters array with as many filters as the size of the layer", () => {
             const prevLayer = new FCLayer(147)
             const layer = new ConvLayer(3)
-            layer.net = {channels: 3}
+            layer.net = {conv: {}, channels: 3}
             layer.assignPrev(layer1)
             expect(layer.filters).to.not.be.undefined
             expect(layer.filters).to.have.lengthOf(3)
@@ -2793,7 +2820,7 @@ describe("ConvLayer", () => {
             layer1 = new FCLayer(2)
             layer2 = new ConvLayer(5, {filterSize: 3})
             layer2.weightsConfig = {weightsInitFn: NetMath.xavieruniform}
-            layer2.net = {weightsInitFn: NetMath.xavieruniform}
+            layer2.net = {conv: {}, weightsInitFn: NetMath.xavieruniform}
             layer2.channels = 1
             layer2.assignPrev(layer1)
         })
@@ -2978,6 +3005,7 @@ describe("ConvLayer", () => {
             expect(layer2.activation).to.be.calledWith(4)
         })
 
+
         it("And thus gives every neuron an activation value", () => {
             layer.filters.forEach(filter => filter.activationMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
             layer.forward()
@@ -2986,6 +3014,19 @@ describe("ConvLayer", () => {
                     expect(row).to.not.include(0)
                 })
             })
+        })
+
+        it("It does not call pass sum map values through an activation function if it is set to not be used", () => {
+            sinon.stub(NetUtil, "convolve").callsFake(() => [[1,2],[3,4]])
+            layer.activation = false
+            layer.filters.forEach(filter => {
+                filter.activationMap = [[0,0],[0,0]]
+            })
+            layer.forward()
+            expect(layer.filters[0].activationMap).to.deep.equal([[1,2],[3,4]])
+            expect(layer.filters[1].activationMap).to.deep.equal([[1,2],[3,4]])
+            expect(layer.filters[2].activationMap).to.deep.equal([[1,2],[3,4]])
+            NetUtil.convolve.restore()
         })
     })
 
@@ -3009,11 +3050,13 @@ describe("ConvLayer", () => {
                 filter.weights = [[[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]], [[1,2,3],[4,5,6],[7,8,9]]]
                 filter.sumMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
                 filter.errorMap = [[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3],[3,3,3,3,3]]
+
+                filter.dropoutMap = [[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]]
             })
             prevLayer.neurons.forEach(neuron => neuron.activation = 0.5)
             layer.net = {l2: 0, l1: 0, miniBatchSize: 1}
 
-            sinon.stub(NetUtil, "buildConvErrorMap").callsFake(() => [[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2]])
+            sinon.stub(NetUtil, "buildConvErrorMap")
             sinon.spy(NetUtil, "buildConvDWeights")
             sinon.spy(layer, "activation")
         })
@@ -3023,9 +3066,37 @@ describe("ConvLayer", () => {
             NetUtil.buildConvDWeights.restore()
         })
 
-        it("Calls the NetUtil.buildConvErrorMap() function for each filter in this layer", () => {
+        it("Calls the NetUtil.buildConvErrorMap() function for each filter in this layer when nextLayer is Conv", () => {
             layer.backward()
             expect(NetUtil.buildConvErrorMap.callCount).to.equal(4)
+        })
+
+        it("Maps the errors in the PoolLayer, 1 to 1, to the filters' errorMap values", () => {
+            const poolLayer = new PoolLayer(3, {stride: 2})
+            const convLayer = new ConvLayer(2, {filterSize: 3, stride: 1})
+            net = new Network({layers: [prevLayer, convLayer, poolLayer, nextLayerA], channels: 3})
+            // Add some test data
+            convLayer.filters.forEach(filter => {
+                filter.sumMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+                filter.errorMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+            })
+            poolLayer.errors = [[
+                [1,2,3,4,5],
+                [5,4,3,2,1],
+                [1,2,3,4,5],
+                [5,4,3,2,1],
+                [1,2,3,4,5]
+            ], [
+                [6,7,8,8,9],
+                [6,7,8,8,9],
+                [0,9,8,7,6],
+                [6,7,8,8,9],
+                [0,9,8,7,6]
+            ]]
+            sinon.stub(convLayer, "activation").callsFake(x => x)
+            convLayer.backward()
+            expect(convLayer.filters[0].errorMap).to.deep.equal([[1,2,3,4,5],[5,4,3,2,1],[1,2,3,4,5],[5,4,3,2,1],[1,2,3,4,5]])
+            expect(convLayer.filters[1].errorMap).to.deep.equal([[6,7,8,8,9],[6,7,8,8,9],[0,9,8,7,6],[6,7,8,8,9],[0,9,8,7,6]])
         })
 
         it("Does not call NetUtil.buildConvErrorMap() if the next layer is an FCLayer", () => {
@@ -3046,7 +3117,8 @@ describe("ConvLayer", () => {
             // Values were worked out manually
             const fcLayer = new FCLayer(4)
 
-            const convLayer = new ConvLayer(2, {filterSize: 3, zeroPadding: 0, stride: 1})
+            // const convLayer = new ConvLayer(2, {filterSize: 3, zeroPadding: 0, stride: 1})
+            const convLayer = new ConvLayer(2, {filterSize: 3, zeroPadding: 0, stride: 1, activation: false})
             const net = new Network({layers: [new FCLayer(18), convLayer, fcLayer]})
             fcLayer.neurons.forEach((neuron, ni) => {
                 neuron.error = (ni+1)/5 // 0.2, 0.4, 0.6, 0.8
@@ -3066,18 +3138,14 @@ describe("ConvLayer", () => {
             const expectedFilter2ErrorMap = [[1.0, 0.8], [0.6, 0.4]]
             convLayer.outMapSize = 2
 
-            sinon.stub(convLayer, "activation").callsFake(() => 1)
-
             // Avoid tests failing due to tiny precision differences
             const roundMapValues = map => map.map(row => row.map(value => Math.round(value*10)/10))
 
             convLayer.backward()
             expect(roundMapValues(convLayer.filters[0].errorMap)).to.deep.equal(expectedFilter1ErrorMap)
             expect(roundMapValues(convLayer.filters[1].errorMap)).to.deep.equal(expectedFilter2ErrorMap)
-
         })
 
-        // Also need to do the dropout stuffs
         it("Calls the activation function for each value in the sum maps", () => {
             layer.backward()
             expect(layer.activation.callCount).to.equal(100)
@@ -3279,25 +3347,614 @@ describe("ConvLayer", () => {
     })
 })
 
-describe("Netmath", () => {
+describe("PoolLayer", () => {
 
-    describe("No Activation", () => {
+    describe("constructor", () => {
 
-        it("Returns the same value when doing the forward pass", () => {
-            expect(NetMath.noactivation(2)).to.equal(2)
-            expect(NetMath.noactivation(3)).to.equal(3)
-            expect(NetMath.noactivation("a")).to.equal("a")
-            expect(NetMath.noactivation(false)).to.equal(false)
+        it("Sets the layer.size to the size given", () => {
+            const layer = new PoolLayer(3)
+            expect(layer.size).to.equal(3)
         })
 
-        it("Returns the value 1 for the prime calculation", () => {
-            expect(NetMath.noactivation(2, true)).to.equal(1)
-            expect(NetMath.noactivation(3, true)).to.equal(1)
-            expect(NetMath.noactivation("a", true)).to.equal(1)
-            expect(NetMath.noactivation(false, true)).to.equal(1)
+        it("Does not set the size to anything if not given", () => {
+            const layer = new PoolLayer()
+            expect(layer.size).to.be.undefined
         })
 
+        it("Sets the layer.stride to the value given", () => {
+            const layer = new PoolLayer(2, {stride: 3})
+            expect(layer.stride).to.equal(3)
+        })
+
+        it("Does not set the stride to anything if not given", () => {
+            const layer = new PoolLayer(2)
+            expect(layer.stride).to.be.undefined
+        })
+
+        it("Sets the activation to false if nothing is provided", () => {
+            const layer = new PoolLayer()
+            expect(layer.activation).to.be.false
+        })
+
+        it("Allows setting the activation function to a custom function", () => {
+            const customFn = x => x
+            const layer = new PoolLayer(2, {activation: customFn})
+            expect(layer.activation).to.equal(customFn)
+        })
+
+        it("Allows setting the activation function to false by setting it to false", () => {
+            const layer = new PoolLayer(5, {activation: false})
+            expect(layer.activation).to.be.false
+        })
+
+        it("Allows setting the activation function to a function from NetMath using a string", () => {
+            const layer = new PoolLayer(5, {activation: "relu"})
+            expect(layer.activation.name).to.equal("bound relu")
+        })
     })
+
+    describe("init", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer(2)
+            expect(layer.init()).to.be.undefined
+        })
+    })
+
+    describe("assignPrev", () => {
+
+        it("Sets the layer.prevLayer to the given layer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Sets the layer.size to the net.pool.size if not already defined, but existing in net.pool", () => {
+            const layer1 = new ConvLayer()
+            layer1.outMapSize = 16
+            const layer2 = new PoolLayer()
+            layer2.net = {pool: {size: 3}}
+            layer2.stride = 1
+            layer2.assignPrev(layer1)
+            expect(layer2.size).to.equal(3)
+        })
+
+        it("Defaults the layer.size to 2 if not defined and not present in net.pool", () => {
+            const layer1 = new ConvLayer()
+            layer1.outMapSize = 16
+            const layer2 = new PoolLayer()
+            layer2.net = {pool: {}}
+            layer2.stride = 1
+            layer2.assignPrev(layer1)
+            expect(layer2.size).to.equal(2)
+        })
+
+        it("Sets the layer.stride to the net.pool.stride if not already defined, but existing in net.pool", () => {
+            const layer1 = new ConvLayer()
+            layer1.outMapSize = 16
+            const layer2 = new PoolLayer()
+            layer2.net = {pool: {stride: 3}}
+            layer2.size = 1
+            layer2.assignPrev(layer1)
+            expect(layer2.stride).to.equal(3)
+        })
+
+        it("Defaults the layer.stride to the layer.size if not defined and not in net.pool", () => {
+            const layer1 = new ConvLayer()
+            layer1.outMapSize = 16
+            const layer2 = new PoolLayer()
+            layer2.net = {pool: {}}
+            layer2.size = 1
+            layer2.assignPrev(layer1)
+            expect(layer2.stride).to.equal(1)
+        })
+
+
+        it("Sets the layer.channels to the last layer's filters count when the last layer is Conv", () => {
+            const layer1 = new ConvLayer(5)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.channels).to.equal(5)
+        })
+
+        it("Sets the layer.channels to the net.channels if the prev layer is an FCLayer", () => {
+            const layer1 = new FCLayer(108)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.channels).to.equal(3)
+        })
+
+        it("Sets the layer.channels to the last layer's channels valuess if the last layer is Pool", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.channels).to.equal(34)
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 1)", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(8)
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 1)", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(3, {stride: 3})
+            layer1.outMapSize = 15
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(5)
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value when prevLayer is FCLayer", () => {
+            const layer1 = new FCLayer(108)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(3)
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value when prevLayer is PoolLayer", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(8)
+        })
+
+        it("Sets the layer.inMapValuesCount to the square value of the input map width value", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.outMapSize).to.equal(8)
+            expect(layer2.inMapValuesCount).to.equal(256)
+        })
+
+        it("Throws an error if the hyperparameters are misconfigured to not produce an output volume with integer dimensions", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(3, {stride: 3})
+            layer1.outMapSize = 16
+            expect(layer2.assignPrev.bind(layer2, layer1)).to.throw("Misconfigured hyperparameters. Activation volume dimensions would be ")
+        })
+
+        it("Sets the layer.indeces and layer.activations to an array with length equal to the number of channels (prev Conv example)", () => {
+            const layer1 = new ConvLayer(6)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.activations.length).to.equal(6)
+            expect(layer2.indeces.length).to.equal(6)
+        })
+
+        it("Sets the layer.indeces and layer.activations to an array with length equal to the number of channels (prev FC example)", () => {
+            const layer1 = new FCLayer(108)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer2.net = {channels: 3}
+            layer2.assignPrev(layer1)
+            expect(layer2.activations.length).to.equal(3)
+            expect(layer2.indeces.length).to.equal(3)
+        })
+
+        it("Sets the layer.indeces and layer.activations to an array with length equal to the number of channels (prev Pool example)", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.activations.length).to.equal(34)
+            expect(layer2.indeces.length).to.equal(34)
+        })
+
+        it("Inits the layer.indeces values as maps of with dimensions equal to the outMapSize", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.indeces[0].length).to.equal(8)
+            expect(layer2.indeces[0][0].length).to.equal(8)
+            expect(layer2.indeces[1].length).to.equal(8)
+            expect(layer2.indeces[1][0].length).to.equal(8)
+        })
+
+        it("Inits the layer.indeces values as maps of with dimensions equal to the outMapSize", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.activations[0].length).to.equal(8)
+            expect(layer2.activations[0][0].length).to.equal(8)
+            expect(layer2.activations[1].length).to.equal(8)
+            expect(layer2.activations[1][0].length).to.equal(8)
+        })
+
+        it("Sets the values in the activations to arrays with two 0 values", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 4
+            layer2.assignPrev(layer1)
+            expect(layer2.activations).to.deep.equal([ [[0,0],[0,0]], [[0,0],[0,0]] ])
+        })
+
+        it("Sets the values in the indeces to arrays with two 0 values", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 4
+            layer2.assignPrev(layer1)
+            expect(layer2.indeces).to.deep.equal([[[[0,0],[0,0]],[[0,0],[0,0]]],[[[0,0],[0,0]],[[0,0],[0,0]]]])
+        })
+
+        it("Sets the layer.errors to an array with dimensions equal to the input map size", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.errors[0].length).to.equal(16)
+            expect(layer2.errors[0][0].length).to.equal(16)
+            expect(layer2.errors[1].length).to.equal(16)
+            expect(layer2.errors[1][0].length).to.equal(16)
+        })
+
+        it("Sets the values in the errors to arrays with two 0 values", () => {
+            const layer1 = new ConvLayer(2)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 4
+            layer2.assignPrev(layer1)
+            expect(layer2.errors).to.deep.equal([[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]])
+        })
+    })
+
+    describe("forward", () => {
+
+        beforeEach(() => sinon.stub(NetMath, "maxPool"))
+
+        afterEach(() => NetMath.maxPool.restore())
+
+        it("Calls the max pool function for each channel in the layer", () => {
+            const layer = new PoolLayer(2)
+            layer.channels = 14
+            layer.forward()
+            expect(NetMath.maxPool.callCount).to.equal(14)
+        })
+
+        it("Does not apply activation function if not provided", () => {
+            const layer = new PoolLayer(2)
+            layer.activation = false
+            layer.channels = 2
+            layer.outMapSize = 2
+            layer.activations = [[[1,2],[3,4]],[[5,6],[7,8]]]
+            layer.forward()
+            expect(layer.activations).to.deep.equal([[[1,2],[3,4]],[[5,6],[7,8]]])
+        })
+
+        it("Applies activation function if provided (using sigmoid for test)", () => {
+            const layer = new PoolLayer(2, {activation: "sigmoid"})
+            layer.channels = 2
+            layer.outMapSize = 2
+            layer.activations = [[[1,2],[3,4]],[[5,6],[7,8]]]
+            layer.forward()
+
+            const expected = [[
+                [0.7310585786300049, 0.8807970779778823],
+                [0.9525741268224334, 0.9820137900379085]
+            ], [
+                [0.9933071490757153, 0.9975273768433653],
+                [0.9990889488055994, 0.9996646498695336]
+            ]]
+
+            expect(layer.activations).to.deep.equal(expected)
+        })
+    })
+
+    describe("backward", () => {
+
+        const convLayer = new ConvLayer(1, {filterSize: 3, zeroPadding: 1, stride: 1})
+        const fcLayer = new FCLayer(36)
+        const poolLayer = new PoolLayer(2)
+        fcLayer.neurons.forEach((neuron, ni) => {
+            neuron.error = ni / 100
+            neuron.weights = [...new Array(36)].map((v, vi) => (vi%10))
+        })
+
+        // 6 x 6
+        convLayer.filters = [new Filter()]
+        convLayer.filters[0].errorMap = [
+            [1,2,3,4,5,6],
+            [7,4,7,2,9,2],
+            [1,9,3,7,3,6],
+            [2,5,2,6,8,3],
+            [8,2,4,9,2,7],
+            [1,7,3,7,3,5]
+        ]
+        convLayer.filters[0].weights = [[
+            [1,2,3],
+            [4,5,2],
+            [3,2,1]
+        ]]
+
+        // 2 x 3 x 3
+        poolLayer.errors = [[
+            [1,2,3],
+            [4,5,6],
+            [7,8,9]
+        ], [
+            [5,9,3],
+            [8,2,4],
+            [6,7,1]
+        ]]
+
+        // 12 x 12
+        const expectedErrorsFC =  [[
+            [0,0, 0,6.3, 0,12.6, 0,18.9, 0,25.2, 0,31.5],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,50.4, 0,0, 0,0, 0,0],
+            [0,37.8, 0,44.1, 0,0, 0,56.7, 0,0, 0,6.3],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,12.6, 0,18.9, 0,25.2, 0,31.5, 0,37.8, 0,44.1],
+            [0,50.4, 0,56.7, 0,0, 0,6.3, 0,12.6, 0,18.9],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,37.8, 0,0, 0,0, 0,0],
+            [0,25.2, 0,31.5, 0,0, 0,44.1, 0,50.4, 0,56.7],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,6.3, 0,12.6, 0,18.9, 0,25.2, 0,31.5]
+        ]]
+
+        const expectedErrorsFCWithActivation =  [[
+            [0,0, 0, 0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0.011526349447153203],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13, 0,0, 0,0],
+            [0,0, 0,0, 0,0, 0,0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,2.865355952475672e-10, 0,6.57474075183004e-13, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0, 0,0, 0,0, 0,0, 0,0],
+            [0,0, 0,0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13]
+        ]]
+
+        // Avoid tests failing due to tiny precision differences
+        const roundVolValues = map => map.map(row => row.map(col => col.map(v => Math.round(v*10)/10)))
+
+        // 13 x 13
+        const expectedErrorsConv = [[
+            [0, 31,  0,  0,  0,  0, 63,  0,  0, 83, 71,  0,  0],
+            [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+            [70,  0,100, 60,111,  0,112,  0,202,  0, 66,  0,  0],
+            [0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+            [0, 76,  0,  0,  0,  0,110,  0,  0,116, 79,  0,  0],
+            [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+            [77,  0, 97,113,103,  0,124,  0,250,  0, 66,  0,  0],
+            [0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+            [0, 76,  0,  0, 80,  0,  0,  0,  0,  0,119,  0,  0],
+            [0, 0,  0,  0,  0,121,  0,  0,  0,  0,  0,  0,  0],
+            [0,  0, 73,  0,  0,  0,125,  0, 83,  0,  0, 72,  0],
+            [0, 55,  0,  0,  0,  0,  0, 81,  0,  0,  0, 47,  0],
+            [0,  0,  0,  0,  0,  0, 94,  0,  0,  0,  0,  0,  0]
+        ]]
+
+        // 2 x 9 x 9
+        const expectedErrorsPool = [[
+            [0,0,0,0,2,0,0,0,0],
+            [0,0,0,0,0,0,0,3,0],
+            [0,0,1,0,0,0,0,0,0],
+            [0,4,0,0,0,0,0,0,6],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,5,0,0,0,0,0],
+            [0,7,0,0,8,0,0,9,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0]
+        ], [
+            [5,0,0,9,0,0,3,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,4,0],
+            [0,0,8,0,0,0,0,0,0],
+            [0,0,0,0,2,0,0,0,0],
+            [6,0,0,0,0,7,0,1,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0]
+        ]]
+
+        it("Creates the error map correctly when the next layer is an FCLayer", () => {
+            const layer = new PoolLayer(2, {stride: 2})
+            layer.channels = 1
+            layer.outMapSize = 6
+
+            // 12 x 12
+            layer.errors = [[
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+            ]]
+            layer.indeces = [[
+                [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+                [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+                [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]],
+                [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+                [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+                [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]]
+            ]]
+            layer.nextLayer = fcLayer
+            layer.backward()
+            expect(roundVolValues(layer.errors)).to.deep.equal(expectedErrorsFC)
+        })
+
+        it("Creates the error map correctly when the next layer is a ConvLayer", () => {
+            const layer = new PoolLayer(3, {stride: 2})
+            layer.channels = 1
+            layer.outMapSize = 6
+
+            // 13 x 13
+            layer.errors = [[
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0]
+            ]]
+            // 6 x 6
+            layer.indeces = [[
+                [[0,1],[2,1],[0,2],[2,2],[0,1],[0,0]],
+                [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+                [[0,1],[2,1],[0,2],[2,2],[0,1],[0,0]],
+                [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+                [[0,1],[0,2],[1,1],[2,0],[0,2],[2,1]],
+
+                [[1,1],[0,0],[2,2],[1,1],[0,0],[1,1]]
+            ]]
+
+            layer.nextLayer = convLayer
+            layer.backward()
+            expect(layer.errors).to.deep.equal(expectedErrorsConv)
+        })
+
+        it("Creates the error map correctly when the next layer is a PoolLayer", () => {
+            const layer = new PoolLayer(3, {stride: 3})
+            layer.channels = 2
+            layer.outMapSize = 3
+
+            // 2 x 9 x 9
+            layer.errors = [[
+                [0,0,0, 0,0,0, 0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+            ], [
+                [0,0,0, 0,0,0, 0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+            ]]
+
+            // 2 x 3 x 3
+            layer.indeces = [[
+                [[2,2],[0,1],[1,1]],
+                [[0,1],[2,0],[0,2]],
+                [[0,1],[0,1],[0,1]]
+            ], [
+                [[0,0],[0,0],[0,0]],
+                [[1,2],[2,1],[0,1]],
+                [[0,0],[0,2],[0,1]]
+            ]]
+            layer.nextLayer = poolLayer
+            layer.backward()
+            expect(layer.errors).to.deep.equal(expectedErrorsPool)
+        })
+
+        it("Applies activation derivative when the activation is sigmoid", () => {
+            const layer = new PoolLayer(2, {stride: 2, activation: "sigmoid"})
+            layer.channels = 1
+            layer.outMapSize = 6
+
+            // 12 x 12
+            layer.errors = [[
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0],
+            ]]
+            layer.indeces = [[
+                [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+                [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+                [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]],
+                [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+                [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+                [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]]
+            ]]
+            layer.nextLayer = fcLayer
+            layer.backward()
+            expect(layer.errors).to.deep.equal(expectedErrorsFCWithActivation)
+        })
+    })
+
+    describe("assignNext", () => {
+        it("Sets the layer.nextLayer to the given layer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2)
+            layer2.assignNext(layer1)
+            expect(layer2.nextLayer).to.equal(layer1)
+        })
+    })
+
+    describe("resetDeltaWeights", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.resetDeltaWeights()).to.be.undefined
+        })
+    })
+
+    describe("applyDeltaWeights", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.applyDeltaWeights()).to.be.undefined
+        })
+    })
+
+    describe("toJSON", () => {
+        it("Exports an empty object", () => {
+            const layer = new PoolLayer()
+            expect(layer.toJSON()).to.deep.equal({})
+        })
+    })
+
+    describe("fromJSON", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.fromJSON()).to.be.undefined
+        })
+    })
+})
+
+describe("Netmath", () => {
 
     describe("Sigmoid", () => {
 
@@ -3388,6 +4045,15 @@ describe("Netmath", () => {
 
         it("lrelu(-2, true)==0", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2, true)()).to.equal(-0.0005)
+        })
+
+        it("Defaults the lreluSlope value if undefined", () => {
+            expect(NetMath.lrelu.bind({}, 2)()).to.equal(2)
+        })
+
+        it("Defaults the lreluSlope value if undefined (when calculating prime)", () => {
+            expect(NetMath.lrelu.bind({}, 2, true)()).to.equal(1)
+            expect(NetMath.lrelu.bind({}, -2, true)()).to.equal(-0.0005)
         })
     })
 
@@ -3934,6 +4600,90 @@ describe("Netmath", () => {
             NetMath.lecununiform.restore()
         })
     })
+
+    describe("maxPool", () => {
+
+        // Hand worked values
+
+        // 12 x 12
+        const testMapData = [
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            1,2,4,5,7,8,10,11,13,14,16,17,
+
+            1,2,4,5,7,9,10,11,13,14,16,17,
+            2,3,5,6,8,8,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            2,3,5,6,8,9,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            1,2,4,5,7,8,10,11,13,14,16,17,
+
+            1,2,4,5,7,9,10,11,13,14,16,17,
+            2,3,5,6,8,8,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            2,3,5,6,8,9,11,12,14,15,17,18
+        ]
+
+        // 6 x 6
+        const expectedActivationMap = [
+            [2,5,8,11,14,17],
+            [3,6,9,12,15,18],
+            [3,6,9,12,15,18],
+            [2,5,8,11,14,17],
+            [3,6,9,12,15,18],
+            [3,6,9,12,15,18]
+        ]
+
+        // 6 x 6
+        const expectedIndeces = [
+            [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+            [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+            [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]],
+            [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
+            [[1,1],[1,1],[0,1],[1,1],[1,1],[1,1]],
+            [[1,1],[1,1],[1,1],[1,1],[1,1],[1,1]]
+        ]
+
+        const layer = new PoolLayer(2, {stride: 2})
+        layer.prevLayerOutWidth = 12
+        layer.outMapSize = 6
+
+        // 6 x 6
+        layer.activations = [[
+            [0,0,0,0,0,0],
+            [0,0,0,0,0,0],
+            [0,0,0,0,0,0],
+            [0,0,0,0,0,0],
+            [0,0,0,0,0,0],
+            [0,0,0,0,0,0]
+        ]]
+
+        // 6 x 6
+        layer.indeces = [[
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+            [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
+        ]]
+
+
+        before(() => {
+            sinon.stub(NetUtil, "getActivations").callsFake(() => testMapData)
+        })
+
+        after(() => NetUtil.getActivations.restore())
+
+
+        it("Performs max pool correctly", () => {
+            NetMath.maxPool(layer, 0)
+            expect(layer.activations[0]).to.deep.equal(expectedActivationMap)
+            expect(layer.indeces[0]).to.deep.equal(expectedIndeces)
+        })
+    })
 })
 
 describe("NetUtil", () => {
@@ -4126,6 +4876,31 @@ describe("NetUtil", () => {
             const activations2 = NetUtil.getActivations(convLayer, 0)
             expect(activations1).to.deep.equal([4,5,6,7,8,9,1,2,3])
             expect(activations2).to.deep.equal([1,2,3,4,5,6,7,8,9])
+        })
+
+        it("Returns all the activations from a PoolLayer correctly", () => {
+            const layer = new PoolLayer()
+            layer.activations = [[
+                [2,5,8,11,14,17],
+                [3,6,9,12,15,18],
+                [3,6,9,12,15,18],
+                [2,5,8,11,14,17],
+                [3,6,9,12,15,18],
+                [3,6,9,12,15,18]
+            ]]
+
+            expect(NetUtil.getActivations(layer)).to.deep.equal([2,5,8,11,14,17,3,6,9,12,15,18,3,6,9,12,15,18,2,5,8,11,14,17,3,6,9,12,15,18,3,6,9,12,15,18])
+        })
+
+        it("Returns just one activation map from a PoolLayer when called with a map index parameter", () => {
+            const layer = new PoolLayer()
+            layer.activations = [
+                [[1,2],[3,4]],
+                [[5,6],[7,8]]
+            ]
+
+            expect(NetUtil.getActivations(layer, 0)).to.deep.equal([1,2,3,4])
+            expect(NetUtil.getActivations(layer, 1)).to.deep.equal([5,6,7,8])
         })
     })
 
@@ -4335,7 +5110,7 @@ describe("NetUtil", () => {
         it("Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 1)", () => {
             nextLayerA.filters = [nlFilterA]
             layer.nextLayer = nextLayerA
-            NetUtil.buildConvErrorMap(layer, filter, 0)
+            NetUtil.buildConvErrorMap(nextLayerA, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedA)
         })
 
@@ -4343,28 +5118,28 @@ describe("NetUtil", () => {
             filter.errorMap = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
             nextLayerA.filters = [nlFilterA]
             layer.nextLayer = nextLayerA
-            NetUtil.buildConvErrorMap(layer, filter, 0)
+            NetUtil.buildConvErrorMap(nextLayerA, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedA)
         })
 
         it("Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 2)", () => {
             nextLayerA.filters = [nlFilterB]
             layer.nextLayer = nextLayerA
-            NetUtil.buildConvErrorMap(layer, filter, 0)
+            NetUtil.buildConvErrorMap(nextLayerA, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedB)
         })
 
         it("Calculates an error map correctly, using two channels, from 2 filters in the next layer", () => {
             nextLayerB.filters = [nlFilterA, nlFilterB]
             layer.nextLayer = nextLayerB
-            NetUtil.buildConvErrorMap(layer, filter, 0)
+            NetUtil.buildConvErrorMap(nextLayerB, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedC)
         })
 
         it("Calculates an error map correctly, using 1 channel where the stride is 1, not 2", () => {
             nextLayerC.filters = [nlFilterC]
             layer.nextLayer = nextLayerC
-            NetUtil.buildConvErrorMap(layer, filter, 0)
+            NetUtil.buildConvErrorMap(nextLayerC, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedD)
         })
     })

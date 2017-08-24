@@ -19,8 +19,21 @@ class FCLayer {
     init () {
         this.neurons.forEach(neuron => {
 
-            const weightsCount = this.prevLayer instanceof FCLayer ? this.prevLayer.size
-                                   : this.prevLayer.filters.length * this.prevLayer.outMapSize**2
+            let weightsCount
+
+            switch (this.prevLayer.constructor.name) {
+                case "FCLayer":
+                    weightsCount = this.prevLayer.size
+                    break
+
+                case "ConvLayer":
+                    weightsCount = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
+                    break
+
+                case "PoolLayer":
+                    weightsCount = this.prevLayer.activations.length * this.prevLayer.outMapSize**2
+                    break
+            }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
             neuron.bias = Math.random()*0.2-0.1

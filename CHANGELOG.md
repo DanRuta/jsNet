@@ -1,8 +1,9 @@
-# 2.0.0 - Conv Layers
+# 2.0.0 - Convolutional Networks
 ---
 #### Network
 - Restructured to allow multiple layer types
 - Added conv config for configuring filterSize, zeroPadding, stride ConvLayer default values
+- Added pool config for configuring size and stride PoolLayer default values
 - Added (input) channels config, used by ConvLayers
 - Re-wrote the JSON import/export. Check README for details on backward compatibility
 - Removed ability to create a network by just giving layer types in the list
@@ -10,12 +11,13 @@
 - Renamed adaptiveLR to updateFn
 
 #### ConvLayer
-- Added ConvLayer.js 🎉
-- Added filterCount, filterSize, zeroPadding and stride configs
-- Added activation config
+- Added ConvLayer.js 🎉 with activation, filterCount, filterSize, zeroPadding and stride configs
 
 #### Filter
 - Added Filter.js
+
+#### PoolLayer
+- Added PoolLayer, with stride and activation configs
 
 #### NetUtil
 - Added NetUtil.js
@@ -97,7 +99,7 @@
 - Added sech to NetMath
 - Added elu activation function
 
-# v1.1.0 - Adaptive learning rates
+# v1.1.0 - Update Functions
 ---
 #### Network
 - Added rho as a network configuration

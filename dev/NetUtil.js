@@ -126,40 +126,38 @@ class NetUtil {
         return outputMap
     }
 
-    static buildConvErrorMap (layer, filter, filterI) {
-
-        // Clear the existing error values, first
-        for (let row=0; row<filter.errorMap.length; row++) {
-            for (let col=0; col<filter.errorMap[0].length; col++) {
-                filter.errorMap[row][col] = 0
-            }
-        }
+    static buildConvErrorMap (nextLayer, errorMap, filterI) {
 
         // Cache / convenience
-        const zeroPadding = layer.nextLayer.zeroPadding
+        const zeroPadding = nextLayer.zeroPadding
+        const paddedLength = errorMap.length + zeroPadding*2
+        const fSSpread = Math.floor(nextLayer.filterSize / 2)
 
-        const fSSpread = Math.floor(layer.nextLayer.filterSize / 2)
-        const paddedLength = filter.errorMap.length + zeroPadding*2
+        // Zero pad and clear the error map, to allow easy convoling
+        const paddedRow = []
 
-        // Zero pad the error map, to allow easy convoling
-        // TODO, may be more performant to just use if statements when updating, instead
-        filter.errorMap = NetUtil.addZeroPadding(filter.errorMap, zeroPadding)
+        for (let val=0; val<paddedLength; val++) {
+            paddedRow.push(0)
+        }
+
+        for (let row=0; row<paddedLength; row++) {
+            errorMap[row] = paddedRow.slice(0)
+        }
 
         // For each channel in filter in the next layer which corresponds to this filter
-        for (let nlFilterI=0; nlFilterI<layer.nextLayer.size; nlFilterI++) {
+        for (let nlFilterI=0; nlFilterI<nextLayer.size; nlFilterI++) {
 
-            const weights = layer.nextLayer.filters[nlFilterI].weights[filterI]
-            const errorMap = layer.nextLayer.filters[nlFilterI].errorMap
+            const weights = nextLayer.filters[nlFilterI].weights[filterI]
+            const errMap = nextLayer.filters[nlFilterI].errorMap
 
             // Unconvolve their error map using the weights
-            for (let inputY=fSSpread; inputY<paddedLength - fSSpread; inputY+=layer.nextLayer.stride) {
-                for (let inputX=fSSpread; inputX<paddedLength - fSSpread; inputX+=layer.nextLayer.stride) {
+            for (let inputY=fSSpread; inputY<paddedLength - fSSpread; inputY+=nextLayer.stride) {
+                for (let inputX=fSSpread; inputX<paddedLength - fSSpread; inputX+=nextLayer.stride) {
 
-                    for (let weightsY=0; weightsY<layer.nextLayer.filterSize; weightsY++) {
-                        for (let weightsX=0; weightsX<layer.nextLayer.filterSize; weightsX++) {
-
-                            filter.errorMap[inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] += weights[weightsY][weightsX]
-                                * errorMap[(inputY-fSSpread)/layer.nextLayer.stride][(inputX-fSSpread)/layer.nextLayer.stride]
+                    for (let weightsY=0; weightsY<nextLayer.filterSize; weightsY++) {
+                        for (let weightsX=0; weightsX<nextLayer.filterSize; weightsX++) {
+                            errorMap[inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] += weights[weightsY][weightsX]
+                                * errMap[(inputY-fSSpread)/nextLayer.stride][(inputX-fSSpread)/nextLayer.stride]
                         }
                     }
                 }
@@ -167,11 +165,12 @@ class NetUtil {
         }
 
         // Take out the zero padding. Rows:
-        filter.errorMap = filter.errorMap.splice(zeroPadding, filter.errorMap.length - zeroPadding*2)
+        errorMap.splice(0, zeroPadding)
+        errorMap.splice(errorMap.length-zeroPadding, errorMap.length)
 
         // Columns:
-        for (let emXI=0; emXI<filter.errorMap.length; emXI++) {
-            filter.errorMap[emXI] = filter.errorMap[emXI].splice(zeroPadding, filter.errorMap[emXI].length - zeroPadding*2)
+        for (let emXI=0; emXI<errorMap.length; emXI++) {
+            errorMap[emXI] = errorMap[emXI].splice(zeroPadding, errorMap[emXI].length - zeroPadding*2)
         }
     }
 
@@ -241,19 +240,19 @@ class NetUtil {
         }
     }
 
-
     static getActivations (layer, mapStartI, mapSize){
 
-        if (arguments.length==1) {
+        const returnArr = []
 
-            const returnArr = []
+        if (arguments.length==1) {
 
             if (layer instanceof FCLayer) {
 
                 for (let ni=0; ni<layer.neurons.length; ni++) {
                     returnArr.push(layer.neurons[ni].activation)
                 }
-            } else {
+
+            } else if (layer instanceof ConvLayer) {
 
                 for (let fi=0; fi<layer.filters.length; fi++) {
                     for (let rowI=0; rowI<layer.filters[fi].activationMap.length; rowI++) {
@@ -262,28 +261,45 @@ class NetUtil {
                         }
                     }
                 }
+
+            } else {
+
+                for (let channel=0; channel<layer.activations.length; channel++) {
+                    for (let row=0; row<layer.activations[0].length; row++) {
+                        for (let col=0; col<layer.activations[0].length; col++) {
+                            returnArr.push(layer.activations[channel][row][col])
+                        }
+                    }
+                }
             }
 
-            return returnArr
         } else {
-
-            const returnArr = []
 
             if (layer instanceof FCLayer) {
 
                 for (let i=mapStartI*mapSize; i<(mapStartI+1)*mapSize; i++) {
                     returnArr.push(layer.neurons[i].activation)
                 }
-            } else {
+
+            } else if (layer instanceof ConvLayer) {
 
                 for (let row=0; row<layer.filters[mapStartI].activationMap.length; row++) {
                     for (let col=0; col<layer.filters[mapStartI].activationMap[row].length; col++) {
                         returnArr.push(layer.filters[mapStartI].activationMap[row][col])
                     }
                 }
+
+            } else {
+
+                for (let row=0; row<layer.activations[mapStartI].length; row++) {
+                    for (let col=0; col<layer.activations[mapStartI].length; col++) {
+                        returnArr.push(layer.activations[mapStartI][row][col])
+                    }
+                }
             }
-            return returnArr
         }
+
+        return returnArr
     }
 }
 

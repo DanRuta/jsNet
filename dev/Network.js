@@ -3,10 +3,12 @@
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []
+        this.conv = {}
+        this.pool = {}
         this.epochs = 0
         this.iterations = 0
         this.dropout = dropout==false ? 1 : dropout
@@ -34,9 +36,14 @@ class Network {
         if (channels)       this.channels = channels
 
         if (conv) {
-            if (conv.filterSize!=undefined)     this.filterSize = conv.filterSize
-            if (conv.zeroPadding!=undefined)    this.zeroPadding = conv.zeroPadding
-            if (conv.stride!=undefined)         this.stride = conv.stride
+            if (conv.filterSize!=undefined)     this.conv.filterSize = conv.filterSize
+            if (conv.zeroPadding!=undefined)    this.conv.zeroPadding = conv.zeroPadding
+            if (conv.stride!=undefined)         this.conv.stride = conv.stride
+        }
+
+        if (pool) {
+            if (pool.size)      this.pool.size = pool.size
+            if (pool.stride)    this.pool.stride = pool.stride
         }
 
         // Activation function / Learning Rate
@@ -112,7 +119,7 @@ class Network {
             this.weightsInitFn = NetMath[this.weightsConfig.distribution]
         }
 
-        // Status
+        // State
         if (layers.length) {
 
             switch (true) {
@@ -123,7 +130,7 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(item => item instanceof FCLayer || item instanceof ConvLayer):
+                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()
@@ -145,7 +152,7 @@ class Network {
             case "not-defined":
                 this.layers[0] = new FCLayer(input)
                 this.layers[1] = new FCLayer(Math.ceil(input/expected > 5 ? expected + (Math.abs(input-expected))/4
-                                                                        : input + expected))
+                                                                          : input + expected))
                 this.layers[2] = new FCLayer(Math.ceil(expected))
                 break
         }
@@ -157,7 +164,7 @@ class Network {
     joinLayer (layer, layerIndex) {
 
         layer.net = this
-        layer.activation = layer.activation || this.activation
+        layer.activation = layer.activation==undefined ? this.activation : layer.activation
 
         layer.weightsConfig = {}
         Object.assign(layer.weightsConfig, this.weightsConfig)
@@ -214,15 +221,15 @@ class Network {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
 
-        if (shuffle) {
-            NetUtil.shuffle(dataSet)
-        }
-
-        if (log) {
-            console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
-        }
-
         return new Promise((resolve, reject) => {
+
+            if (shuffle) {
+                NetUtil.shuffle(dataSet)
+            }
+
+            if (log) {
+                console.log(`Training started. Epochs: ${epochs} Batch Size: ${this.miniBatchSize}`)
+            }
 
             if (dataSet === undefined || dataSet === null) {
                 return void reject("No data provided")

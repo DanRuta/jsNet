@@ -3,10 +3,6 @@
 class NetMath {
 
     // Activation functions
-    static noactivation (value, prime) {
-        return prime ? 1 : value
-    }
-
     static sigmoid (value, prime) {
         const val = 1/(1+Math.exp(-value))
         return prime ? val*(1-val)
@@ -25,8 +21,8 @@ class NetMath {
     }
 
     static lrelu (value, prime) {
-        return prime ? value > 0 ? 1 : this.lreluSlope
-                     : Math.max(this.lreluSlope*Math.abs(value), value)
+        return prime ? value > 0 ? 1 : (this.lreluSlope || -0.0005)
+                     : Math.max((this.lreluSlope || -0.0005)*Math.abs(value), value)
     }
 
     static rrelu (value, prime, neuron) {
@@ -168,6 +164,37 @@ class NetMath {
 
     static lecununiform (size, {fanIn}) {
         return NetMath.uniform(size, {limit: Math.sqrt(3/fanIn)})
+    }
+
+    // Pool
+    static maxPool (layer, channel) {
+
+        const activations = NetUtil.getActivations(layer.prevLayer, channel, layer.inMapValuesCount)
+
+        for (let row=0; row<layer.outMapSize; row++) {
+            for (let col=0; col<layer.outMapSize; col++) {
+
+                const rowStart = row * layer.stride
+                const colStart = col * layer.stride
+
+                // The first value
+                let activation = activations[rowStart*layer.prevLayerOutWidth + colStart]
+
+                for (let filterRow=0; filterRow<layer.size; filterRow++) {
+                    for (let filterCol=0; filterCol<layer.size; filterCol++) {
+
+                        const value = activations[ ((rowStart+filterRow) * layer.prevLayerOutWidth) + (colStart+filterCol) ]
+
+                        if (value > activation) {
+                            activation = value
+                            layer.indeces[channel][row][col] = [filterRow, filterCol]
+                        }
+                    }
+                }
+
+                layer.activations[channel][row][col] = activation
+            }
+        }
     }
 
     // Other

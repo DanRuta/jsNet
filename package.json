@@ -1,15 +1,36 @@
 {
-  "name": "network-js",
-  "version": "1.0.0",
-  "description": "Simple, promises based neural network library",
+  "name": "jsnet",
+  "version": "2.0.0",
+  "description": "Javascript based deep learning framework for basic and convolutional neural networks.",
   "scripts": {
     "test": "nyc mocha",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanRuta/jsNet.git"
+  },
+  "keywords": [
+    "convolutional",
+    "deep",
+    "learning",
+    "neural",
+    "network",
+    "javascript"
+  ],
+  "main": "dist/jsNet.min.js",
   "author": "Dan Ruta",
   "license": "MIT",
-  "dependencies": {
+  "directories": {},
+  "bugs": {
+    "url": "https://github.com/DanRuta/jsNet/issues"
+  },
+  "engines": {
+    "node": ">= 7.5.0"
+  },
+  "homepage": "https://github.com/DanRuta/jsNet#readme",
+  "devDependencies": {
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-stage-3": "^6.5.0",
     "babelify": "^7.3.0",

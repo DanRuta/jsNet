@@ -1,6 +1,7 @@
 # 2.0.0 - Convolutional Networks
 ---
 #### Network
+- New name: jsNet
 - Restructured to allow multiple layer types
 - Added conv config for configuring filterSize, zeroPadding, stride ConvLayer default values
 - Added pool config for configuring size and stride PoolLayer default values

@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised);
 
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/Network.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNet.concat.js")
 
 describe("Loading", () => {
 

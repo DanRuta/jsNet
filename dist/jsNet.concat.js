@@ -1661,4 +1661,4 @@ class PoolLayer {
 }
 
 typeof window=="undefined" && (exports.PoolLayer = PoolLayer)
-//# sourceMappingURL=Network.concat.js.map
+//# sourceMappingURL=jsNet.concat.js.map

@@ -1,7 +1,7 @@
-# Network.js
-[![Build Status](https://travis-ci.org/DanRuta/Network.js.svg?branch=master)](https://travis-ci.org/DanRuta/Network.js)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/Network.js/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/Network.js?branch=master)
+# jsNet
+[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master)
 
-Network.js is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser, though, for larger convolutional networks, I'd recommend training in node.
+jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
@@ -9,9 +9,9 @@ Network.js is a javascript based deep learning framework for basic and convoluti
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
 
 ##  Usage
-When using in the browser, you just include the ```Network.min.js``` file. In nodejs, you just require it like so:
+When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just require it like so:
 ```javascript
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("./Network.min.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("./jsNet.min.js")
 // Get just what you need.
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
@@ -49,7 +49,9 @@ const net = new Network({
 ```
 
 The usual arrangement of layers would folow something like this:
+
 ```FCLayer -> [ConvLayer]* -> [[ConvLayer]* || PoolLayer]+ -> FCLayer+```
+
 In words, an FCLayer, maybe followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
 The first FCLayer needs to have as many neurons in it as there are data points per iteration, and the last FCLayer needs to have as many neurons as there are classes for your data set.
 

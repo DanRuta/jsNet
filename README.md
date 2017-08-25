@@ -237,9 +237,11 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 ### Activation Function
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
+| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid\* |
 | lreluSlope | Slope for lrelu, when used | Any number | 0.99 |
 | eluAlpha | Alpha value for elu, when used | Any number | 1 |
+
+\* When constructing convolutional networks, one of the rectified linear unit activation functions may be more suitable.
 
 ##### Examples
 ```javascript

@@ -745,11 +745,32 @@ class NetUtil {
     }
 
     static addZeroPadding (map, zP) {
-        const extraColumns = [...new Array(zP)].map(v => 0)
-        map = map.map(row => [...extraColumns, ...row, ...extraColumns])
 
-        const extraRows = [...new Array(zP)].map(r => [...new Array(map.length+zP*2)].map(x => 0))
-        return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
+        const data = []
+
+        for (let row=0; row<map.length; row++) {
+            data.push(map[row].slice(0))
+        }
+
+        const extraRows = []
+
+        for (let i=0; i<data.length+2*zP; i++) {
+            extraRows.push(0)
+        }
+
+        for (let col=0; col<data.length; col++) {
+            for (let i=0; i<zP; i++) {
+                data[col].splice(0, 0, 0)
+                data[col].splice(data.length+1, data.length, 0)
+            }
+        }
+
+        for (let i=0; i<zP; i++) {
+            data.splice(0, 0, extraRows.slice(0))
+            data.splice(data.length, data.length-1, extraRows.slice(0))
+        }
+
+        return data
     }
 
     static arrayToMap (arr, size) {

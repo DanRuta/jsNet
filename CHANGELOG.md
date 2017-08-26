@@ -1,3 +1,8 @@
+# Upcoming
+---
+#### NetUtil
+- Optimised addZeroPadding() - 68% faster
+
 # 2.0.0 - Convolutional Networks
 ---
 #### Network

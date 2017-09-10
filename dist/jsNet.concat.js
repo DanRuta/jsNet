@@ -611,8 +611,10 @@ class NetMath {
     }
 
     static gaussian (size, {mean, stdDeviation}) {
-        return [...new Array(size)].map(() => {
-            // Polar Box Muller
+        const values = []
+
+        // Polar Box Muller
+        for (let i=0; i<size; i++) {
             let x1, x2, r, y
 
             do {
@@ -621,8 +623,10 @@ class NetMath {
                 r = x1**2 + x2**2
             } while (r >= 1 || !r)
 
-            return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
-        })
+            values.push(mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation)
+        }
+
+        return values
     }
 
     static xaviernormal (size, {fanIn, fanOut}) {

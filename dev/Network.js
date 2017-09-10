@@ -130,7 +130,7 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
+                case layers.every(layer => layer instanceof FCLayer || layer instanceof ConvLayer || layer instanceof PoolLayer):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()

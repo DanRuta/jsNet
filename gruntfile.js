@@ -32,6 +32,7 @@ module.exports = function(grunt){
                         url: "dist/jsNet.min.js.map",
                         includeSources: true,
                     },
+                    mangle: false,
                     sourceMapIn: "dist/jsNet.min.js.map"
                 },
                 files: {

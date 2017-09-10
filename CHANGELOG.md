@@ -5,6 +5,9 @@
 - Optimised uniform() - 688% faster
 - Optimised gaussian() - 450% faster
 
+#### Bug Fixes
+- Fixed bug caused by minification and disabled name mangling
+
 # 2.0.0 - Convolutional Networks
 ---
 #### Network

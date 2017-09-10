@@ -34,16 +34,16 @@ class ConvLayer {
         this.filterSize = this.filterSize || this.net.conv.filterSize || 3
         this.stride = this.stride || this.net.conv.stride || 1
 
-        switch (layer.constructor.name) {
-            case "FCLayer":
+        switch (true) {
+            case layer instanceof FCLayer:
                 this.channels = this.net.channels ||1
                 break
 
-            case "ConvLayer":
+            case layer instanceof ConvLayer:
                 this.channels = layer.size
                 break
 
-            case "PoolLayer":
+            case layer instanceof PoolLayer:
                 this.channels = layer.activations.length
                 break
         }
@@ -1171,7 +1171,7 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
+                case layers.every(layer => layer instanceof FCLayer || layer instanceof ConvLayer || layer instanceof PoolLayer):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()

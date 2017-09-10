@@ -2,6 +2,7 @@
 ---
 #### NetUtil
 - Optimised addZeroPadding() - 68% faster
+- Optimised uniform() - 688% faster
 
 # 2.0.0 - Convolutional Networks
 ---

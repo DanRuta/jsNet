@@ -601,7 +601,13 @@ class NetMath {
 
     // Weights init
     static uniform (size, {limit}) {
-        return [...new Array(size)].map(v => Math.random()*2*limit-limit)
+        const values = []
+
+        for (let i=0; i<size; i++) {
+            values.push(Math.random()*2*limit-limit)
+        }
+
+        return values
     }
 
     static gaussian (size, {mean, stdDeviation}) {

@@ -16,6 +16,9 @@ class NetUtil {
                 if (value < 1000) {
                     formatted.push(`${date.getMilliseconds()}ms`)
 
+                } else if (value < 60000) {
+                    formatted.push(`${date.getSeconds()}.${date.getMilliseconds()}s`)
+
                 } else {
 
                     if (value >= 3600000) formatted.push(`${date.getHours()}h`)

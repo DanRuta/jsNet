@@ -92,23 +92,30 @@ class FCLayer {
     }
 
     resetDeltaWeights () {
-        this.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
+        for (let n=0; n<this.neurons.length; n++) {
+            for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
+                this.neurons[n].deltaWeights[dwi] = 0
+            }
+        }
     }
 
     applyDeltaWeights () {
-        this.neurons.forEach(neuron => {
-            neuron.deltaWeights.forEach((dw, dwi) => {
+        for (let n=0; n<this.neurons.length; n++) {
+
+            const neuron = this.neurons[n]
+
+            for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
                 if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
                 if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], dw, neuron, dwi)()
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
-            })
+            }
 
             neuron.bias = this.net.weightUpdateFn.bind(this.net, neuron.bias, neuron.deltaBias, neuron)()
-        })
+        }
     }
 
     toJSON () {

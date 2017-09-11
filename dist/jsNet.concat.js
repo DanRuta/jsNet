@@ -687,8 +687,19 @@ class NetMath {
 
     // Other
     static softmax (values) {
-        const total = values.reduce((prev, curr) => prev+curr, 0)
-        return values.map(value => value/total)
+        let total = 0
+
+        for (let i=0; i<values.length; i++) {
+            total += values[i]
+        }
+
+        for (let i=0; i<values.length; i++) {
+            if (total) {
+                values[i] /= total
+            }
+        }
+
+        return values
     }
 
     static sech (value) {
@@ -743,8 +754,8 @@ class NetUtil {
                 } else {
 
                     if (value >= 3600000) formatted.push(`${date.getHours()}h`)
-                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
 
+                    formatted.push(`${date.getMinutes()}m`)
                     formatted.push(`${date.getSeconds()}s`)
                 }
 

@@ -4118,6 +4118,10 @@ describe("Netmath", () => {
         it("softmax([23, 54, 167, 3]) == [0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251]", () => {
             expect(NetMath.softmax([23, 54, 167, 3])).to.deep.equal([0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251])
         })
+
+        it("softmax([0]) == [0]", () => {
+            expect(NetMath.softmax([0])).to.deep.equal([0])
+        })
     })
 
     describe("Mean Squared Error", () => {
@@ -4719,7 +4723,7 @@ describe("NetUtil", () => {
 
         it("Formats given milliseconds to seconds only when under a minute", () => {
             const testMils = 10000
-            expect(NetUtil.format(testMils, "time")).to.equal("10s")
+            expect(NetUtil.format(testMils, "time")).to.equal("10.0s")
         })
 
         it("Formats given milliseconds to minutes and seconds only when under an hour", () => {

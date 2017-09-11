@@ -22,8 +22,8 @@ class NetUtil {
                 } else {
 
                     if (value >= 3600000) formatted.push(`${date.getHours()}h`)
-                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
 
+                    formatted.push(`${date.getMinutes()}m`)
                     formatted.push(`${date.getSeconds()}s`)
                 }
 

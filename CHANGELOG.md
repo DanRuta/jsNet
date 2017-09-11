@@ -1,12 +1,15 @@
 # Upcoming
 ---
 #### NetUtil
-- Optimised addZeroPadding() - 68% faster
-- Optimised uniform() - 588% faster
-- Optimised gaussian() - 450% faster
+- Optimised addZeroPadding() - ~68% faster
+- Optimised uniform() - ~588% faster
+- Optimised gaussian() - ~450% faster
 
 #### FCLayer
 - Optimised resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
+
+#### NetMath
+- Optimised softmax() - ~924% faster
 
 #### Bug Fixes
 - Fixed bug caused by minification and disabled name mangling

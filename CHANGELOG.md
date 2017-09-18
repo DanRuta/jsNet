@@ -11,6 +11,9 @@
 #### NetMath
 - Optimised softmax() - ~924% faster
 
+#### ConvLayer
+- Restricted filters' dropout maps only to when dropout is configured - less memory usage
+
 #### Bug Fixes
 - Fixed bug caused by minification and disabled name mangling
 

@@ -1611,9 +1611,12 @@ describe("FCLayer", () => {
             layer3.net = {miniBatchSize: 1}
             layer3.backward([1,2,3,4])
             expect(layer3.neurons[0].deltaWeights).to.deep.equal([0.25, 0.25, 0.25])
+            expect(layer3.neurons[1].deltaWeights).to.deep.equal([0.75, 0.75, 0.75])
+            expect(layer3.neurons[2].deltaWeights).to.deep.equal([1.25, 1.25, 1.25])
+            expect(layer3.neurons[3].deltaWeights).to.deep.equal([1.75, 1.75, 1.75])
         })
 
-        it("Increments each neuron's bias with the its error", () => {
+        it("Sets each neuron's deltaBias to the its error", () => {
             layer3.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.backward([1,2,3,4])
             expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([0.5, 1.5, 2.5, 3.5])
@@ -2933,6 +2936,13 @@ describe("ConvLayer", () => {
             const expected = [[false,false,false], [false,false,false], [false,false,false]]
             expect(layer2.filters[0].dropoutMap).to.deep.equal(expected)
         })
+
+        it("Does not init the dropout map if dropout is not configured", () => {
+            layer2.outMapSize = 3
+            layer2.net.dropout = 1
+            layer2.init()
+            expect(layer2.filters[0].dropoutMap).to.be.undefined
+        })
     })
 
     describe("forward", () => {
@@ -2962,6 +2972,7 @@ describe("ConvLayer", () => {
         it("Sets the filter.activationMap values to zero if when dropping out", () => {
             layer.net = {dropout: 0}
             layer.state = "training"
+            layer.filters.forEach(filter => filter.dropoutMap = filter.activationMap.map(row => row.map(v => false)))
             layer.forward()
             const zeroedOutMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
             expect(layer.filters[0].activationMap).to.deep.equal(zeroedOutMap)
@@ -2972,6 +2983,7 @@ describe("ConvLayer", () => {
         it("Doesn't do any dropout if the layer state is not training", () => {
             layer.net = {dropout: 0}
             layer.state = "dfkgjdhflgjk"
+            layer.filters.forEach(filter => filter.dropoutMap = filter.activationMap.map(row => row.map(v => false)))
             layer.forward()
             expect(layer.filters[0].dropoutMap).to.not.include(true)
             expect(layer.filters[1].dropoutMap).to.not.include(true)
@@ -2981,6 +2993,7 @@ describe("ConvLayer", () => {
         it("Doesn't do any dropout if the dropout is set to 1", () => {
             layer.net = {dropout: 1}
             layer.state = "training"
+            layer.filters.forEach(filter => filter.dropoutMap = filter.activationMap.map(row => row.map(v => false)))
             layer.forward()
             expect(layer.filters[0].dropoutMap).to.not.include(true)
             expect(layer.filters[1].dropoutMap).to.not.include(true)
@@ -4043,7 +4056,7 @@ describe("Netmath", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, 2, true)()).to.equal(1)
         })
 
-        it("lrelu(-2, true)==0", () => {
+        it("lrelu(-2, true)==-0.0005", () => {
             expect(NetMath.lrelu.bind({lreluSlope:-0.0005}, -2, true)()).to.equal(-0.0005)
         })
 
@@ -4090,19 +4103,19 @@ describe("Netmath", () => {
     describe("elu", () => {
 
         it("elu(2)==2", () => {
-            expect(NetMath.elu.bind(null, 2, false, {eluAlpha: 1})()).to.equal(2)
+            expect(NetMath.elu(2, false, {eluAlpha: 1})).to.equal(2)
         })
 
         it("elu(-0.25)==-0.22119921692859512", () => {
-            expect(NetMath.elu.bind(null, -0.25, false, {eluAlpha: 1})()).to.equal(-0.22119921692859512)
+            expect(NetMath.elu(-0.25, false, {eluAlpha: 1})).to.equal(-0.22119921692859512)
         })
 
         it("elu(2, true)==1", () => {
-            expect(NetMath.elu.bind(null, 2, true, {eluAlpha: 1})()).to.equal(1)
+            expect(NetMath.elu(2, true, {eluAlpha: 1})).to.equal(1)
         })
 
         it("elu(-0.5, true)==0.6065306597126334", () => {
-            expect(NetMath.elu.bind(null, -0.5, true, {eluAlpha: 1})()).to.equal(0.6065306597126334)
+            expect(NetMath.elu(-0.5, true, {eluAlpha: 1})).to.equal(0.6065306597126334)
         })
     })
 
@@ -4117,6 +4130,10 @@ describe("Netmath", () => {
 
         it("softmax([23, 54, 167, 3]) == [0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251]", () => {
             expect(NetMath.softmax([23, 54, 167, 3])).to.deep.equal([0.0931174089068826, 0.21862348178137653, 0.6761133603238867, 0.012145748987854251])
+        })
+
+        it("softmax([0]) == [0]", () => {
+            expect(NetMath.softmax([0])).to.deep.equal([0])
         })
     })
 
@@ -4719,7 +4736,7 @@ describe("NetUtil", () => {
 
         it("Formats given milliseconds to seconds only when under a minute", () => {
             const testMils = 10000
-            expect(NetUtil.format(testMils, "time")).to.equal("10s")
+            expect(NetUtil.format(testMils, "time")).to.equal("10.0s")
         })
 
         it("Formats given milliseconds to minutes and seconds only when under an hour", () => {

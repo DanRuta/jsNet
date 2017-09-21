@@ -34,16 +34,16 @@ class ConvLayer {
         this.filterSize = this.filterSize || this.net.conv.filterSize || 3
         this.stride = this.stride || this.net.conv.stride || 1
 
-        switch (layer.constructor.name) {
-            case "FCLayer":
+        switch (true) {
+            case layer instanceof FCLayer:
                 this.channels = this.net.channels ||1
                 break
 
-            case "ConvLayer":
+            case layer instanceof ConvLayer:
                 this.channels = layer.size
                 break
 
-            case "PoolLayer":
+            case layer instanceof PoolLayer:
                 this.channels = layer.activations.length
                 break
         }
@@ -76,8 +76,11 @@ class ConvLayer {
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
             filter.bias = Math.random()*0.2-0.1
+
+            if (this.net.dropout != 1) {
+                filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
+            }
 
             filter.init({
                 updateFn: this.net.updateFn,
@@ -106,7 +109,7 @@ class ConvLayer {
 
             for (let sumY=0; sumY<filter.sumMap.length; sumY++) {
                 for (let sumX=0; sumX<filter.sumMap.length; sumX++) {
-                    if (this.state=="training" && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
+                    if (this.state=="training" && filter.dropoutMap && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
                         filter.activationMap[sumY][sumX] = 0
                     } else if (this.activation) {
                         filter.activationMap[sumY][sumX] = this.activation(filter.sumMap[sumY][sumX], false, filter) / (this.net.dropout||1)
@@ -170,7 +173,7 @@ class ConvLayer {
             for (let row=0; row<filter.errorMap.length; row++) {
                 for (let col=0; col<filter.errorMap[0].length; col++) {
 
-                    if (filter.dropoutMap[row][col]) {
+                    if (filter.dropoutMap && filter.dropoutMap[row][col]) {
                         filter.errorMap[row][col] = 0
                     } else if (this.activation){
                         filter.errorMap[row][col] *= this.activation(filter.sumMap[row][col], true, filter)
@@ -196,9 +199,11 @@ class ConvLayer {
                 }
             }
 
-            for (let row=0; row<filter.dropoutMap.length; row++) {
-                for (let col=0; col<filter.dropoutMap[0].length; col++) {
-                    filter.dropoutMap[row][col] = false
+            if (filter.dropoutMap) {
+                for (let row=0; row<filter.dropoutMap.length; row++) {
+                    for (let col=0; col<filter.dropoutMap[0].length; col++) {
+                        filter.dropoutMap[row][col] = false
+                    }
                 }
             }
         }

@@ -130,12 +130,20 @@ class NetMath {
 
     // Weights init
     static uniform (size, {limit}) {
-        return [...new Array(size)].map(v => Math.random()*2*limit-limit)
+        const values = []
+
+        for (let i=0; i<size; i++) {
+            values.push(Math.random()*2*limit-limit)
+        }
+
+        return values
     }
 
     static gaussian (size, {mean, stdDeviation}) {
-        return [...new Array(size)].map(() => {
-            // Polar Box Muller
+        const values = []
+
+        // Polar Box Muller
+        for (let i=0; i<size; i++) {
             let x1, x2, r, y
 
             do {
@@ -144,8 +152,10 @@ class NetMath {
                 r = x1**2 + x2**2
             } while (r >= 1 || !r)
 
-            return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
-        })
+            values.push(mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation)
+        }
+
+        return values
     }
 
     static xaviernormal (size, {fanIn, fanOut}) {
@@ -199,8 +209,19 @@ class NetMath {
 
     // Other
     static softmax (values) {
-        const total = values.reduce((prev, curr) => prev+curr, 0)
-        return values.map(value => value/total)
+        let total = 0
+
+        for (let i=0; i<values.length; i++) {
+            total += values[i]
+        }
+
+        for (let i=0; i<values.length; i++) {
+            if (total) {
+                values[i] /= total
+            }
+        }
+
+        return values
     }
 
     static sech (value) {

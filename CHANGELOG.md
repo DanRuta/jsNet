@@ -1,3 +1,22 @@
+# 2.1.0 - Optimizations
+---
+#### NetUtil
+- Optimised addZeroPadding() - ~68% faster
+- Optimised uniform() - ~588% faster
+- Optimised gaussian() - ~450% faster
+
+#### FCLayer
+- Optimised resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
+
+#### NetMath
+- Optimised softmax() - ~924% faster
+
+#### ConvLayer
+- Restricted filters' dropout maps only to when dropout is configured - less memory usage
+
+#### Bug Fixes
+- Fixed bug caused by minification and disabled name mangling
+
 # 2.0.0 - Convolutional Networks
 ---
 #### Network

@@ -34,16 +34,16 @@ class ConvLayer {
         this.filterSize = this.filterSize || this.net.conv.filterSize || 3
         this.stride = this.stride || this.net.conv.stride || 1
 
-        switch (layer.constructor.name) {
-            case "FCLayer":
+        switch (true) {
+            case layer instanceof FCLayer:
                 this.channels = this.net.channels ||1
                 break
 
-            case "ConvLayer":
+            case layer instanceof ConvLayer:
                 this.channels = layer.size
                 break
 
-            case "PoolLayer":
+            case layer instanceof PoolLayer:
                 this.channels = layer.activations.length
                 break
         }
@@ -76,8 +76,11 @@ class ConvLayer {
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
             filter.bias = Math.random()*0.2-0.1
+
+            if (this.net.dropout != 1) {
+                filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
+            }
 
             filter.init({
                 updateFn: this.net.updateFn,
@@ -106,7 +109,7 @@ class ConvLayer {
 
             for (let sumY=0; sumY<filter.sumMap.length; sumY++) {
                 for (let sumX=0; sumX<filter.sumMap.length; sumX++) {
-                    if (this.state=="training" && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
+                    if (this.state=="training" && filter.dropoutMap && (filter.dropoutMap[sumY][sumX] = Math.random() > this.net.dropout)) {
                         filter.activationMap[sumY][sumX] = 0
                     } else if (this.activation) {
                         filter.activationMap[sumY][sumX] = this.activation(filter.sumMap[sumY][sumX], false, filter) / (this.net.dropout||1)
@@ -170,7 +173,7 @@ class ConvLayer {
             for (let row=0; row<filter.errorMap.length; row++) {
                 for (let col=0; col<filter.errorMap[0].length; col++) {
 
-                    if (filter.dropoutMap[row][col]) {
+                    if (filter.dropoutMap && filter.dropoutMap[row][col]) {
                         filter.errorMap[row][col] = 0
                     } else if (this.activation){
                         filter.errorMap[row][col] *= this.activation(filter.sumMap[row][col], true, filter)
@@ -196,9 +199,11 @@ class ConvLayer {
                 }
             }
 
-            for (let row=0; row<filter.dropoutMap.length; row++) {
-                for (let col=0; col<filter.dropoutMap[0].length; col++) {
-                    filter.dropoutMap[row][col] = false
+            if (filter.dropoutMap) {
+                for (let row=0; row<filter.dropoutMap.length; row++) {
+                    for (let col=0; col<filter.dropoutMap[0].length; col++) {
+                        filter.dropoutMap[row][col] = false
+                    }
                 }
             }
         }
@@ -351,23 +356,30 @@ class FCLayer {
     }
 
     resetDeltaWeights () {
-        this.neurons.forEach(neuron => neuron.deltaWeights = neuron.weights.map(dw => 0))
+        for (let n=0; n<this.neurons.length; n++) {
+            for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
+                this.neurons[n].deltaWeights[dwi] = 0
+            }
+        }
     }
 
     applyDeltaWeights () {
-        this.neurons.forEach(neuron => {
-            neuron.deltaWeights.forEach((dw, dwi) => {
+        for (let n=0; n<this.neurons.length; n++) {
+
+            const neuron = this.neurons[n]
+
+            for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
                 if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
                 if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], dw, neuron, dwi)()
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
-            })
+            }
 
             neuron.bias = this.net.weightUpdateFn.bind(this.net, neuron.bias, neuron.deltaBias, neuron)()
-        })
+        }
     }
 
     toJSON () {
@@ -601,12 +613,20 @@ class NetMath {
 
     // Weights init
     static uniform (size, {limit}) {
-        return [...new Array(size)].map(v => Math.random()*2*limit-limit)
+        const values = []
+
+        for (let i=0; i<size; i++) {
+            values.push(Math.random()*2*limit-limit)
+        }
+
+        return values
     }
 
     static gaussian (size, {mean, stdDeviation}) {
-        return [...new Array(size)].map(() => {
-            // Polar Box Muller
+        const values = []
+
+        // Polar Box Muller
+        for (let i=0; i<size; i++) {
             let x1, x2, r, y
 
             do {
@@ -615,8 +635,10 @@ class NetMath {
                 r = x1**2 + x2**2
             } while (r >= 1 || !r)
 
-            return mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation
-        })
+            values.push(mean + (x1 * (Math.sqrt(-2 * Math.log(r) / r))) * stdDeviation)
+        }
+
+        return values
     }
 
     static xaviernormal (size, {fanIn, fanOut}) {
@@ -670,8 +692,19 @@ class NetMath {
 
     // Other
     static softmax (values) {
-        const total = values.reduce((prev, curr) => prev+curr, 0)
-        return values.map(value => value/total)
+        let total = 0
+
+        for (let i=0; i<values.length; i++) {
+            total += values[i]
+        }
+
+        for (let i=0; i<values.length; i++) {
+            if (total) {
+                values[i] /= total
+            }
+        }
+
+        return values
     }
 
     static sech (value) {
@@ -720,11 +753,14 @@ class NetUtil {
                 if (value < 1000) {
                     formatted.push(`${date.getMilliseconds()}ms`)
 
+                } else if (value < 60000) {
+                    formatted.push(`${date.getSeconds()}.${date.getMilliseconds()}s`)
+
                 } else {
 
                     if (value >= 3600000) formatted.push(`${date.getHours()}h`)
-                    if (value >= 60000)   formatted.push(`${date.getMinutes()}m`)
 
+                    formatted.push(`${date.getMinutes()}m`)
                     formatted.push(`${date.getSeconds()}s`)
                 }
 
@@ -745,11 +781,32 @@ class NetUtil {
     }
 
     static addZeroPadding (map, zP) {
-        const extraColumns = [...new Array(zP)].map(v => 0)
-        map = map.map(row => [...extraColumns, ...row, ...extraColumns])
 
-        const extraRows = [...new Array(zP)].map(r => [...new Array(map.length+zP*2)].map(x => 0))
-        return [...extraRows.slice(0), ...map, ...extraRows.slice(0)]
+        const data = []
+
+        for (let row=0; row<map.length; row++) {
+            data.push(map[row].slice(0))
+        }
+
+        const extraRows = []
+
+        for (let i=0; i<data.length+2*zP; i++) {
+            extraRows.push(0)
+        }
+
+        for (let col=0; col<data.length; col++) {
+            for (let i=0; i<zP; i++) {
+                data[col].splice(0, 0, 0)
+                data[col].splice(data.length+1, data.length, 0)
+            }
+        }
+
+        for (let i=0; i<zP; i++) {
+            data.splice(0, 0, extraRows.slice(0))
+            data.splice(data.length, data.length-1, extraRows.slice(0))
+        }
+
+        return data
     }
 
     static arrayToMap (arr, size) {
@@ -1140,7 +1197,7 @@ class Network {
                     this.initLayers()
                     break
 
-                case layers.every(layer => ["FCLayer", "ConvLayer", "PoolLayer"].includes(layer.constructor.name)):
+                case layers.every(layer => layer instanceof FCLayer || layer instanceof ConvLayer || layer instanceof PoolLayer):
                     this.state = "constructed"
                     this.layers = layers
                     this.initLayers()

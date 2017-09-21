@@ -1,4 +1,4 @@
-# Upcoming
+# 2.1.0 - Optimizations
 ---
 #### NetUtil
 - Optimised addZeroPadding() - ~68% faster

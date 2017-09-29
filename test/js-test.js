@@ -7,9 +7,11 @@ const expect = chai.expect
 const sinonChai = require("sinon-chai")
 const sinon = require("sinon")
 chai.use(sinonChai)
-chai.use(chaiAsPromised);
+chai.use(chaiAsPromised)
 
 const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNet.concat.js")
+
+global.Module = require("./emscriptenTests.js")
 
 describe("Loading", () => {
 
@@ -33,7 +35,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("2.0.0")
+        expect(Network.version).to.equal("2.1.1")
     })
 })
 
@@ -1142,16 +1144,6 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function when the net state is not 'initialised'", () => {
-            const network = new Network({updateFn: null})
-            sinon.stub(network, "forward")
-            sinon.spy(network, "initLayers")
-
-            return network.train(testData).then(() => {
-                expect(network.initLayers).to.have.been.called
-            })
-        })
-
         it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
             const network = new Network({updateFn: null})
             sinon.stub(network, "forward")
@@ -1316,7 +1308,7 @@ describe("Network", () => {
             })
         })
 
-        it("Accepts test date with output key instead of expected", () => {
+        it("Accepts test data with output key instead of expected", () => {
             return net.test(testDataOutput).then(() => {
                 expect(net.cost.callCount).to.equal(4)
             })
@@ -1389,6 +1381,13 @@ describe("FCLayer", () => {
             const layer2 = new Layer(3)
             layer2.assignPrev(layer1)
             expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Assigns the layer.layerIndex to the value given", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            layer2.assignPrev(layer1, 12345)
+            expect(layer2.layerIndex).to.equal(12345)
         })
     })
 
@@ -2567,6 +2566,14 @@ describe("ConvLayer", () => {
             expect(layer2.prevLayer).to.equal(layer1)
         })
 
+        it("Sets the layer.layerIndex to the given value", () => {
+            const layer = new ConvLayer(3)
+            const net = new Network({conv: {filterSize: 5}})
+            layer.net = net
+            layer.assignPrev(layer1, 12345)
+            expect(layer.layerIndex).to.equal(12345)
+        })
+
         it("Defaults the layer.filterSize to the net.filterSize value, if there's no layer.filterSize, but there is one for net", () => {
             const layer = new ConvLayer(3)
             const net = new Network({conv: {filterSize: 5}})
@@ -3422,6 +3429,15 @@ describe("PoolLayer", () => {
             layer2.assignPrev(layer1)
             expect(layer2.prevLayer).to.equal(layer1)
         })
+
+        it("Sets the layer.layerIndex to the value given", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1, 12345)
+            expect(layer2.layerIndex).to.equal(12345)
+        })
+
 
         it("Sets the layer.size to the net.pool.size if not already defined, but existing in net.pool", () => {
             const layer1 = new ConvLayer()

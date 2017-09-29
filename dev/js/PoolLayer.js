@@ -25,6 +25,7 @@ class PoolLayer {
         this.prevLayer = layer
         this.size = this.size || this.net.pool.size || 2
         this.stride = this.stride || this.net.pool.stride || this.size
+        this.layerIndex = layerIndex
 
         let prevLayerOutWidth = layer.outMapSize
 

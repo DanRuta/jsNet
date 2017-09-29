@@ -12,8 +12,9 @@ class FCLayer {
         this.nextLayer = layer
     }
 
-    assignPrev (layer) {
+    assignPrev (layer, layerIndex) {
         this.prevLayer = layer
+        this.layerIndex = layerIndex
     }
 
     init () {

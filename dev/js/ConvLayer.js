@@ -30,6 +30,7 @@ class ConvLayer {
 
         this.prevLayer = layer
 
+        this.layerIndex = layerIndex
         this.size = this.size || 4
         this.filterSize = this.filterSize || this.net.conv.filterSize || 3
         this.stride = this.stride || this.net.conv.stride || 1

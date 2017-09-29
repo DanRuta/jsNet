@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}, Module) {
 
         this.state = "not-defined"
         this.layers = []
@@ -119,7 +119,6 @@ class Network {
             this.weightsInitFn = NetMath[this.weightsConfig.distribution]
         }
 
-        // State
         if (layers.length) {
 
             switch (true) {
@@ -236,7 +235,8 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
+                // this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
+                this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
             this.layers.forEach(layer => layer.state = "training")
@@ -402,7 +402,7 @@ class Network {
     }
 
     static get version () {
-        return "2.0.0"
+        return "2.1.1"
     }
 }
 

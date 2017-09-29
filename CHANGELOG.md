@@ -1,3 +1,7 @@
+# Upcoming - 3.0 - WebAssembly
+---
+- jsNet version 1.0 feature parity. Preliminary, rudimentary tests show ~30x speed improvement
+
 # 2.1.0 - Optimizations
 ---
 #### NetUtil

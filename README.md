@@ -5,7 +5,8 @@
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
-Check the github dev branch to keep track of WebAssembly progress.
+## Current WebAssembly version: 1.0.
+General release 3.0 will follow when it reaches 2.0, matching the JavaScript only feature set.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
@@ -13,12 +14,19 @@ Check the github dev branch to keep track of WebAssembly progress.
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
 
 ##  Usage
+There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version. To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. To use WebAssembly, you must also include the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
+
+### JavaScript
 When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just ```npm install jsnet``` and  require it like so:
 ```javascript
 const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("jsNet")
 // Get just what you need.
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
+
+### WebAssembly
+
+I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server. Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
 
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 

@@ -11,11 +11,14 @@ class Network {
 public:
     static std::vector<Network*> netInstances;
     float learningRate;
+    float rho;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
     double (*activation)(double, bool, Neuron*);
     double (*costFunction)(std::vector<double> calculated, std::vector<double> desired);
+
+    int updateFnIndex;
 
     Network () {}
 
@@ -47,9 +50,8 @@ public:
 };
 
 class Layer {
-private:
-    int netInstance;
 public:
+    int netInstance;
     int size;
     std::vector<Neuron*> neurons;
     Layer* nextLayer;
@@ -79,6 +81,7 @@ class Neuron {
     public:
         std::vector<double> weights;
         std::vector<double> deltaWeights;
+        std::vector<double> weightGain;
         double bias;
         double deltaBias;
         double derivative;
@@ -88,10 +91,11 @@ class Neuron {
         double lreluSlope;
         double rreluSlope;
         double eluAlpha;
+        double biasGain;
 
-        Neuron() {}
+        Neuron(void) {}
 
-        void init (void);
+        void init (int netInstance);
 };
 
 
@@ -101,7 +105,9 @@ public:
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 
-    static float vanillaupdatefn (int netInstance, float value, float deltaValue);
+    static double vanillaupdatefn (int netInstance, double value, double deltaValue);
+
+    static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
 };

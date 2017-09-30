@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({Module, learningRate=0.2, activation="sigmoid", cost="meansquarederror", layers=[]}) {
+    constructor ({Module, learningRate=0.2, activation="sigmoid", updateFn="vanillaupdatefn", rho, cost="meansquarederror", layers=[]}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -12,10 +12,8 @@ class Network {
             throw new Error("Custom functions are not (yet) supported with WASM.")
         }
 
-        this.Module = Module
-        /*TODO-test*/
         NetUtil.Module = Module
-        /**/
+        this.Module = Module
         this.netInstance = this.Module.ccall("newNetwork", null, null, null)
         this.state = "not-defined"
 
@@ -46,7 +44,7 @@ class Network {
         this.activation = activationName
 
         // Cost function get / set
-        const costFunctionsIndeces = {
+        const costIndeces = {
             meansquarederror: 0,
             crossentropy: 1
         }
@@ -54,14 +52,34 @@ class Network {
         Object.defineProperty(this, "cost", {
             get: () => `WASM ${costFunctionName}`,
             set: cost => {
-                if (costFunctionsIndeces[cost] == undefined) {
+                if (costIndeces[cost] == undefined) {
                     throw new Error(`The ${cost} function does not exist`)
                 }
                 costFunctionName = cost
-                this.Module.ccall("setCostFunction", null, ["number", "number"], [this.netInstance, costFunctionsIndeces[cost]])
+                this.Module.ccall("setCostFunction", null, ["number", "number"], [this.netInstance, costIndeces[cost]])
             }
         })
         this.cost = costFunctionName
+
+
+        const updateFnIndeces = {
+            vanillaupdatefn: 0,
+            gain: 1,
+            adadelta: 5
+        }
+        NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
+            getCallback: index => Object.keys(updateFnIndeces).find(key => updateFnIndeces[key]==index),
+            setCallback: name => updateFnIndeces[name]
+        })
+        this.updateFn = NetUtil.format(updateFn)
+
+        switch (NetUtil.format(updateFn)) {
+            case "adadelta":
+                NetUtil.defineProperty(this, "rho", ["number"], [this.netInstance])
+                this.rho = rho==null ? 0.95 : rho
+                break
+        }
+
 
         this.layers = []
         this.epochs = 0

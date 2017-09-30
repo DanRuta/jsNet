@@ -210,6 +210,21 @@ class NetUtil {
 
         return value
     }
+
+    static defineProperty (self, prop, valTypes=[], values=[], {getCallback=x=>x, setCallback=x=>x}={}) {
+        Object.defineProperty(self, prop, {
+            get: () => getCallback(this.Module.ccall(`get_${prop}`, "number", valTypes, values)),
+            set: val => this.Module.ccall(`set_${prop}`, null, valTypes.concat("number"), values.concat(setCallback(val)))
+        })
+    }
+
+    static defineArrayProperty (self, prop, valTypes, values, returnSize) {
+        Object.defineProperty(self, prop, {
+            get: () => NetUtil.ccallArrays(`get_${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
+            set: (value) => NetUtil.ccallArrays(`set_${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+        })
+    }
+
 }
 
 typeof window=="undefined" && (exports.NetUtil = NetUtil)
@@ -217,7 +232,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 
 class Network {
 
-    constructor ({Module, learningRate=0.2, activation="sigmoid", cost="meansquarederror", layers=[]}) {
+    constructor ({Module, learningRate=0.2, activation="sigmoid", updateFn="vanillaupdatefn", rho, cost="meansquarederror", layers=[]}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -227,10 +242,8 @@ class Network {
             throw new Error("Custom functions are not (yet) supported with WASM.")
         }
 
-        this.Module = Module
-        /*TODO-test*/
         NetUtil.Module = Module
-        /**/
+        this.Module = Module
         this.netInstance = this.Module.ccall("newNetwork", null, null, null)
         this.state = "not-defined"
 
@@ -261,7 +274,7 @@ class Network {
         this.activation = activationName
 
         // Cost function get / set
-        const costFunctionsIndeces = {
+        const costIndeces = {
             meansquarederror: 0,
             crossentropy: 1
         }
@@ -269,14 +282,34 @@ class Network {
         Object.defineProperty(this, "cost", {
             get: () => `WASM ${costFunctionName}`,
             set: cost => {
-                if (costFunctionsIndeces[cost] == undefined) {
+                if (costIndeces[cost] == undefined) {
                     throw new Error(`The ${cost} function does not exist`)
                 }
                 costFunctionName = cost
-                this.Module.ccall("setCostFunction", null, ["number", "number"], [this.netInstance, costFunctionsIndeces[cost]])
+                this.Module.ccall("setCostFunction", null, ["number", "number"], [this.netInstance, costIndeces[cost]])
             }
         })
         this.cost = costFunctionName
+
+
+        const updateFnIndeces = {
+            vanillaupdatefn: 0,
+            gain: 1,
+            adadelta: 5
+        }
+        NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
+            getCallback: index => Object.keys(updateFnIndeces).find(key => updateFnIndeces[key]==index),
+            setCallback: name => updateFnIndeces[name]
+        })
+        this.updateFn = NetUtil.format(updateFn)
+
+        switch (NetUtil.format(updateFn)) {
+            case "adadelta":
+                NetUtil.defineProperty(this, "rho", ["number"], [this.netInstance])
+                this.rho = rho==null ? 0.95 : rho
+                break
+        }
+
 
         this.layers = []
         this.epochs = 0
@@ -501,24 +534,14 @@ class Neuron {
 
     init (netInstance, layerIndex, neuronIndex) {
 
-        Object.defineProperty(this, "weights", {
-            get: () => NetUtil.ccallArrays("getNeuronWeights", "array", ["number", "number", "number"],
-                    [netInstance, layerIndex, neuronIndex], {returnArraySize: this.size, heapOut: "HEAPF64"}),
-            set: weights => NetUtil.ccallArrays("setNeuronWeights", null, ["number", "number", "number", "array"],
-                    [netInstance, layerIndex, neuronIndex, weights], {heapIn: "HEAPF64"})
-        })
-        Object.defineProperty(this, "bias", {
-            get: () => NetUtil.ccallArrays("getNeuronBias", "number", ["number", "number", "number"],
-                [netInstance, layerIndex, neuronIndex]),
-            set: value => NetUtil.ccallArrays("setNeuronBias", null, ["number", "number", "number", "number"],
-                [netInstance, layerIndex, neuronIndex, value])
-        })
-        Object.defineProperty(this, "deltaWeights", {
-            get: () => NetUtil.ccallArrays("getNeuronDeltaWeights", "array", ["number", "number", "number"],
-                [netInstance, layerIndex, neuronIndex], {returnArraySize: this.size, heapOut: "HEAPF64"}),
-            set: deltaWeights => NetUtil.ccallArrays("setNeuronDeltaWeights", null, ["number", "number", "number", "array"],
-                    [netInstance, layerIndex, neuronIndex, deltaWeights], {heapIn: "HEAPF64"})
-        })
+
+        NetUtil.defineArrayProperty(this, "weights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+        NetUtil.defineProperty(this, "bias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+        NetUtil.defineArrayProperty(this, "deltaWeights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+
+        NetUtil.defineProperty(this, "biasGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+        NetUtil.defineArrayProperty(this, "weightGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+
     }
 
 }

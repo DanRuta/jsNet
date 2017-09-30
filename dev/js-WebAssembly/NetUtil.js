@@ -120,6 +120,21 @@ class NetUtil {
 
         return value
     }
+
+    static defineProperty (self, prop, valTypes=[], values=[], {getCallback=x=>x, setCallback=x=>x}={}) {
+        Object.defineProperty(self, prop, {
+            get: () => getCallback(this.Module.ccall(`get_${prop}`, "number", valTypes, values)),
+            set: val => this.Module.ccall(`set_${prop}`, null, valTypes.concat("number"), values.concat(setCallback(val)))
+        })
+    }
+
+    static defineArrayProperty (self, prop, valTypes, values, returnSize) {
+        Object.defineProperty(self, prop, {
+            get: () => NetUtil.ccallArrays(`get_${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
+            set: (value) => NetUtil.ccallArrays(`set_${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+        })
+    }
+
 }
 
 typeof window=="undefined" && (exports.NetUtil = NetUtil)

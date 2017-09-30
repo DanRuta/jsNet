@@ -8,6 +8,10 @@ bool doublesAreEqual(double a, double b) {
     return a==b || std::abs(a-b)<std::abs(std::min(a,b))*std::numeric_limits<double>::epsilon();
 }
 
+bool moreOrLessEqual (double a, double b, int decimalPlaces) {
+    return round(a * pow(10, decimalPlaces))/decimalPlaces == round(b * pow(10, decimalPlaces))/decimalPlaces;
+}
+
 /* Network */
 TEST_CASE("Network::newNetwork - Appends a new instance to the Network::instances vector, returning instance index") {
     REQUIRE( Network::netInstances.size() == 0 );
@@ -127,6 +131,7 @@ TEST_CASE("Network::resetDeltaWeights - Sets all the delta weights values to 0")
 
 TEST_CASE("Network::applyDeltaWeights - Increment the weights by the delta weights") {
     Network::getInstance(0)->learningRate = 1;
+    Network::getInstance(0)->updateFnIndex = 0;
 
     for (int n=1; n<3; n++) {
         Network::getInstance(0)->layers[1]->neurons[n]->weights = {1,1,1};
@@ -424,6 +429,8 @@ TEST_CASE("Layer::applyDeltaWeights - Increments the weights by the delta weight
     Layer* l2 = new Layer(0, 3);
     l2->assignPrev(l1);
     l2->init(1);
+    Network::getInstance(0)->updateFnIndex = 0;
+    l2->netInstance = 0;
 
     for (int n=1; n<3; n++) {
         l2->neurons[n]->weights = {1,1,1};
@@ -443,12 +450,13 @@ TEST_CASE("Layer::applyDeltaWeights - Increments the weights by the delta weight
 
 TEST_CASE("Layer::applyDeltaWeights - Increments the bias by the deltaBias") {
     Network::getInstance(0)->learningRate = 1;
+    Network::getInstance(0)->updateFnIndex = 0;
     Layer* l1 = new Layer(0, 2);
     Layer* l2 = new Layer(0, 3);
+    l2->netInstance = 0;
     l2->assignPrev(l1);
     l2->init(1);
 
-    // for (int n=1; n<3; n++) {
     for (int n=0; n<3; n++) {
         l2->neurons[n]->bias = n;
         l2->neurons[n]->deltaBias = n*2;
@@ -489,15 +497,35 @@ TEST_CASE("Layer::resetDeltaWeights - Sets all deltaWeight values to 0") {
 TEST_CASE("Neuron::init - Fills the deltaWeights vector with 0 values, matching weights size") {
     Neuron* testN = new Neuron();
     testN->weights = {1,2,3,4,5};
-    testN->init();
+    testN->init(0);
     REQUIRE( testN->deltaWeights.size() == 5 );
     delete testN;
 }
 
 TEST_CASE("Neuron::init - Sets the neuron deltaBias to 0") {
     Neuron* testN = new Neuron();
-    testN->init();
+    testN->init(0);
     REQUIRE( testN->deltaBias == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron biasGain to 1 if the net's updateFn is gain") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 1;
+    testN->init(0);
+    REQUIRE( testN->biasGain == 1 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron weightGain to a vector of 1s, with the same size as the weights vector") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    testN->weights = {1,2,3,4,5};
+    net->updateFnIndex = 1;
+    testN->init(0);
+    std::vector<double> expected = {1,1,1,1,1};
+    REQUIRE( testN->weightGain == expected );
     delete testN;
 }
 
@@ -516,9 +544,95 @@ TEST_CASE("NetMath::meansquarederror") {
 }
 
 TEST_CASE("NetMath::vanillaupdatefn") {
-    Network* net = Network::getInstance(0);
-    net->learningRate = 0.5;
+    Network::getInstance(0)->learningRate = 0.5;
     REQUIRE( NetMath::vanillaupdatefn(0, 10, 10)==15 );
     REQUIRE( NetMath::vanillaupdatefn(0, 10, 20)==20 );
     REQUIRE( NetMath::vanillaupdatefn(0, 10, -30)==-5 );
+}
+
+TEST_CASE("NetMath::gain - Doubles a value when the gain is 2 and learningRate 1") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = 1;
+    testN->biasGain = 2;
+    REQUIRE( NetMath::gain(0, (double)10, (double)5, testN, -1) == 20 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Halves a value when the gain is -5 and learningRate 0.1") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = 0.1;
+    testN->biasGain = -5;
+    double res = NetMath::gain(0, (double)5, (double)5, testN, -1);
+    REQUIRE( moreOrLessEqual(res, (double)2.5, 2) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Increments a neuron's biasGain by 0.05 when the bias value doesn't change sign") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = 1;
+    testN->bias = 0.1;
+    testN->biasGain = 1;
+    NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+    REQUIRE( testN->biasGain == 1.05 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Does not increase the gain to more than 5") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = 1;
+    testN->bias = 0.1;
+    testN->biasGain = 4.99;
+    NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+    REQUIRE( testN->biasGain == 5 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Multiplies a neuron's bias gain by 0.95 when the value changes sign") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = -10;
+    testN->bias = 0.1;
+    testN->biasGain = 1;
+    NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+    REQUIRE( testN->biasGain == 0.95 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Does not reduce the bias gain to less than 0.5") {
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    Network::getInstance(0)->learningRate = -10;
+    testN->bias = 0.1;
+    testN->biasGain = 0.51;
+    NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+    REQUIRE( testN->biasGain == 0.5 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Increases weight gain the same way as the bias gain") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 1;
+    testN->weights = {0.1, 0.1};
+    testN->weightGain = {1, 4.99};
+    NetMath::gain(0, (double)0.1, (double)1, testN, 0);
+    NetMath::gain(0, (double)0.1, (double)1, testN, 1);
+    REQUIRE( testN->weightGain[0] == 1.05 );
+    REQUIRE( testN->weightGain[1] == 5 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::gain - Decreases weight gain the same way as the bias gain") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = -10;
+    testN->weights = {0.1, 0.1};
+    testN->weightGain = {1, 0.51};
+    NetMath::gain(0, (double)0.1, (double)1, testN, 0);
+    NetMath::gain(0, (double)0.1, (double)1, testN, 1);
+    REQUIRE( testN->weightGain[0] == 0.95 );
+    REQUIRE( testN->weightGain[1] == 0.5 );
+    delete testN;
 }

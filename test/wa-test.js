@@ -99,6 +99,53 @@ describe("Network", () => {
             })
         })
 
+        describe("defining properties", () => {
+
+            it("Calls the NetUtil.defineProperty function for updateFn", () => {
+                sinon.stub(NetUtil, "defineProperty")
+
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "updateFn")
+                net.updateFn
+
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Calls the NetUtil.defineProperty function for rho, when updateFn is 'adadelta'", () => {
+                sinon.stub(NetUtil, "defineProperty")
+
+                const net = new Network({Module: fakeModule, updateFn: "adadelta", rho: 2})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "rho", ["number"], [0])
+                expect(net.rho).to.equal(2)
+
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Passes the updateFn index from the WASM module through the updateFnIndeces map", () => {
+                const net = new Network({Module: fakeModule})
+                sinon.stub(fakeModule, "ccall").callsFake(() => 0)
+                const res = net.updateFn
+                fakeModule.ccall.restore()
+                expect(res).to.equal("vanillaupdatefn")
+            })
+
+
+            it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, updateFn: "adadelta"})
+                expect(net.rho).to.equal(0.95)
+                NetUtil.defineProperty.restore()
+            })
+
+        })
+
+        it("Sets the given Module to NetUtil, also", () => {
+            try {
+                const net = new Network({Module: "some stuff"})
+            } catch (e) {}
+            expect(NetUtil.Module).to.equal("some stuff")
+        })
+
         it("Throws an error if the Module is not provided", () => {
             const wrapperFn = () => new Network()
             const wrapperFn2 = () => new Network({})
@@ -795,14 +842,14 @@ describe("FCLayer", () => {
             expect(net.layers[1].fromJSON.bind(net.layers[1], testData.layers[1], 1)).to.throw("Mismatched weights count. Given: 2 Existing: 3. At layers[1], neurons[0]")
         })
 
-        it("CCalls the WASM module's setNeuronWeights and setNeuronBias functions", () => {
+        it("CCalls the WASM module's set_weights and set_bias functions", () => {
             const net = new Network({Module: fakeModule, layers: [new FCLayer(2), new FCLayer(3)]})
             sinon.stub(fakeModule, "ccall")
 
             net.layers[1].fromJSON(testData.layers[1], 1)
 
-            expect(fakeModule.ccall).to.be.calledWith("setNeuronWeights")
-            expect(fakeModule.ccall).to.be.calledWith("setNeuronBias")
+            expect(fakeModule.ccall).to.be.calledWith("set_weights")
+            expect(fakeModule.ccall).to.be.calledWith("set_bias")
 
             fakeModule.ccall.restore()
         })
@@ -819,46 +866,26 @@ describe("Neuron", () => {
         beforeEach(() => {
             neuron = new Neuron()
             neuron.size = 5
+            sinon.stub(NetUtil, "defineArrayProperty")
+            sinon.stub(NetUtil, "defineProperty")
             neuron.init(789, 1, 13)
-            sinon.stub(NetUtil, "ccallArrays")
         })
 
-        afterEach(() => NetUtil.ccallArrays.restore())
-
-        it("Accessing the wasm neuron's weights attribute calls the NetUtil.ccallArrays function with 'getNeuronWeights' and with given indeces", () => {
-            neuron.weights
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("getNeuronWeights", "array", ["number", "number", "number"], [789, 1, 13])
+        afterEach(() => {
+            NetUtil.defineArrayProperty.restore()
+            NetUtil.defineProperty.restore()
         })
 
-        it("Setting the wasm neuron's weights values calls the NetUtil.ccallArrays function with 'setNeuronWeights', the weights, and fgiven indeces", () => {
-            neuron.weights = [1,2,3,4,5]
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("setNeuronWeights", null, ["number", "number", "number", "array"], [789, 1, 13, [1,2,3,4,5]])
+        it("Calls the NetUtil.defineArrayProperty for neuron.weights", () => {
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weights")
         })
 
-        it("Accessing the wasm neuron's bias attribute calls the NetUtil.ccallArrays function with 'getNeuronBias' and with given indeces", () => {
-            neuron.bias
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("getNeuronBias", "number", ["number", "number", "number"], [789, 1, 13])
+        it("Calls the NetUtil.defineProperty for neuron.bias", () => {
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "bias")
         })
 
-        it("Setting the wasm neuron's bias attribute calls the NetUtil.ccallArrays function with 'setNeuronBias', the value and with given indeces", () => {
-            neuron.bias = 1234
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("setNeuronBias", null, ["number", "number", "number", "number"], [789, 1, 13, 1234])
-        })
-
-        it("Accessing the wasm neuron's deltaWeights attribute calls the NetUtil.ccallArrays function with 'getNeuronDeltaWeights' and with given indeces", () => {
-            neuron.deltaWeights
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("getNeuronDeltaWeights", "array", ["number", "number", "number"], [789, 1, 13])
-        })
-
-        it("Setting the wasm neuron's deltaWeights values calls the NetUtil.ccallArrays function with 'setNeuronDeltaWeights', the deltaWeights, and fgiven indeces", () => {
-            neuron.deltaWeights = [1,2,3,4,5]
-            expect(NetUtil.ccallArrays).to.be.calledOnce
-            expect(NetUtil.ccallArrays).to.be.calledWith("setNeuronDeltaWeights", null, ["number", "number", "number", "array"], [789, 1, 13, [1,2,3,4,5]])
+        it("Calls the NetUtil.defineArrayProperty for neuron.deltaWeights", () => {
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights")
         })
     })
 })
@@ -991,6 +1018,74 @@ describe("NetUtil", () => {
         it("Formats given milliseconds to hours, minutes and seconds when over an hour", () => {
             const testMils = 10000000
             expect(NetUtil.format(testMils, "time")).to.equal("2h 46m 40s")
+        })
+    })
+
+    describe("defineProperty", () => {
+
+        before(() => NetUtil.Module = fakeModule)
+
+        beforeEach(() => sinon.stub(fakeModule, "ccall").callsFake(() => 1))
+
+        afterEach(() => fakeModule.ccall.restore())
+
+        const net = {}
+
+        it("Sets the given property to the given net instance", () => {
+            expect(net.test).to.be.undefined
+            NetUtil.defineProperty(net, "test", ["number"], [13579])
+            NetUtil.defineProperty(net, "stuff")
+            net.test = 1
+            net.stuff = 2
+            expect(net.test).to.not.be.undefined
+            expect(net.stuff).to.not.be.undefined
+            expect(fakeModule.ccall).to.be.calledWith("set_test", null, ["number", "number"], [13579, 1])
+            expect(fakeModule.ccall).to.be.calledWith("set_stuff", null, ["number"], [2])
+        })
+
+        it("CCalls the WASM module's function when setting to the value", () => {
+            net.test = 5
+            expect(fakeModule.ccall).to.be.calledWith("set_test", null, ["number", "number"], [13579, 5])
+        })
+
+        it("The getter returns the returned value from the WASM Module", () => {
+            expect(net.test).to.equal(1)
+        })
+    })
+
+    describe("defineArrayProperty", () => {
+
+        beforeEach(() => {
+            sinon.stub(fakeModule, "ccall")
+            sinon.spy(NetUtil, "ccallArrays")
+        })
+
+        afterEach(() => {
+            fakeModule.ccall.restore()
+            NetUtil.ccallArrays.restore()
+        })
+
+        const scope = {}
+
+        it("Sets the given property to the given scope", () => {
+            expect(scope.stuff).to.be.undefined
+            NetUtil.defineArrayProperty(scope, "stuff", ["number", "number"], [1,2], 5)
+            expect(scope.stuff).to.not.be.undefined
+        })
+
+        it("CCalls the NetUtil.ccallArrays with 'stuffGet' and given params when accessing the property", () => {
+            scope.stuff
+            expect(NetUtil.ccallArrays).to.be.calledWith("get_stuff", "array", ["number", "number"], [1,2])
+        })
+
+        it("Returns an array with the correct size", () => {
+            const result = scope.stuff
+            expect(result).to.have.lengthOf(5)
+        })
+
+        it("The getter calls the NetUtil.ccallArrays function with the correct parameters", () => {
+            scope.stuff = [1,2,3,4,5]
+            expect(NetUtil.ccallArrays).to.be.calledWith("set_stuff", null, ["number", "number", "array"], [1,2,[1,2,3,4,5]])
         })
     })
 })

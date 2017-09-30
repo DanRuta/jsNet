@@ -10,27 +10,26 @@ int main(int argc, char const *argv[]) {
 extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
-    int newNetwork(void) {
+    int newNetwork (void) {
         return Network::newNetwork();
     }
 
+    /* Network config */
     EMSCRIPTEN_KEEPALIVE
-    float getLearningRate(int instanceIndex) {
-        Network* net = Network::getInstance(instanceIndex);
-        return net->learningRate;
+    float getLearningRate (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->learningRate;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setLearningRate(int instanceIndex, float lr) {
-        Network* net = Network::getInstance(instanceIndex);
-        net->learningRate = lr;
+    void setLearningRate (int instanceIndex, float lr) {
+        Network::getInstance(instanceIndex)->learningRate = lr;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setActivation(int instanceIndex, int activationIndex) {
+    void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
-        switch (activationIndex) {
+        switch (activationFnIndex) {
             case 0:
                 net->activation = &NetMath::sigmoid;
                 break;
@@ -38,7 +37,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setCostFunction(int instanceIndex, int fnIndex) {
+    void setCostFunction (int instanceIndex, int fnIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
 
@@ -50,20 +49,36 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void addFCLayer(int instanceIndex, int size) {
-        Network* net = Network::getInstance(instanceIndex);
-        net->layers.push_back(new Layer(instanceIndex, size));
+    void set_rho  (int instanceIndex, float rho) {
+        Network::getInstance(instanceIndex)->rho = rho;
+    }
+
+    float get_rho (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->rho;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void initLayers(int instanceIndex) {
-
-        Network* net = Network::getInstance(instanceIndex);
-        net->joinLayers();
+    void set_updateFn (int instanceIndex, int fnIndex) {
+        Network::getInstance(instanceIndex)->updateFnIndex = fnIndex;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* forward(int instanceIndex, float *buf, int vals) {
+    int get_updateFn (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->updateFnIndex;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void addFCLayer (int instanceIndex, int size) {
+        Network::getInstance(instanceIndex)->layers.push_back(new Layer(instanceIndex, size));
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void initLayers (int instanceIndex) {
+        Network::getInstance(instanceIndex)->joinLayers();
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* forward (int instanceIndex, float *buf, int vals) {
 
         Network* net = Network::getInstance(instanceIndex);
         std::vector<double> input;
@@ -85,8 +100,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    // void train(int instanceIndex, char *buf, int total, int size, int dimension) {
-    void train(int instanceIndex, float *buf, int total, int size, int dimension) {
+    void train (int instanceIndex, float *buf, int total, int size, int dimension) {
 
         Network* net = Network::getInstance(instanceIndex);
         net->trainingData.clear();
@@ -116,7 +130,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double test(int instanceIndex, float *buf, int total, int size, int dimension) {
+    double test (int instanceIndex, float *buf, int total, int size, int dimension) {
 
         Network* net = Network::getInstance(instanceIndex);
         net->testData.clear();
@@ -147,13 +161,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     void resetDeltaWeights (int instanceIndex) {
-        Network* net = Network::getInstance(instanceIndex);
-        net->resetDeltaWeights();
+        Network::getInstance(instanceIndex)->resetDeltaWeights();
     }
 
     /* Neuron */
     EMSCRIPTEN_KEEPALIVE
-    double* getNeuronWeights(int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_weights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weights.size();
@@ -168,7 +181,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setNeuronWeights(int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_weights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int w=0; w<bufSize; w++) {
@@ -177,19 +190,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double getNeuronBias(int instanceIndex, int layerIndex, int neuronIndex) {
-        Network* net = Network::getInstance(instanceIndex);
-        return net->layers[layerIndex]->neurons[neuronIndex]->bias;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void setNeuronBias(int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network* net = Network::getInstance(instanceIndex);
-        net->layers[layerIndex]->neurons[neuronIndex]->bias = value;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    double* getNeuronDeltaWeights(int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights.size();
@@ -204,11 +205,55 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setNeuronDeltaWeights(int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
             net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights[dw] = buf[dw];
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_weightGain (int instanceIndex, int layerIndex, int neuronIndex) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weightGain.size();
+        double weightGain[neuronSize];
+
+        for (int i=0; i<neuronSize; i++) {
+            weightGain[i] = net->layers[layerIndex]->neurons[neuronIndex]->weightGain[i];
+        }
+
+        auto ptr = &weightGain[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_weightGain (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        for (int dw=0; dw<bufSize; dw++) {
+            net->layers[layerIndex]->neurons[neuronIndex]->weightGain[dw] = buf[dw];
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_bias (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_bias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_biasGain (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasGain = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_biasGain (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasGain;
     }
 }

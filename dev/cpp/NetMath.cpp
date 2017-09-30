@@ -17,9 +17,31 @@ double NetMath::meansquarederror (std::vector<double> calculated, std::vector<do
 }
 
 // Weight update functions
-float NetMath::vanillaupdatefn (int netInstance, float value, float deltaValue) {
+double NetMath::vanillaupdatefn (int netInstance, double value, double deltaValue) {
     Network* net = Network::getInstance(netInstance);
     return value + net->learningRate * deltaValue;
+}
+
+double NetMath::gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    Network* net = Network::getInstance(netInstance);
+    double newVal = value + net->learningRate * deltaValue * (weightIndex < 0 ? neuron->biasGain : neuron->weightGain[weightIndex]);
+
+    if ((newVal<=0 && value>0) || (newVal>=0 && value<0)) {
+        if (weightIndex>-1) {
+            neuron->weightGain[weightIndex] = fmax(neuron->weightGain[weightIndex]*0.95, 0.5);
+        } else {
+            neuron->biasGain = fmax(neuron->biasGain*0.95, 0.5);
+        }
+    } else {
+        if (weightIndex>-1) {
+            neuron->weightGain[weightIndex] = fmin(neuron->weightGain[weightIndex]+0.05, 5);
+        } else {
+            neuron->biasGain = fmin(neuron->biasGain+0.05, 5);
+        }
+    }
+
+    return newVal;
 }
 
 // Other

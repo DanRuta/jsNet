@@ -32,7 +32,7 @@ void Layer::init (int layerIndex) {
             neuron->bias = ((double) rand() / (RAND_MAX))/5 - 0.1;
         }
 
-        neuron->init();
+        neuron->init(netInstance);
         neurons.push_back(neuron);
     }
 }
@@ -56,6 +56,7 @@ void Layer::backward (std::vector<double> expected) {
             neurons[n]->error = expected[n] - neurons[n]->activation;
         } else {
             neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
+
             double weightedErrors = 0.0;
 
             for (int nn=0; nn<nextLayer->neurons.size(); nn++) {
@@ -74,16 +75,36 @@ void Layer::backward (std::vector<double> expected) {
 }
 
 void Layer::applyDeltaWeights (void) {
+
+    // Function pointers are far too slow, here.
+    // Using repetitive switch statements makes a substantial perf difference
+    int updateFnIndex = Network::getInstance(netInstance)->updateFnIndex;
+
     for(int n=0; n<neurons.size(); n++) {
 
         for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
-            neurons[n]->weights[dw] = NetMath::vanillaupdatefn(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw]);
+
+            switch (updateFnIndex) {
+                case 0:
+                    neurons[n]->weights[dw] = NetMath::vanillaupdatefn(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw]);
+                    break;
+                case 1:
+                    neurons[n]->weights[dw] = NetMath::gain(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
+                    break;
+            }
+
         }
 
-        neurons[n]->bias = NetMath::vanillaupdatefn(netInstance, neurons[n]->bias, neurons[n]->deltaBias);
+        switch (updateFnIndex) {
+            case 0:
+                neurons[n]->bias = NetMath::vanillaupdatefn(netInstance, neurons[n]->bias, neurons[n]->deltaBias);
+                break;
+            case 1:
+                neurons[n]->bias = NetMath::gain(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
+                break;
+        }
     }
 }
-
 
 void Layer::resetDeltaWeights (void) {
     for(int n=0; n<neurons.size(); n++) {

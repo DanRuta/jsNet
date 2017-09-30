@@ -26,7 +26,21 @@ Layer is an alias for FCLayer, for people not using the library for convolutiona
 
 ### WebAssembly
 
-I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server. Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
+I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server.
+
+The second difference is that the wasm gets lazy loaded, meaning you have to wait for it to be loaded before you can create the network. You can listen for the ```jsNetWASMLoaded``` event to know when it's ready, like so:
+
+```javascript
+window.addEventListener("jsNetWASMLoaded", () => { /* ready */ })
+```
+
+Finally, you need to assign the module when creating the network, like so:
+```javascript
+const net = new Network({Module: Module})
+```
+This makes it easier to use in nodejs.
+
+Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
 
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
@@ -38,6 +52,10 @@ A network can be built in three different ways:
 With absolutely no parameters, and it will build a 3 FCLayer net. It will figure out some appropriate sizes for them once you pass it some data.
 ```javascript
 const net = new Network()
+
+// WebAssembly
+const net = new Network({Module: Module})
+// This config must always be included when using the  WebAssembly version
 ```
 ##### 2
 By giving a list of numbers, and the network will configure some FCLayers with that many neurons.

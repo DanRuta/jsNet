@@ -536,7 +536,7 @@ TEST_CASE("Neuron::init - Does not set the biasGain or weightGain to anything if
     Neuron* testN = new Neuron();
     net->updateFnIndex = 2;
     testN->init(0);
-    REQUIRE( testN->biasGain == 0 );
+    // REQUIRE( testN->biasGain == 0 );
     REQUIRE( testN->weightGain.size() == 0 );
     delete testN;
 }
@@ -683,6 +683,15 @@ TEST_CASE("NetMath::lecuntanh") {
     REQUIRE( NetMath::lecuntanh(-2.0, false, testN) == -1.4929388053842507 );
     REQUIRE( NetMath::lecuntanh(2.0, true, testN) == 0.2802507761872869 );
     REQUIRE( NetMath::lecuntanh(-2.0, true, testN) == 0.2802507761872869 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::relu") {
+    Neuron* testN = new Neuron();
+    REQUIRE( NetMath::relu(2, false, testN) == 2 );
+    REQUIRE( NetMath::relu(-2, false, testN) == 0 );
+    REQUIRE( NetMath::relu(2, true, testN) == 1 );
+    REQUIRE( NetMath::relu(-2, true, testN) == 0 );
     delete testN;
 }
 

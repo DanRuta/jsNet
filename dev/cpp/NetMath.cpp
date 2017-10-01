@@ -16,6 +16,11 @@ double NetMath::lecuntanh(double value, bool prime, Neuron* neuron) {
                : 1.7159 * NetMath::tanh((2.0/3.0) * value, false, neuron);
 }
 
+double NetMath::relu(double value, bool prime, Neuron* neuron) {
+    return prime ? (value > 0 ? 1 : 0)
+                 : (value>=0 ? value : 0);
+}
+
 // Cost Functions
 double NetMath::meansquarederror (std::vector<double> calculated, std::vector<double> desired) {
     double error = 0.0;

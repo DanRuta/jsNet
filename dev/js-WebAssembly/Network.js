@@ -99,9 +99,13 @@ class Network {
                 if (learningRate==undefined) {
 
                     switch (activationName) {
+                        case "relu":
+                            this.learningRate = 0.01
+                            break
+
                         case "tanh":
                         case "lecuntanh":
-                            this.learningRate = 0.01
+                            this.learningRate = 0.001
                             break
 
                         default:

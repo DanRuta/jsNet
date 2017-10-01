@@ -234,7 +234,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 
 class Network {
 
-    constructor ({Module, learningRate=0.2, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
+    constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
         rmsDecay, rho}) {
 
         if (!Module) {
@@ -255,7 +255,8 @@ class Network {
             get: this.Module.cwrap("getLearningRate", null, null).bind(this, this.netInstance),
             set: this.Module.cwrap("setLearningRate", "number", null).bind(this, this.netInstance)
         })
-        this.learningRate = learningRate
+
+        if (learningRate) this.learningRate = learningRate
 
         // Activation function get / set
         const activationsIndeces = {
@@ -294,12 +295,12 @@ class Network {
         })
         this.cost = costFunctionName
 
-
         const updateFnIndeces = {
             vanillaupdatefn: 0,
             gain: 1,
             adagrad: 2,
             rmsprop: 3,
+            adam: 4,
             adadelta: 5
         }
         NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
@@ -308,11 +309,27 @@ class Network {
         })
         this.updateFn = NetUtil.format(updateFn)
 
+
         switch (NetUtil.format(updateFn)) {
+
+            case "rmsprop":
+                this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
+                break
+
+            case "adam":
+                this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                break
+
             case "adadelta":
                 NetUtil.defineProperty(this, "rho", ["number"], [this.netInstance])
                 this.rho = rho==null ? 0.95 : rho
                 break
+
+            default:
+
+                if (this.learningRate==undefined) {
+                    this.learningRate = 0.2
+                }
         }
 
         if (this.updateFn=="rmsprop") {
@@ -555,6 +572,11 @@ class Neuron {
             case "rmsprop":
                 NetUtil.defineProperty(this, "biasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
                 NetUtil.defineArrayProperty(this, "weightsCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                break
+
+            case "adam":
+                NetUtil.defineProperty(this, "m", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                NetUtil.defineProperty(this, "v", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
                 break
         }
 

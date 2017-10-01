@@ -20,6 +20,11 @@ class Neuron {
                 NetUtil.defineProperty(this, "biasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
                 NetUtil.defineArrayProperty(this, "weightsCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
                 break
+
+            case "adam":
+                NetUtil.defineProperty(this, "m", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                NetUtil.defineProperty(this, "v", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                break
         }
 
     }

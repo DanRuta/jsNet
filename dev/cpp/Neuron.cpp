@@ -21,5 +21,9 @@ void Neuron::init (int netInstance) {
                 weightsCache.push_back(0);
             }
             break;
+        case 4: // adam
+            m = 0;
+            v = 0;
+            break;
     }
 }

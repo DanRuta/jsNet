@@ -113,6 +113,14 @@ void Layer::applyDeltaWeights (void) {
                 neurons[n]->bias = NetMath::rmsprop(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }
             break;
+        case 4: // adam
+            for(int n=0; n<neurons.size(); n++) {
+                for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
+                    neurons[n]->weights[dw] = NetMath::adam(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
+                }
+                neurons[n]->bias = NetMath::adam(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
+            }
+            break;
     }
 }
 

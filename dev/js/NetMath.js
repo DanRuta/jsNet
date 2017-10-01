@@ -106,7 +106,7 @@ class NetMath {
         neuron.m = 0.9*neuron.m + (1-0.9) * deltaValue
         const mt = neuron.m / (1-Math.pow(0.9, this.iterations + 1))
 
-        neuron.v = 0.999*neuron.v + (1-0.999)*(Math.pow(deltaValue, 2))
+        neuron.v = 0.999*neuron.v + (1-0.999) * Math.pow(deltaValue, 2)
         const vt = neuron.v / (1-Math.pow(0.999, this.iterations + 1))
 
         return value + this.learningRate * mt / (Math.sqrt(vt) + 1e-8)

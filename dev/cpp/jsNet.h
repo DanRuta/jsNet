@@ -10,6 +10,7 @@ class NetUtil;
 class Network {
 public:
     static std::vector<Network*> netInstances;
+    int iterations;
     float learningRate;
     float rmsDecay;
     float rho;
@@ -95,6 +96,8 @@ class Neuron {
         double eluAlpha;
         double biasGain;
         double biasCache;
+        double m;
+        double v;
 
         Neuron(void) {}
 
@@ -115,6 +118,8 @@ public:
     static double adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
 };

@@ -71,6 +71,19 @@ double NetMath::rmsprop(int netInstance, double value, double deltaValue, Neuron
                                                                                 : neuron->biasCache));
 }
 
+double NetMath::adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    neuron->m = 0.9 * neuron->m + (1-0.9) * deltaValue;
+    double mt = neuron->m / (1 - pow(0.9, net->iterations + 1));
+
+    neuron->v = 0.999 * neuron->v + (1-0.999) * pow(deltaValue, 2);
+    double vt = neuron->v / (1 - pow(0.999, net->iterations + 1));
+
+    return value + net->learningRate * mt / (sqrt(vt) + 1e-6);
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

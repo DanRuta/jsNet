@@ -78,6 +78,62 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Still allows a custom learningRate value", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.stub(fakeModule, "cwrapReturnFunction").callsFake(() => 123)
+
+                const net = new Network({Module: fakeModule, learningRate: 123})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 123)
+
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
+            it("Defaults the learning rate to 0.001 if the updateFn is rmsprop", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, updateFn: "rmsprop"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.001)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
+            it("Still allows a custom learning rate if the updateFn is rmsprop", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.stub(fakeModule, "cwrapReturnFunction").callsFake(() => 123)
+
+                const net2 = new Network({Module: fakeModule, updateFn: "rmsprop", learningRate: 123})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 123)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
+            it("Defaults the learning rate to 0.01 if the updateFn is adam", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, updateFn: "adam"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
+            it("Still allows a custom learning rate if the updateFn is adam", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.stub(fakeModule, "cwrapReturnFunction").callsFake(() => 123)
+
+                const net2 = new Network({Module: fakeModule, updateFn: "adam", learningRate: 123})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 123)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the activation to sigmoid", () => {
                 expect(net.activation).to.equal("WASM sigmoid")
             })
@@ -344,10 +400,6 @@ describe("Network", () => {
     })
 
     describe("initLayers", () => {
-
-        // beforeEach(() => {
-        //     sinon.stub()
-        // })
 
         it("Creates three Layers when state is not-defined. First and last layer sizes respective to input/output, middle is in-between", () => {
             const net = new Network({Module: fakeModule, state: "not-defined", layers: []})
@@ -957,6 +1009,24 @@ describe("Neuron", () => {
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is not adagrad", () => {
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache")
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.m and neuron.v if the updateFn is adam", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil, "defineProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "adam"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "m")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "v")
+        })
+
+        it("Doesn't call the NetUtil.defineProperty for neuron.m and neuron.v if the updateFn is not adam", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil, "defineProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "something not adam"})
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "m")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "v")
         })
     })
 })

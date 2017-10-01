@@ -101,7 +101,7 @@ describe("Network", () => {
                 expect(net2.rmsDecay).to.be.undefined
             })
 
-            it("Defaults the learning rate to 0.01 if the updateFn is rmsprop", () => {
+            it("Defaults the learning rate to 0.001 if the updateFn is rmsprop", () => {
                 const net2 = new Network({updateFn: "rmsprop"})
                 expect(net2.learningRate).to.equal(0.001)
             })
@@ -4337,23 +4337,23 @@ describe("Netmath", () => {
 
         beforeEach(() => neuron = new Neuron())
 
-        it("Sets the neuron.m to the correct value, following the algorithm", () => {
+        it("Sets the neuron.m to the correct value, following the formula", () => {
             neuron.m = 0.1
             NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
             expect(neuron.m.toFixed(2)).to.equal("0.11") // 0.9 * 0.1 + (1-0.9) * 0.2
         })
 
-        it("Sets the neuron.v to the correct value, following the algorithm", () => {
+        it("Sets the neuron.v to the correct value, following the formula", () => {
             neuron.v = 0.1
             NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
             expect(neuron.v.toFixed(5)).to.equal("0.09994") // 0.999 * 0.1 + (1-0.999) * 0.2*0.2
         })
 
-        it("Calculates a value correctly, following the algorithm", () => {
+        it("Calculates a value correctly, following the formula", () => {
             neuron.m = 0.121
             neuron.v = 0.045
-            const result = NetMath.adam.bind({learningRate: 0.01, iterations: 0.2}, -0.3, 0.02, neuron)()
-            expect(result.toFixed(6)).to.equal("-0.298474")
+            const result = NetMath.adam.bind({learningRate: 0.01, iterations: 2}, -0.3, 0.02, neuron)()
+            expect(result.toFixed(6)).to.equal("-0.298943")
         })
     })
 

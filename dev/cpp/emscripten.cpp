@@ -301,4 +301,24 @@ extern "C" {
     double get_biasCache (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasCache;
     }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_m (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->m = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_m (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->m;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_v (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->v = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_v (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->v;
+    }
 }

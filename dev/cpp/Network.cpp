@@ -11,6 +11,7 @@ Network::~Network () {
 
 int Network::newNetwork(void) {
     Network* net = new Network();
+    net->iterations = 0;
     netInstances.push_back(net);
     return netInstances.size()-1;
 }
@@ -80,6 +81,8 @@ void Network::train (void) {
     for (int i=0; i<trainingData.size(); i++) {
         printf("Doing iteration\n");
         resetDeltaWeights();
+
+        iterations++;
 
         std::vector<double> output = forward(std::get<0>(trainingData[i]));
         totalErrors += costFunction(std::get<1>(trainingData[i]), output);

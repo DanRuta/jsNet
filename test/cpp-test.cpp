@@ -594,6 +594,29 @@ TEST_CASE("Neuron::init - Sets the neuron weightsCache to a vector of zeroes wit
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the neuron m and neuron v to 0 if the updateFn is adam") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 4;
+    testN->m = 1;
+    testN->v = 1;
+    testN->init(0);
+    REQUIRE( testN->m == 0 );
+    REQUIRE( testN->v == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Does not set the neuron m and neuron v to 0 if the updateFn is not adam") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 3;
+    testN->m = 1;
+    testN->v = 1;
+    testN->init(0);
+    REQUIRE( testN->m == 1 );
+    REQUIRE( testN->v == 1 );
+    delete testN;
+}
 
 /* NetMath */
 /*
@@ -774,5 +797,34 @@ TEST_CASE("NetMath::rmsprop - Updates the weightsCache the same way as the biasC
     REQUIRE( moreOrLessEqual(result1, 6.0, 2) );
     REQUIRE( moreOrLessEqual(result2, 2.9, 1) );
     REQUIRE( moreOrLessEqual(result3, 1.7, 1) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adam - It sets the neuron.m to the correct value, following the formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.01;
+    testN->m = 0.1;
+    NetMath::adam(0, (double)1, (double)0.2, testN, -1);
+    REQUIRE( doublesAreEqual(testN->m, 0.11) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adam - It sets the neuron.v to the correct value, following the formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.01;
+    testN->v = 0.1;
+    NetMath::adam(0, (double)1, (double)0.2, testN, -1);
+    REQUIRE( moreOrLessEqual(testN->v, 0.09994, 3) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adam - Calculates a value correctly, following the formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.01;
+    Network::getInstance(0)->iterations = 2;
+    testN->m = 0.121;
+    testN->v = 0.045;
+    double result = NetMath::adam(0, (double)-0.3, (double)0.02, testN, -1);
+    REQUIRE( moreOrLessEqual(result, -0.298943, 5) );
     delete testN;
 }

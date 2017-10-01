@@ -321,4 +321,38 @@ extern "C" {
     double get_v (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->v;
     }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->adadeltaBiasCache = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->adadeltaBiasCache;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->adadeltaCache.size();
+        double adadeltaCache[neuronSize];
+
+        for (int i=0; i<neuronSize; i++) {
+            adadeltaCache[i] = net->layers[layerIndex]->neurons[neuronIndex]->adadeltaCache[i];
+        }
+
+        auto ptr = &adadeltaCache[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        for (int dw=0; dw<bufSize; dw++) {
+            net->layers[layerIndex]->neurons[neuronIndex]->adadeltaCache[dw] = buf[dw];
+        }
+    }
 }

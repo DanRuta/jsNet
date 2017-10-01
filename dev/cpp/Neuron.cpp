@@ -16,11 +16,20 @@ void Neuron::init (int netInstance) {
             break;
         case 2: // adagrad
         case 3: // rmsprop
+        case 5: // adadelta
             biasCache = 0;
             for (int i=0; i<weights.size(); i++) {
                 weightsCache.push_back(0);
             }
+
+            if (Network::getInstance(netInstance)->updateFnIndex == 5) {
+                adadeltaBiasCache = 0;
+                for (int i=0; i<weights.size(); i++) {
+                    adadeltaCache.push_back(0);
+                }
+            }
             break;
+
         case 4: // adam
             m = 0;
             v = 0;

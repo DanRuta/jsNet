@@ -4382,7 +4382,7 @@ describe("Netmath", () => {
             expect(neuron.weightsCache[1].toFixed(4)).to.equal("0.7145")
         })
 
-        it("Creates a value for the bias correctly, following the algorithm", () => {
+        it("Creates a value for the bias correctly, following the formula", () => {
             neuron.biasCache = 0.5
             neuron.adadeltaBiasCache = 0.25
             const newValue = NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()

@@ -1028,6 +1028,34 @@ describe("Neuron", () => {
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "m")
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "v")
         })
+
+        it("Calls the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is adadelta", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil, "defineProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "adadelta"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "adadeltaBiasCache")
+        })
+
+        it("Doesn't call the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is not adadelta", () => {
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "adadeltaBiasCache")
+        })
+
+        it("Calls the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is adadelta", () => {
+            NetUtil.defineArrayProperty.restore()
+            sinon.stub(NetUtil, "defineArrayProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "adadelta"})
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "adadeltaCache")
+        })
+
+        it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is not adadelta", () => {
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache")
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "adadeltaCache")
+        })
     })
 })
 

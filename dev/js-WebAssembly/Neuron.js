@@ -17,8 +17,14 @@ class Neuron {
                 break
             case "adagrad":
             case "rmsprop":
+            case "adadelta":
                 NetUtil.defineProperty(this, "biasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
                 NetUtil.defineArrayProperty(this, "weightsCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+
+                if (updateFn=="adadelta") {
+                    NetUtil.defineProperty(this, "adadeltaBiasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                    NetUtil.defineArrayProperty(this, "adadeltaCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                }
                 break
 
             case "adam":

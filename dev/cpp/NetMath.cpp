@@ -84,6 +84,23 @@ double NetMath::adam(int netInstance, double value, double deltaValue, Neuron* n
     return value + net->learningRate * mt / (sqrt(vt) + 1e-6);
 }
 
+double NetMath::adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    double rho = Network::getInstance(netInstance)->rho;
+
+    if (weightIndex>-1) {
+        neuron->weightsCache[weightIndex] = rho * neuron->weightsCache[weightIndex] + (1-rho) * pow(deltaValue, 2);
+        double newVal = value + sqrt((neuron->adadeltaCache[weightIndex] + 1e-6) / (neuron->weightsCache[weightIndex] + 1e-6)) * deltaValue;
+        neuron->adadeltaCache[weightIndex] = rho * neuron->adadeltaCache[weightIndex] + (1-rho) * pow(deltaValue, 2);
+        return newVal;
+    } else {
+        neuron->biasCache = rho * neuron->biasCache + (1-rho) * pow(deltaValue, 2);
+        double newVal = value + sqrt((neuron->adadeltaBiasCache + 1e-6) / (neuron->biasCache + 1e-6)) * deltaValue;
+        neuron->adadeltaBiasCache = rho * neuron->adadeltaBiasCache + (1-rho) * pow(deltaValue, 2);
+        return newVal;
+    }
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

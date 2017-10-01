@@ -85,6 +85,7 @@ class Neuron {
         std::vector<double> deltaWeights;
         std::vector<double> weightGain;
         std::vector<double> weightsCache;
+        std::vector<double> adadeltaCache;
         double bias;
         double deltaBias;
         double derivative;
@@ -95,6 +96,7 @@ class Neuron {
         double rreluSlope;
         double eluAlpha;
         double biasGain;
+        double adadeltaBiasCache;
         double biasCache;
         double m;
         double v;
@@ -120,6 +122,8 @@ public:
     static double rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
 };

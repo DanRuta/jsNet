@@ -618,6 +618,44 @@ TEST_CASE("Neuron::init - Does not set the neuron m and neuron v to 0 if the upd
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the neuron biasCache and adadeltaBiasCache to 0 if the updateFn is adadelta") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 5;
+    testN->biasCache = 1;
+    testN->adadeltaBiasCache = 1;
+    testN->init(0);
+    REQUIRE( testN->biasCache == 0 );
+    REQUIRE( testN->adadeltaBiasCache == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron weightsCache and adadeltaCache to a vector of zeroes with the same size as the weights when updateFn is adadelta") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    testN->weights = {1,2,3,4,5};
+    net->updateFnIndex = 5;
+    testN->init(0);
+    std::vector<double> expected = {0,0,0,0,0};
+    REQUIRE( testN->weightsCache == expected );
+    REQUIRE( testN->adadeltaCache == expected );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Does not set the biasCache or weightsCache to anything if updateFn is not adadelta") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 1;
+    testN->biasCache = 12234;
+    testN->adadeltaBiasCache = 12234;
+    testN->init(0);
+    REQUIRE( testN->biasCache == 12234 );
+    REQUIRE( testN->adadeltaBiasCache == 12234 );
+    REQUIRE( testN->weightsCache.size() == 0 );
+    REQUIRE( testN->adadeltaCache.size() == 0 );
+    delete testN;
+}
+
 /* NetMath */
 /*
     NOTE: all expected values were copied from the js unit tests, where they were calculated by hand
@@ -826,5 +864,72 @@ TEST_CASE("NetMath::adam - Calculates a value correctly, following the formula")
     testN->v = 0.045;
     double result = NetMath::adam(0, (double)-0.3, (double)0.02, testN, -1);
     REQUIRE( moreOrLessEqual(result, -0.298943, 5) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Sets the neuron.biasCache to the correct value, following the adadelta formula") {
+    Network::deleteNetwork();
+    Network::newNetwork();
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = (double)0.95;
+    testN->biasCache = (double)0.5;
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
+    REQUIRE( moreOrLessEqual(testN->biasCache, 0.477, 3) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Sets the weightsCache to the correct value, following the adadelta formula, same as biasCache") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = 0.95;
+    testN->weightsCache = {0.5, 0.75};
+    testN->adadeltaCache = {0, 0};
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0);
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
+    REQUIRE( moreOrLessEqual(testN->weightsCache[0], 0.477, 3) );
+    REQUIRE( moreOrLessEqual(testN->weightsCache[1], 0.7145, 4) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Creates a value for the bias correctly, following the formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = 0.95;
+    testN->biasCache = 0.5;
+    testN->adadeltaBiasCache = 0.25;
+    double val = NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
+    REQUIRE( moreOrLessEqual(val, 0.64479, 5) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Creates a value for the weight correctly, the same was as the bias") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = 0.95;
+    testN->weightsCache = {0.5, 0.75};
+    testN->adadeltaCache = {0.1, 0.2};
+    double val1 = NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0);
+    double val2 = NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
+    REQUIRE( moreOrLessEqual(val1, 0.59157, 3) );
+    REQUIRE( moreOrLessEqual(val2, 0.60581, 3) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Updates the neuron.adadeltaBiasCache with the correct value, following the formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = (double)0.95;
+    testN->biasCache = (double)0.5;
+    testN->adadeltaBiasCache = (double)0.25;
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
+    REQUIRE( moreOrLessEqual(testN->adadeltaBiasCache, 0.2395, 2) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adadelta - Updates the neuron.adadeltaCache with the correct value, following the formula, same as adadeltaBiasCache") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->rho = 0.95;
+    testN->weightsCache = {0.5, 0.75};
+    testN->adadeltaCache = {0.1, 0.2};
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0);
+    NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
+    REQUIRE( moreOrLessEqual(testN->adadeltaCache[0], 0.097, 1) );
+    REQUIRE( moreOrLessEqual(testN->adadeltaCache[1], 0.192, 1) );
     delete testN;
 }

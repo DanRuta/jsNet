@@ -30,7 +30,8 @@ class Network {
         const activationsIndeces = {
             sigmoid: 0,
             tanh: 1,
-            relu: 2
+            lecuntanh: 2,
+            relu: 3
         }
         let activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
@@ -99,6 +100,7 @@ class Network {
 
                     switch (activationName) {
                         case "tanh":
+                        case "lecuntanh":
                             this.learningRate = 0.01
                             break
 

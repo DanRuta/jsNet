@@ -677,6 +677,15 @@ TEST_CASE("NetMath::tanh") {
     delete testN;
 }
 
+TEST_CASE("NetMath::lecuntanh") {
+    Neuron* testN = new Neuron();
+    REQUIRE( NetMath::lecuntanh(2.0, false, testN) == 1.4929388053842507 );
+    REQUIRE( NetMath::lecuntanh(-2.0, false, testN) == -1.4929388053842507 );
+    REQUIRE( NetMath::lecuntanh(2.0, true, testN) == 0.2802507761872869 );
+    REQUIRE( NetMath::lecuntanh(-2.0, true, testN) == 0.2802507761872869 );
+    delete testN;
+}
+
 TEST_CASE("NetMath::meansquarederror") {
     std::vector<double> values1 = {13,17,18,20,24};
     std::vector<double> values2 = {12,15,20,22,24};
@@ -948,4 +957,9 @@ TEST_CASE("NetMath::adadelta - Updates the neuron.adadeltaCache with the correct
     REQUIRE( moreOrLessEqual(testN->adadeltaCache[0], 0.097, 1) );
     REQUIRE( moreOrLessEqual(testN->adadeltaCache[1], 0.192, 1) );
     delete testN;
+}
+
+TEST_CASE("NetMath::sech - Calculates values correctly") {
+    REQUIRE( doublesAreEqual(NetMath::sech(1), 0.6480542736638853) );
+    REQUIRE( doublesAreEqual(NetMath::sech(-0.5), 0.886818883970074) );
 }

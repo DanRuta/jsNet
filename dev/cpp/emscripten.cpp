@@ -36,6 +36,9 @@ extern "C" {
             case 1:
                 net->activation = &NetMath::tanh;
                 break;
+            case 2:
+                net->activation = &NetMath::lecuntanh;
+                break;
         }
     }
 

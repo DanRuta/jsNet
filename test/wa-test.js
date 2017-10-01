@@ -134,6 +134,17 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Defaults the learning rate to 0.01 if the activation is lecuntanh", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, activation: "lecuntanh"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the learning rate to 0.01 if the activation is tanh", () => {
                 sinon.spy(fakeModule, "cwrap")
                 sinon.spy(fakeModule, "cwrapReturnFunction")

@@ -7,7 +7,9 @@ void Neuron::init (int netInstance) {
 
     deltaBias = 0;
 
-    switch (Network::getInstance(netInstance)->updateFnIndex) {
+    Network* net = Network::getInstance(netInstance);
+
+    switch (net->updateFnIndex) {
         case 1: // gain
             biasGain = 1;
             for (int i=0; i<weights.size(); i++) {
@@ -22,7 +24,7 @@ void Neuron::init (int netInstance) {
                 weightsCache.push_back(0);
             }
 
-            if (Network::getInstance(netInstance)->updateFnIndex == 5) {
+            if (net->updateFnIndex == 5) {
                 adadeltaBiasCache = 0;
                 for (int i=0; i<weights.size(); i++) {
                     adadeltaCache.push_back(0);
@@ -34,5 +36,9 @@ void Neuron::init (int netInstance) {
             m = 0;
             v = 0;
             break;
+    }
+
+    if (net->activation == &NetMath::lrelu) {
+        lreluSlope = net->lreluSlope;
     }
 }

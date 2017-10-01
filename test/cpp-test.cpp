@@ -656,6 +656,17 @@ TEST_CASE("Neuron::init - Does not set the biasCache or weightsCache to anything
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the network lreluSlope to the neuron, if the activation function is lrelu") {
+    Network* net = Network::getInstance(0);
+    net->activation = &NetMath::lrelu;
+    net->lreluSlope = 0.1;
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    REQUIRE( moreOrLessEqual(testN->lreluSlope, 0.1, 6) );
+    delete testN;
+}
+
+
 /* NetMath */
 /*
     NOTE: all expected values were copied from the js unit tests, where they were calculated by hand
@@ -692,6 +703,16 @@ TEST_CASE("NetMath::relu") {
     REQUIRE( NetMath::relu(-2, false, testN) == 0 );
     REQUIRE( NetMath::relu(2, true, testN) == 1 );
     REQUIRE( NetMath::relu(-2, true, testN) == 0 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::lrelu") {
+    Neuron* testN = new Neuron();
+    testN->lreluSlope = -0.0005;
+    REQUIRE( NetMath::lrelu(2, false, testN) == 2 );
+    REQUIRE( NetMath::lrelu(-2, false, testN) == -0.001 );
+    REQUIRE( NetMath::lrelu(2, true, testN) == 1 );
+    REQUIRE( NetMath::lrelu(-2, true, testN) == -0.0005 );
     delete testN;
 }
 

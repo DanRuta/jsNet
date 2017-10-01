@@ -14,6 +14,7 @@ public:
     float learningRate;
     float rmsDecay;
     float rho;
+    float lreluSlope;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
@@ -86,14 +87,14 @@ class Neuron {
         std::vector<double> weightGain;
         std::vector<double> weightsCache;
         std::vector<double> adadeltaCache;
+        double lreluSlope;
+        double rreluSlope;
         double bias;
         double deltaBias;
         double derivative;
         double activation;
         double sum;
         double error;
-        double lreluSlope;
-        double rreluSlope;
         double eluAlpha;
         double biasGain;
         double adadeltaBiasCache;
@@ -116,6 +117,8 @@ public:
     static double lecuntanh(double value, bool prime, Neuron* neuron);
 
     static double relu(double value, bool prime, Neuron* neuron);
+
+    static double lrelu(double value, bool prime, Neuron* neuron);
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 

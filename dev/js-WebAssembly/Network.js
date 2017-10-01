@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho}) {
+        rmsDecay, rho, lreluSlope}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -31,7 +31,8 @@ class Network {
             sigmoid: 0,
             tanh: 1,
             lecuntanh: 2,
-            relu: 3
+            relu: 3,
+            lrelu: 4
         }
         let activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
@@ -39,7 +40,7 @@ class Network {
             set: activation => {
 
                 if (activationsIndeces[activation] == undefined) {
-                    throw new Error(`The ${activation} function does not exist`)
+                    throw new Error(`The ${activation} activation function does not exist`)
                 }
                 activationName = activation
                 this.Module.ccall("setActivation", null, ["number", "number"], [this.netInstance, activationsIndeces[activation]])
@@ -100,6 +101,7 @@ class Network {
 
                     switch (activationName) {
                         case "relu":
+                        case "lrelu":
                             this.learningRate = 0.01
                             break
 
@@ -117,6 +119,11 @@ class Network {
         if (this.updateFn=="rmsprop") {
             NetUtil.defineProperty(this, "rmsDecay", ["number"], [this.netInstance])
             this.rmsDecay = rmsDecay===undefined ? 0.99 : rmsDecay
+        }
+
+        if (activationName=="lrelu") {
+            NetUtil.defineProperty(this, "lreluSlope", ["number"], [this.netInstance])
+            this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
         }
 
         this.layers = []

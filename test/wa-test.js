@@ -167,6 +167,17 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Defaults the learning rate to 0.01 if the activation is lrelu", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, activation: "lrelu"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the activation to sigmoid", () => {
                 expect(net.activation).to.equal("WASM sigmoid")
             })
@@ -237,6 +248,20 @@ describe("Network", () => {
                 sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, updateFn: "rmsprop"})
                 expect(net.rmsDecay).to.equal(0.99)
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Defaults the lreluSlope value to -0.0005 if the activation is lrelu", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, activation: "lrelu"})
+                expect(net.lreluSlope).to.equal(-0.0005)
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Still allows custom lreluSlope values", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, activation: "lrelu", lreluSlope: 123})
+                expect(net.lreluSlope).to.equal(123)
                 NetUtil.defineProperty.restore()
             })
         })
@@ -354,7 +379,7 @@ describe("Network", () => {
             const net = new Network({Module: fakeModule, activation: "sigmoid"})
             // Needs to be wrapped as the function tested is a setter
             const wrapperFn = () => net.activation = "test"
-            expect(wrapperFn).to.throw("The test function does not exist")
+            expect(wrapperFn).to.throw("The test activation function does not exist")
         })
 
         it("Allows snake_case activation function configuration", () => {

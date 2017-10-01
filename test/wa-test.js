@@ -189,6 +189,17 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Defaults the learning rate to 0.01 if the activation is elu", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, activation: "elu"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the activation to sigmoid", () => {
                 expect(net.activation).to.equal("WASM sigmoid")
             })
@@ -273,6 +284,20 @@ describe("Network", () => {
                 sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, activation: "lrelu", lreluSlope: 123})
                 expect(net.lreluSlope).to.equal(123)
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Defaults the eluAlpha value to 1 if the activation is elu", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, activation: "elu"})
+                expect(net.eluAlpha).to.equal(1)
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Still allows custom eluAlpha values", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, activation: "elu", eluAlpha: 123})
+                expect(net.eluAlpha).to.equal(123)
                 NetUtil.defineProperty.restore()
             })
         })

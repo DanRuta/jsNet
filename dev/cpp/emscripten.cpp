@@ -48,6 +48,9 @@ extern "C" {
             case 5:
                 net->activation = &NetMath::rrelu;
                 break;
+            case 6:
+                net->activation = &NetMath::elu;
+                break;
         }
     }
 
@@ -94,6 +97,16 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     float get_lreluSlope (int instanceIndex) {
         return Network::getInstance(instanceIndex)->lreluSlope;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_eluAlpha  (int instanceIndex, float eluAlpha) {
+        Network::getInstance(instanceIndex)->eluAlpha = eluAlpha;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_eluAlpha (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->eluAlpha;
     }
 
     EMSCRIPTEN_KEEPALIVE

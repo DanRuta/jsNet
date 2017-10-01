@@ -679,6 +679,16 @@ TEST_CASE("Neuron::init - Sets the neuron rreluSlope to a number if the activati
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the network eluAlpha to the neuron, if the activation function is elu") {
+    Network* net = Network::getInstance(0);
+    net->activation = &NetMath::elu;
+    net->eluAlpha = 0.1;
+    Neuron* testN = new Neuron();
+    testN->init(0);
+    REQUIRE( moreOrLessEqual(testN->eluAlpha, 0.1, 6) );
+    delete testN;
+}
+
 /* NetMath */
 /*
     NOTE: all expected values were copied from the js unit tests, where they were calculated by hand
@@ -735,6 +745,16 @@ TEST_CASE("NetMath::rrelu") {
     REQUIRE( NetMath::rrelu(-2, false, testN) == 0.0005 );
     REQUIRE( NetMath::rrelu(2, true, testN) == 1 );
     REQUIRE( NetMath::rrelu(-2, true, testN) == 0.0005 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::elu") {
+    Neuron* testN = new Neuron();
+    testN->eluAlpha = 1;
+    REQUIRE( NetMath::elu(2, false, testN) == 2 );
+    REQUIRE( NetMath::elu(-0.25, false, testN) == -0.22119921692859512 );
+    REQUIRE( NetMath::elu(2, true, testN) == 1 );
+    REQUIRE( NetMath::elu(-0.5, true, testN) == 0.6065306597126334 );
     delete testN;
 }
 

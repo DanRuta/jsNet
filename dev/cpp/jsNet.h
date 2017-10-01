@@ -15,6 +15,7 @@ public:
     float rmsDecay;
     float rho;
     float lreluSlope;
+    float eluAlpha;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
@@ -121,6 +122,8 @@ public:
     static double lrelu(double value, bool prime, Neuron* neuron);
 
     static double rrelu(double value, bool prime, Neuron* neuron);
+
+    static double elu(double value, bool prime, Neuron* neuron);
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 

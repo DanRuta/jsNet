@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope}) {
+        rmsDecay, rho, lreluSlope, eluAlpha}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -33,7 +33,8 @@ class Network {
             lecuntanh: 2,
             relu: 3,
             lrelu: 4,
-            rrelu: 5
+            rrelu: 5,
+            elu: 6
         }
         let activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
@@ -104,6 +105,7 @@ class Network {
                         case "relu":
                         case "lrelu":
                         case "rrelu":
+                        case "elu":
                             this.learningRate = 0.01
                             break
 
@@ -126,6 +128,9 @@ class Network {
         if (activationName=="lrelu") {
             NetUtil.defineProperty(this, "lreluSlope", ["number"], [this.netInstance])
             this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        } else if (activationName=="elu") {
+            NetUtil.defineProperty(this, "eluAlpha", ["number"], [this.netInstance])
+            this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
 
         this.layers = []

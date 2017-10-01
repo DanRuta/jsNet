@@ -31,6 +31,11 @@ double NetMath::rrelu(double value, bool prime, Neuron* neuron) {
                  : fmax(neuron->rreluSlope, value);
 }
 
+double NetMath::elu(double value, bool prime, Neuron* neuron) {
+    return prime ? value >= 0 ? 1 : elu(value, false, neuron) + neuron->eluAlpha
+                 : value >= 0 ? value : neuron->eluAlpha * (exp(value) - 1);
+}
+
 // Cost Functions
 double NetMath::meansquarederror (std::vector<double> calculated, std::vector<double> desired) {
     double error = 0.0;

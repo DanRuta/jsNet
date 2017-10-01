@@ -2,7 +2,8 @@
 
 class Network {
 
-    constructor ({Module, learningRate=0.2, activation="sigmoid", updateFn="vanillaupdatefn", rho, cost="meansquarederror", layers=[]}) {
+    constructor ({Module, learningRate=0.2, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
+        rmsDecay, rho}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -66,6 +67,7 @@ class Network {
             vanillaupdatefn: 0,
             gain: 1,
             adagrad: 2,
+            rmsprop: 3,
             adadelta: 5
         }
         NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
@@ -81,6 +83,10 @@ class Network {
                 break
         }
 
+        if (this.updateFn=="rmsprop") {
+            NetUtil.defineProperty(this, "rmsDecay", ["number"], [this.netInstance])
+            this.rmsDecay = rmsDecay===undefined ? 0.99 : rmsDecay
+        }
 
         this.layers = []
         this.epochs = 0

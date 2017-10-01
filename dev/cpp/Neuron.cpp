@@ -15,6 +15,7 @@ void Neuron::init (int netInstance) {
             }
             break;
         case 2: // adagrad
+        case 3: // rmsprop
             biasCache = 0;
             for (int i=0; i<weights.size(); i++) {
                 weightsCache.push_back(0);

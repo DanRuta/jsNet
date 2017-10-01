@@ -11,6 +11,7 @@ class Network {
 public:
     static std::vector<Network*> netInstances;
     float learningRate;
+    float rmsDecay;
     float rho;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
@@ -112,6 +113,8 @@ public:
     static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
 };

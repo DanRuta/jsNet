@@ -57,6 +57,20 @@ double NetMath::adagrad(int netInstance, double value, double deltaValue, Neuron
                                                                                 : neuron->biasCache));
 }
 
+double NetMath::rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    if (weightIndex>-1) {
+        neuron->weightsCache[weightIndex] = net->rmsDecay * neuron->weightsCache[weightIndex] + (1 - net->rmsDecay) * pow(deltaValue, 2);
+    } else {
+        neuron->biasCache = net->rmsDecay * neuron->biasCache + (1 - net->rmsDecay) * pow(deltaValue, 2);
+    }
+
+    return value + net->learningRate * deltaValue / (1e-6 + sqrt(weightIndex>-1 ? neuron->weightsCache[weightIndex]
+                                                                                : neuron->biasCache));
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

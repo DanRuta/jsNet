@@ -4304,7 +4304,7 @@ describe("Netmath", () => {
             neuron.init({updateFn: "rmsprop"})
         })
 
-        it("Sets the cache value to the correct formula", () => {
+        it("Sets the cache value to the correct value, following the rmsprop formula", () => {
             neuron.biasCache = 10
             NetMath.rmsprop.bind({learningRate: 2, rmsDecay: 0.99}, 1, 3, neuron)()
             expect(neuron.biasCache).to.equal(9.99) // 9.9 + 0.01 * 9

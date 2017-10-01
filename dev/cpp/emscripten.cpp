@@ -49,10 +49,21 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void set_rmsDecay  (int instanceIndex, float rmsDecay) {
+        Network::getInstance(instanceIndex)->rmsDecay = rmsDecay;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_rmsDecay (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->rmsDecay;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_rho  (int instanceIndex, float rho) {
         Network::getInstance(instanceIndex)->rho = rho;
     }
 
+    EMSCRIPTEN_KEEPALIVE
     float get_rho (int instanceIndex) {
         return Network::getInstance(instanceIndex)->rho;
     }

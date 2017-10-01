@@ -573,9 +573,32 @@ TEST_CASE("Neuron::init - Does not set the biasCache or weightsCache to anything
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the neuron biasCache to 0 if the updateFn is rmsprop") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 3;
+    testN->biasCache = 1;
+    testN->init(0);
+    REQUIRE( testN->biasCache == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is rmsprop") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    testN->weights = {1,2,3,4,5};
+    net->updateFnIndex = 3;
+    testN->init(0);
+    std::vector<double> expected = {0,0,0,0,0};
+    REQUIRE( testN->weightsCache == expected );
+    delete testN;
+}
 
 
 /* NetMath */
+/*
+    NOTE: all expected values were copied from the js unit tests, where they were calculated by hand
+*/
 TEST_CASE("NetMath::sigmoid") {
     Neuron* testN = new Neuron();
     REQUIRE( NetMath::sigmoid(1.681241237, false, testN) == 0.8430688214048092 );
@@ -714,5 +737,42 @@ TEST_CASE("NetMath::adagrad - Increments the neuron's weightsCache with the same
     REQUIRE( moreOrLessEqual(result1, 3.0, 2) );
     REQUIRE( moreOrLessEqual(result2, 2.9, 1) );
     REQUIRE( moreOrLessEqual(result3, 2.6, 1) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::rmsprop - Sets the cache value to the correct value, following the rmsprop formula") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 2;
+    Network::getInstance(0)->rmsDecay = 0.99;
+    testN->biasCache = 10;
+    NetMath::rmsprop(0, (double)1, (double)3, testN, -1);
+    REQUIRE( moreOrLessEqual(testN->biasCache, 9.99, 3) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::rmsprop - Returns a new value matching the formula for rmsprop, using this new cache value") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.5;
+    Network::getInstance(0)->rmsDecay = 0.99;
+    testN->biasCache = 10;
+    double result = NetMath::rmsprop(0, (double)1, (double)3, testN, -1);
+    REQUIRE( moreOrLessEqual(result, 1.47, 2) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::rmsprop - Updates the weightsCache the same way as the biasCache") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.5;
+    Network::getInstance(0)->rmsDecay = 0.99;
+    testN->weightsCache = {0, 1, 2};
+    double result1 = NetMath::rmsprop(0, (double)1, (double)3, testN, 0);
+    double result2 = NetMath::rmsprop(0, (double)1, (double)4, testN, 1);
+    double result3 = NetMath::rmsprop(0, (double)1, (double)2, testN, 2);
+    REQUIRE( moreOrLessEqual(testN->weightsCache[0], 0.09, 2) );
+    REQUIRE( moreOrLessEqual(testN->weightsCache[1], 1.15, 2) );
+    REQUIRE( moreOrLessEqual(testN->weightsCache[2], 2.02, 2) );
+    REQUIRE( moreOrLessEqual(result1, 6.0, 2) );
+    REQUIRE( moreOrLessEqual(result2, 2.9, 1) );
+    REQUIRE( moreOrLessEqual(result3, 1.7, 1) );
     delete testN;
 }

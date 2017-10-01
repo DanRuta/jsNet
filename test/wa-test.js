@@ -129,7 +129,6 @@ describe("Network", () => {
                 expect(res).to.equal("vanillaupdatefn")
             })
 
-
             it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
                 sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, updateFn: "adadelta"})
@@ -137,6 +136,20 @@ describe("Network", () => {
                 NetUtil.defineProperty.restore()
             })
 
+            it("Sets the rmsDecay property when the updateFn is rmsprop", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", rmsDecay: 1})
+                expect(net.rmsDecay).to.equal(1)
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "rmsDecay")
+                NetUtil.defineProperty.restore()
+            })
+
+            it("Defaults the rmsDecay value to 0.99 when calling the defineProperty function", () => {
+                sinon.stub(NetUtil, "defineProperty")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop"})
+                expect(net.rmsDecay).to.equal(0.99)
+                NetUtil.defineProperty.restore()
+            })
         })
 
         it("Sets the given Module to NetUtil, also", () => {

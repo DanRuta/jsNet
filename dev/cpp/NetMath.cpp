@@ -16,6 +16,16 @@ double NetMath::meansquarederror (std::vector<double> calculated, std::vector<do
     return error / calculated.size();
 }
 
+double NetMath::crossentropy (std::vector<double> target, std::vector<double> output) {
+    double error = 0.0;
+
+    for (int v=0; v<target.size(); v++) {
+        error -= target[v] * log(output[v]+1e-15) + ((1 - target[v]) * log(1+1e-15-output[v]));
+    }
+
+    return error;
+}
+
 // Weight update functions
 double NetMath::vanillaupdatefn (int netInstance, double value, double deltaValue) {
     Network* net = Network::getInstance(netInstance);

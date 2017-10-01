@@ -1,6 +1,6 @@
 # Upcoming - 3.0 - WebAssembly
 ---
-- jsNet version 1.0 feature parity
+- jsNet version 1.1 feature parity
 
 # 2.1.0 - Optimizations
 ---

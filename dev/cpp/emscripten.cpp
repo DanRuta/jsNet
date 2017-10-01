@@ -45,6 +45,9 @@ extern "C" {
             case 0:
                 net->costFunction = &NetMath::meansquarederror;
                 break;
+            case 1:
+                net->costFunction = &NetMath::crossentropy;
+                break;
         }
     }
 

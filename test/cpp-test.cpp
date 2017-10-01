@@ -673,6 +673,12 @@ TEST_CASE("NetMath::meansquarederror") {
     REQUIRE(NetMath::meansquarederror(values1, values2)==(double)2.6 );
 }
 
+TEST_CASE("NetMath::crossentropy") {
+    std::vector<double> values1 = {1, 0, 0.3};
+    std::vector<double> values2 = {0, 1, 0.8};
+    REQUIRE( NetMath::crossentropy(values1, values2) == (double)70.16654147569186 );
+}
+
 TEST_CASE("NetMath::vanillaupdatefn") {
     Network::getInstance(0)->learningRate = 0.5;
     REQUIRE( NetMath::vanillaupdatefn(0, 10, 10)==15 );

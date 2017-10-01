@@ -27,7 +27,9 @@ class FCLayer {
                     break
             }
 
-            neuron.init(this.netInstance, this.layerIndex, ni)
+            neuron.init(this.netInstance, this.layerIndex, ni, {
+                updateFn: this.net.updateFn
+            })
         })
     }
 

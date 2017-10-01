@@ -77,32 +77,34 @@ void Layer::backward (std::vector<double> expected) {
 void Layer::applyDeltaWeights (void) {
 
     // Function pointers are far too slow, here.
-    // Using repetitive switch statements makes a substantial perf difference
+    // Using code repetitive switch statements makes a substantial perf difference
     int updateFnIndex = Network::getInstance(netInstance)->updateFnIndex;
 
-    for(int n=0; n<neurons.size(); n++) {
-
-        for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
-
-            switch (updateFnIndex) {
-                case 0:
+    switch (updateFnIndex) {
+        case 0: // vanilla
+            for(int n=0; n<neurons.size(); n++) {
+                for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
                     neurons[n]->weights[dw] = NetMath::vanillaupdatefn(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw]);
-                    break;
-                case 1:
-                    neurons[n]->weights[dw] = NetMath::gain(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
-                    break;
-            }
-
-        }
-
-        switch (updateFnIndex) {
-            case 0:
+                }
                 neurons[n]->bias = NetMath::vanillaupdatefn(netInstance, neurons[n]->bias, neurons[n]->deltaBias);
-                break;
-            case 1:
+            }
+            break;
+        case 1: // gain
+            for(int n=0; n<neurons.size(); n++) {
+                for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
+                    neurons[n]->weights[dw] = NetMath::gain(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
+                }
                 neurons[n]->bias = NetMath::gain(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
-                break;
-        }
+            }
+            break;
+        case 2: // adagrad
+            for(int n=0; n<neurons.size(); n++) {
+                for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
+                    neurons[n]->weights[dw] = NetMath::adagrad(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
+                }
+                neurons[n]->bias = NetMath::adagrad(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
+            }
+            break;
     }
 }
 

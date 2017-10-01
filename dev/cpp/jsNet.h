@@ -82,6 +82,7 @@ class Neuron {
         std::vector<double> weights;
         std::vector<double> deltaWeights;
         std::vector<double> weightGain;
+        std::vector<double> weightsCache;
         double bias;
         double deltaBias;
         double derivative;
@@ -92,6 +93,7 @@ class Neuron {
         double rreluSlope;
         double eluAlpha;
         double biasGain;
+        double biasCache;
 
         Neuron(void) {}
 
@@ -108,6 +110,8 @@ public:
     static double vanillaupdatefn (int netInstance, double value, double deltaValue);
 
     static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
 };

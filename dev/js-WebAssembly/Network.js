@@ -65,6 +65,7 @@ class Network {
         const updateFnIndeces = {
             vanillaupdatefn: 0,
             gain: 1,
+            adagrad: 2,
             adadelta: 5
         }
         NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
@@ -130,9 +131,7 @@ class Network {
             if (layer instanceof FCLayer) {
                 this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
                 this.joinLayer(layer, l)
-                // layer.init()
             }
-
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
@@ -140,6 +139,7 @@ class Network {
 
     joinLayer (layer, layerIndex) {
 
+        layer.net = this
         layer.layerIndex = layerIndex
 
         if (layerIndex) {

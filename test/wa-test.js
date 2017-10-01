@@ -412,6 +412,14 @@ describe("Network", () => {
             sinon.stub(layer2, "init")
         })
 
+        it("Sets the layer.net to a reference to the network", () => {
+            net.layers = [layer1]
+            net.joinLayer(layer1, 0)
+            net.joinLayer(layer2, 1)
+            expect(layer1.net).to.equal(net)
+            expect(layer2.net).to.equal(net)
+        })
+
         it("Sets the layer.layerIndex to the given layer index value", () => {
             net.layers = [layer1]
             net.joinLayer(layer1, 0)
@@ -767,6 +775,7 @@ describe("FCLayer", () => {
         it("Calls the init function of all of the layer's neurons with the layerIndex and the neuron index", () => {
             const layer = new FCLayer(3)
             const layer2 = new FCLayer(3)
+            layer.net = {}
             layer.netInstance = 456
             layer.prevLayer = layer2
             layer.layerIndex = 4
@@ -783,6 +792,7 @@ describe("FCLayer", () => {
             const layer = new FCLayer(3)
             const layer2 = new FCLayer(123)
             layer.prevLayer = layer2
+            layer.net = {}
             layer.init()
             expect(layer.neurons[0].size).to.equal(123)
             expect(layer.neurons[1].size).to.equal(123)
@@ -868,7 +878,7 @@ describe("Neuron", () => {
             neuron.size = 5
             sinon.stub(NetUtil, "defineArrayProperty")
             sinon.stub(NetUtil, "defineProperty")
-            neuron.init(789, 1, 13)
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
         })
 
         afterEach(() => {
@@ -886,6 +896,54 @@ describe("Neuron", () => {
 
         it("Calls the NetUtil.defineArrayProperty for neuron.deltaWeights", () => {
             expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights")
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.biasGain when the updateFn is gain", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil, "defineProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "gain"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasGain")
+        })
+
+        it("Doesn't call the NetUtil.defineProperty for neuron.biasGain when the updateFn is not gain", () => {
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
+        })
+
+        it("Calls the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is gain", () => {
+            NetUtil.defineArrayProperty.restore()
+            sinon.stub(NetUtil, "defineArrayProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "gain"})
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightGain")
+        })
+
+        it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is not gain", () => {
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightGain")
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.biasCache when the updateFn is adagrad", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil, "defineProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "adagrad"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache")
+        })
+
+        it("Doesn't call the NetUtil.defineProperty for neuron.biasCache when the updateFn is not adagrad", () => {
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
+        })
+
+        it("Calls the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is adagrad", () => {
+            NetUtil.defineArrayProperty.restore()
+            sinon.stub(NetUtil, "defineArrayProperty")
+            const neuron = new Neuron()
+            neuron.init(789, 1, 13, {updateFn: "adagrad"})
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache")
+        })
+
+        it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is not adagrad", () => {
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache")
         })
     })
 })

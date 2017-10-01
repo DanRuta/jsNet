@@ -44,6 +44,19 @@ double NetMath::gain(int netInstance, double value, double deltaValue, Neuron* n
     return newVal;
 }
 
+double NetMath::adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    if (weightIndex>-1) {
+        neuron->weightsCache[weightIndex] += pow(deltaValue, 2);
+    } else {
+        neuron->biasCache += pow(deltaValue, 2);
+    }
+
+    Network* net = Network::getInstance(netInstance);
+    return value + net->learningRate * deltaValue / (1e-6 + sqrt(weightIndex>-1 ? neuron->weightsCache[weightIndex]
+                                                                                : neuron->biasCache));
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

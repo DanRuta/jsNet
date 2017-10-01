@@ -4280,7 +4280,7 @@ describe("Netmath", () => {
             expect(result.toFixed(1)).to.equal("1.5")
         })
 
-        it("Increments the neuron's weightsCache the same was as the biasCache", () => {
+        it("Increments the neuron's weightsCache the same way as the biasCache", () => {
             neuron.weightsCache = [0, 1, 2]
             const result1 = NetMath.adagrad.bind({learningRate: 2}, 1, 3, neuron, 0)()
             const result2 = NetMath.adagrad.bind({learningRate: 2}, 1, 4, neuron, 1)()

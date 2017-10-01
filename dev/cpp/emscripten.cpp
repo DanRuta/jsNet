@@ -238,6 +238,30 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    double* get_weightsCache (int instanceIndex, int layerIndex, int neuronIndex) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weightsCache.size();
+        double weightsCache[neuronSize];
+
+        for (int i=0; i<neuronSize; i++) {
+            weightsCache[i] = net->layers[layerIndex]->neurons[neuronIndex]->weightsCache[i];
+        }
+
+        auto ptr = &weightsCache[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_weightsCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+        Network* net = Network::getInstance(instanceIndex);
+
+        for (int dw=0; dw<bufSize; dw++) {
+            net->layers[layerIndex]->neurons[neuronIndex]->weightsCache[dw] = buf[dw];
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     double get_bias (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias;
     }
@@ -255,5 +279,15 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     double get_biasGain (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasGain;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_biasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasCache = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_biasCache (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasCache;
     }
 }

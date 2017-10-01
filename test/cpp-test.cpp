@@ -493,6 +493,8 @@ TEST_CASE("Layer::resetDeltaWeights - Sets all deltaWeight values to 0") {
     delete l2;
 }
 
+
+
 /* Neuron */
 TEST_CASE("Neuron::init - Fills the deltaWeights vector with 0 values, matching weights size") {
     Neuron* testN = new Neuron();
@@ -518,7 +520,7 @@ TEST_CASE("Neuron::init - Sets the neuron biasGain to 1 if the net's updateFn is
     delete testN;
 }
 
-TEST_CASE("Neuron::init - Sets the neuron weightGain to a vector of 1s, with the same size as the weights vector") {
+TEST_CASE("Neuron::init - Sets the neuron weightGain to a vector of 1s, with the same size as the weights vector when updateFn is gain") {
     Network* net = Network::getInstance(0);
     Neuron* testN = new Neuron();
     testN->weights = {1,2,3,4,5};
@@ -528,6 +530,50 @@ TEST_CASE("Neuron::init - Sets the neuron weightGain to a vector of 1s, with the
     REQUIRE( testN->weightGain == expected );
     delete testN;
 }
+
+TEST_CASE("Neuron::init - Does not set the biasGain or weightGain to anything if updateFn is not gain") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 2;
+    testN->init(0);
+    REQUIRE( testN->biasGain == 0 );
+    REQUIRE( testN->weightGain.size() == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron biasCache to 0 if the updateFn is adagrad") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 2;
+    testN->biasCache = 1;
+    testN->init(0);
+    REQUIRE( testN->biasCache == 0 );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is adagrad") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    testN->weights = {1,2,3,4,5};
+    net->updateFnIndex = 2;
+    testN->init(0);
+    std::vector<double> expected = {0,0,0,0,0};
+    REQUIRE( testN->weightsCache == expected );
+    delete testN;
+}
+
+TEST_CASE("Neuron::init - Does not set the biasCache or weightsCache to anything if updateFn is not adagrad") {
+    Network* net = Network::getInstance(0);
+    Neuron* testN = new Neuron();
+    net->updateFnIndex = 1;
+    testN->biasCache = 12234;
+    testN->init(0);
+    REQUIRE( testN->biasCache == 12234 );
+    REQUIRE( testN->weightsCache.size() == 0 );
+    delete testN;
+}
+
+
 
 /* NetMath */
 TEST_CASE("NetMath::sigmoid") {
@@ -634,5 +680,39 @@ TEST_CASE("NetMath::gain - Decreases weight gain the same way as the bias gain")
     NetMath::gain(0, (double)0.1, (double)1, testN, 1);
     REQUIRE( testN->weightGain[0] == 0.95 );
     REQUIRE( testN->weightGain[1] == 0.5 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adagrad - Increments the neuron's biasCache by the square of its deltaBias") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 2;
+    testN->biasCache = 0;
+    NetMath::adagrad(0, (double)1, (double)3, testN, -1);
+    REQUIRE( testN->biasCache == 9 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adagrad - Returns a new value matching the formula for adagrad") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 0.5;
+    testN->biasCache = 0;
+    double result = NetMath::adagrad(0, (double)1, (double)3, testN, -1);
+    REQUIRE( moreOrLessEqual(result, 1.5, 2) );
+    delete testN;
+}
+
+TEST_CASE("NetMath::adagrad - Increments the neuron's weightsCache with the same way as the biasCache") {
+    Neuron* testN = new Neuron();
+    Network::getInstance(0)->learningRate = 2;
+    testN->weightsCache = {0, 1, 2};
+    double result1 = NetMath::adagrad(0, (double)1, (double)3, testN, 0);
+    double result2 = NetMath::adagrad(0, (double)1, (double)4, testN, 1);
+    double result3 = NetMath::adagrad(0, (double)1, (double)2, testN, 2);
+    REQUIRE( testN->weightsCache[0] == 9 );
+    REQUIRE( testN->weightsCache[1] == 17 );
+    REQUIRE( testN->weightsCache[2] == 6 );
+    REQUIRE( moreOrLessEqual(result1, 3.0, 2) );
+    REQUIRE( moreOrLessEqual(result2, 2.9, 1) );
+    REQUIRE( moreOrLessEqual(result3, 2.6, 1) );
     delete testN;
 }

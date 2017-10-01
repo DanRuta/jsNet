@@ -35,7 +35,9 @@ class FCLayer {
                     break
             }
 
-            neuron.init(this.netInstance, this.layerIndex, ni)
+            neuron.init(this.netInstance, this.layerIndex, ni, {
+                updateFn: this.net.updateFn
+            })
         })
     }
 
@@ -295,6 +297,7 @@ class Network {
         const updateFnIndeces = {
             vanillaupdatefn: 0,
             gain: 1,
+            adagrad: 2,
             adadelta: 5
         }
         NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
@@ -360,9 +363,7 @@ class Network {
             if (layer instanceof FCLayer) {
                 this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
                 this.joinLayer(layer, l)
-                // layer.init()
             }
-
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
@@ -370,6 +371,7 @@ class Network {
 
     joinLayer (layer, layerIndex) {
 
+        layer.net = this
         layer.layerIndex = layerIndex
 
         if (layerIndex) {
@@ -532,15 +534,22 @@ class Neuron {
 
     constructor () {}
 
-    init (netInstance, layerIndex, neuronIndex) {
-
+    init (netInstance, layerIndex, neuronIndex, {updateFn}) {
 
         NetUtil.defineArrayProperty(this, "weights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
         NetUtil.defineProperty(this, "bias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
         NetUtil.defineArrayProperty(this, "deltaWeights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
 
-        NetUtil.defineProperty(this, "biasGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-        NetUtil.defineArrayProperty(this, "weightGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+        switch (updateFn) {
+            case "gain":
+                NetUtil.defineProperty(this, "biasGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                NetUtil.defineArrayProperty(this, "weightGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                break
+            case "adagrad":
+                NetUtil.defineProperty(this, "biasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                NetUtil.defineArrayProperty(this, "weightsCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                break
+        }
 
     }
 

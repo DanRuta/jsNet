@@ -32,7 +32,8 @@ class Network {
             tanh: 1,
             lecuntanh: 2,
             relu: 3,
-            lrelu: 4
+            lrelu: 4,
+            rrelu: 5
         }
         let activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
@@ -102,6 +103,7 @@ class Network {
                     switch (activationName) {
                         case "relu":
                         case "lrelu":
+                        case "rrelu":
                             this.learningRate = 0.01
                             break
 

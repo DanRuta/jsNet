@@ -45,6 +45,9 @@ extern "C" {
             case 4:
                 net->activation = &NetMath::lrelu;
                 break;
+            case 5:
+                net->activation = &NetMath::rrelu;
+                break;
         }
     }
 

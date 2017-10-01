@@ -120,6 +120,8 @@ public:
 
     static double lrelu(double value, bool prime, Neuron* neuron);
 
+    static double rrelu(double value, bool prime, Neuron* neuron);
+
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 
     static double crossentropy (std::vector<double> target, std::vector<double> output);

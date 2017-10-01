@@ -40,5 +40,7 @@ void Neuron::init (int netInstance) {
 
     if (net->activation == &NetMath::lrelu) {
         lreluSlope = net->lreluSlope;
+    } else if (net->activation == &NetMath::rrelu) {
+        rreluSlope = ((double) rand() / (RAND_MAX))/5 - 0.1;
     }
 }

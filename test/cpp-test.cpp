@@ -666,6 +666,18 @@ TEST_CASE("Neuron::init - Sets the network lreluSlope to the neuron, if the acti
     delete testN;
 }
 
+TEST_CASE("Neuron::init - Sets the neuron rreluSlope to a number if the activation is rrelu") {
+    Network* net = Network::getInstance(0);
+    net->activation = &NetMath::rrelu;
+    Neuron* testN = new Neuron();
+    testN->rreluSlope = 0.1;
+    testN->init(0);
+    REQUIRE( testN->rreluSlope != 0 );
+    REQUIRE( testN->rreluSlope != 0.1 );
+    REQUIRE( testN->rreluSlope >= -0.1);
+    REQUIRE( testN->rreluSlope <= 0.1);
+    delete testN;
+}
 
 /* NetMath */
 /*
@@ -713,6 +725,16 @@ TEST_CASE("NetMath::lrelu") {
     REQUIRE( NetMath::lrelu(-2, false, testN) == -0.001 );
     REQUIRE( NetMath::lrelu(2, true, testN) == 1 );
     REQUIRE( NetMath::lrelu(-2, true, testN) == -0.0005 );
+    delete testN;
+}
+
+TEST_CASE("NetMath::rrelu") {
+    Neuron* testN = new Neuron();
+    testN->rreluSlope = 0.0005;
+    REQUIRE( NetMath::rrelu(2, false, testN) == 2 );
+    REQUIRE( NetMath::rrelu(-2, false, testN) == 0.0005 );
+    REQUIRE( NetMath::rrelu(2, true, testN) == 1 );
+    REQUIRE( NetMath::rrelu(-2, true, testN) == 0.0005 );
     delete testN;
 }
 

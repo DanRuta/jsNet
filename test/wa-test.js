@@ -178,6 +178,17 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Defaults the learning rate to 0.01 if the activation is rrelu", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, activation: "rrelu"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the activation to sigmoid", () => {
                 expect(net.activation).to.equal("WASM sigmoid")
             })

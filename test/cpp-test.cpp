@@ -667,6 +667,16 @@ TEST_CASE("NetMath::sigmoid") {
     delete testN;
 }
 
+TEST_CASE("NetMath::tanh") {
+    Neuron* testN = new Neuron();
+    REQUIRE( doublesAreEqual(NetMath::tanh(1, false, testN), 0.7615941559557649) );
+    REQUIRE( doublesAreEqual(NetMath::tanh(0.5, false, testN), 0.46211715726000974));
+    REQUIRE( doublesAreEqual(NetMath::tanh(0.5, true, testN), 0.7864477329659275) );
+    REQUIRE( doublesAreEqual(NetMath::tanh(1.5, true, testN), 0.18070663892364855) );
+    REQUIRE( NetMath::tanh(900, true, testN)!=NAN );
+    delete testN;
+}
+
 TEST_CASE("NetMath::meansquarederror") {
     std::vector<double> values1 = {13,17,18,20,24};
     std::vector<double> values2 = {12,15,20,22,24};

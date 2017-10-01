@@ -261,7 +261,8 @@ class Network {
         // Activation function get / set
         const activationsIndeces = {
             sigmoid: 0,
-            relu: 1
+            tanh: 1,
+            relu: 2
         }
         let activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
@@ -309,7 +310,6 @@ class Network {
         })
         this.updateFn = NetUtil.format(updateFn)
 
-
         switch (NetUtil.format(updateFn)) {
 
             case "rmsprop":
@@ -327,8 +327,16 @@ class Network {
 
             default:
 
-                if (this.learningRate==undefined) {
-                    this.learningRate = 0.2
+                if (learningRate==undefined) {
+
+                    switch (activationName) {
+                        case "tanh":
+                            this.learningRate = 0.01
+                            break
+
+                        default:
+                            this.learningRate = 0.2
+                    }
                 }
         }
 

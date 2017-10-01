@@ -33,6 +33,9 @@ extern "C" {
             case 0:
                 net->activation = &NetMath::sigmoid;
                 break;
+            case 1:
+                net->activation = &NetMath::tanh;
+                break;
         }
     }
 

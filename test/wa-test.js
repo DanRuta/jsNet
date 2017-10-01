@@ -134,6 +134,17 @@ describe("Network", () => {
                 fakeModule.cwrap.restore()
             })
 
+            it("Defaults the learning rate to 0.01 if the activation is tanh", () => {
+                sinon.spy(fakeModule, "cwrap")
+                sinon.spy(fakeModule, "cwrapReturnFunction")
+
+                const net2 = new Network({Module: fakeModule, activation: "tanh"})
+                expect(fakeModule.cwrap).to.be.calledWith("setLearningRate")
+                expect(fakeModule.cwrapReturnFunction).to.be.calledWith(0, 0.01)
+                fakeModule.cwrapReturnFunction.restore()
+                fakeModule.cwrap.restore()
+            })
+
             it("Defaults the activation to sigmoid", () => {
                 expect(net.activation).to.equal("WASM sigmoid")
             })
@@ -342,15 +353,15 @@ describe("Network", () => {
         it("Setting a new net.activation value ccalls the WASM setActivation function", () => {
             const net = new Network({Module: fakeModule, activation: "sigmoid"})
             sinon.spy(fakeModule, "ccall")
-            net.activation = "relu"
+            net.activation = "tanh"
             expect(fakeModule.ccall).to.be.calledWith("setActivation", null, ["number", "number"], [0, 1])
             fakeModule.ccall.restore()
         })
 
         it("Setting a new net.activation value changes the getter return string to use the new activation name", () => {
             const net = new Network({Module: fakeModule, activation: "sigmoid"})
-            net.activation = "relu"
-            expect(net.activation).to.equal("WASM relu")
+            net.activation = "tanh"
+            expect(net.activation).to.equal("WASM tanh")
         })
 
         it("net.cost returns 'WASM x', where x is the given cost function string", () => {

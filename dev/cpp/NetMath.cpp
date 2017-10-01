@@ -5,6 +5,12 @@ double NetMath::sigmoid(double value, bool prime, Neuron* neuron) {
                  : val;
 }
 
+double NetMath::tanh(double value, bool prime, Neuron* neuron) {
+    double ex = exp(2*value);
+    double val = prime ? 4 / pow(exp(value)+exp(-value), 2) : (ex-1)/(ex+1);
+    return val==0 ? 1e-18 : val;
+}
+
 // Cost Functions
 double NetMath::meansquarederror (std::vector<double> calculated, std::vector<double> desired) {
     double error = 0.0;

@@ -16,6 +16,7 @@ public:
     float rho;
     float lreluSlope;
     float eluAlpha;
+    double error;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;

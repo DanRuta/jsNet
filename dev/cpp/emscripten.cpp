@@ -26,6 +26,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    double getError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->error;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 

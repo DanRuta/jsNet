@@ -22,6 +22,7 @@ class FCLayer {
     init () {
         this.neurons.forEach((neuron, ni) => {
             switch (true) {
+
                 case this.prevLayer instanceof FCLayer:
                     neuron.size = this.prevLayer.size
                     break

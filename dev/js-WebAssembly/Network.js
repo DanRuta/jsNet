@@ -26,6 +26,10 @@ class Network {
 
         if (learningRate) this.learningRate = learningRate
 
+        Object.defineProperty(this, "error", {
+            get: () => Module.ccall("getError", "number", ["number"], [this.netInstance])
+        })
+
         // Activation function get / set
         const activationsIndeces = {
             sigmoid: 0,
@@ -239,6 +243,8 @@ class Network {
 
             const typedArray = new Float32Array(itemsCount)
 
+            console.log(`Training started. Epochs: ${epochs}`)
+
             for (let di=0; di<data.length; di++) {
 
                 if (!data[di].hasOwnProperty("input") || (!data[di].hasOwnProperty("expected") && !data[di].hasOwnProperty("output"))) {
@@ -261,13 +267,17 @@ class Network {
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)
 
+            let elapsed
+
             for (let e=0; e<epochs; e++) {
                 this.Module.ccall("train", "number", ["number", "number", "number", "number", "number"],
                                                 [this.netInstance, buf, itemsCount, itemSize, dimension])
+                elapsed = Date.now() - startTime
+                console.log(`Epoch ${e+1} Error: ${this.error}` +
+                            `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
             }
 
             this.Module._free(buf)
-            const elapsed = Date.now() - startTime
             console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
             resolve()
         })

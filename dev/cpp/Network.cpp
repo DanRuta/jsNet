@@ -74,8 +74,6 @@ void Network::backward (std::vector<double> expected) {
 
 void Network::train (void) {
 
-    printf("Training...\n");
-
     double totalErrors = 0.0;
 
     for (int i=0; i<trainingData.size(); i++) {
@@ -90,11 +88,11 @@ void Network::train (void) {
         backward(std::get<1>(trainingData[i]));
         applyDeltaWeights();
     }
+
+    error = totalErrors / trainingData.size();
 }
 
 double Network::test (void) {
-
-    printf("Testing...\n");
 
     double totalErrors = 0.0;
 

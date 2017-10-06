@@ -236,7 +236,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -258,6 +258,9 @@ class Network {
         })
 
         if (learningRate) this.learningRate = learningRate
+
+        NetUtil.defineProperty(this, "dropout", ["number"], [this.netInstance])
+        this.dropout = dropout==false ? 1 : dropout
 
         Object.defineProperty(this, "error", {
             get: () => Module.ccall("getError", "number", ["number"], [this.netInstance])

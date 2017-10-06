@@ -78,6 +78,8 @@ void Network::train (int its, int startI) {
     double totalErrors = 0.0;
     double iterationError = 0.0;
 
+    isTraining = true;
+
     for (int i=startI; i<(startI+its); i++) {
         resetDeltaWeights();
 
@@ -91,6 +93,7 @@ void Network::train (int its, int startI) {
         applyDeltaWeights();
     }
 
+    isTraining = false;
     error = totalErrors / its;
 }
 

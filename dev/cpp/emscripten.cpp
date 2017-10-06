@@ -115,6 +115,16 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void set_dropout  (int instanceIndex, float dropout) {
+        Network::getInstance(instanceIndex)->dropout = dropout;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_dropout (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->dropout;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_updateFn (int instanceIndex, int fnIndex) {
         Network::getInstance(instanceIndex)->updateFnIndex = fnIndex;
     }

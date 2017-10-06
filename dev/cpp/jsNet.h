@@ -17,6 +17,8 @@ public:
     float rho;
     float lreluSlope;
     float eluAlpha;
+    bool isTraining;
+    float dropout;
     double error;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
@@ -104,6 +106,7 @@ class Neuron {
         double biasCache;
         double m;
         double v;
+        bool dropped;
 
         Neuron(void) {}
 

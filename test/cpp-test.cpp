@@ -235,6 +235,9 @@ TEST_CASE("Layer::forward - SETS the neurons' sum to their bias + weighted activ
         l2->neurons[n]->bias = n;
     }
 
+    Network::getInstance(0)->isTraining = false;
+    Network::getInstance(0)->dropout = 1;
+    l2->netInstance = 0;
     l2->forward();
 
     REQUIRE(l2->neurons[0]->sum == 5);
@@ -244,6 +247,7 @@ TEST_CASE("Layer::forward - SETS the neurons' sum to their bias + weighted activ
     // Check that it SETS it, and doesn't increment it
     l2->forward();
 
+    REQUIRE(Network::getInstance(0)->isTraining==false);
     REQUIRE(l2->neurons[0]->sum == 5);
     REQUIRE(l2->neurons[1]->sum == 6);
     REQUIRE(l2->neurons[2]->sum == 7);
@@ -268,11 +272,116 @@ TEST_CASE("Layer::forward - Sets the layer's neurons' activation to the result o
         l2->neurons[n]->bias = n;
     }
 
+    Network::getInstance(0)->isTraining = false;
+    Network::getInstance(0)->dropout = 1;
     l2->forward();
+
+    REQUIRE(Network::getInstance(0)->isTraining==false);
+    REQUIRE(l2->neurons[0]->activation == 0.9933071490757153);
+    REQUIRE(l2->neurons[1]->activation == 0.9975273768433653);
+    REQUIRE(l2->neurons[2]->activation == 0.9990889488055994);
+
+    delete l1;
+    delete l2;
+}
+
+TEST_CASE("Layer::forward - Sets the neurons' dropped value to true and activation to 0 if the net is training and dropout is set to 0") {
+    Layer* l1 = new Layer(0, 2);
+    Layer* l2 = new Layer(0, 3);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+    l2->activation = &NetMath::sigmoid;
+
+    l1->neurons[0]->activation = 1;
+    l1->neurons[1]->activation = 2;
+
+    for (int n=0; n<3; n++) {
+        l2->neurons[n]->weights = {1,2};
+        l2->neurons[n]->bias = n;
+        l2->neurons[n]->sum = 0;
+    }
+
+    l2->netInstance = 0;
+    Network::getInstance(0)->dropout = 0;
+    Network::getInstance(0)->isTraining = true;
+    l2->forward();
+
+    REQUIRE(l2->neurons[0]->dropped);
+    REQUIRE(l2->neurons[1]->dropped);
+    REQUIRE(l2->neurons[2]->dropped);
+
+    REQUIRE(l2->neurons[0]->activation == 0);
+    REQUIRE(l2->neurons[1]->activation == 0);
+    REQUIRE(l2->neurons[2]->activation == 0);
+
+    REQUIRE(l2->neurons[0]->sum == 0);
+    REQUIRE(l2->neurons[1]->sum == 0);
+    REQUIRE(l2->neurons[2]->sum == 0);
+
+    delete l1;
+    delete l2;
+}
+
+TEST_CASE("Layer::forward - Does not set neurons to dropped if the net is not training") {
+    Layer* l1 = new Layer(0, 2);
+    Layer* l2 = new Layer(0, 3);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+    l2->activation = &NetMath::sigmoid;
+
+    l1->neurons[0]->activation = 1;
+    l1->neurons[1]->activation = 2;
+
+    for (int n=0; n<3; n++) {
+        l2->neurons[n]->weights = {1,2};
+        l2->neurons[n]->bias = n;
+        l2->neurons[n]->activation = 0;
+    }
+
+    l2->netInstance = 0;
+    Network::getInstance(0)->dropout = 1;
+    Network::getInstance(0)->isTraining = false;
+    l2->forward();
+
+    REQUIRE( !l2->neurons[0]->dropped );
+    REQUIRE( !l2->neurons[1]->dropped );
+    REQUIRE( !l2->neurons[2]->dropped );
 
     REQUIRE(l2->neurons[0]->activation == 0.9933071490757153);
     REQUIRE(l2->neurons[1]->activation == 0.9975273768433653);
     REQUIRE(l2->neurons[2]->activation == 0.9990889488055994);
+
+    delete l1;
+    delete l2;
+}
+
+
+TEST_CASE("Layer::forward - Divides the activation values by the dropout") {
+    Layer* l1 = new Layer(0, 2);
+    Layer* l2 = new Layer(0, 3);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+    l2->activation = &NetMath::sigmoid;
+
+    l1->neurons[0]->activation = 1;
+    l1->neurons[1]->activation = 2;
+
+    for (int n=0; n<3; n++) {
+        l2->neurons[n]->weights = {1,2};
+        l2->neurons[n]->bias = n;
+    }
+
+    Network::getInstance(0)->dropout = 0.5;
+    Network::getInstance(0)->isTraining = false;
+    l2->forward();
+
+    REQUIRE(Network::getInstance(0)->isTraining==false);
+    REQUIRE(l2->neurons[0]->activation == 0.9933071490757153 * 2);
+    REQUIRE(l2->neurons[1]->activation == 0.9975273768433653 * 2);
+    REQUIRE(l2->neurons[2]->activation == 0.9990889488055994 * 2);
 
     delete l1;
     delete l2;
@@ -290,6 +399,10 @@ TEST_CASE("Layer::backward - Sets the neurons' errors to difference between thei
     l2->neurons[0]->activation = 0;
     l2->neurons[1]->activation = 1;
     l2->neurons[2]->activation = 0;
+
+    l2->neurons[0]->dropped = false;
+    l2->neurons[1]->dropped = false;
+    l2->neurons[2]->dropped = false;
 
     l2->backward(expected);
 
@@ -318,6 +431,9 @@ TEST_CASE("Layer::backward - Sets the neurons' derivatives to the activation pri
     l2->neurons[0]->sum = 0;
     l2->neurons[1]->sum = 1;
     l2->neurons[2]->sum = 0;
+    l2->neurons[0]->dropped = false;
+    l2->neurons[1]->dropped = false;
+    l2->neurons[2]->dropped = false;
     l2->backward(emptyVec);
 
     REQUIRE( l2->neurons[0]->derivative == 0.25 );
@@ -346,6 +462,9 @@ TEST_CASE("Layer::backward - Sets the neurons' errors to their derivative multip
     l2->neurons[0]->sum = 0.5;
     l2->neurons[1]->sum = 0.5;
     l2->neurons[2]->sum = 0.5;
+    l2->neurons[0]->dropped = false;
+    l2->neurons[1]->dropped = false;
+    l2->neurons[2]->dropped = false;
 
     for (int i=0; i<4; i++) {
         l3->neurons[i]->error = 0.5;
@@ -380,6 +499,10 @@ TEST_CASE("Layer::backward - Increments each of its delta weights by its error *
     l2->neurons[0]->activation = 0.5;
     l2->neurons[1]->activation = 0.5;
     l2->neurons[2]->activation = 0.5;
+    l3->neurons[0]->dropped = false;
+    l3->neurons[1]->dropped = false;
+    l3->neurons[2]->dropped = false;
+    l3->neurons[3]->dropped = false;
 
     for (int i=0; i<4; i++) {
         l3->neurons[i]->activation = 0.5;
@@ -423,6 +546,45 @@ TEST_CASE("Layer::backward - Sets the neurons' deltaBias to their errors") {
     delete l1;
     delete l2;
 }
+
+TEST_CASE("Layer::backward - Sets the neurons' error and deltaBias values to 0 when they are dropped") {
+    Layer* l1 = new Layer(0, 2);
+    Layer* l2 = new Layer(0, 3);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+
+    std::vector<double> expected = {1,2,3};
+
+    l2->neurons[0]->activation = 0;
+    l2->neurons[1]->activation = 1;
+    l2->neurons[2]->activation = 0;
+
+    l2->neurons[0]->dropped = true;
+    l2->neurons[1]->dropped = true;
+    l2->neurons[2]->dropped = true;
+    l2->neurons[0]->error = 123;
+    l2->neurons[1]->error = 123;
+    l2->neurons[2]->error = 123;
+    l2->neurons[0]->deltaBias = 456;
+    l2->neurons[2]->deltaBias = 456;
+    l2->neurons[1]->deltaBias = 456;
+
+    l2->backward(expected);
+
+    REQUIRE( l2->neurons[0]->error == 0 );
+    REQUIRE( l2->neurons[1]->error == 0 );
+    REQUIRE( l2->neurons[2]->error == 0 );
+
+    REQUIRE( l2->neurons[0]->deltaBias == 0 );
+    REQUIRE( l2->neurons[1]->deltaBias == 0 );
+    REQUIRE( l2->neurons[2]->deltaBias == 0 );
+
+    delete l1;
+    delete l2;
+}
+
+
 
 TEST_CASE("Layer::applyDeltaWeights - Increments the weights by the delta weights") {
     Layer* l1 = new Layer(0, 2);

@@ -25,7 +25,6 @@ void Layer::init (int layerIndex) {
         if (layerIndex) {
 
             for (int pn=0; pn<prevLayer->size; pn++) {
-                // neuron->weights.push_back(rand()/1e+11-);
                 neuron->weights.push_back(((double) rand() / (RAND_MAX))/5 - 0.1);
             }
 
@@ -38,39 +37,57 @@ void Layer::init (int layerIndex) {
 }
 
 void Layer::forward (void) {
+
+    Network* net = Network::getInstance(netInstance);
+
     for (int n=0; n<neurons.size(); n++) {
-        neurons[n]->sum = neurons[n]->bias;
 
-        for (int pn=0; pn<prevLayer->neurons.size(); pn++) {
-            neurons[n]->sum += prevLayer->neurons[pn]->activation * neurons[n]->weights[pn];
+        if (net->isTraining && (neurons[n]->dropped = ((double) rand() / (RAND_MAX)) > net->dropout)) {
+            neurons[n]->activation = 0;
+
+        } else {
+            neurons[n]->sum = neurons[n]->bias;
+
+            for (int pn=0; pn<prevLayer->neurons.size(); pn++) {
+                neurons[n]->sum += prevLayer->neurons[pn]->activation * neurons[n]->weights[pn];
+            }
+
+            neurons[n]->activation = activation(neurons[n]->sum, false, neurons[n]) / net->dropout;
         }
-
-        neurons[n]->activation = activation(neurons[n]->sum, false, neurons[n]);
     }
 }
 
 void Layer::backward (std::vector<double> expected) {
+
     for (int n=0; n<neurons.size(); n++) {
 
-        if (expected.size()) {
-            neurons[n]->error = expected[n] - neurons[n]->activation;
+        if (neurons[n]->dropped) {
+
+            neurons[n]->error = 0;
+            neurons[n]->deltaBias = 0;
+
         } else {
-            neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
 
-            double weightedErrors = 0.0;
+            if (expected.size()) {
+                neurons[n]->error = expected[n] - neurons[n]->activation;
+            } else {
+                neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
 
-            for (int nn=0; nn<nextLayer->neurons.size(); nn++) {
-                weightedErrors += nextLayer->neurons[nn]->error * nextLayer->neurons[nn]->weights[n];
+                double weightedErrors = 0.0;
+
+                for (int nn=0; nn<nextLayer->neurons.size(); nn++) {
+                    weightedErrors += nextLayer->neurons[nn]->error * nextLayer->neurons[nn]->weights[n];
+                }
+
+                neurons[n]->error = neurons[n]->derivative * weightedErrors;
             }
 
-            neurons[n]->error = neurons[n]->derivative * weightedErrors;
-        }
+            for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
+                neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation;
+            }
 
-        for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
-            neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation; //* (1  neurons[n]->deltaWeights[dw]);
+            neurons[n]->deltaBias = neurons[n]->error;
         }
-
-        neurons[n]->deltaBias = neurons[n]->error;
     }
 }
 

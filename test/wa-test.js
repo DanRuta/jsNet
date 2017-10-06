@@ -223,24 +223,20 @@ describe("Network", () => {
 
         describe("defining properties", () => {
 
-            it("Calls the NetUtil.defineProperty function for updateFn", () => {
-                sinon.stub(NetUtil, "defineProperty")
+            beforeEach(() => sinon.stub(NetUtil, "defineProperty"))
 
+            afterEach(() => NetUtil.defineProperty.restore())
+
+            it("Calls the NetUtil.defineProperty function for updateFn", () => {
                 const net = new Network({Module: fakeModule})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "updateFn")
                 net.updateFn
-
-                NetUtil.defineProperty.restore()
             })
 
             it("Calls the NetUtil.defineProperty function for rho, when updateFn is 'adadelta'", () => {
-                sinon.stub(NetUtil, "defineProperty")
-
                 const net = new Network({Module: fakeModule, updateFn: "adadelta", rho: 2})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "rho", ["number"], [0])
                 expect(net.rho).to.equal(2)
-
-                NetUtil.defineProperty.restore()
             })
 
             it("Passes the updateFn index from the WASM module through the updateFnIndeces map", () => {
@@ -252,53 +248,54 @@ describe("Network", () => {
             })
 
             it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, updateFn: "adadelta"})
                 expect(net.rho).to.equal(0.95)
-                NetUtil.defineProperty.restore()
             })
 
             it("Sets the rmsDecay property when the updateFn is rmsprop", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, updateFn: "rmsprop", rmsDecay: 1})
                 expect(net.rmsDecay).to.equal(1)
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "rmsDecay")
-                NetUtil.defineProperty.restore()
             })
 
             it("Defaults the rmsDecay value to 0.99 when calling the defineProperty function", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, updateFn: "rmsprop"})
                 expect(net.rmsDecay).to.equal(0.99)
-                NetUtil.defineProperty.restore()
             })
 
             it("Defaults the lreluSlope value to -0.0005 if the activation is lrelu", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, activation: "lrelu"})
                 expect(net.lreluSlope).to.equal(-0.0005)
-                NetUtil.defineProperty.restore()
             })
 
             it("Still allows custom lreluSlope values", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, activation: "lrelu", lreluSlope: 123})
                 expect(net.lreluSlope).to.equal(123)
-                NetUtil.defineProperty.restore()
             })
 
             it("Defaults the eluAlpha value to 1 if the activation is elu", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, activation: "elu"})
                 expect(net.eluAlpha).to.equal(1)
-                NetUtil.defineProperty.restore()
             })
 
             it("Still allows custom eluAlpha values", () => {
-                sinon.stub(NetUtil, "defineProperty")
                 const net = new Network({Module: fakeModule, activation: "elu", eluAlpha: 123})
                 expect(net.eluAlpha).to.equal(123)
-                NetUtil.defineProperty.restore()
+            })
+
+            it("Defaults the dropout to 1", () => {
+                const net = new Network({Module: fakeModule})
+                expect(net.dropout).to.equal(1)
+            })
+
+            it("Allows setting the dropout to false, which sets it to 1", () => {
+                const net = new Network({Module: fakeModule, dropout: false})
+                expect(net.dropout).to.equal(1)
+            })
+
+            it("Allows setting the dropout to custom value", () => {
+                const net = new Network({Module: fakeModule, dropout: 0.6})
+                expect(net.dropout).to.equal(0.6)
             })
         })
 

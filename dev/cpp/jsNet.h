@@ -21,6 +21,8 @@ public:
     float dropout;
     float l2;
     double l2Error;
+    float l1;
+    double l1Error;
     double error;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;

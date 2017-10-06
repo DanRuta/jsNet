@@ -236,7 +236,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -266,6 +266,12 @@ class Network {
             NetUtil.defineProperty(this, "l2", ["number"], [this.netInstance])
             NetUtil.defineProperty(this, "l2Error", ["number"], [this.netInstance])
             this.l2 = typeof l2=="boolean" ? 0.001 : l2
+        }
+
+        if (l1) {
+            NetUtil.defineProperty(this, "l1", ["number"], [this.netInstance])
+            NetUtil.defineProperty(this, "l1Error", ["number"], [this.netInstance])
+            this.l1 = typeof l1=="boolean" ? 0.005 : l1
         }
 
         Object.defineProperty(this, "error", {
@@ -522,9 +528,8 @@ class Network {
 
                 const doEpoch = () => {
 
-                    if (this.l2) {
-                        this.l2Error = 0
-                    }
+                    if (this.l2) this.l2Error = 0
+                    if (this.l1) this.l1Error = 0
 
                     iterationIndex = 0
                     doIteration()
@@ -562,9 +567,8 @@ class Network {
             } else {
                 for (let e=0; e<epochs; e++) {
 
-                    if (this.l2) {
-                        this.l2Error = 0
-                    }
+                    if (this.l2) this.l2Error = 0
+                    if (this.l1) this.l1Error = 0
 
                     this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime

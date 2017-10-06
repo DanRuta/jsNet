@@ -322,6 +322,31 @@ describe("Network", () => {
                 const net = new Network({Module: fakeModule})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "l2Error")
             })
+
+            it("Defaults l1 to 0.005", () => {
+                const net = new Network({Module: fakeModule})
+                expect(net.l1).to.equal(0.005)
+            })
+
+            it("Allows setting l1 to true, which sets it to 0.005", () => {
+                const net = new Network({Module: fakeModule, l1: true})
+                expect(net.l1).to.equal(0.005)
+            })
+
+            it("Allows setting l1 to custom value", () => {
+                const net = new Network({Module: fakeModule, l1: 0.6})
+                expect(net.l1).to.equal(0.6)
+            })
+
+            it("Setting l1 to false does not assign any value", () => {
+                const net = new Network({Module: fakeModule, l1: false})
+                expect(net.l1).to.be.undefined
+            })
+
+            it("Defines the net l2Error", () => {
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "l2Error")
+            })
         })
 
         it("Sets the given Module to NetUtil, also", () => {
@@ -794,6 +819,43 @@ describe("Network", () => {
             sinon.stub(fakeModule, "ccall").callsFake(() => false) // simulates this.l2==false
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
+                fakeModule.ccall.restore()
+            })
+        })
+
+
+        it("Sets the l1Error to 0 with each epoch", () => {
+            const network = new Network({Module: fakeModule})
+            sinon.stub(fakeModule, "ccall").callsFake(() => true)
+            return network.train(testData, {epochs: 5}).then(() => {
+                expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
+                fakeModule.ccall.restore()
+            })
+        })
+
+        it("Does not set the l1Error to 0 if l1 was not configured", () => {
+            const network = new Network({Module: fakeModule})
+            sinon.stub(fakeModule, "ccall").callsFake(() => false) // simulates this.l1==false
+            return network.train(testData, {epochs: 5}).then(() => {
+                expect(fakeModule.ccall.withArgs("set_l1Error")).to.not.be.called
+                fakeModule.ccall.restore()
+            })
+        })
+
+        it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
+            const network = new Network({Module: fakeModule})
+            sinon.stub(fakeModule, "ccall").callsFake(() => true)
+            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+                expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
+                fakeModule.ccall.restore()
+            })
+        })
+
+        it("Does not set the l1Error to 0 if l1 was not configured (with callbacks)", () => {
+            const network = new Network({Module: fakeModule})
+            sinon.stub(fakeModule, "ccall").callsFake(() => false) // simulates this.l1==false
+            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+                expect(fakeModule.ccall.withArgs("set_l1Error")).to.not.be.called
                 fakeModule.ccall.restore()
             })
         })

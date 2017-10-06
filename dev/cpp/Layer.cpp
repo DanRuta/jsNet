@@ -86,7 +86,7 @@ void Layer::backward (std::vector<double> expected) {
 
             for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
                 neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation *
-                                                (1 + (net->l2) * neurons[n]->deltaWeights[wi]);
+                                                (1 + (net->l2 + net->l1) * neurons[n]->deltaWeights[wi]);
             }
 
             neurons[n]->deltaBias = neurons[n]->error;
@@ -108,6 +108,9 @@ void Layer::applyDeltaWeights (void) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
                     }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
+                    }
                     neurons[n]->weights[dw] = NetMath::vanillaupdatefn(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw]);
                 }
                 neurons[n]->bias = NetMath::vanillaupdatefn(netInstance, neurons[n]->bias, neurons[n]->deltaBias);
@@ -118,6 +121,9 @@ void Layer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
+                    }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
                     }
                     neurons[n]->weights[dw] = NetMath::gain(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
                 }
@@ -130,6 +136,9 @@ void Layer::applyDeltaWeights (void) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
                     }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
+                    }
                     neurons[n]->weights[dw] = NetMath::adagrad(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
                 }
                 neurons[n]->bias = NetMath::adagrad(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
@@ -140,6 +149,9 @@ void Layer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
+                    }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
                     }
                     neurons[n]->weights[dw] = NetMath::rmsprop(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
                 }
@@ -152,6 +164,9 @@ void Layer::applyDeltaWeights (void) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
                     }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
+                    }
                     neurons[n]->weights[dw] = NetMath::adam(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
                 }
                 neurons[n]->bias = NetMath::adam(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
@@ -162,6 +177,9 @@ void Layer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
                     if (net->l2) {
                         net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
+                    }
+                    if (net->l1) {
+                        net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
                     }
                     neurons[n]->weights[dw] = NetMath::adadelta(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
                 }

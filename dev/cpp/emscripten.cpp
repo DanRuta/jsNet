@@ -144,6 +144,25 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void set_l1  (int instanceIndex, float l1) {
+        Network::getInstance(instanceIndex)->l1 = l1;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_l1 (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->l1;
+    }
+    EMSCRIPTEN_KEEPALIVE
+    void set_l1Error  (int instanceIndex, float l1Error) {
+        Network::getInstance(instanceIndex)->l1Error = l1Error;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_l1Error (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->l1Error;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_updateFn (int instanceIndex, int fnIndex) {
         Network::getInstance(instanceIndex)->updateFnIndex = fnIndex;
     }

@@ -629,6 +629,47 @@ TEST_CASE("Layer::backward - Increments the deltaWeights by the orig value, mult
     delete l3;
 }
 
+TEST_CASE("Layer::backward - Increments the deltaWeights by the orig value, multiplied by the l1 amount * existing deltaWeight value") {
+    Layer* l1 = new Layer(0, 2);
+    Layer* l2 = new Layer(0, 3);
+    Layer* l3 = new Layer(0, 4);
+    l2->assignPrev(l1);
+    l2->assignNext(l3);
+    l3->assignPrev(l2);
+    l2->activation = &NetMath::sigmoid;
+    l1->init(0);
+    l2->init(1);
+    l3->init(2);
+
+    std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
+    Network::getInstance(0)->l1 = 0.005;
+
+    l2->neurons[0]->activation = 0.5;
+    l2->neurons[1]->activation = 0.5;
+    l2->neurons[2]->activation = 0.5;
+    l3->neurons[0]->dropped = false;
+    l3->neurons[1]->dropped = false;
+    l3->neurons[2]->dropped = false;
+    l3->neurons[3]->dropped = false;
+
+    for (int i=0; i<4; i++) {
+        l3->neurons[i]->activation = 0.25;
+        l3->neurons[i]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    }
+
+    l3->backward(expected);
+
+    for (int n=0; n<4; n++) {
+        REQUIRE( moreOrLessEqual(l3->neurons[n]->deltaWeights[0], 0.275031, 4) );
+        REQUIRE( moreOrLessEqual(l3->neurons[n]->deltaWeights[1], 0.275031, 4) );
+        REQUIRE( moreOrLessEqual(l3->neurons[n]->deltaWeights[2], 0.275031, 4) );
+    }
+
+    delete l1;
+    delete l2;
+    delete l3;
+}
+
 
 TEST_CASE("Layer::applyDeltaWeights - Increments the weights by the delta weights") {
     Layer* l1 = new Layer(0, 2);
@@ -696,6 +737,29 @@ TEST_CASE("Layer::applyDeltaWeights - Increments the l2Error by the l2 formula a
     l2->applyDeltaWeights();
 
     REQUIRE( moreOrLessEqual( net->l2Error, 0.0000625 , 6) );
+
+    delete l1;
+    delete l2;
+}
+
+TEST_CASE("Layer::applyDeltaWeights - Increments the l1Error by the l1 formula applied to all weights") {
+    Network* net = Network::getInstance(0);
+    net->l1 = 0.005;
+    net->updateFnIndex = 0;
+    net->learningRate = 0.2;
+    net->l1Error = 0;
+    Layer* l1 = new Layer(0, 1);
+    Layer* l2 = new Layer(0, 1);
+    l2->netInstance = 0;
+    l2->assignPrev(l1);
+    l2->init(1);
+
+    l2->neurons[0]->weights = {0.25, 0.25};
+    l2->neurons[0]->deltaWeights = {0.5, 0.5};
+
+    l2->applyDeltaWeights();
+
+    REQUIRE( moreOrLessEqual( net->l1Error, 0.0025 , 6) );
 
     delete l1;
     delete l2;

@@ -224,7 +224,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1}={}) {
+    train (data, {epochs=1, callback}={}) {
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -269,17 +269,60 @@ class Network {
 
             let elapsed
 
-            for (let e=0; e<epochs; e++) {
-                this.Module.ccall("train", "number", ["number", "number", "number", "number", "number"],
-                                                [this.netInstance, buf, itemsCount, itemSize, dimension])
-                elapsed = Date.now() - startTime
-                console.log(`Epoch ${e+1} Error: ${this.error}` +
-                            `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
-            }
+            this.Module.ccall("loadTrainingData", "number", ["number", "number", "number", "number", "number"],
+                                            [this.netInstance, buf, itemsCount, itemSize, dimension])
 
-            this.Module._free(buf)
-            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
-            resolve()
+
+            if (callback) {
+
+                let epochIndex = 0
+                let iterationIndex = 0
+
+                const doEpoch = () => {
+                    iterationIndex = 0
+                    doIteration()
+                }
+
+                const doIteration = () => {
+
+                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, 1, iterationIndex])
+
+                    callback({
+                        iterations: (iterationIndex+1),
+                        error: this.error,
+                        elapsed: Date.now() - startTime,
+                        input: data[this.iterations].input
+                    })
+
+                    if (++iterationIndex < data.length) {
+                        setTimeout(doIteration.bind(this), 0)
+                    } else {
+                        epochIndex++
+
+                        elapsed = Date.now() - startTime
+                        console.log(`Epoch ${epochIndex} Error: ${this.error}` +
+                                `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`)
+
+                        if (epochIndex < epochs) {
+                            doEpoch()
+                        } else {
+                            resolve()
+                        }
+                    }
+                }
+                doEpoch()
+
+            } else {
+                for (let e=0; e<epochs; e++) {
+                    const x = this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
+                    elapsed = Date.now() - startTime
+                    console.log(`Epoch ${e+1} Error: ${this.error}` +
+                                `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
+                }
+                this.Module._free(buf)
+                console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
+                resolve()
+            }
         })
     }
 

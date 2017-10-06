@@ -274,7 +274,7 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 net = new Network({activation: "sigmoid"})
 net = new Network({activation: "lrelu", lreluSlope: 0.99})
 net = new Network({activation: "elu", eluAlpha: 1})
-net = new Network({activation: x => x, eluAlpha: 1})
+net = new Network({activation: x => x})
 ```
 You can set your own activation functions. They are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias

@@ -13,7 +13,8 @@ int Network::newNetwork(void) {
     Network* net = new Network();
     net->iterations = 0;
     netInstances.push_back(net);
-    return netInstances.size()-1;
+    net->instanceIndex = netInstances.size()-1;
+    return net->instanceIndex;
 }
 
 void Network::deleteNetwork(void)  {
@@ -72,24 +73,25 @@ void Network::backward (std::vector<double> expected) {
     }
 }
 
-void Network::train (void) {
+void Network::train (int its, int startI) {
 
     double totalErrors = 0.0;
+    double iterationError = 0.0;
 
-    for (int i=0; i<trainingData.size(); i++) {
-        printf("Doing iteration\n");
+    for (int i=startI; i<(startI+its); i++) {
         resetDeltaWeights();
 
         iterations++;
 
         std::vector<double> output = forward(std::get<0>(trainingData[i]));
-        totalErrors += costFunction(std::get<1>(trainingData[i]), output);
+        iterationError = costFunction(std::get<1>(trainingData[i]), output);
+        totalErrors += iterationError;
 
         backward(std::get<1>(trainingData[i]));
         applyDeltaWeights();
     }
 
-    error = totalErrors / trainingData.size();
+    error = totalErrors / its;
 }
 
 double Network::test (void) {

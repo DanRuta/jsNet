@@ -157,15 +157,14 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void train (int instanceIndex, float *buf, int total, int size, int dimension) {
-
+    void loadTrainingData (int instanceIndex, float *buf, int total, int size, int dimension) {
         Network* net = Network::getInstance(instanceIndex);
         net->trainingData.clear();
 
         std::tuple<std::vector<double>, std::vector<double> > epoch;
 
         // Push training data to memory
-        for (int i=0; i<total; i++) {
+        for (int i=0; i<=total; i++) {
 
             if (i && i%size==0) {
                 net->trainingData.push_back(epoch);
@@ -179,11 +178,18 @@ extern "C" {
                 std::get<1>(epoch).push_back((double)buf[i]);
             }
         }
+    }
 
-        net->trainingData.push_back(epoch);
-        net->train();
+    EMSCRIPTEN_KEEPALIVE
+    void train (int instanceIndex, int iterations, int startIndex) {
 
-        net->trainingData.clear();
+        Network* net = Network::getInstance(instanceIndex);
+
+        if (iterations == -1) {
+            net->train(net->trainingData.size(), 0);
+        } else {
+            net->train(iterations, startIndex);
+        }
     }
 
     EMSCRIPTEN_KEEPALIVE

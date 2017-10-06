@@ -10,6 +10,7 @@ class NetUtil;
 class Network {
 public:
     static std::vector<Network*> netInstances;
+    int instanceIndex;
     int iterations;
     float learningRate;
     float rmsDecay;
@@ -43,7 +44,7 @@ public:
 
     void backward (std::vector<double> expected);
 
-    void train (void);
+    void train (int iterations, int startIndex);
 
     double test (void);
 

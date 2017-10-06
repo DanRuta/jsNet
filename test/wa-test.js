@@ -512,7 +512,6 @@ describe("Network", () => {
         it("CCalls the WASM Module's addFCLayer function for every FCLayer configured", () => {
             const spy = sinon.spy(fakeModule, "ccall")
             const net = new Network({Module: fakeModule, layers: [new FCLayer(2), new FCLayer(3), new FCLayer(1)]})
-            spy.withArgs("addFCLayer")
             net.initLayers()
             expect(spy.withArgs("addFCLayer").callCount).to.equal(3)
             fakeModule.ccall.restore()
@@ -521,7 +520,6 @@ describe("Network", () => {
         it("CCalls the WASM Module's addFCLayer function for every layer configured (when configured with digits)", () => {
             const spy = sinon.spy(fakeModule, "ccall")
             const net = new Network({Module: fakeModule, layers: [2, 3, 1]})
-            spy.withArgs("addFCLayer")
             net.initLayers()
             expect(spy.withArgs("addFCLayer").callCount).to.equal(3)
             fakeModule.ccall.restore()
@@ -530,7 +528,6 @@ describe("Network", () => {
         it("CCalls the WASM Module's addFCLayer function for every layer configured (when layers configured implicitly)", () => {
             const spy = sinon.spy(fakeModule, "ccall")
             const net = new Network({Module: fakeModule})
-            spy.withArgs("addFCLayer")
             net.initLayers(2, 1)
             expect(spy.withArgs("addFCLayer").callCount).to.equal(3)
             fakeModule.ccall.restore()
@@ -541,7 +538,6 @@ describe("Network", () => {
             const net = new Network({Module: fakeModule})
             net.layers = [new FCLayer(2), new ConvLayer(1), new PoolLayer(1), new FCLayer(3), new FCLayer(1)]
             net.state = "constructed"
-            spy.withArgs("addFCLayer")
             sinon.stub(net, "joinLayer")
 
             net.initLayers()
@@ -552,7 +548,6 @@ describe("Network", () => {
         it("CCalls the WASM Module's initLayers function", () => {
             const net = new Network({Module: fakeModule})
             const spy = sinon.spy(fakeModule, "ccall")
-            spy.withArgs("initLayers")
             net.initLayers(2, 3)
             expect(fakeModule.ccall).to.be.calledWith("initLayers")
             fakeModule.ccall.restore()
@@ -713,6 +708,37 @@ describe("Network", () => {
             })
         })
 
+        it("CCalls the WASM Module's loadTrainingData function", () => {
+            sinon.stub(fakeModule, "ccall")
+            const network = new Network({Module: fakeModule})
+            return network.train(testData).then(() => {
+
+                expect(fakeModule.ccall).to.be.calledWith("loadTrainingData")
+                fakeModule.ccall.restore()
+            })
+        })
+
+        it("CCalls the WASM Module's train function for every iteration when a callback is given", () => {
+            const network = new Network({Module: fakeModule})
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(console.log)
+
+            const cb = () => {}
+
+            return network.train(testData, {callback: cb}).then(() => {
+                expect(stub.withArgs("train").callCount).to.equal(4)
+                stub.restore()
+            })
+        })
+
+        it("Calls the callback with every iteration, in every epoch", () => {
+            let counter = 0
+            const cb = () => counter++
+            const network = new Network({Module: fakeModule})
+
+            return network.train(testData, {epochs: 2, callback: cb}).then(() => {
+                expect(counter).to.equal(8)
+            })
+        })
     })
 
     describe("test", () => {

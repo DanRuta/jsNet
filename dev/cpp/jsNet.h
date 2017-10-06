@@ -19,6 +19,8 @@ public:
     float eluAlpha;
     bool isTraining;
     float dropout;
+    float l2;
+    double l2Error;
     double error;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;

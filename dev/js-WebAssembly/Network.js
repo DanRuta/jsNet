@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -28,6 +28,12 @@ class Network {
 
         NetUtil.defineProperty(this, "dropout", ["number"], [this.netInstance])
         this.dropout = dropout==false ? 1 : dropout
+
+        if (l2) {
+            NetUtil.defineProperty(this, "l2", ["number"], [this.netInstance])
+            NetUtil.defineProperty(this, "l2Error", ["number"], [this.netInstance])
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
+        }
 
         Object.defineProperty(this, "error", {
             get: () => Module.ccall("getError", "number", ["number"], [this.netInstance])
@@ -282,6 +288,11 @@ class Network {
                 let iterationIndex = 0
 
                 const doEpoch = () => {
+
+                    if (this.l2) {
+                        this.l2Error = 0
+                    }
+
                     iterationIndex = 0
                     doIteration()
                 }
@@ -303,7 +314,7 @@ class Network {
                         epochIndex++
 
                         elapsed = Date.now() - startTime
-                        console.log(`Epoch ${epochIndex} Error: ${this.error}` +
+                        console.log(`Epoch ${epochIndex} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
                                 `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`)
 
                         if (epochIndex < epochs) {
@@ -317,9 +328,14 @@ class Network {
 
             } else {
                 for (let e=0; e<epochs; e++) {
-                    const x = this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
+
+                    if (this.l2) {
+                        this.l2Error = 0
+                    }
+
+                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime
-                    console.log(`Epoch ${e+1} Error: ${this.error}` +
+                    console.log(`Epoch ${e+1} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/data.length}`}`,
                                 `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
                 }
                 this.Module._free(buf)

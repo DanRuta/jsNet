@@ -163,6 +163,25 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void set_maxNorm  (int instanceIndex, float maxNorm) {
+        Network::getInstance(instanceIndex)->maxNorm = maxNorm;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_maxNorm (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->maxNorm;
+    }
+    EMSCRIPTEN_KEEPALIVE
+    void set_maxNormTotal  (int instanceIndex, float maxNormTotal) {
+        Network::getInstance(instanceIndex)->maxNormTotal = maxNormTotal;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_maxNormTotal (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->maxNormTotal;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_updateFn (int instanceIndex, int fnIndex) {
         Network::getInstance(instanceIndex)->updateFnIndex = fnIndex;
     }

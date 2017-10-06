@@ -162,3 +162,22 @@ std::vector<double> NetMath::softmax (std::vector<double> values) {
 double NetMath::sech(double value) {
     return (2 * exp(-value)) / (1+exp(-2*value));
 }
+
+void NetMath::maxNorm(int netInstance) {
+    Network* net = Network::getInstance(netInstance);
+
+    if (net->maxNormTotal > net->maxNorm) {
+
+        double multiplier = net->maxNorm / (1e-18 + net->maxNormTotal);
+
+        for (int l=1; l<net->layers.size(); l++) {
+            for (int n=0; n<net->layers[l]->neurons.size(); n++) {
+                for (int w=0; w<net->layers[l]->neurons[n]->weights.size(); w++) {
+                    net->layers[l]->neurons[n]->weights[w] *= multiplier;
+                }
+            }
+        }
+    }
+
+    net->maxNormTotal = 0;
+}

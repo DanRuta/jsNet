@@ -1328,3 +1328,59 @@ TEST_CASE("NetMath::sech - Calculates values correctly") {
     REQUIRE( doublesAreEqual(NetMath::sech(1), 0.6480542736638853) );
     REQUIRE( doublesAreEqual(NetMath::sech(-0.5), 0.886818883970074) );
 }
+
+
+TEST_CASE("NetMath::maxNorm - Sets the maxNormTotal to 0") {
+    Network::getInstance(0)->maxNormTotal = 1;
+    NetMath::maxNorm(0);
+    REQUIRE( Network::getInstance(0)->maxNormTotal == 0 );
+}
+
+
+TEST_CASE("NetMath::maxNorm - Scales weights if their L2 exceeds the configured max norm threshold") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    net->maxNorm = 1;
+
+    Layer* l1 = new Layer(0, 1);
+    Layer* l2 = new Layer(0, 2);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+    net->layers.push_back(l1);
+    net->layers.push_back(l2);
+
+    l2->neurons[0]->weights = {2, 2};
+    net->maxNormTotal = 2.8284271247461903;
+
+    NetMath::maxNorm(0);
+
+    REQUIRE( l2->neurons[0]->weights[0] == 0.7071067811865475 );
+    REQUIRE( l2->neurons[0]->weights[1] == 0.7071067811865475 );
+    delete l1;
+    delete l2;
+}
+
+TEST_CASE("NetMath::maxNorm - Does not scale weights if their L2 doesn't exceed the configured max norm threshold") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    net->maxNorm = 1000;
+
+    Layer* l1 = new Layer(0, 1);
+    Layer* l2 = new Layer(0, 2);
+    l2->assignPrev(l1);
+    l1->init(0);
+    l2->init(1);
+    net->layers.push_back(l1);
+    net->layers.push_back(l2);
+
+    l2->neurons[0]->weights = {2, 2};
+    net->maxNormTotal = 2.8284271247461903;
+
+    NetMath::maxNorm(0);
+
+    REQUIRE( l2->neurons[0]->weights[0] == 2 );
+    REQUIRE( l2->neurons[0]->weights[1] == 2 );
+    delete l1;
+    delete l2;
+}

@@ -343,9 +343,29 @@ describe("Network", () => {
                 expect(net.l1).to.be.undefined
             })
 
-            it("Defines the net l2Error", () => {
+            it("Defines the net l1Error", () => {
                 const net = new Network({Module: fakeModule})
-                expect(NetUtil.defineProperty).to.be.calledWith(net, "l2Error")
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "l1Error")
+            })
+
+            it("Defaults maxNorm to 1000", () => {
+                const net = new Network({Module: fakeModule, maxNorm: true})
+                expect(net.maxNorm).to.equal(1000)
+            })
+
+            it("Allows setting maxNorm to custom value", () => {
+                const net = new Network({Module: fakeModule, maxNorm: 0.6})
+                expect(net.maxNorm).to.equal(0.6)
+            })
+
+            it("Setting maxNorm to false does not assign any value", () => {
+                const net = new Network({Module: fakeModule, maxNorm: false})
+                expect(net.maxNorm).to.be.undefined
+            })
+
+            it("Defines the net maxNormTotal when configured", () => {
+                const net = new Network({Module: fakeModule, maxNorm: true})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "maxNormTotal")
             })
         })
 

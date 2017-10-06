@@ -236,7 +236,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -272,6 +272,12 @@ class Network {
             NetUtil.defineProperty(this, "l1", ["number"], [this.netInstance])
             NetUtil.defineProperty(this, "l1Error", ["number"], [this.netInstance])
             this.l1 = typeof l1=="boolean" ? 0.005 : l1
+        }
+
+        if (maxNorm) {
+            NetUtil.defineProperty(this, "maxNorm", ["number"], [this.netInstance])
+            NetUtil.defineProperty(this, "maxNormTotal", ["number"], [this.netInstance])
+            this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
         }
 
         Object.defineProperty(this, "error", {

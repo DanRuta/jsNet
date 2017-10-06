@@ -23,6 +23,8 @@ public:
     double l2Error;
     float l1;
     double l1Error;
+    float maxNorm;
+    double maxNormTotal;
     double error;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
@@ -151,6 +153,8 @@ public:
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static std::vector<double> softmax (std::vector<double> values);
+
+    static void maxNorm(int netInstance);
 
     static double sech (double value);
 };

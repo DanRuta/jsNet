@@ -1072,7 +1072,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}, Module) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []

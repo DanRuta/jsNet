@@ -53,6 +53,8 @@ TEST_CASE("Network::deleteNetwork - Deletes all network instances when no index 
 TEST_CASE("Network::joinLayers - Assigns the network activation function to each layer") {
     Network::deleteNetwork();
     Network::newNetwork();
+    Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+    Network::getInstance(0)->weightInitFn = &NetMath::uniform;
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
@@ -110,6 +112,8 @@ TEST_CASE("Network::forward - Returns a vector of activations in the last layer"
 TEST_CASE("Network::resetDeltaWeights - Sets all the delta weights values to 0") {
     Network::deleteNetwork();
     Network::newNetwork();
+    Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+    Network::getInstance(0)->weightInitFn = &NetMath::uniform;
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
     Network::getInstance(0)->layers.push_back(new Layer(0, 3));
@@ -132,7 +136,6 @@ TEST_CASE("Network::resetDeltaWeights - Sets all the delta weights values to 0")
 TEST_CASE("Network::applyDeltaWeights - Increment the weights by the delta weights") {
     Network::getInstance(0)->learningRate = 1;
     Network::getInstance(0)->updateFnIndex = 0;
-
     for (int n=1; n<3; n++) {
         Network::getInstance(0)->layers[1]->neurons[n]->weights = {1,1,1};
         Network::getInstance(0)->layers[2]->neurons[n]->weights = {2,2,2};
@@ -1260,6 +1263,8 @@ TEST_CASE("NetMath::adam - Calculates a value correctly, following the formula")
 TEST_CASE("NetMath::adadelta - Sets the neuron.biasCache to the correct value, following the adadelta formula") {
     Network::deleteNetwork();
     Network::newNetwork();
+    Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+    Network::getInstance(0)->weightInitFn = &NetMath::uniform;
     Neuron* testN = new Neuron();
     Network::getInstance(0)->rho = (double)0.95;
     testN->biasCache = (double)0.5;
@@ -1383,4 +1388,40 @@ TEST_CASE("NetMath::maxNorm - Does not scale weights if their L2 doesn't exceed 
     REQUIRE( l2->neurons[0]->weights[1] == 2 );
     delete l1;
     delete l2;
+}
+
+TEST_CASE("NetMath::uniform - Returns the same number of values as the size value given") {
+
+    std::vector<double> values = NetMath::uniform(0, 10);
+    REQUIRE( values.size() == 10 );
+}
+
+TEST_CASE("NetMath::uniform - Weights are all between -0.1 and +0.1 when the limit is 0.1") {
+    Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+
+    bool ok = true;
+    std::vector<double> values = NetMath::uniform(0, 100);
+
+    for (int i=0; i<100; i++) {
+        if (values[i] > 0.1 || values[i]<=-0.1) {
+            ok = false;
+        }
+    }
+
+    REQUIRE( ok );
+}
+
+TEST_CASE("NetMath::uniform - There are some weights bigger than |0.1| when the limit is 1000") {
+    Network::getInstance(0)->weightsConfig["limit"] = 1000;
+
+    bool ok = false;
+    std::vector<double> values = NetMath::uniform(0, 1000);
+
+    for (int i=0; i<1000; i++) {
+        if (values[i] > 0.1 || values[i]<=-0.1) {
+            ok = true;
+        }
+    }
+
+    REQUIRE( ok );
 }

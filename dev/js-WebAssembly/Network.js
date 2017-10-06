@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -106,6 +106,39 @@ class Network {
             setCallback: name => updateFnIndeces[name]
         })
         this.updateFn = NetUtil.format(updateFn)
+
+
+        // Weights init configs
+        const weightsConfigFns = {
+            uniform: 0,
+            gaussian: 1,
+            xavieruniform: 2,
+            xaviernormal: 3,
+            lecununiform: 4,
+            lecunnormal: 5
+        }
+        this.weightsConfig = {}
+
+        NetUtil.defineProperty(this.weightsConfig, "distribution", ["number"], [this.netInstance], {
+            getCallback: index => Object.keys(weightsConfigFns).find(key => weightsConfigFns[key]==Math.round(index)),
+            setCallback: name => weightsConfigFns[name]
+        })
+        NetUtil.defineProperty(this.weightsConfig, "limit", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this.weightsConfig, "mean", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this.weightsConfig, "stdDeviation", ["number"], [this.netInstance])
+
+        this.weightsConfig.distribution = "uniform" //  TODO - replace with xavieruniform
+
+        if (weightsConfig!=undefined && weightsConfig.distribution) {
+
+            if (typeof weightsConfig.distribution == "function") {
+                throw new Error("Custom weights init functions are not (yet) supported with WASM.")
+            }
+
+            this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution)
+        }
+
+        this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
 
         switch (NetUtil.format(updateFn)) {
 

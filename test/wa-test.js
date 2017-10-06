@@ -219,6 +219,38 @@ describe("Network", () => {
             it("Sets the initial iterations value to 0", () => {
                 expect(net.iterations).to.equal(0)
             })
+
+            it("Defaults the weightsConfig distribution to uniform", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop"})
+                expect(fakeModule.ccall).to.be.calledWith("set_distribution", null, ["number", "number"], [undefined, 0])
+                fakeModule.ccall.restore()
+
+                sinon.stub(fakeModule, "ccall").callsFake(() => 0)
+                expect(net.weightsConfig.distribution).to.equal("uniform")
+                fakeModule.ccall.restore()
+            })
+
+            it("Allows setting a different weightsConfig distribution value", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "gaussian"}})
+                expect(fakeModule.ccall).to.be.calledWith("set_distribution", null, ["number", "number"], [undefined, 1])
+                fakeModule.ccall.restore()
+            })
+
+            it("Defaults the limit to 0.1", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "uniform"}})
+                expect(fakeModule.ccall).to.be.calledWith("set_limit", null, ["number", "number"], [undefined, 0.1])
+                fakeModule.ccall.restore()
+            })
+
+            it("Allows setting the limit to own value", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "uniform", limit: 100}})
+                expect(fakeModule.ccall).to.be.calledWith("set_limit", null, ["number", "number"], [undefined, 100])
+                fakeModule.ccall.restore()
+            })
         })
 
         describe("defining properties", () => {
@@ -366,6 +398,33 @@ describe("Network", () => {
             it("Defines the net maxNormTotal when configured", () => {
                 const net = new Network({Module: fakeModule, maxNorm: true})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "maxNormTotal")
+            })
+
+            it("Defines the net weightsConfig distribution", () => {
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net.weightsConfig, "distribution")
+            })
+
+            it("Defines the net weightsConfig limit", () => {
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net.weightsConfig, "limit")
+            })
+
+            it("Defines the net weightsConfig mean", () => {
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net.weightsConfig, "mean")
+            })
+
+            it("Defines the net weightsConfig stdDeviation", () => {
+                const net = new Network({Module: fakeModule})
+                expect(NetUtil.defineProperty).to.be.calledWith(net.weightsConfig, "stdDeviation")
+            })
+
+            it("Throws an error if setting a custom function as weightsConfig distribution", () => {
+                const wrapperFn = () => {
+                    const net = new Network({Module: fakeModule, weightsConfig: {distribution: () => {}}})
+                }
+                expect(wrapperFn).to.throw("Custom weights init functions are not (yet) supported with WASM.")
             })
         })
 

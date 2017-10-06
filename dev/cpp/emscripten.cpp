@@ -171,6 +171,7 @@ extern "C" {
     float get_maxNorm (int instanceIndex) {
         return Network::getInstance(instanceIndex)->maxNorm;
     }
+
     EMSCRIPTEN_KEEPALIVE
     void set_maxNormTotal  (int instanceIndex, float maxNormTotal) {
         Network::getInstance(instanceIndex)->maxNormTotal = maxNormTotal;
@@ -179,6 +180,34 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     float get_maxNormTotal (int instanceIndex) {
         return Network::getInstance(instanceIndex)->maxNormTotal;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_distribution  (int instanceIndex, int distribution) {
+
+        Network* net = Network::getInstance(instanceIndex);
+        net->weightsConfig["distribution"] = distribution;
+
+        switch (distribution) {
+            case 0:
+                net->weightInitFn = &NetMath::uniform;
+                break;
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_distribution (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->weightsConfig["distribution"];
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_limit  (int instanceIndex, float limit) {
+        Network::getInstance(instanceIndex)->weightsConfig["limit"] = limit;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_limit (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->weightsConfig["limit"];
     }
 
     EMSCRIPTEN_KEEPALIVE

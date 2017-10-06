@@ -1,5 +1,6 @@
 #include <vector>
 #include <tuple>
+#include <map>
 #include <tgmath.h>
 
 class Layer;
@@ -29,8 +30,10 @@ public:
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
+    std::map<std::string, float> weightsConfig;
     double (*activation)(double, bool, Neuron*);
     double (*costFunction)(std::vector<double> calculated, std::vector<double> desired);
+    std::vector<double> (*weightInitFn)(int netInstance, int size);
 
     int updateFnIndex;
 
@@ -151,6 +154,8 @@ public:
     static double adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static std::vector<double> uniform (int netInstance, int size);
 
     static std::vector<double> softmax (std::vector<double> values);
 

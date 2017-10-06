@@ -142,6 +142,19 @@ double NetMath::adadelta(int netInstance, double value, double deltaValue, Neuro
     }
 }
 
+// Weights init
+std::vector<double> NetMath::uniform (int netInstance, int size) {
+    std::vector<double> values;
+
+    float limit = Network::getInstance(netInstance)->weightsConfig["limit"];
+
+    for (int v=0; v<size; v++) {
+        values.push_back( (double) rand() / (RAND_MAX) * 2 * limit - limit );
+    }
+
+    return values;
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

@@ -143,7 +143,7 @@ double NetMath::adadelta(int netInstance, double value, double deltaValue, Neuro
 }
 
 // Weights init
-std::vector<double> NetMath::uniform (int netInstance, int size) {
+std::vector<double> NetMath::uniform (int netInstance, int layerIndex, int size) {
     std::vector<double> values;
 
     float limit = Network::getInstance(netInstance)->weightsConfig["limit"];
@@ -155,7 +155,7 @@ std::vector<double> NetMath::uniform (int netInstance, int size) {
     return values;
 }
 
-std::vector<double> NetMath::gaussian (int netInstance, int size) {
+std::vector<double> NetMath::gaussian (int netInstance, int layerIndex, int size) {
 
     Network* net = Network::getInstance(netInstance);
     std::vector<double> values;
@@ -174,6 +174,13 @@ std::vector<double> NetMath::gaussian (int netInstance, int size) {
     }
 
     return values;
+}
+
+std::vector<double> NetMath::lecununiform (int netInstance, int layerIndex, int size) {
+    Network* net = Network::getInstance(netInstance);
+    net->weightsConfig["limit"] = sqrt((double)3/net->layers[layerIndex]->fanIn);
+
+    return NetMath::uniform(netInstance, layerIndex, size);
 }
 
 // Other

@@ -195,6 +195,9 @@ extern "C" {
             case 1:
                 net->weightInitFn = &NetMath::gaussian;
                 break;
+            case 4:
+                net->weightInitFn = &NetMath::lecununiform;
+                break;
         }
     }
 

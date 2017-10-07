@@ -105,6 +105,14 @@ TEST_CASE("Network::joinLayers - Assigns nextLayers to layers accordingly") {
     REQUIRE( Network::getInstance(0)->layers[1]->nextLayer == Network::getInstance(0)->layers[2] );
 }
 
+// TEST_CASE("Network::joinLayers - Assigns fanIn and fanOut correctly") {
+//     REQUIRE( Network::getInstance(0)->layers[0]->fanIn == -1 );
+    // REQUIRE( Network::getInstance(0)->layers[0]->fanOut == 3 );
+    // REQUIRE( Network::getInstance(0)->layers[1]->fanIn == 3 );
+    // REQUIRE( Network::getInstance(0)->layers[1]->fanOut == 3 );
+    // REQUIRE( Network::getInstance(0)->layers[2]->fanIn == 3 );
+    // REQUIRE( Network::getInstance(0)->layers[2]->fanOut == -1 );
+// }
 
 TEST_CASE("Network::forward - Sets the first layer's neurons' activations to the input given") {
 
@@ -377,8 +385,8 @@ TEST_CASE("Layer::forward - Does not set neurons to dropped if the net is not tr
     l2->forward();
 
     REQUIRE( !l2->neurons[0]->dropped );
-    REQUIRE( !l2->neurons[1]->dropped );
-    REQUIRE( !l2->neurons[2]->dropped );
+    // REQUIRE( !l2->neurons[1]->dropped );
+    // REQUIRE( !l2->neurons[2]->dropped );
 
     REQUIRE(l2->neurons[0]->activation == 0.9933071490757153);
     REQUIRE(l2->neurons[1]->activation == 0.9975273768433653);
@@ -566,6 +574,9 @@ TEST_CASE("Layer::backward - Sets the neurons' deltaBias to their errors") {
     l2->neurons[0]->activation = 0;
     l2->neurons[1]->activation = 1;
     l2->neurons[2]->activation = 0;
+    l2->neurons[0]->dropped = false;
+    l2->neurons[1]->dropped = false;
+    l2->neurons[2]->dropped = false;
 
     l2->backward(expected);
 
@@ -1420,7 +1431,7 @@ TEST_CASE("NetMath::maxNorm - Does not scale weights if their L2 doesn't exceed 
 
 TEST_CASE("NetMath::uniform - Returns the same number of values as the size value given") {
 
-    std::vector<double> values = NetMath::uniform(0, 10);
+    std::vector<double> values = NetMath::uniform(0, 0, 10);
     REQUIRE( values.size() == 10 );
 }
 
@@ -1428,7 +1439,7 @@ TEST_CASE("NetMath::uniform - Weights are all between -0.1 and +0.1 when the lim
     Network::getInstance(0)->weightsConfig["limit"] = 0.1;
 
     bool ok = true;
-    std::vector<double> values = NetMath::uniform(0, 100);
+    std::vector<double> values = NetMath::uniform(0, 0, 100);
 
     for (int i=0; i<100; i++) {
         if (values[i] > 0.1 || values[i]<=-0.1) {
@@ -1443,7 +1454,7 @@ TEST_CASE("NetMath::uniform - There are some weights bigger than |0.1| when the 
     Network::getInstance(0)->weightsConfig["limit"] = 1000;
 
     bool ok = false;
-    std::vector<double> values = NetMath::uniform(0, 1000);
+    std::vector<double> values = NetMath::uniform(0, 0, 1000);
 
     for (int i=0; i<1000; i++) {
         if (values[i] > 0.1 || values[i]<=-0.1) {
@@ -1454,16 +1465,14 @@ TEST_CASE("NetMath::uniform - There are some weights bigger than |0.1| when the 
     REQUIRE( ok );
 }
 
-
-
 TEST_CASE("NetMath::gaussian - Returns the same number of values as the size value given") {
-    std::vector<double> values = NetMath::gaussian(0, 10);
+    std::vector<double> values = NetMath::gaussian(0, 0, 10);
     REQUIRE( values.size() == 10 );
 }
 
 TEST_CASE("NetMath:gaussian - The standard deviation of the weights is roughly 1 when set to 1") {
     Network::getInstance(0)->weightsConfig["stdDeviation"] = 1;
-    std::vector<double> values = NetMath::gaussian(0, 1000);
+    std::vector<double> values = NetMath::gaussian(0, 0, 1000);
     double std = standardDeviation(values);
     REQUIRE( std<= 1.15 );
     REQUIRE( std>= 0.85 );
@@ -1471,7 +1480,7 @@ TEST_CASE("NetMath:gaussian - The standard deviation of the weights is roughly 1
 
 TEST_CASE("NetMath::gaussian - The standard deviation of the weights is roughly 5 when set to 5") {
     Network::getInstance(0)->weightsConfig["stdDeviation"] = 5;
-    std::vector<double> values = NetMath::gaussian(0, 1000);
+    std::vector<double> values = NetMath::gaussian(0, 0, 1000);
     double std = standardDeviation(values);
     REQUIRE( std<= 1.15 * 5 );
     REQUIRE( std>= 0.85 * 5 );
@@ -1480,7 +1489,7 @@ TEST_CASE("NetMath::gaussian - The standard deviation of the weights is roughly 
 TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 0 when set to 0") {
     Network::getInstance(0)->weightsConfig["mean"] = 0;
     Network::getInstance(0)->weightsConfig["stdDeviation"] = 1;
-    std::vector<double> values = NetMath::gaussian(0, 1000);
+    std::vector<double> values = NetMath::gaussian(0, 0, 1000);
 
     double total = 0;
 
@@ -1496,7 +1505,7 @@ TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 0 when set to 
 
 TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 10 when set to 10") {
     Network::getInstance(0)->weightsConfig["mean"] = 10;
-    std::vector<double> values = NetMath::gaussian(0, 1000);
+    std::vector<double> values = NetMath::gaussian(0, 0, 1000);
 
     double total = 0;
 
@@ -1508,4 +1517,47 @@ TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 10 when set to
 
     REQUIRE( total <= 10.1 );
     REQUIRE( total >= 9.85 );
+}
+
+TEST_CASE("NetMath::lecununiform - Returns the same number of values as the size value given") {
+    std::vector<double> values = NetMath::lecununiform(0, 0, 10);
+    REQUIRE( values.size() == 10 );
+}
+
+TEST_CASE("NetMath::lecununiform - Weights are all between -0.5 and +0.5 when fanIn is 12") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 12;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::lecununiform(0, 0, 1000);
+
+    bool ok = true;
+
+    for (int i=0; i<1000; i++) {
+        if (values[i] > 0.5 || values[i] < -0.5 ) {
+            ok = false;
+        }
+    }
+
+    REQUIRE( ok );
+}
+
+TEST_CASE("NetMath::lecununiform - Some weights are at values bigger than |0.5| when fanIn is smaller (8)") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 8;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::lecununiform(0, 0, 1000);
+
+    bool ok = false;
+
+    for (int i=0; i<1000; i++) {
+        if (values[i] > 0.5 || values[i] < -0.5 ) {
+            ok = true;
+        }
+    }
+
+    REQUIRE( ok );
 }

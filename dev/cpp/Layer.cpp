@@ -28,7 +28,7 @@ void Layer::init (int layerIndex) {
                 neuron->weights.push_back(((double) rand() / (RAND_MAX))/5 - 0.1);
             }
 
-            neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, prevLayer->size);
+            neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, prevLayer->size);
             neuron->bias = ((double) rand() / (RAND_MAX))/5 - 0.1;
         }
 

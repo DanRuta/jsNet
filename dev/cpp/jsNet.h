@@ -33,7 +33,7 @@ public:
     std::map<std::string, float> weightsConfig;
     double (*activation)(double, bool, Neuron*);
     double (*costFunction)(std::vector<double> calculated, std::vector<double> desired);
-    std::vector<double> (*weightInitFn)(int netInstance, int size);
+    std::vector<double> (*weightInitFn)(int netInstance, int layerIndex, int size);
 
     int updateFnIndex;
 
@@ -70,6 +70,8 @@ class Layer {
 public:
     int netInstance;
     int size;
+    int fanIn;
+    int fanOut;
     std::vector<Neuron*> neurons;
     Layer* nextLayer;
     Layer* prevLayer;
@@ -155,9 +157,11 @@ public:
 
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
-    static std::vector<double> uniform (int netInstance, int size);
+    static std::vector<double> uniform (int netInstance, int layerIndex, int size);
 
-    static std::vector<double> gaussian (int netInstance, int size);
+    static std::vector<double> gaussian (int netInstance, int layerIndex, int size);
+
+    static std::vector<double> lecununiform (int netInstance, int layerIndex, int size);
 
     static std::vector<double> softmax (std::vector<double> values);
 

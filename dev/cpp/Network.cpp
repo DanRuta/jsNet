@@ -35,10 +35,15 @@ void Network::joinLayers(void) {
     for (int l=0; l<layers.size(); l++) {
         layers[l]->activation = activation;
 
+        layers[l]->fanIn = -1;
+        layers[l]->fanOut = -1;
+
         // Join layer
         if (l>0) {
             layers[l-1]->assignNext(layers[l]);
+            layers[l-1]->fanOut = layers[l]->size;
             layers[l]->assignPrev(layers[l-1]);
+            layers[l]->fanIn = layers[l-1]->size;
         }
 
         layers[l]->init(l);

@@ -192,6 +192,9 @@ extern "C" {
             case 0:
                 net->weightInitFn = &NetMath::uniform;
                 break;
+            case 1:
+                net->weightInitFn = &NetMath::gaussian;
+                break;
         }
     }
 
@@ -208,6 +211,26 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     float get_limit (int instanceIndex) {
         return Network::getInstance(instanceIndex)->weightsConfig["limit"];
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_mean  (int instanceIndex, float mean) {
+        Network::getInstance(instanceIndex)->weightsConfig["mean"] = mean;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_mean (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->weightsConfig["mean"];
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_stdDeviation  (int instanceIndex, float stdDeviation) {
+        Network::getInstance(instanceIndex)->weightsConfig["stdDeviation"] = stdDeviation;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_stdDeviation (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->weightsConfig["stdDeviation"];
     }
 
     EMSCRIPTEN_KEEPALIVE

@@ -157,6 +157,8 @@ public:
 
     static std::vector<double> uniform (int netInstance, int size);
 
+    static std::vector<double> gaussian (int netInstance, int size);
+
     static std::vector<double> softmax (std::vector<double> values);
 
     static void maxNorm(int netInstance);

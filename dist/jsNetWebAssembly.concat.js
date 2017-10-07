@@ -369,12 +369,11 @@ class Network {
             }
 
             this.weightsConfig.distribution = NetUtil.format(weightsConfig.distribution)
-
-            // if (weightsConfig.distribution == "uniform") {
-            // }
         }
 
         this.weightsConfig.limit = weightsConfig && weightsConfig.limit!=undefined ? weightsConfig.limit : 0.1
+        this.weightsConfig.mean = weightsConfig && weightsConfig.mean!=undefined ? weightsConfig.mean : 0
+        this.weightsConfig.stdDeviation = weightsConfig && weightsConfig.stdDeviation!=undefined ? weightsConfig.stdDeviation : 0.05
 
         switch (NetUtil.format(updateFn)) {
 

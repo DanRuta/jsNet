@@ -251,6 +251,27 @@ describe("Network", () => {
                 expect(fakeModule.ccall).to.be.calledWith("set_limit", null, ["number", "number"], [undefined, 100])
                 fakeModule.ccall.restore()
             })
+
+            it("Allows setting the mean to own value", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "uniform", mean: 100}})
+                expect(fakeModule.ccall).to.be.calledWith("set_mean", null, ["number", "number"], [undefined, 100])
+                fakeModule.ccall.restore()
+            })
+
+            it("Defaults the stdDeviation to 0.05", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "uniform"}})
+                expect(fakeModule.ccall).to.be.calledWith("set_stdDeviation", null, ["number", "number"], [undefined, 0.05])
+                fakeModule.ccall.restore()
+            })
+
+            it("Allows setting the stdDeviation to own value", () => {
+                sinon.stub(fakeModule, "ccall")
+                const net = new Network({Module: fakeModule, updateFn: "rmsprop", weightsConfig: {distribution: "uniform", stdDeviation: 100}})
+                expect(fakeModule.ccall).to.be.calledWith("set_stdDeviation", null, ["number", "number"], [undefined, 100])
+                fakeModule.ccall.restore()
+            })
         })
 
         describe("defining properties", () => {

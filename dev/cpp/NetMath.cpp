@@ -155,6 +155,27 @@ std::vector<double> NetMath::uniform (int netInstance, int size) {
     return values;
 }
 
+std::vector<double> NetMath::gaussian (int netInstance, int size) {
+
+    Network* net = Network::getInstance(netInstance);
+    std::vector<double> values;
+
+    // Polar Box Muller
+    for (int i=0; i<size; i++) {
+        float x1, x2, r, y;
+
+        do {
+            x1 = 2 * (double) rand() / (RAND_MAX) - 1;
+            x2 = 2 * (double) rand() / (RAND_MAX) - 1;
+            r = x1*x1 + x2*x2;
+        } while ( r >= 1);
+
+        values.push_back(net->weightsConfig["mean"] + ( x1 * sqrt(-2 * log(r) / r) ) * net->weightsConfig["stdDeviation"] );
+    }
+
+    return values;
+}
+
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
     double total = 0.0;

@@ -12,6 +12,34 @@ bool moreOrLessEqual (double a, double b, int decimalPlaces) {
     return round(a * pow(10, decimalPlaces))/decimalPlaces == round(b * pow(10, decimalPlaces))/decimalPlaces;
 }
 
+double standardDeviation (std::vector<double> arr) {
+    double avg = 0;
+
+    for (int i=0; i<arr.size(); i++) {
+        avg += arr[i];
+    }
+
+    avg /= arr.size();
+
+    for (int i=0; i<arr.size(); i++) {
+        arr[i] = pow(arr[i] - avg, 2);
+    }
+
+    double var = 0;
+
+    for (int i=0; i<arr.size(); i++) {
+        var += arr[i];
+    }
+
+    return sqrt(var / arr.size());
+}
+
+TEST_CASE("standardDeviation") {
+    std::vector<double> vals = {3,5,7,8,5,25,8,4};
+    REQUIRE( standardDeviation(vals) == 6.603739470936145 );
+}
+
+
 /* Network */
 TEST_CASE("Network::newNetwork - Appends a new instance to the Network::instances vector, returning instance index") {
     REQUIRE( Network::netInstances.size() == 0 );
@@ -1424,4 +1452,60 @@ TEST_CASE("NetMath::uniform - There are some weights bigger than |0.1| when the 
     }
 
     REQUIRE( ok );
+}
+
+
+
+TEST_CASE("NetMath::gaussian - Returns the same number of values as the size value given") {
+    std::vector<double> values = NetMath::gaussian(0, 10);
+    REQUIRE( values.size() == 10 );
+}
+
+TEST_CASE("NetMath:gaussian - The standard deviation of the weights is roughly 1 when set to 1") {
+    Network::getInstance(0)->weightsConfig["stdDeviation"] = 1;
+    std::vector<double> values = NetMath::gaussian(0, 1000);
+    double std = standardDeviation(values);
+    REQUIRE( std<= 1.15 );
+    REQUIRE( std>= 0.85 );
+}
+
+TEST_CASE("NetMath::gaussian - The standard deviation of the weights is roughly 5 when set to 5") {
+    Network::getInstance(0)->weightsConfig["stdDeviation"] = 5;
+    std::vector<double> values = NetMath::gaussian(0, 1000);
+    double std = standardDeviation(values);
+    REQUIRE( std<= 1.15 * 5 );
+    REQUIRE( std>= 0.85 * 5 );
+}
+
+TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 0 when set to 0") {
+    Network::getInstance(0)->weightsConfig["mean"] = 0;
+    Network::getInstance(0)->weightsConfig["stdDeviation"] = 1;
+    std::vector<double> values = NetMath::gaussian(0, 1000);
+
+    double total = 0;
+
+    for (int v=0; v<1000; v++) {
+        total += values[v];
+    }
+
+    total /= 1000;
+
+    REQUIRE( total <= 0.1 );
+    REQUIRE( total >= -0.1 );
+}
+
+TEST_CASE("NetMath::gaussian - The mean of the weights is roughly 10 when set to 10") {
+    Network::getInstance(0)->weightsConfig["mean"] = 10;
+    std::vector<double> values = NetMath::gaussian(0, 1000);
+
+    double total = 0;
+
+    for (int v=0; v<1000; v++) {
+        total += values[v];
+    }
+
+    total /= 1000;
+
+    REQUIRE( total <= 10.1 );
+    REQUIRE( total >= 9.85 );
 }

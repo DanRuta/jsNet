@@ -629,7 +629,7 @@ class NetMath {
 
         // Polar Box Muller
         for (let i=0; i<size; i++) {
-            let x1, x2, r, y
+            let x1, x2, r
 
             do {
                 x1 = 2 * Math.random() -1

@@ -220,14 +220,14 @@ describe("Network", () => {
                 expect(net.iterations).to.equal(0)
             })
 
-            it("Defaults the weightsConfig distribution to uniform", () => {
+            it("Defaults the weightsConfig distribution to xavieruniform", () => {
                 sinon.stub(fakeModule, "ccall")
                 const net = new Network({Module: fakeModule, updateFn: "rmsprop"})
-                expect(fakeModule.ccall).to.be.calledWith("set_distribution", null, ["number", "number"], [undefined, 0])
+                expect(fakeModule.ccall).to.be.calledWith("set_distribution", null, ["number", "number"], [undefined, 2])
                 fakeModule.ccall.restore()
 
-                sinon.stub(fakeModule, "ccall").callsFake(() => 0)
-                expect(net.weightsConfig.distribution).to.equal("uniform")
+                sinon.stub(fakeModule, "ccall").callsFake(() => 2)
+                expect(net.weightsConfig.distribution).to.equal("xavieruniform")
                 fakeModule.ccall.restore()
             })
 
@@ -957,6 +957,24 @@ describe("Network", () => {
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error")).to.not.be.called
                 fakeModule.ccall.restore()
+            })
+        })
+
+        it("console.logs once for each epoch, + 2", () => {
+            sinon.stub(console, "log")
+            const network = new Network({Module: fakeModule})
+            return network.train(testData, {epochs: 4}).then(() => {
+                expect(console.log.callCount).to.equal(6)
+                console.log.restore()
+            })
+        })
+
+        it("Does not call console.log if log is set to false", () => {
+            sinon.stub(console, "log")
+            const network = new Network({Module: fakeModule})
+            return network.train(testData, {epochs: 4, log: false}).then(() => {
+                expect(console.log).to.not.be.called
+                console.log.restore()
             })
         })
     })

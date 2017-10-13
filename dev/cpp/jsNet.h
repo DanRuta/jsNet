@@ -35,6 +35,8 @@ public:
     double (*costFunction)(std::vector<double> calculated, std::vector<double> desired);
     std::vector<double> (*weightInitFn)(int netInstance, int layerIndex, int size);
 
+    // bool logTraining;
+
     int updateFnIndex;
 
     Network () {}

@@ -195,8 +195,17 @@ extern "C" {
             case 1:
                 net->weightInitFn = &NetMath::gaussian;
                 break;
+            case 2:
+                net->weightInitFn = &NetMath::xavieruniform;
+                break;
+            case 3:
+                net->weightInitFn = &NetMath::xaviernormal;
+                break;
             case 4:
                 net->weightInitFn = &NetMath::lecununiform;
+                break;
+            case 5:
+                net->weightInitFn = &NetMath::lecunnormal;
                 break;
         }
     }
@@ -343,6 +352,11 @@ extern "C" {
 
         return avgError;
     }
+
+    // EMSCRIPTEN_KEEPALIVE
+    // void set_logTraining (int instanceIndex, int val) {
+    //     Network::getInstance(instanceIndex)->logTraining = val==1;
+    // }
 
     EMSCRIPTEN_KEEPALIVE
     void resetDeltaWeights (int instanceIndex) {

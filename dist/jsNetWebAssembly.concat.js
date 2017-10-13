@@ -360,7 +360,7 @@ class Network {
         NetUtil.defineProperty(this.weightsConfig, "mean", ["number"], [this.netInstance])
         NetUtil.defineProperty(this.weightsConfig, "stdDeviation", ["number"], [this.netInstance])
 
-        this.weightsConfig.distribution = "uniform" //  TODO - replace with xavieruniform
+        this.weightsConfig.distribution = "xavieruniform"
 
         if (weightsConfig!=undefined && weightsConfig.distribution) {
 

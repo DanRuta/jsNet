@@ -127,7 +127,7 @@ class Network {
         NetUtil.defineProperty(this.weightsConfig, "mean", ["number"], [this.netInstance])
         NetUtil.defineProperty(this.weightsConfig, "stdDeviation", ["number"], [this.netInstance])
 
-        this.weightsConfig.distribution = "uniform" //  TODO - replace with xavieruniform
+        this.weightsConfig.distribution = "xavieruniform"
 
         if (weightsConfig!=undefined && weightsConfig.distribution) {
 
@@ -280,7 +280,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback}={}) {
+    train (data, {epochs=1, callback, log=true}={}) {
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -299,7 +299,9 @@ class Network {
 
             const typedArray = new Float32Array(itemsCount)
 
-            console.log(`Training started. Epochs: ${epochs}`)
+            if (log) {
+                console.log(`Training started. Epochs: ${epochs}`)
+            }
 
             for (let di=0; di<data.length; di++) {
 
@@ -360,8 +362,9 @@ class Network {
                         epochIndex++
 
                         elapsed = Date.now() - startTime
-                        console.log(`Epoch ${epochIndex} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`)
+
+                        log && console.log(`Epoch ${epochIndex} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`)
 
                         if (epochIndex < epochs) {
                             doEpoch()
@@ -380,11 +383,15 @@ class Network {
 
                     this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime
-                    console.log(`Epoch ${e+1} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/data.length}`}`,
-                                `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
+                    if (log) {
+                        console.log(`Epoch ${e+1} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/data.length}`}`,
+                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
+                    }
                 }
                 this.Module._free(buf)
-                console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
+                if (log) {
+                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
+                }
                 resolve()
             }
         })

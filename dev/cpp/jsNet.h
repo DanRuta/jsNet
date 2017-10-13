@@ -165,6 +165,8 @@ public:
 
     static std::vector<double> lecunnormal (int netInstance, int layerIndex, int size);
 
+    static std::vector<double> xavieruniform (int netInstance, int layerIndex, int size);
+
     static std::vector<double> softmax (std::vector<double> values);
 
     static void maxNorm(int netInstance);

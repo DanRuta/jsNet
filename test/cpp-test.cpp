@@ -1598,3 +1598,48 @@ TEST_CASE("NetMath::lecunnormal - The mean of the weights is roughly 0 when fanI
     REQUIRE( total <= 0.1 );
     REQUIRE( total >= -0.1 );
 }
+
+TEST_CASE("NetMath::xavieruniform - Returns the same number of values as the size value given") {
+    std::vector<double> values = NetMath::xavieruniform(0, 0, 10);
+    REQUIRE( values.size() == 10 );
+}
+
+TEST_CASE("NetMath::xavieruniform - Weights are all between -0.5 and +0.5 when fanIn is 10 and fanOut is 15") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 10;
+    l1->fanOut = 15;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::xavieruniform(0, 0, 1000);
+
+    bool ok = true;
+
+    for (int i=0; i<1000; i++) {
+        if (values[i] > 0.5 || values[i] < -0.5 ) {
+            ok = false;
+        }
+    }
+
+    REQUIRE( ok );
+}
+
+TEST_CASE("NetMath::xavieruniform - Inits some weights at values bigger |0.5| when fanIn+fanOut is smaller") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 5;
+    l1->fanOut = 5;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::xavieruniform(0, 0, 1000);
+
+    bool ok = false;
+
+    for (int i=0; i<1000; i++) {
+        if (values[i] > 0.05 || values[i] < -0.05 ) {
+            ok = true;
+        }
+    }
+
+    REQUIRE( ok );
+}

@@ -189,6 +189,19 @@ std::vector<double> NetMath::lecunnormal (int netInstance, int layerIndex, int s
     return NetMath::gaussian(netInstance, layerIndex, size);
 }
 
+std::vector<double> NetMath::xavieruniform (int netInstance, int layerIndex, int size) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    if (net->layers[layerIndex]->fanOut) {
+        net->weightsConfig["limit"] = sqrt((double)6/(net->layers[layerIndex]->fanIn + net->layers[layerIndex]->fanOut));
+
+        return NetMath::uniform(netInstance, layerIndex, size);
+    } else {
+        return NetMath::lecununiform(netInstance, layerIndex, size);
+    }
+}
+
 
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {

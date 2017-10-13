@@ -167,6 +167,8 @@ public:
 
     static std::vector<double> xavieruniform (int netInstance, int layerIndex, int size);
 
+    static std::vector<double> xaviernormal (int netInstance, int layerIndex, int size);
+
     static std::vector<double> softmax (std::vector<double> values);
 
     static void maxNorm(int netInstance);

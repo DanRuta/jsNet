@@ -5,7 +5,7 @@
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
-## Current WebAssembly version: 1.3.
+## Current WebAssembly version: 1.4.
 General release 3.0 will follow when it reaches 2.0, matching the JavaScript only feature set.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*

@@ -1561,3 +1561,40 @@ TEST_CASE("NetMath::lecununiform - Some weights are at values bigger than |0.5| 
 
     REQUIRE( ok );
 }
+
+TEST_CASE("NetMath::lecunnormal - Returns the same number of values as the size value given") {
+    std::vector<double> values = NetMath::lecunnormal(0, 0, 10);
+    REQUIRE( values.size() == 10 );
+}
+
+TEST_CASE("NetMath::lecunnormal - The standard deviation of the weights is roughly 0.05 when fanIn is 5") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 5;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::lecunnormal(0, 0, 1000);
+    double std = standardDeviation(values);
+    REQUIRE( std>= 0.4 );
+    REQUIRE( std<= 0.6 );
+}
+
+TEST_CASE("NetMath::lecunnormal - The mean of the weights is roughly 0 when fanIn is 5") {
+    Network* net = Network::getInstance(0);
+    net->layers.clear();
+    Layer* l1 = new Layer(0, 1);
+    l1->fanIn = 5;
+    net->layers.push_back(l1);
+    std::vector<double> values = NetMath::lecunnormal(0, 0, 1000);
+
+    double total = 0;
+
+    for (int v=0; v<1000; v++) {
+        total += values[v];
+    }
+
+    total /= 1000;
+
+    REQUIRE( total <= 0.1 );
+    REQUIRE( total >= -0.1 );
+}

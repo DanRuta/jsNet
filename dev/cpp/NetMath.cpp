@@ -179,9 +179,16 @@ std::vector<double> NetMath::gaussian (int netInstance, int layerIndex, int size
 std::vector<double> NetMath::lecununiform (int netInstance, int layerIndex, int size) {
     Network* net = Network::getInstance(netInstance);
     net->weightsConfig["limit"] = sqrt((double)3/net->layers[layerIndex]->fanIn);
-
     return NetMath::uniform(netInstance, layerIndex, size);
 }
+
+std::vector<double> NetMath::lecunnormal (int netInstance, int layerIndex, int size) {
+    Network* net = Network::getInstance(netInstance);
+    net->weightsConfig["mean"] = 0;
+    net->weightsConfig["stdDeviation"] = sqrt((double)1/net->layers[layerIndex]->fanIn);
+    return NetMath::gaussian(netInstance, layerIndex, size);
+}
+
 
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {

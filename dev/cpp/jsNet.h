@@ -163,6 +163,8 @@ public:
 
     static std::vector<double> lecununiform (int netInstance, int layerIndex, int size);
 
+    static std::vector<double> lecunnormal (int netInstance, int layerIndex, int size);
+
     static std::vector<double> softmax (std::vector<double> values);
 
     static void maxNorm(int netInstance);

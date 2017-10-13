@@ -4527,7 +4527,7 @@ describe("Netmath", () => {
             expect(result.length).to.equal(10)
         })
 
-        it("The standard deviation of the weights is roughly 0.05 when the fanIn is 5", () => {
+        it("The standard deviation of the weights is roughly 0.5 when the fanIn is 5", () => {
             const result = NetMath.lecunnormal(1000, {fanIn: 5})
             const std = NetMath.standardDeviation(result)
             expect(Math.round(std*1000)/1000).to.be.at.most(0.60)

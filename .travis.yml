@@ -1,6 +1,23 @@
-sudo: false
-language: node_js
+sudo: required
+language:
+  - cpp
+
 node_js:
   - 8.4.0
+
+before_install:
+  - npm install -g codecov
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - npm install
+  - npm test
+  - make
+  - ./cpp-tests
+
 after_success:
-- npm run coverage
+  - npm run coverage
+  - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
+  - codecov

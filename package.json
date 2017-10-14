@@ -3,12 +3,13 @@
   "version": "2.1.1",
   "description": "Javascript based deep learning framework for basic and convolutional neural networks.",
   "scripts": {
-    "test": "npm run js-test && npm run wa-test",
-    "js-test": "nyc mocha test/js-test.js",
-    "wa-test": "nyc mocha test/wa-test.js",
-    "cpp-test": "g++ -std=c++11 test/cpp-test.cpp -o test/catch.exe & cd test & catch.exe & cd ..",
+    "test": "npm run js-tests && npm run wa-tests",
+    "js-tests": "nyc mocha test/js-test.js",
+    "wa-tests": "nyc mocha test/wa-test.js",
+    "cpp-tests": "cd ./build && make && cpp-tests",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
+    "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
+    "build": "rm -rf build && mkdir build && cd build && cmake -G\"MSYS Makefiles\" .. && npm install"
   },
   "repository": {
     "type": "git",

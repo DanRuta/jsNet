@@ -1,5 +1,7 @@
-# jsNet
-[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master)
+jsNet
+=
+[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++ [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
+---
 
 [![NPM](https://nodei.co/npm/jsnet.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jsnet/)
 

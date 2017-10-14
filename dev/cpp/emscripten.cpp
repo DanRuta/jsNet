@@ -353,10 +353,6 @@ extern "C" {
         return avgError;
     }
 
-    // EMSCRIPTEN_KEEPALIVE
-    // void set_logTraining (int instanceIndex, int val) {
-    //     Network::getInstance(instanceIndex)->logTraining = val==1;
-    // }
 
     EMSCRIPTEN_KEEPALIVE
     void resetDeltaWeights (int instanceIndex) {

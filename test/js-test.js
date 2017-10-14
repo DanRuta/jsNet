@@ -11,8 +11,6 @@ chai.use(chaiAsPromised)
 
 const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNet.concat.js")
 
-global.Module = require("./emscriptenTests.js")
-
 describe("Loading", () => {
 
     it("Network is loaded", () => expect(Network).to.not.be.undefined)

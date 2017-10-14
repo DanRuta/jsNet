@@ -13,7 +13,7 @@ script:
   - cd build
   - cmake ..
   - npm install
-  - npm test
+  - npm run js-tests
   - make
   - ./cpp-tests
 

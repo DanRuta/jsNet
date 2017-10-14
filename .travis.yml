@@ -9,13 +9,12 @@ before_install:
   - npm install -g codecov
 
 script:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v8.7.0
   - mkdir build
   - cd build
   - cmake ..
   - npm install
-  - npm run js-tests
-  - node -v
-  - npm run wa-tests
+  - npm test
   - make
   - ./cpp-tests
 

@@ -1,6 +1,10 @@
+#include "../dev/cpp/Network.cpp"
+#include "cpp-mocks.cpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "../dev/cpp/Network.cpp"
+
+using ::testing::MockFunction;
+using ::testing::NiceMock;
 
 double standardDeviation (std::vector<double> arr) {
     double avg = 0;
@@ -22,6 +26,16 @@ double standardDeviation (std::vector<double> arr) {
     }
 
     return sqrt(var / arr.size());
+}
+
+MockLayer::MockLayer(int netI, int s) : Layer(netI, s) {
+    netInstance = netI;
+    size = s;
+}
+MockLayer::~MockLayer() {
+    for (int n=0; n<neurons.size(); n++) {
+        delete neurons[n];
+    }
 }
 
 namespace Misc {
@@ -81,9 +95,9 @@ namespace Network_cpp {
         Network::newNetwork();
         Network::getInstance(0)->weightsConfig["limit"] = 0.1;
         Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
+        Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
+        Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
+        Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
         Network::getInstance(0)->activation = &NetMath::sigmoid;
 
         EXPECT_NE( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid );
@@ -115,83 +129,127 @@ namespace Network_cpp {
         EXPECT_EQ( Network::getInstance(0)->layers[2]->fanOut,-1 );
     }
 
-    // Sets the first layer's neurons' activations to the input given
-    TEST(Network, forward_1) {
-        std::vector<double> testInput = {1,2,3};
+    class ForwardFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            l1 = new MockLayer(0, 3);
+            l2 = new MockLayer(0, 2);
+            l1->neurons.push_back(new Neuron());
+            l1->neurons.push_back(new Neuron());
+            l1->neurons.push_back(new Neuron());
+            l2->neurons.push_back(new Neuron());
+            l2->neurons.push_back(new Neuron());
 
-        EXPECT_NE( Network::getInstance(0)->layers[0]->neurons[0]->activation, 1 );
-        EXPECT_NE( Network::getInstance(0)->layers[0]->neurons[1]->activation, 2 );
-        EXPECT_NE( Network::getInstance(0)->layers[0]->neurons[2]->activation, 3 );
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
 
-        Network::getInstance(0)->forward(testInput);
+            EXPECT_CALL(*l1, forward()).Times(0);
+            EXPECT_CALL(*l2, forward()).Times(1);
 
-        EXPECT_EQ( Network::getInstance(0)->layers[0]->neurons[0]->activation, 1);
-        EXPECT_EQ( Network::getInstance(0)->layers[0]->neurons[1]->activation, 2);
-        EXPECT_EQ( Network::getInstance(0)->layers[0]->neurons[2]->activation, 3);
+            testInput = {1,2,3};
+        }
+
+        virtual void TearDown() {
+            delete l1;
+            delete l2;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        MockLayer* l1;
+        MockLayer* l2;
+        std::vector<double> testInput;
+    };
+
+    // Calls the forward function of every layer except the first's
+    TEST_F(ForwardFixture, forward_1) {
+        MockLayer* l3 = new MockLayer(0, 1);
+        net->layers.push_back(l3);
+        l3->neurons.push_back(new Neuron());
+
+        EXPECT_CALL(*l3, forward()).Times(1);
+
+        net->forward(testInput);
+
+        delete l3;
     }
 
+    // Sets the first layer's neurons' activations to the input given
+    TEST_F(ForwardFixture, forward_2) {
+
+        EXPECT_NE( l1->neurons[0]->activation, 1 );
+        EXPECT_NE( l1->neurons[1]->activation, 2 );
+        EXPECT_NE( l1->neurons[2]->activation, 3 );
+
+        net->forward(testInput);
+
+        EXPECT_EQ( l1->neurons[0]->activation, 1);
+        EXPECT_EQ( l1->neurons[1]->activation, 2);
+        EXPECT_EQ( l1->neurons[2]->activation, 3);
+    }
+
+
     // Returns a vector of activations in the last layer
-    TEST(Network, forward_2) {
-        std::vector<double> testInput = {1,2,3};
+    TEST_F(ForwardFixture, forward_3) {
+
+        l2->neurons[0]->activation = 1;
+        l2->neurons[1]->activation = 2;
+
         std::vector<double> returned = Network::getInstance(0)->forward(testInput);
 
-        std::vector<double> actualValues;
+        std::vector<double> actualValues = {1, 2};
 
-        for (int i=0; i<3; i++) {
-            actualValues.push_back(Network::getInstance(0)->layers[2]->neurons[i]->activation);
-        }
 
         EXPECT_EQ( returned, actualValues );
     }
 
-    // Sets all the delta weights values to 0
-    TEST(Network, resetDeltaWeights) {
+    // Calls the resetDeltaWeights function of each layer except the first's
+    TEST(Network, resetDeltaWeights){
         Network::deleteNetwork();
         Network::newNetwork();
-        Network::getInstance(0)->weightsConfig["limit"] = 0.1;
-        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
-        Network::getInstance(0)->layers.push_back(new Layer(0, 3));
-        Network::getInstance(0)->joinLayers();
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
 
-        for (int n=1; n<3; n++) {
-            Network::getInstance(0)->layers[0]->neurons[n]->deltaWeights = {1,1,1};
-            Network::getInstance(0)->layers[1]->neurons[n]->deltaWeights = {1,1,1};
-        }
+        EXPECT_CALL(*l1, resetDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, resetDeltaWeights()).Times(1);
 
         Network::getInstance(0)->resetDeltaWeights();
-        std::vector<double> expected = {0,0,0};
 
-        for (int n=1; n<3; n++) {
-            EXPECT_EQ( Network::getInstance(0)->layers[1]->neurons[n]->deltaWeights, expected );
-            EXPECT_EQ( Network::getInstance(0)->layers[2]->neurons[n]->deltaWeights, expected );
-        }
+        delete l1;
+        delete l2;
+        delete l3;
     }
 
-    // Increment the weights by the delta weights
-    TEST(Network, applyDeltaWeights) {
-        Network::getInstance(0)->learningRate = 1;
-        Network::getInstance(0)->updateFnIndex = 0;
-        for (int n=1; n<3; n++) {
-            Network::getInstance(0)->layers[1]->neurons[n]->weights = {1,1,1};
-            Network::getInstance(0)->layers[2]->neurons[n]->weights = {2,2,2};
-            Network::getInstance(0)->layers[1]->neurons[n]->deltaWeights = {1,2,3};
-            Network::getInstance(0)->layers[2]->neurons[n]->deltaWeights = {4,5,6};
-        }
+    // Calls the applyDeltaWeights function of each layer except the first's
+    TEST(Network, applyDeltaWeights){
+        Network::deleteNetwork();
+        Network::newNetwork();
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
 
-        std::vector<double> expected1 = {2,3,4};
-        std::vector<double> expected2 = {6,7,8};
+        EXPECT_CALL(*l1, applyDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, applyDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, applyDeltaWeights()).Times(1);
 
         Network::getInstance(0)->applyDeltaWeights();
 
-        for (int n=1; n<3; n++) {
-            EXPECT_EQ( Network::getInstance(0)->layers[1]->neurons[n]->weights, expected1 );
-            EXPECT_EQ( Network::getInstance(0)->layers[2]->neurons[n]->weights, expected2 );
-        }
+        delete l1;
+        delete l2;
+        delete l3;
     }
 }
-
 
 int main (int argc, char** argv) {
     ::testing::InitGoogleMock(&argc, argv);

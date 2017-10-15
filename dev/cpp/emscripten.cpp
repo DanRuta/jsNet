@@ -257,7 +257,7 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     void addFCLayer (int instanceIndex, int size) {
-        Network::getInstance(instanceIndex)->layers.push_back(new Layer(instanceIndex, size));
+        Network::getInstance(instanceIndex)->layers.push_back(new FCLayer(instanceIndex, size));
     }
 
     EMSCRIPTEN_KEEPALIVE

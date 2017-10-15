@@ -66,9 +66,11 @@ public:
     Layer* getLayer(int i);
 };
 
+
 class Layer {
 public:
     int netInstance;
+    std::string type;
     int size;
     int fanIn;
     int fanOut;
@@ -77,9 +79,32 @@ public:
     Layer* prevLayer;
     double (*activation)(double, bool, Neuron*);
 
-    Layer(int netI, int s);
+    Layer (int netI, int s) {};
 
-    ~Layer ();
+    virtual ~Layer(void) {} ;
+
+    virtual void assignNext (Layer* l) = 0;
+
+    virtual void assignPrev (Layer* l) = 0;
+
+    virtual void init (int layerIndex) = 0;
+
+    virtual void forward (void) = 0;
+
+    virtual void backward (std::vector<double> expected) = 0;
+
+    virtual void applyDeltaWeights (void) = 0;
+
+    virtual void resetDeltaWeights (void) = 0;
+
+};
+
+class FCLayer : public Layer {
+public:
+
+    FCLayer (int netI, int s);
+
+    ~FCLayer (void);
 
     void assignNext (Layer* l);
 
@@ -95,6 +120,7 @@ public:
 
     void resetDeltaWeights (void);
 };
+
 
 class Neuron {
     public:

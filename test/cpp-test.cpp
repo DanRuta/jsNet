@@ -828,6 +828,763 @@ namespace FCLayer_cpp {
 }
 
 
+namespace NetMath_cpp {
+
+    TEST(NetMath, sigmoid) {
+        Neuron* testN = new Neuron();
+        EXPECT_EQ( NetMath::sigmoid(1.681241237, false, testN), 0.8430688214048092 );
+        EXPECT_EQ( NetMath::sigmoid(0.8430688214048092, true, testN), 0.21035474941074114 );
+        delete testN;
+    }
+
+    TEST(NetMath, tanh) {
+        Neuron* testN = new Neuron();
+        EXPECT_EQ( NetMath::tanh(1, false, testN), 0.7615941559557649 );
+        EXPECT_EQ( NetMath::tanh(0.5, false, testN), 0.46211715726000974);
+        EXPECT_EQ( NetMath::tanh(0.5, true, testN), 0.7864477329659275 );
+        EXPECT_EQ( NetMath::tanh(1.5, true, testN), 0.18070663892364855 );
+        EXPECT_NE( NetMath::tanh(900, true, testN), NAN );
+        delete testN;
+    }
+
+    TEST(NetMath, lecuntanh) {
+        Neuron* testN = new Neuron();
+        EXPECT_EQ( NetMath::lecuntanh(2.0, false, testN), 1.4929388053842507 );
+        EXPECT_EQ( NetMath::lecuntanh(-2.0, false, testN), -1.4929388053842507 );
+        EXPECT_EQ( NetMath::lecuntanh(2.0, true, testN), 0.2802507761872869 );
+        EXPECT_EQ( NetMath::lecuntanh(-2.0, true, testN), 0.2802507761872869 );
+        delete testN;
+    }
+
+    TEST(NetMath, relu) {
+        Neuron* testN = new Neuron();
+        EXPECT_EQ( NetMath::relu(2, false, testN), 2 );
+        EXPECT_EQ( NetMath::relu(-2, false, testN), 0 );
+        EXPECT_EQ( NetMath::relu(2, true, testN), 1 );
+        EXPECT_EQ( NetMath::relu(-2, true, testN), 0 );
+        delete testN;
+    }
+
+    TEST(NetMath, lrelu) {
+        Neuron* testN = new Neuron();
+        testN->lreluSlope = -0.0005;
+        EXPECT_EQ( NetMath::lrelu(2, false, testN), 2 );
+        EXPECT_EQ( NetMath::lrelu(-2, false, testN), -0.001 );
+        EXPECT_EQ( NetMath::lrelu(2, true, testN), 1 );
+        EXPECT_EQ( NetMath::lrelu(-2, true, testN), -0.0005 );
+        delete testN;
+    }
+
+    TEST(NetMath, rrelu) {
+        Neuron* testN = new Neuron();
+        testN->rreluSlope = 0.0005;
+        EXPECT_EQ( NetMath::rrelu(2, false, testN), 2 );
+        EXPECT_EQ( NetMath::rrelu(-2, false, testN), 0.0005 );
+        EXPECT_EQ( NetMath::rrelu(2, true, testN), 1 );
+        EXPECT_EQ( NetMath::rrelu(-2, true, testN), 0.0005 );
+        delete testN;
+    }
+
+    TEST(NetMath, elu) {
+        Neuron* testN = new Neuron();
+        testN->eluAlpha = 1;
+        EXPECT_EQ( NetMath::elu(2, false, testN), 2 );
+        EXPECT_EQ( NetMath::elu(-0.25, false, testN), -0.22119921692859512 );
+        EXPECT_EQ( NetMath::elu(2, true, testN), 1 );
+        EXPECT_EQ( NetMath::elu(-0.5, true, testN), 0.6065306597126334 );
+        delete testN;
+    }
+
+    TEST(NetMath, meansquarederror) {
+        std::vector<double> values1 = {13,17,18,20,24};
+        std::vector<double> values2 = {12,15,20,22,24};
+        EXPECT_EQ( NetMath::meansquarederror(values1, values2), (double)2.6 );
+    }
+
+    TEST(NetMath, crossentropy) {
+        std::vector<double> values1 = {1, 0, 0.3};
+        std::vector<double> values2 = {0, 1, 0.8};
+        EXPECT_EQ( NetMath::crossentropy(values1, values2), (double)70.16654147569186 );
+    }
+
+    TEST(NetMath, vanillaupdatefn) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network::getInstance(0)->learningRate = 0.5;
+        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 10), 15 );
+        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 20), 20 );
+        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, -30), -5 );
+    }
+
+    class GainFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->learningRate = 1;
+            testN = new Neuron();
+            testN->init(0);
+            testN->bias = 0.1;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // Doubles a value when the gain is 2 and learningRate 1
+    TEST_F(GainFixture, gain_1) {
+        testN->biasGain = 2;
+        EXPECT_EQ( NetMath::gain(0, (double)10, (double)5, testN, -1), 20 );
+    }
+
+    // Halves a value when the gain is -5 and learningRate 0.1
+    TEST_F(GainFixture, gain_2) {
+        net->learningRate = 0.1;
+        testN->biasGain = -5;
+        EXPECT_NEAR( NetMath::gain(0, (double)5, (double)5, testN, -1), 2.5, 1e-6 );
+    }
+
+    // Increments a neuron's biasGain by 0.05 when the bias value doesn't change sign
+    TEST_F(GainFixture, gain_3) {
+        testN->biasGain = 1;
+        NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+        EXPECT_EQ( testN->biasGain, 1.05 );
+    }
+
+    // Does not increase the gain to more than 5
+    TEST_F(GainFixture, gain_4) {
+        testN->biasGain = 4.99;
+        NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+        EXPECT_EQ( testN->biasGain, 5 );
+    }
+
+    // Multiplies a neuron's bias gain by 0.95 when the value changes sign
+    TEST_F(GainFixture, gain_5) {
+        net->learningRate = -10;
+        testN->biasGain = 1;
+        NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+        EXPECT_EQ( testN->biasGain, 0.95 );
+    }
+
+    // Does not reduce the bias gain to less than 0.5
+    TEST_F(GainFixture, gain_6) {
+        net->learningRate = -10;
+        testN->biasGain = 0.51;
+        NetMath::gain(0, (double)0.1, (double)1, testN, -1);
+        EXPECT_EQ( testN->biasGain, 0.5 );
+    }
+
+    // Increases weight gain the same way as the bias gain
+    TEST_F(GainFixture, gain_7) {
+        testN->weights = {0.1, 0.1};
+        testN->weightGain = {1, 4.99};
+        NetMath::gain(0, (double)0.1, (double)1, testN, 0);
+        NetMath::gain(0, (double)0.1, (double)1, testN, 1);
+        EXPECT_EQ( testN->weightGain[0], 1.05 );
+        EXPECT_EQ( testN->weightGain[1], 5 );
+    }
+
+    // Decreases weight gain the same way as the bias gain
+    TEST_F(GainFixture, gain_8) {
+        net->learningRate = -10;
+        testN->weights = {0.1, 0.1};
+        testN->weightGain = {1, 0.51};
+        NetMath::gain(0, (double)0.1, (double)1, testN, 0);
+        NetMath::gain(0, (double)0.1, (double)1, testN, 1);
+        EXPECT_EQ( testN->weightGain[0], 0.95 );
+        EXPECT_EQ( testN->weightGain[1], 0.5 );
+    }
+
+    class AdagradFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->learningRate = 2;
+            testN = new Neuron();
+            testN->init(0);
+            testN->biasCache = 0;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // Increments the neuron's biasCache by the square of its deltaBias
+    TEST_F(AdagradFixture, adagrad_1) {
+        NetMath::adagrad(0, (double)1, (double)3, testN, -1);
+        EXPECT_EQ( testN->biasCache, 9 );
+    }
+
+    // Returns a new value matching the formula for adagrad
+    TEST_F(AdagradFixture, adagrad_2) {
+        net->learningRate = 0.5;
+        EXPECT_NEAR( NetMath::adagrad(0, (double)1, (double)3, testN, -1), 1.5, 1e-3 );
+    }
+
+    // Increments the neuron's weightsCache with the same way as the biasCache
+    TEST_F(AdagradFixture, adagrad_3) {
+        testN->weightsCache = {0, 1, 2};
+        double result1 = NetMath::adagrad(0, (double)1, (double)3, testN, 0);
+        double result2 = NetMath::adagrad(0, (double)1, (double)4, testN, 1);
+        double result3 = NetMath::adagrad(0, (double)1, (double)2, testN, 2);
+        EXPECT_EQ( testN->weightsCache[0], 9 );
+        EXPECT_EQ( testN->weightsCache[1], 17 );
+        EXPECT_EQ( testN->weightsCache[2], 6 );
+        EXPECT_NEAR( result1, 3.0, 1e-2 );
+        EXPECT_NEAR( result2, 2.9, 1e-1 );
+        EXPECT_NEAR( result3, 2.6, 1e-1 );
+    }
+
+    class RMSPropFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->learningRate = 0.5;
+            net->rmsDecay = 0.99;
+            testN = new Neuron();
+            testN->init(0);
+            testN->biasCache = 10;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // Sets the cache value to the correct value, following the rmsprop formula
+    TEST_F(RMSPropFixture, rmsprop_1) {
+        net->learningRate = 2;
+        NetMath::rmsprop(0, (double)1, (double)3, testN, -1);
+        EXPECT_NEAR(testN->biasCache, 9.99, 1e-3);
+    }
+
+    // Returns a new value matching the formula for rmsprop, using this new cache value
+    TEST_F(RMSPropFixture, rmsprop_2) {
+        EXPECT_NEAR( NetMath::rmsprop(0, (double)1, (double)3, testN, -1), 1.47, 1e-2);
+    }
+
+    // Updates the weightsCache the same way as the biasCache
+    TEST_F(RMSPropFixture, rmsprop_3) {
+        testN->weightsCache = {0, 1, 2};
+        double result1 = NetMath::rmsprop(0, (double)1, (double)3, testN, 0);
+        double result2 = NetMath::rmsprop(0, (double)1, (double)4, testN, 1);
+        double result3 = NetMath::rmsprop(0, (double)1, (double)2, testN, 2);
+        EXPECT_NEAR( testN->weightsCache[0], 0.09, 1e-2 );
+        EXPECT_NEAR( testN->weightsCache[1], 1.15, 1e-2 );
+        EXPECT_NEAR( testN->weightsCache[2], 2.02, 1e-2 );
+        EXPECT_NEAR( result1, 6.0, 1e-2 );
+        EXPECT_NEAR( result2, 2.9, 0.1 );
+        EXPECT_NEAR( result3, 1.7, 0.1 );
+    }
+
+    class AdamFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->learningRate = 0.01;
+            testN = new Neuron();
+            testN->init(0);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // It sets the neuron.m to the correct value, following the formula
+    TEST_F(AdamFixture, adam_1) {
+        testN->m = 0.1;
+        NetMath::adam(0, (double)1, (double)0.2, testN, -1);
+        EXPECT_EQ( testN->m, 0.11 );
+    }
+
+    // It sets the neuron.v to the correct value, following the formula
+    TEST_F(AdamFixture, adam_2) {
+        testN->v = 0.1;
+        NetMath::adam(0, (double)1, (double)0.2, testN, -1);
+        EXPECT_NEAR( testN->v, 0.09994, 1e-3 );
+    }
+
+    // Calculates a value correctly, following the formula
+    TEST_F(AdamFixture, adam_3) {
+        net->iterations = 2;
+        testN->m = 0.121;
+        testN->v = 0.045;
+        EXPECT_NEAR( NetMath::adam(0, (double)-0.3, (double)0.02, testN, -1), -0.298943, 1e-5 );
+    }
+
+    class AdadeltaFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightsConfig["limit"] = 0.1;
+            net->weightInitFn = &NetMath::uniform;
+            net->rho = 0.95;
+            testN = new Neuron();
+            testN->init(0);
+            testN->biasCache = 0.5;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // Sets the neuron.biasCache to the correct value, following the adadelta formula
+    TEST_F(AdadeltaFixture, adadelta_1) {
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
+        EXPECT_NEAR( testN->biasCache, 0.477, 1e-3 );
+    }
+
+    // Sets the weightsCache to the correct value, following the adadelta formula, same as biasCache
+    TEST_F(AdadeltaFixture, adadelta_2) {
+        testN->weightsCache = {0.5, 0.75};
+        testN->adadeltaCache = {0, 0};
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0);
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
+        EXPECT_NEAR( testN->weightsCache[0], 0.477, 1e-3 );
+        EXPECT_NEAR( testN->weightsCache[1], 0.7145, 1e-4 );
+    }
+
+    // Creates a value for the bias correctly, following the formula
+    TEST_F(AdadeltaFixture, adadelta_3) {
+        testN->adadeltaBiasCache = 0.25;
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1), 0.64479, 1e-5 );
+    }
+
+    // Creates a value for the weight correctly, the same was as the bias
+    TEST_F(AdadeltaFixture, adadelta_4) {
+        testN->weightsCache = {0.5, 0.75};
+        testN->adadeltaCache = {0.1, 0.2};
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0), 0.59157, 1e-3 );
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1), 0.60581, 1e-3 );
+    }
+
+    // Updates the neuron.adadeltaBiasCache with the correct value, following the formula
+    TEST_F(AdadeltaFixture, adadelta_5) {
+        testN->adadeltaBiasCache = 0.25;
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
+        EXPECT_NEAR( testN->adadeltaBiasCache, 0.2395, 1e-2 );
+    }
+
+    // Updates the neuron.adadeltaCache with the correct value, following the formula, same as adadeltaBiasCache
+    TEST_F(AdadeltaFixture, adadelta_6) {
+        testN->weightsCache = {0.5, 0.75};
+        testN->adadeltaCache = {0.1, 0.2};
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0);
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
+        EXPECT_NEAR( testN->adadeltaCache[0], 0.097, 0.1 );
+        EXPECT_NEAR( testN->adadeltaCache[1], 0.192, 0.1 );
+    }
+
+    TEST(NetMath, sech) {
+        EXPECT_DOUBLE_EQ( NetMath::sech(-0.5), 0.886818883970074 );
+        EXPECT_DOUBLE_EQ( NetMath::sech(1),    0.6480542736638853 );
+    }
+
+    class MaxNormFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->maxNorm = 1;
+            net->maxNormTotal = 2.8284271247461903;
+
+            l1 = new FCLayer(0, 1);
+            l2 = new FCLayer(0, 2);
+            l2->assignPrev(l1);
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
+
+            Neuron* n = new Neuron();
+            n->weights = {2, 2};
+            l2->neurons.push_back(n);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete l1;
+            delete l2;
+        }
+
+        Network* net;
+        FCLayer* l1;
+        FCLayer* l2;
+    };
+
+    // Sets the maxNormTotal to 0
+    TEST_F(MaxNormFixture, maxNorm_1) {
+        NetMath::maxNorm(0);
+        EXPECT_EQ(Network::getInstance(0)->maxNormTotal, 0);
+    }
+
+    // Scales weights if their L2 exceeds the configured max norm threshold
+    TEST_F(MaxNormFixture, maxNorm_2) {
+        NetMath::maxNorm(0);
+        EXPECT_EQ( l2->neurons[0]->weights[0], 0.7071067811865475 );
+        EXPECT_EQ( l2->neurons[0]->weights[1], 0.7071067811865475 );
+    }
+
+    // Does not scale weights if their L2 doesn't exceed the configured max norm threshold
+    TEST_F(MaxNormFixture, maxNorm_3) {
+        net->maxNorm = 1000;
+        NetMath::maxNorm(0);
+        EXPECT_EQ( l2->neurons[0]->weights[0], 2 );
+        EXPECT_EQ( l2->neurons[0]->weights[1], 2 );
+    }
+
+    // Returns the same number of values as the size value given
+    TEST(NetMath, uniform_1) {
+        EXPECT_EQ( NetMath::uniform(0, 0, 10).size(), 10 );
+    }
+
+    // Weights are all between -0.1 and +0.1 when the limit is 0.1
+    TEST(NetMath, uniform_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+
+        bool ok = true;
+        std::vector<double> values = NetMath::uniform(0, 0, 100);
+
+        for (int i=0; i<100; i++) {
+            if (values[i] > 0.1 || values[i]<=-0.1) {
+                ok = false;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    // There are some weights bigger than |0.1| when the limit is 1000
+    TEST(NetMath, uniform_3) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network::getInstance(0)->weightsConfig["limit"] = 1000;
+        bool ok = false;
+        std::vector<double> values = NetMath::uniform(0, 0, 1000);
+
+        for (int i=0; i<1000; i++) {
+            if (values[i] > 0.1 || values[i]<=-0.1) {
+                ok = true;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    class GaussianFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightsConfig["stdDeviation"] = 1;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+    };
+
+    // Returns the same number of values as the size value given
+    TEST_F(GaussianFixture, gaussian_1) {
+        EXPECT_EQ( NetMath::gaussian(0, 0, 10).size(), 10 );
+    }
+
+    // The standard deviation of the weights is roughly 1 when set to 1
+    TEST_F(GaussianFixture, gaussian_2) {
+        double std = standardDeviation(NetMath::gaussian(0, 0, 1000));
+        EXPECT_LE( std, 1.15 );
+        EXPECT_GE( std, 0.85 );
+    }
+
+    // The standard deviation of the weights is roughly 5 when set to 5
+    TEST_F(GaussianFixture, gaussian_3) {
+        net->weightsConfig["stdDeviation"] = 5;
+        double std = standardDeviation(NetMath::gaussian(0, 0, 1000));
+        EXPECT_LE( std, 1.15 * 5 );
+        EXPECT_GE( std, 0.85 * 5 );
+    }
+
+    // The mean of the weights is roughly 0 when set to 0
+    TEST_F(GaussianFixture, gaussian_4) {
+        net->weightsConfig["mean"] = 10;
+        std::vector<double> values = NetMath::gaussian(0, 0, 1000);
+
+        double total = 0;
+
+        for (int v=0; v<1000; v++) {
+            total += values[v];
+        }
+
+        total /= 1000;
+
+        EXPECT_LE( total, 10.1 );
+        EXPECT_GE( total, 9.85 );
+    }
+
+    // The mean of the weights is roughly 10 when set to 10
+    TEST_F(GaussianFixture, gaussian_5) {
+        net->weightsConfig["mean"] = 10;
+        std::vector<double> values = NetMath::gaussian(0, 0, 1000);
+
+        double total = 0;
+
+        for (int v=0; v<1000; v++) {
+            total += values[v];
+        }
+
+        total /= 1000;
+
+        EXPECT_LE( total, 10.1 );
+        EXPECT_GE( total, 9.85 );
+    }
+
+
+    class LeCunUniformFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            l1 = new FCLayer(0, 1);
+            l1->fanIn = 12;
+            net->layers.push_back(l1);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+    };
+
+    // Returns the same number of values as the size value given
+    TEST_F(LeCunUniformFixture, lecununiform_1) {
+        EXPECT_EQ( NetMath::lecununiform(0, 0, 10).size(), 10 );
+    }
+
+    // Weights are all between -0.5 and +0.5 when fanIn is 12
+    TEST_F(LeCunUniformFixture, lecununiform_2) {
+        std::vector<double> values = NetMath::lecununiform(0, 0, 1000);
+
+        bool ok = true;
+
+        for (int i=0; i<1000; i++) {
+            if (values[i] > 0.5 || values[i] < -0.5 ) {
+                ok = false;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    // Some weights are at values bigger than |0.5| when fanIn is smaller (8)
+    TEST_F(LeCunUniformFixture, lecununiform_3) {
+        l1->fanIn = 8;
+        std::vector<double> values = NetMath::lecununiform(0, 0, 1000);
+
+        bool ok = false;
+
+        for (int i=0; i<1000; i++) {
+            if (values[i] > 0.5 || values[i] < -0.5 ) {
+                ok = true;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    class LeCunNormalFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            l1 = new FCLayer(0, 1);
+            l1->fanIn = 5;
+            net->layers.push_back(l1);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+    };
+
+    // Returns the same number of values as the size value given
+    TEST_F(LeCunNormalFixture, lecunNormal_1) {
+        EXPECT_EQ( NetMath::lecunnormal(0, 0, 10).size(), 10 );
+    }
+
+    // The standard deviation of the weights is roughly 0.05 when fanIn is 5
+    TEST_F(LeCunNormalFixture, lecunNormal_2) {
+        double std = standardDeviation(NetMath::lecunnormal(0, 0, 1000));
+        EXPECT_GE( std, 0.4 );
+        EXPECT_LE( std, 0.6 );
+    }
+
+    // The mean of the weights is roughly 0 when fanIn is 5
+    TEST_F(LeCunNormalFixture, lecunNormal_3) {
+        std::vector<double> values = NetMath::lecunnormal(0, 0, 1000);
+
+        double total = 0;
+
+        for (int v=0; v<1000; v++) {
+            total += values[v];
+        }
+
+        total /= 1000;
+
+        EXPECT_GE( total, -0.1 );
+        EXPECT_LE( total, 0.1 );
+    }
+
+    class XavierUniformFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            l1 = new FCLayer(0, 1);
+            net->layers.push_back(l1);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+    };
+
+    // Returns the same number of values as the size value given
+    TEST_F(XavierUniformFixture, xavierUniform_1) {
+        EXPECT_EQ( NetMath::xavieruniform(0, 0, 10).size(), 10 );
+    }
+
+    // Weights are all between -0.5 and +0.5 when fanIn is 10 and fanOut is 15
+    TEST_F(XavierUniformFixture, xavierUniform_2) {
+        l1->fanIn = 10;
+        l1->fanOut = 15;
+        std::vector<double> values = NetMath::xavieruniform(0, 0, 1000);
+
+        bool ok = true;
+
+        for (int i=0; i<1000; i++) {
+            if (values[i] > 0.5 || values[i] < -0.5 ) {
+                ok = false;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    // Inits some weights at values bigger |0.5| when fanIn+fanOut is smaller
+    TEST_F(XavierUniformFixture, xavierUniform_3) {
+        l1->fanIn = 5;
+        l1->fanOut = 5;
+        net->layers.push_back(l1);
+        std::vector<double> values = NetMath::xavieruniform(0, 0, 1000);
+
+        bool ok = false;
+
+        for (int i=0; i<1000; i++) {
+            if (values[i] > 0.05 || values[i] < -0.05 ) {
+                ok = true;
+            }
+        }
+
+        EXPECT_TRUE( ok );
+    }
+
+    class XavierNormalFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            l1 = new FCLayer(0, 1);
+            l1->fanIn = 5;
+            l1->fanOut = 25;
+            net->layers.push_back(l1);
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+    };
+
+    // Returns the same number of values as the size value given
+    TEST_F(XavierNormalFixture, xavierNormal_1) {
+        EXPECT_EQ( NetMath::xaviernormal(0, 0, 10).size(), 10 );
+    }
+
+    // The standard deviation of the weights is roughly 0.25 when fanIn is 5 and fanOut 25
+    TEST_F(XavierNormalFixture, xavierNormal_2) {
+        double std = standardDeviation(NetMath::xaviernormal(0, 0, 1000));
+        EXPECT_GE( std, 0.2 );
+        EXPECT_LE( std, 0.3 );
+    }
+
+    // The mean of the weights is roughly 0 when fanIn is 5
+    TEST_F(XavierNormalFixture, xavierNormal_3) {
+        std::vector<double> values = NetMath::xaviernormal(0, 0, 1000);
+
+        double total = 0;
+
+        for (int v=0; v<1000; v++) {
+            total += values[v];
+        }
+
+        total /= 1000;
+
+        EXPECT_GE( total, -0.1 );
+        EXPECT_LE( total, 0.1 );
+    }
+}
+
 int main (int argc, char** argv) {
     ::testing::InitGoogleMock(&argc, argv);
     return RUN_ALL_TESTS();

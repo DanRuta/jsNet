@@ -749,17 +749,16 @@ namespace FCLayer_cpp {
     // Increments the weights by the delta weights
     TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_1) {
 
-        for (int n=1; n<3; n++) {
-            l2->neurons[n]->weights = {1,1,1};
-            l2->neurons[n]->deltaWeights = {1,2,3};
-        }
+        l2->neurons[0]->weights = {1,1,1};
+        l2->neurons[0]->deltaWeights = {1,2,3};
+        l2->neurons[1]->weights = {1,1,1};
+        l2->neurons[1]->deltaWeights = {1,2,3};
 
         l2->applyDeltaWeights();
         std::vector<double> expected = {2,3,4};
 
-        for (int n=1; n<3; n++) {
-            EXPECT_EQ( l2->neurons[n]->weights, expected );
-        }
+        EXPECT_EQ( l2->neurons[0]->weights, expected );
+        EXPECT_EQ( l2->neurons[1]->weights, expected );
     }
 
     // Increments the bias by the deltaBias

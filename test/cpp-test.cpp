@@ -1292,7 +1292,7 @@ namespace NetMath_cpp {
     TEST_F(AdamFixture, adam_1) {
         testN->m = 0.1;
         NetMath::adam(0, (double)1, (double)0.2, testN, -1);
-        EXPECT_EQ( testN->m, 0.11 );
+        EXPECT_DOUBLE_EQ( testN->m, 0.11 );
     }
 
     // It sets the neuron.v to the correct value, following the formula

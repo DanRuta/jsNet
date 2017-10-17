@@ -19,10 +19,6 @@ module.exports = function(grunt){
                 presets: ["es2015", "stage-3"]
             },
             dist: {
-                // options: {
-                //     sourceMap: true,
-                //     inputSourceMap: grunt.file.readJSON("./dist/jsNetNoWA.concat.js.map")
-                // },
                 files: {
                     "dist/jsNet.min.js": ["dist/jsNet.concat.js"]
                 }
@@ -33,11 +29,9 @@ module.exports = function(grunt){
             my_target: {
                 options: {
                     sourceMap: {
-                    //     url: "dist/jsNet.min.js.map",
                         includeSources: true,
                     },
                     mangle: false,
-                    // sourceMapIn: "dist/jsNet.min.js.map"
                 },
                 files: {
                     "dist/jsNetWebAssembly.min.js" : ["dist/jsNetWebAssembly.concat.js"],
@@ -47,8 +41,8 @@ module.exports = function(grunt){
         },
 
         exec: {
-            build: "C:/emsdk/emsdk_env.bat & echo Building... & emcc -o ./dist/NetWASM.js ./dev/cpp/emscripten.cpp -O3 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s NO_EXIT_RUNTIME=1 -std=c++1z",
-            emscriptenTests: "C:/Users/Dan/emsdk/emsdk_env.bat & echo Building... & emcc -o ./test/emscriptenTests.js ./test/emscriptenTests.cpp -O3 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s NO_EXIT_RUNTIME=1 -std=c++1z"
+            build: "C:/emsdk/emsdk_env.bat & echo Building... & emcc -o ./dist/NetWASM.js ./dev/cpp/emscripten.cpp -O3 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s NO_EXIT_RUNTIME=1 -std=c++14",
+            emscriptenTests: "C:/emsdk/emsdk_env.bat & echo Building... & emcc -o ./test/emscriptenTests.js ./test/emscriptenTests.cpp -O3 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s NO_EXIT_RUNTIME=1 -std=c++14"
         },
 
         watch: {

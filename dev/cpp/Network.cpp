@@ -1,5 +1,5 @@
 #include "jsNet.h"
-#include "Layer.cpp"
+#include "FCLayer.cpp"
 #include "Neuron.cpp"
 #include "NetMath.cpp"
 
@@ -74,7 +74,8 @@ void Network::backward (std::vector<double> expected) {
     layers[layers.size()-1]->backward(expected);
 
     for (int l=layers.size()-2; l>0; l--) {
-        layers[l]->backward((std::vector<double>){});
+        std::vector<double> emptyVec;
+        layers[l]->backward(emptyVec);
     }
 }
 

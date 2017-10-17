@@ -1,24 +1,24 @@
 
-Layer::Layer(int netI, int s) {
+FCLayer::FCLayer (int netI, int s) : Layer(netI, s) {
     netInstance = netI;
     size = s;
 }
 
-Layer::~Layer () {
+FCLayer::~FCLayer (void) {
     for (int n=0; n<neurons.size(); n++) {
         delete neurons[n];
     }
 }
 
-void Layer::assignNext (Layer* l) {
+void FCLayer::assignNext (Layer* l) {
     nextLayer = l;
 }
 
-void Layer::assignPrev (Layer* l) {
+void FCLayer::assignPrev (Layer* l) {
     prevLayer = l;
 }
 
-void Layer::init (int layerIndex) {
+void FCLayer::init (int layerIndex) {
     for (int n=0; n<size; n++) {
         Neuron* neuron = new Neuron();
 
@@ -37,13 +37,15 @@ void Layer::init (int layerIndex) {
     }
 }
 
-void Layer::forward (void) {
+void FCLayer::forward (void) {
 
     Network* net = Network::getInstance(netInstance);
 
     for (int n=0; n<neurons.size(); n++) {
 
-        if (net->isTraining && (neurons[n]->dropped = ((double) rand() / (RAND_MAX)) > net->dropout)) {
+        neurons[n]->dropped = (double) rand() / (RAND_MAX) > net->dropout;
+
+        if (net->isTraining && neurons[n]->dropped) {
             neurons[n]->activation = 0;
 
         } else {
@@ -58,7 +60,7 @@ void Layer::forward (void) {
     }
 }
 
-void Layer::backward (std::vector<double> expected) {
+void FCLayer::backward (std::vector<double> expected) {
 
     Network* net = Network::getInstance(netInstance);
 
@@ -95,7 +97,7 @@ void Layer::backward (std::vector<double> expected) {
     }
 }
 
-void Layer::applyDeltaWeights (void) {
+void FCLayer::applyDeltaWeights (void) {
 
     // Function pointers are far too slow, here.
     // Using code repetitive switch statements makes a substantial perf difference
@@ -189,7 +191,7 @@ void Layer::applyDeltaWeights (void) {
     }
 }
 
-void Layer::resetDeltaWeights (void) {
+void FCLayer::resetDeltaWeights (void) {
     for(int n=0; n<neurons.size(); n++) {
         for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
             neurons[n]->deltaWeights[dw] = 0;

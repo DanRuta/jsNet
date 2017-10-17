@@ -1,5 +1,5 @@
 #include "jsNet.h"
-#include "Layer.cpp"
+#include "FCLayer.cpp"
 #include "Neuron.cpp"
 #include "NetMath.cpp"
 

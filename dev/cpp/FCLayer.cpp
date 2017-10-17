@@ -43,7 +43,9 @@ void FCLayer::forward (void) {
 
     for (int n=0; n<neurons.size(); n++) {
 
-        if (net->isTraining && (neurons[n]->dropped = ((double) rand() / (RAND_MAX)) > net->dropout)) {
+        neurons[n]->dropped = (double) rand() / (RAND_MAX) > net->dropout;
+
+        if (net->isTraining && neurons[n]->dropped) {
             neurons[n]->activation = 0;
 
         } else {

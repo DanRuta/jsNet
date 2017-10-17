@@ -20,9 +20,9 @@ public:
     float eluAlpha;
     bool isTraining;
     float dropout;
-    float l2;
+    double l2;
     double l2Error;
-    float l1;
+    double l1;
     double l1Error;
     float maxNorm;
     double maxNormTotal;

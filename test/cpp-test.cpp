@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 
 using ::testing::MockFunction;
-using ::testing::NiceMock;
 
 double standardDeviation (std::vector<double> arr) {
     double avg = 0;
@@ -179,10 +178,6 @@ namespace Network_cpp {
 
     // Sets the first layer's neurons' activations to the input given
     TEST_F(ForwardFixture, forward_2) {
-
-        EXPECT_NE( l1->neurons[0]->activation, 1 );
-        EXPECT_NE( l1->neurons[1]->activation, 2 );
-        EXPECT_NE( l1->neurons[2]->activation, 3 );
 
         net->forward(testInput);
 
@@ -480,14 +475,15 @@ namespace FCLayer_cpp {
         virtual void SetUp() {
             Network::deleteNetwork();
             Network::newNetwork();
-            net = Network::getInstance(0);
+            Network::newNetwork();
+            net = Network::getInstance(1);
             net->weightInitFn = &NetMath::uniform;
-            l1 = new FCLayer(0, 2);
-            l2 = new FCLayer(0, 3);
-            l3 = new FCLayer(0, 4);
+            l1 = new FCLayer(1, 2);
+            l2 = new FCLayer(1, 3);
+            l3 = new FCLayer(1, 4);
             l2->prevLayer = l1;
-            l2->netInstance = 0;
-            l2->netInstance = 0;
+            l2->netInstance = 1;
+            l2->netInstance = 1;
             l3->prevLayer = l2;
             l2->nextLayer = l3;
             l1->init(0);
@@ -648,7 +644,7 @@ namespace FCLayer_cpp {
     // Increments the deltaWeights by the orig value, multiplied by the l2 amount * existing deltaWeight value
     TEST_F(FCBackwardFixture, backward_7) {
         std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
-        Network::getInstance(0)->l2 = 0.001;
+        net->l2 = 0.001;
 
         l2->neurons[0]->activation = 0.5;
         l2->neurons[1]->activation = 0.5;
@@ -667,17 +663,19 @@ namespace FCLayer_cpp {
 
         l3->backward(expected);
 
+        EXPECT_EQ( net->l2, 0.001 );
+
         for (int n=0; n<4; n++) {
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.27500625, 1e-6 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.27500625, 1e-6 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.27500625, 1e-6 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.27500625, 1e-3 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.27500625, 1e-3 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.27500625, 1e-3 );
         }
     }
 
     // Increments the deltaWeights by the orig value, multiplied by the l1 amount * existing deltaWeight value
     TEST_F(FCBackwardFixture, backward_8) {
         std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
-        Network::getInstance(0)->l1 = 0.005;
+        net->l1 = 0.005;
 
         l2->neurons[0]->activation = 0.5;
         l2->neurons[1]->activation = 0.5;
@@ -824,6 +822,180 @@ namespace FCLayer_cpp {
         delete l1;
         delete l2;
         Network::deleteNetwork();
+    }
+}
+
+
+namespace Neuron_cpp {
+
+    class NeuronInitFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            testN = new Neuron();
+        }
+
+        virtual void TearDown() {
+            delete testN;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        Neuron* testN;
+    };
+
+    // Fills the deltaWeights vector with 0 values, matching weights size
+    TEST_F(NeuronInitFixture, init_1) {
+        testN->weights = {1,2,3,4,5};
+        testN->init(0);
+        EXPECT_EQ( testN->deltaWeights.size(), 5 );
+    }
+
+    // Sets the neuron deltaBias to 0
+    TEST_F(NeuronInitFixture, init_2) {
+        testN->deltaBias = 999;
+        testN->init(0);
+        EXPECT_EQ( testN->deltaBias, 0 );
+    }
+
+    // Sets the neuron biasGain to 1 if the net's updateFn is gain
+    TEST_F(NeuronInitFixture, init_3) {
+        // testN->biasGain = 99;
+        net->updateFnIndex = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->biasGain, 1 );
+    }
+
+    // Sets the neuron weightGain to a vector of 1s, with the same size as the weights vector when updateFn is gain
+    TEST_F(NeuronInitFixture, init_4) {
+        testN->weights = {1,2,3,4,5};
+        net->updateFnIndex = 1;
+        testN->init(0);
+        std::vector<double> expected = {1,1,1,1,1};
+        EXPECT_EQ( testN->weightGain, expected );
+    }
+
+    // Does not set the biasGain or weightGain to anything if updateFn is not gain
+    TEST_F(NeuronInitFixture, init_5) {
+        net->updateFnIndex = 2;
+        testN->init(0);
+        EXPECT_EQ( testN->weightGain.size(), 0 );
+    }
+
+    // Sets the neuron biasCache to 0 if the updateFn is adagrad
+    TEST_F(NeuronInitFixture, init_6) {
+        net->updateFnIndex = 2;
+        testN->biasCache = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->biasCache, 0 );
+    }
+
+    // Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is adagrad
+    TEST_F(NeuronInitFixture, init_7) {
+        testN->weights = {1,2,3,4,5};
+        net->updateFnIndex = 2;
+        testN->init(0);
+        std::vector<double> expected = {0,0,0,0,0};
+        EXPECT_EQ( testN->weightsCache, expected );
+    }
+
+    // Does not set the biasCache or weightsCache to anything if updateFn is not adagrad
+    TEST_F(NeuronInitFixture, init_8) {
+        net->updateFnIndex = 1;
+        testN->biasCache = 12234;
+        testN->init(0);
+        EXPECT_EQ( testN->biasCache, 12234 );
+        EXPECT_EQ( testN->weightsCache.size(), 0 );
+    }
+
+    // Sets the neuron biasCache to 0 if the updateFn is rmsprop
+    TEST_F(NeuronInitFixture, init_9) {
+        net->updateFnIndex = 3;
+        testN->biasCache = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->biasCache, 0 );
+    }
+
+    // Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is rmsprop
+    TEST_F(NeuronInitFixture, init_10) {
+        testN->weights = {1,2,3,4,5};
+        net->updateFnIndex = 3;
+        testN->init(0);
+        std::vector<double> expected = {0,0,0,0,0};
+        EXPECT_EQ( testN->weightsCache, expected );
+    }
+
+    // Sets the neuron m and neuron v to 0 if the updateFn is adam
+    TEST_F(NeuronInitFixture, init_11) {
+        net->updateFnIndex = 4;
+        testN->m = 1;
+        testN->v = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->m, 0 );
+        EXPECT_EQ( testN->v, 0 );
+    }
+
+    // Does not set the neuron m and neuron v to 0 if the updateFn is not adam
+    TEST_F(NeuronInitFixture, init_12) {
+        net->updateFnIndex = 3;
+        testN->m = 1;
+        testN->v = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->m, 1 );
+        EXPECT_EQ( testN->v, 1 );
+    }
+
+    // Sets the neuron biasCache and adadeltaBiasCache to 0 if the updateFn is adadelta
+    TEST_F(NeuronInitFixture, init_13) {
+        net->updateFnIndex = 5;
+        testN->biasCache = 1;
+        testN->adadeltaBiasCache = 1;
+        testN->init(0);
+        EXPECT_EQ( testN->biasCache, 0 );
+        EXPECT_EQ( testN->adadeltaBiasCache, 0 );
+    }
+
+    // Sets the neuron weightsCache and adadeltaCache to a vector of zeroes with the same size as the weights when updateFn is adadelta
+    TEST_F(NeuronInitFixture, init_14) {
+        testN->weights = {1,2,3,4,5};
+        net->updateFnIndex = 5;
+        testN->init(0);
+        std::vector<double> expected = {0,0,0,0,0};
+        EXPECT_EQ( testN->weightsCache, expected );
+        EXPECT_EQ( testN->adadeltaCache, expected );
+    }
+
+    // Does not set the biasCache or weightsCache to anything if updateFn is not adadelta
+    TEST_F(NeuronInitFixture, init_15) {
+        net->updateFnIndex = 1;
+        testN->biasCache = 12234;
+        testN->adadeltaBiasCache = 12234;
+        testN->init(0);
+        EXPECT_EQ( testN->biasCache, 12234 );
+        EXPECT_EQ( testN->adadeltaBiasCache, 12234 );
+        EXPECT_EQ( testN->weightsCache.size(), 0 );
+        EXPECT_EQ( testN->adadeltaCache.size(), 0 );
+    }
+
+    // Sets the neuron rreluSlope to a number if the activation is rrelu
+    TEST_F(NeuronInitFixture, init_16) {
+        net->activation = &NetMath::rrelu;
+        testN->rreluSlope = 0.1;
+        testN->init(0);
+        EXPECT_NE( testN->rreluSlope, 0 );
+        EXPECT_NE( testN->rreluSlope, 0.1 );
+        EXPECT_GE( testN->rreluSlope, -0.1);
+        EXPECT_LE( testN->rreluSlope, 0.1);
+    }
+
+    // Sets the network eluAlpha to the neuron, if the activation function is elu
+    TEST_F(NeuronInitFixture, init_17) {
+        net->activation = &NetMath::elu;
+        net->eluAlpha = 0.1;
+        testN->init(0);
+        EXPECT_NEAR(testN->eluAlpha, 0.1, 1e-6 );
     }
 }
 

@@ -1796,6 +1796,85 @@ namespace NetMath_cpp {
     }
 }
 
+namespace NetUtil_cpp {
+
+    class ShuffleFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            std::tuple<std::vector<double>, std::vector<double> > a;
+            std::tuple<std::vector<double>, std::vector<double> > b;
+            std::tuple<std::vector<double>, std::vector<double> > c;
+
+            std::get<0>(a) = {1,2,3};
+            std::get<1>(a) = {4,5,6};
+            values.push_back(a);
+
+            std::get<0>(b) = {7,8,9};
+            std::get<1>(b) = {10,11,12};
+            values.push_back(b);
+
+            std::get<0>(c) = {13,14,15};
+            std::get<1>(c) = {16,17,18};
+            values.push_back(c);
+
+            original = values;
+        }
+
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > values;
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > original;
+
+    };
+
+    // Keeps the same number of elements
+    TEST_F(ShuffleFixture, shuffle_1) {
+        NetUtil::shuffle(values);
+        EXPECT_EQ( values.size(), 3 );
+    }
+
+    // Changes the order of the elements
+    TEST_F(ShuffleFixture, shuffle_2) {
+        NetUtil::shuffle(values);
+        EXPECT_NE(values, original);
+    }
+
+    // Still contains all original values
+    TEST_F(ShuffleFixture, shuffle_3) {
+
+        NetUtil::shuffle(values);
+
+        for (int i=0; i<3; i++) {
+            bool ok = false;
+
+            for (int j=0; j<3; j++) {
+
+                if (values[i] == original[j]) {
+                    ok = true;
+                }
+            }
+
+            EXPECT_TRUE(ok);
+        }
+    }
+
+    // Contains no new values
+    TEST_F(ShuffleFixture, shuffle_4) {
+
+        NetUtil::shuffle(values);
+
+        for (int i=0; i<3; i++) {
+
+            bool ok = true;
+
+            if (values[i] != original[0] && values[i] != original[1] && values[i] != original[2]) {
+                ok = false;
+            }
+
+            EXPECT_TRUE(ok);
+        }
+    }
+}
+
+
 int main (int argc, char** argv) {
     ::testing::InitGoogleMock(&argc, argv);
     return RUN_ALL_TESTS();

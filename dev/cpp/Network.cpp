@@ -2,6 +2,7 @@
 #include "FCLayer.cpp"
 #include "Neuron.cpp"
 #include "NetMath.cpp"
+#include "NetUtil.cpp"
 
 Network::~Network () {
     for (int l=0; l<layers.size(); l++) {

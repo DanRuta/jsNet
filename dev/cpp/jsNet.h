@@ -202,3 +202,9 @@ public:
 
     static double sech (double value);
 };
+
+class NetUtil {
+public:
+
+    static void shuffle (std::vector<std::tuple<std::vector<double>, std::vector<double> > > &values);
+};

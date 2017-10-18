@@ -89,7 +89,7 @@ void FCLayer::backward (std::vector<double> expected) {
 
             for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
                 neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation *
-                                                (1 + (net->l2 + net->l1)/net->miniBatchSize * neurons[n]->deltaWeights[wi]);
+                                                (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
             }
 
             neurons[n]->deltaBias = neurons[n]->error;

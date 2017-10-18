@@ -517,7 +517,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, miniBatchSize=1, log=true}={}) {
+    train (data, {epochs=1, callback, miniBatchSize=1, log=true, shuffle=false}={}) {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
@@ -571,6 +571,7 @@ class Network {
             this.Module.ccall("loadTrainingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
 
+            this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
 
             if (callback) {
 

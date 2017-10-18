@@ -348,6 +348,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void shuffleTrainingData (int instanceIndex) {
+        NetUtil::shuffle(Network::getInstance(instanceIndex)->trainingData);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     double test (int instanceIndex, int iterations, int startIndex) {
 
         Network* net = Network::getInstance(instanceIndex);

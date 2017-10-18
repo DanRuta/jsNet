@@ -867,6 +867,15 @@ describe("Network", () => {
             })
         })
 
+        it("CCalls the WASM Module's shuffleTrainingData function if the shuffle option is set to true", () => {
+            sinon.stub(fakeModule, "ccall")
+            net.netInstance = 123
+            return net.train(testData, {shuffle: true}).then(() => {
+                expect(fakeModule.ccall).to.be.calledWith("shuffleTrainingData", null, ["number"], [123])
+                fakeModule.ccall.restore()
+            })
+        })
+
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
             const network = new Network({Module: fakeModule})
             sinon.spy(network, "initLayers")

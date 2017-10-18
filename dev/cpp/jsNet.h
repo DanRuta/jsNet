@@ -210,4 +210,7 @@ public:
 
     static std::vector<std::vector<double> > addZeroPadding (std::vector<std::vector<double> > map, int zP);
 
+    static std::vector<std::vector<double> > convolve(std::vector<std::vector<std::vector<double> > > input,
+     int zP, std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias);
+
 };

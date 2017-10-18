@@ -351,7 +351,7 @@ class Network {
 
                 const doIteration = () => {
 
-                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
+                    this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
                     callback({
                         iterations: (iterationIndex+1),
@@ -375,6 +375,7 @@ class Network {
                         if (epochIndex < epochs) {
                             doEpoch()
                         } else {
+                            this.Module._free(buf)
                             resolve()
                         }
                     }
@@ -387,7 +388,7 @@ class Network {
                     if (this.l2) this.l2Error = 0
                     if (this.l1) this.l1Error = 0
 
-                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, -1, 0])
+                    this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime
                     if (log) {
                         console.log(`Epoch ${e+1} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/data.length}`}`,
@@ -403,7 +404,7 @@ class Network {
         })
     }
 
-    test (data, {log=true}={}) {
+    test (data, {log=true, callback}={}) {
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -437,17 +438,54 @@ class Network {
 
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)
-            const avgError = this.Module.ccall("test", "number", ["number", "number", "number", "number", "number"],
+
+            this.Module.ccall("loadTestingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
-            this.Module._free(buf)
 
-            const elapsed = Date.now() - startTime
+            if (callback) {
 
-            if (log) {
-                console.log(`Testing finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/data.length, "time")}`)
+                let iterationIndex = 0
+                let totalError = 0
+
+                const doIteration = () => {
+
+                    totalError += this.Module.ccall("test", "number", ["number", "number", "number"], [this.netInstance, 1, iterationIndex])
+
+                    callback({
+                        iterations: (iterationIndex+1),
+                        error: totalError/(iterationIndex+1),
+                        elapsed: Date.now() - startTime,
+                        input: data[iterationIndex].input
+                    })
+
+                    if (++iterationIndex < data.length) {
+                        setTimeout(doIteration.bind(this), 0)
+                    } else {
+                        iterationIndex
+
+                        const elapsed = Date.now() - startTime
+                        log && console.log(`Testing finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
+
+                        this.Module._free(buf)
+                        resolve(totalError/data.length)
+                    }
+                }
+
+                doIteration()
+
+            } else {
+
+                const avgError = this.Module.ccall("test", "number", ["number", "number"], [this.netInstance, -1, 0])
+                this.Module._free(buf)
+
+                const elapsed = Date.now() - startTime
+
+                if (log) {
+                    console.log(`Testing finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/data.length, "time")}`)
+                }
+
+                resolve(avgError)
             }
-
-            resolve(avgError)
         })
     }
 

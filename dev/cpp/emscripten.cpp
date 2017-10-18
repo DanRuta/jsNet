@@ -324,8 +324,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double test (int instanceIndex, float *buf, int total, int size, int dimension) {
-
+    void loadTestingData (int instanceIndex, float *buf, int total, int size, int dimension) {
         Network* net = Network::getInstance(instanceIndex);
         net->testData.clear();
         std::tuple<std::vector<double>, std::vector<double> > epoch;
@@ -346,9 +345,20 @@ extern "C" {
         }
 
         net->testData.push_back(epoch);
+    }
 
-        double avgError = net->test();
-        net->testData.clear();
+    EMSCRIPTEN_KEEPALIVE
+    double test (int instanceIndex, int iterations, int startIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        double avgError;
+
+        if (iterations == -1) {
+            avgError = net->test(net->testData.size(), 0);
+        } else {
+            avgError = net->test(iterations, startIndex);
+        }
 
         return avgError;
     }

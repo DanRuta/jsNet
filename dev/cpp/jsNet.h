@@ -58,7 +58,7 @@ public:
 
     void train (int iterations, int startIndex);
 
-    double test (void);
+    double test (int iterations, int startIndex);
 
     void resetDeltaWeights (void);
 

@@ -109,16 +109,16 @@ void Network::train (int its, int startI) {
     error = totalErrors / its;
 }
 
-double Network::test (void) {
+double Network::test (int its, int startI) {
 
     double totalErrors = 0.0;
 
-    for (int i=0; i<testData.size(); i++) {
+    for (int i=startI; i<(startI+its); i++) {
         std::vector<double> output = forward(std::get<0>(testData[i]));
         totalErrors += costFunction(std::get<1>(testData[i]), output);
     }
 
-    return totalErrors / testData.size();
+    return totalErrors / its;
 }
 
 void Network::resetDeltaWeights (void) {

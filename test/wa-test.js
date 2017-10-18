@@ -1054,8 +1054,20 @@ describe("Network", () => {
         it("Calls the Module.ccall function with the data", () => {
             net.netInstance = 456
             net.test(testData)
+            expect(fakeModule.ccall).to.be.calledWith("loadTestingData", "number", ["number", "number", "number", "number", "number"])
+        })
 
-            expect(fakeModule.ccall).to.be.calledWith("test", "number", ["number", "number", "number", "number", "number"])
+        it("CCalls the WASM Module's test function once", () => {
+            net.netInstance = 456
+            net.test(testData)
+            expect(fakeModule.ccall.withArgs("test").callCount).to.equal(1)
+        })
+
+        it("CCalls the WASM Module's test for every test item when a callback is given", () => {
+            net.netInstance = 456
+            return net.test(testData, {callback: () => {}}).then(() => {
+                expect(fakeModule.ccall.withArgs("test").callCount).to.equal(4)
+            })
         })
 
         it("Accepts test data with output key instead of expected", () => {

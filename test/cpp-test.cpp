@@ -1822,7 +1822,6 @@ namespace NetUtil_cpp {
 
         std::vector<std::tuple<std::vector<double>, std::vector<double> > > values;
         std::vector<std::tuple<std::vector<double>, std::vector<double> > > original;
-
     };
 
     // Keeps the same number of elements
@@ -1871,6 +1870,81 @@ namespace NetUtil_cpp {
 
             EXPECT_TRUE(ok);
         }
+    }
+
+
+    class AddZPaddingFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            std::vector<double> testData_0 = {3,5,2,6,8};
+            std::vector<double> testData_1 = {9,6,4,3,2};
+            std::vector<double> testData_2 = {2,9,3,4,2};
+            std::vector<double> testData_3 = {5,8,1,3,7};
+            std::vector<double> testData_4 = {4,8,6,4,3};
+            testData.push_back(testData_0);
+            testData.push_back(testData_1);
+            testData.push_back(testData_2);
+            testData.push_back(testData_3);
+            testData.push_back(testData_4);
+        }
+
+        std::vector<std::vector<double> > testData;
+    };
+
+    // Returns the same data when zero padding of 0 is given
+    TEST_F(AddZPaddingFixture, addZeroPadding_1) {
+        std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 0);
+        EXPECT_EQ( res, testData );
+    }
+
+    // Returns a map with 1 level of 0 values padded, when zero padding of 1 is given
+    TEST_F(AddZPaddingFixture, addZeroPadding_2) {
+        std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 1);
+        std::vector<double> zeroRow = {0,0,0,0,0,0,0};
+
+        EXPECT_EQ( res.size(), 7 );
+        EXPECT_EQ( res[0], zeroRow );
+        EXPECT_NE( res[1], zeroRow );
+        EXPECT_NE( res[res.size()-2], zeroRow );
+        EXPECT_EQ( res[res.size()-1], zeroRow );
+    }
+
+    // Returns a map with 3 levels of 0 values padded, when zero padding of 3 is given
+    TEST_F(AddZPaddingFixture, addZeroPadding_3) {
+        std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 3);
+        std::vector<double> zeroRow = {0,0,0,0,0,0,0,0,0,0,0};
+
+        EXPECT_EQ( res.size(), 11 );
+        EXPECT_EQ( res[0], zeroRow );
+        EXPECT_EQ( res[1], zeroRow );
+        EXPECT_EQ( res[2], zeroRow );
+        EXPECT_NE( res[3], zeroRow );
+        EXPECT_NE( res[res.size()-4], zeroRow );
+        EXPECT_EQ( res[res.size()-3], zeroRow );
+        EXPECT_EQ( res[res.size()-2], zeroRow );
+        EXPECT_EQ( res[res.size()-1], zeroRow );
+    }
+
+    // Keeps the same data, apart for the zeroes
+    TEST_F(AddZPaddingFixture, addZeroPadding_4) {
+        std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 1);
+
+        res[1].erase(res[1].begin());
+        res[1].pop_back();
+        res[2].erase(res[2].begin());
+        res[2].pop_back();
+        res[3].erase(res[3].begin());
+        res[3].pop_back();
+        res[4].erase(res[4].begin());
+        res[4].pop_back();
+        res[5].erase(res[5].begin());
+        res[5].pop_back();
+
+        EXPECT_EQ( res[1], testData[0] );
+        EXPECT_EQ( res[2], testData[1] );
+        EXPECT_EQ( res[3], testData[2] );
+        EXPECT_EQ( res[4], testData[3] );
+        EXPECT_EQ( res[5], testData[4] );
     }
 }
 

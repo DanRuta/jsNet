@@ -207,4 +207,7 @@ class NetUtil {
 public:
 
     static void shuffle (std::vector<std::tuple<std::vector<double>, std::vector<double> > > &values);
+
+    static std::vector<std::vector<double> > addZeroPadding (std::vector<std::vector<double> > map, int zP);
+
 };

@@ -353,6 +353,10 @@ extern "C" {
         return avgError;
     }
 
+    EMSCRIPTEN_KEEPALIVE
+    void set_miniBatchSize (int instanceIndex, int mbs) {
+        Network::getInstance(instanceIndex)->miniBatchSize = mbs;
+    }
 
     EMSCRIPTEN_KEEPALIVE
     void resetDeltaWeights (int instanceIndex) {

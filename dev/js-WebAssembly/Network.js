@@ -280,7 +280,11 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, log=true}={}) {
+    train (data, {epochs=1, callback, miniBatchSize=1, log=true}={}) {
+
+        miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
+        this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
+
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -300,7 +304,7 @@ class Network {
             const typedArray = new Float32Array(itemsCount)
 
             if (log) {
-                console.log(`Training started. Epochs: ${epochs}`)
+                console.log(`Training started. Epochs: ${epochs} Batch size: ${miniBatchSize}`)
             }
 
             for (let di=0; di<data.length; di++) {
@@ -347,7 +351,7 @@ class Network {
 
                 const doIteration = () => {
 
-                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, 1, iterationIndex])
+                    this.Module.ccall("train", "number", ["number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
                     callback({
                         iterations: (iterationIndex+1),
@@ -356,7 +360,9 @@ class Network {
                         input: data[this.iterations].input
                     })
 
-                    if (++iterationIndex < data.length) {
+                    iterationIndex += miniBatchSize
+
+                    if (iterationIndex < data.length) {
                         setTimeout(doIteration.bind(this), 0)
                     } else {
                         epochIndex++

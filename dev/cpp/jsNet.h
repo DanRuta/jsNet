@@ -13,6 +13,7 @@ public:
     static std::vector<Network*> netInstances;
     int instanceIndex;
     int iterations;
+    int miniBatchSize;
     float learningRate;
     float rmsDecay;
     float rho;

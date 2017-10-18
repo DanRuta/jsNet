@@ -478,6 +478,7 @@ namespace FCLayer_cpp {
             Network::newNetwork();
             net = Network::getInstance(1);
             net->weightInitFn = &NetMath::uniform;
+            net->miniBatchSize = 1;
             l1 = new FCLayer(1, 2);
             l2 = new FCLayer(1, 3);
             l3 = new FCLayer(1, 4);
@@ -697,6 +698,43 @@ namespace FCLayer_cpp {
             EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.275031, 1e-4 );
             EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.275031, 1e-4 );
         }
+    }
+
+    // Regularizes by a tenth as much when the miniBatchSize is configured as 10
+    TEST_F(FCBackwardFixture, backward_9) {
+        std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
+        l2->neurons[0]->activation = 0.5;
+        l2->neurons[1]->activation = 0.5;
+        l2->neurons[2]->activation = 0.5;
+        l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[0]->activation = 0.25;
+        l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[1]->activation = 0.25;
+        l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[2]->activation = 0.25;
+        l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[3]->activation = 0.25;
+        net->l1 = 0.005;
+        net->miniBatchSize = 10;
+
+        l3->backward(expected);
+
+        EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275003, 1e-6);
+
+        l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[0]->activation = 0.25;
+        l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[1]->activation = 0.25;
+        l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[2]->activation = 0.25;
+        l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+        l3->neurons[3]->activation = 0.25;
+        net->l2 = 0.001;
+        net->l1 = 0;
+
+        l3->backward(expected);
+
+        EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275001, 1e-6);
     }
 
     class FCApplyDeltaWeightsFixture : public ::testing::Test {

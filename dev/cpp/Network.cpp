@@ -87,7 +87,6 @@ void Network::train (int its, int startI) {
     isTraining = true;
 
     for (int i=startI; i<(startI+its); i++) {
-        resetDeltaWeights();
 
         iterations++;
 
@@ -96,7 +95,14 @@ void Network::train (int its, int startI) {
         totalErrors += iterationError;
 
         backward(std::get<1>(trainingData[i]));
-        applyDeltaWeights();
+
+        if ((i+1) % miniBatchSize == 0) {
+            applyDeltaWeights();
+            resetDeltaWeights();
+        } else if (i >= trainingData.size()) {
+            applyDeltaWeights();
+        }
+
     }
 
     isTraining = false;

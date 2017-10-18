@@ -16,7 +16,6 @@ class FCLayer {
         this.netInstance = netInstance
         this.prevLayer = layer
         this.layerIndex = layerIndex
-
     }
 
     init () {

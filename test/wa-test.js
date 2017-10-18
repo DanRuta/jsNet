@@ -816,6 +816,18 @@ describe("Network", () => {
             {input: [1,0], output: [1, 0]},
             {input: [1,1], output: [1, 1]}
         ]
+        const testDataX10 = [
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [0,0], expected: [0, 0]},
+            {input: [0,1], expected: [0, 1]},
+            {input: [1,0], expected: [1, 0]},
+            {input: [1,1], expected: [1, 1]}
+        ]
 
         it("Returns a promise", () => {
             expect(net.train(testData)).instanceof(Promise)
@@ -835,6 +847,24 @@ describe("Network", () => {
 
         it("Accepts 'output' as an alternative name for expected values", () => {
             return expect(net.train(testDataWithOutput)).to.be.fulfilled
+        })
+
+        it("CCalls the Module's set_miniBatchSize function with the given miniBatchSize value", () => {
+            sinon.stub(fakeModule, "ccall")
+            net.netInstance = 99
+            return net.train(testData, {miniBatchSize: 1234}).then(() => {
+                expect(fakeModule.ccall).to.be.calledWith("set_miniBatchSize", null, ["number", "number"], [99, 1234])
+                fakeModule.ccall.restore()
+            })
+        })
+
+        it("Defaults the miniBatchSize to the number of classifications if set as boolean true", () => {
+            sinon.stub(fakeModule, "ccall")
+            net.netInstance = 99
+            return net.train(testData, {miniBatchSize: true}).then(() => {
+                expect(fakeModule.ccall).to.be.calledWith("set_miniBatchSize", null, ["number", "number"], [99, 2])
+                fakeModule.ccall.restore()
+            })
         })
 
         it("Calls the initLayers function when the net state is not 'initialised'", () => {

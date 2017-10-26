@@ -98,3 +98,26 @@ std::vector<std::vector<double> > NetUtil::convolve(std::vector<std::vector<std:
 
     return output;
 }
+
+std::vector<std::vector<std::vector<double> > > NetUtil::createVolume (int depth, int rows, int columns, int value) {
+
+    std::vector<std::vector<std::vector<double> > > volume;
+
+    for (int d=0; d<depth; d++) {
+        std::vector<std::vector<double> > map;
+
+        for (int r=0; r<rows; r++) {
+            std::vector<double> row;
+
+            for (int c=0; c<columns; c++) {
+                row.push_back(value);
+            }
+
+            map.push_back(row);
+        }
+
+        volume.push_back(map);
+    }
+
+    return volume;
+}

@@ -151,6 +151,34 @@ class Neuron {
         void init (int netInstance);
 };
 
+class Filter {
+public:
+    std::vector<std::vector<std::vector<double> > > weights;
+    std::vector<std::vector<std::vector<double> > > deltaWeights;
+    std::vector<std::vector<std::vector<double> > > weightGain;
+    std::vector<std::vector<std::vector<double> > > weightsCache;
+    std::vector<std::vector<std::vector<double> > > adadeltaCache;
+    double lreluSlope;
+    double rreluSlope;
+    double bias;
+    double deltaBias;
+    double derivative;
+    double activation;
+    double sum;
+    double error;
+    double eluAlpha;
+    double biasGain;
+    double adadeltaBiasCache;
+    double biasCache;
+    double m;
+    double v;
+    bool dropped;
+
+    Filter (void) {}
+
+    void init (int netInstance);
+};
+
 
 class NetMath {
 public:
@@ -212,5 +240,7 @@ public:
 
     static std::vector<std::vector<double> > convolve(std::vector<std::vector<std::vector<double> > > input,
      int zP, std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias);
+
+    static std::vector<std::vector<std::vector<double> > > createVolume (int depth, int rows, int columns, int value);
 
 };

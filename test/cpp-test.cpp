@@ -1018,8 +1018,16 @@ namespace Neuron_cpp {
         EXPECT_EQ( testN->adadeltaCache.size(), 0 );
     }
 
-    // Sets the neuron rreluSlope to a number if the activation is rrelu
+    // Sets the network eluAlpha to the neuron, if the activation function is elu
     TEST_F(NeuronInitFixture, init_16) {
+        net->activation = &NetMath::lrelu;
+        net->lreluSlope = 0.1;
+        testN->init(0);
+        EXPECT_NEAR(testN->lreluSlope, 0.1, 1e-6 );
+    }
+
+    // Sets the neuron rreluSlope to a number if the activation is rrelu
+    TEST_F(NeuronInitFixture, init_17) {
         net->activation = &NetMath::rrelu;
         testN->rreluSlope = 0.1;
         testN->init(0);
@@ -1030,12 +1038,187 @@ namespace Neuron_cpp {
     }
 
     // Sets the network eluAlpha to the neuron, if the activation function is elu
-    TEST_F(NeuronInitFixture, init_17) {
+    TEST_F(NeuronInitFixture, init_18) {
         net->activation = &NetMath::elu;
         net->eluAlpha = 0.1;
         testN->init(0);
         EXPECT_NEAR(testN->eluAlpha, 0.1, 1e-6 );
     }
+}
+
+namespace Filter_cpp {
+
+    class FilterInitFixture : public ::testing::Test {
+    public:
+        virtual void SetUp () {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            testFilter = new Filter();
+            testFilter->weights = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
+        }
+
+        virtual void TearDown () {
+            delete testFilter;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        Filter* testFilter;
+    };
+
+    // Creates a volume of delta weights with depth==channels and the same spacial dimensions as the weights map, with 0 values
+    TEST_F(FilterInitFixture, init_1) {
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
+        EXPECT_EQ( testFilter->deltaWeights,  expected);
+    }
+
+    // Sets the filter.deltaBias value to 0
+    TEST_F(FilterInitFixture, init_2) {
+        testFilter->deltaBias = 99;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->deltaBias, 0 );
+    }
+
+    // Creates a weightGain map if the updateFn parameter is gain, with the same dimensions as weights, with 1 values
+    TEST_F(FilterInitFixture, init_3) {
+        net->updateFnIndex = 1;
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,1,1},{1,1,1},{1,1,1}}, {{1,1,1},{1,1,1},{1,1,1}}};
+        EXPECT_EQ( testFilter->weightGain,  expected);
+    }
+
+    // Creates a biasGain value of 1 if the updateFn parameter is gain
+    TEST_F(FilterInitFixture, init_4) {
+        testFilter->biasGain = 0;
+        net->updateFnIndex = 1;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->biasGain, 1 );
+    }
+
+    // Does not create the weightGains and biasGain when the updateFn is not gain
+    TEST_F(FilterInitFixture, init_5) {
+        net->updateFnIndex = 99;
+        testFilter->biasGain = 123;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->biasGain, 123 );
+        EXPECT_EQ( testFilter->weightGain.size(), 0 );
+    }
+
+    // Creates a weightsCache map, with same dimensions as weights, with 0 values, and biasCache value of 0, if the updateFn is adagrad
+    TEST_F(FilterInitFixture, init_6) {
+        testFilter->biasCache = 123;
+        net->updateFnIndex = 2;
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
+        EXPECT_EQ( testFilter->weightsCache,  expected);
+        EXPECT_EQ( testFilter->biasCache, 0 );
+    }
+
+    // Creates a weightsCache map, with same dimensions as weights, with 0 values, and biasCache value of 0, if the updateFn is rmsprop
+    TEST_F(FilterInitFixture, init_7) {
+        testFilter->biasCache = 123;
+        net->updateFnIndex = 2;
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
+        EXPECT_EQ( testFilter->weightsCache,  expected);
+        EXPECT_EQ( testFilter->biasCache, 0 );
+    }
+
+    // Creates a weightsCache map, with same dimensions as weights, with 0 values, and biasCache value of 0, if the updateFn is adadelta
+    TEST_F(FilterInitFixture, init_8) {
+        testFilter->biasCache = 123;
+        net->updateFnIndex = 2;
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
+        EXPECT_EQ( testFilter->weightsCache,  expected);
+        EXPECT_EQ( testFilter->biasCache, 0 );
+    }
+
+    // Does not create the weightsCache or biasCache if the updateFn is something else
+    TEST_F(FilterInitFixture, init_9) {
+        testFilter->biasCache = 123;
+        net->updateFnIndex = 99;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->weightsCache.size(), 0 );
+        EXPECT_EQ( testFilter->biasCache, 123 );
+    }
+
+    // Creates a adadeltaCache map, with same dimensions as weights, with 0 values, and adadeltaBiasCache value of 0, if the updateFn is adadelta
+    TEST_F(FilterInitFixture, init_10) {
+        net->updateFnIndex = 5;
+        testFilter->adadeltaBiasCache = 123;
+        testFilter->init(0);
+        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
+        EXPECT_EQ( testFilter->adadeltaBiasCache, 0 );
+        EXPECT_EQ( testFilter->adadeltaCache, expected );
+    }
+
+    // Does not create adadeltaBiasCache or adadeltaCache when the updateFn is adagrad or rmsprop
+    TEST_F(FilterInitFixture, init_11a) {
+        net->updateFnIndex = 2;
+        testFilter->adadeltaBiasCache = 123;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->adadeltaBiasCache, 123 );
+        EXPECT_EQ( testFilter->adadeltaCache.size(), 0 );
+    }
+    TEST_F(FilterInitFixture, init_11b) {
+        net->updateFnIndex = 3;
+        testFilter->adadeltaBiasCache = 123;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->adadeltaBiasCache, 123 );
+        EXPECT_EQ( testFilter->adadeltaCache.size(), 0 );
+    }
+
+    // Creates and sets filter.m and filter.v to 0 if the updateFn parameter is adam
+    TEST_F(FilterInitFixture, init_12) {
+        net->updateFnIndex = 4;
+        testFilter->m = 99;
+        testFilter->v = 99;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->m, 0 );
+        EXPECT_EQ( testFilter->v, 0 );
+    }
+
+    // It does not create them if the updateFn is not adam
+    TEST_F(FilterInitFixture, init_13) {
+        net->updateFnIndex = 123;
+        testFilter->m = 99;
+        testFilter->v = 99;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->m, 99 );
+        EXPECT_EQ( testFilter->v, 99 );
+    }
+
+    // Sets the filter.lreluSlope to the given value, if given a value
+    TEST_F(FilterInitFixture, init_14) {
+        net->activation = &NetMath::lrelu;
+        net->lreluSlope = 123;
+        testFilter->lreluSlope = 0;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->lreluSlope, 123 );
+    }
+
+    // Creates a random filter.rreluSlope number if the activation is rrelu
+    TEST_F(FilterInitFixture, init_15) {
+        net->activation = &NetMath::rrelu;
+        testFilter->init(0);
+        EXPECT_NE( testFilter->rreluSlope, 0 );
+        EXPECT_NE( testFilter->rreluSlope, 0.1 );
+        EXPECT_GE( testFilter->rreluSlope, -0.1);
+        EXPECT_LE( testFilter->rreluSlope, 0.1);
+    }
+
+    // Sets the filter.eluAlpha to the given value, if given a value
+    TEST_F(FilterInitFixture, init_16) {
+        net->activation = &NetMath::elu;
+        net->eluAlpha = 123;
+        testFilter->eluAlpha = 0;
+        testFilter->init(0);
+        EXPECT_EQ( testFilter->eluAlpha, 123 );
+    }
+
 }
 
 
@@ -1990,6 +2173,14 @@ namespace NetUtil_cpp {
         std::vector<std::vector<double> > expected2 = {{1,9,1},{-1,-2,1},{4,-7,-4}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInput, 1, testWeights2, 3, 2, 0);
         EXPECT_EQ( res, expected2 );
+    }
+
+    TEST(NetUtil, createVolume) {
+        std::vector<std::vector<std::vector<double> > > expected1 = {{{1,1,1},{1,1,1},{1,1,1}}, {{1,1,1},{1,1,1},{1,1,1}}};
+        std::vector<std::vector<std::vector<double> > > expected2 = {{{0,0},{0,0},{0,0}}};
+
+        EXPECT_EQ( NetUtil::createVolume(2, 3, 3, 1), expected1 );
+        EXPECT_EQ( NetUtil::createVolume(1, 3, 2, 0), expected2 );
     }
 }
 

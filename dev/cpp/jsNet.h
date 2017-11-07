@@ -178,7 +178,7 @@ class Neuron {
         double bias;
         double deltaBias;
         double derivative;
-        double activation;
+        double activation = 0;
         double sum;
         double error;
         double eluAlpha;

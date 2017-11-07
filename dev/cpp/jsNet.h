@@ -5,6 +5,7 @@
 
 class Layer;
 class Neuron;
+class Filter;
 class NetMath;
 class NetUtil;
 
@@ -14,6 +15,10 @@ public:
     int instanceIndex;
     int iterations;
     int miniBatchSize;
+    int channels;
+    int filterSize;
+    int zeroPadding;
+    int stride;
     float learningRate;
     float rmsDecay;
     float rho;
@@ -68,6 +73,7 @@ public:
 };
 
 
+// template <typename T>
 class Layer {
 public:
     int netInstance;
@@ -75,10 +81,20 @@ public:
     int size;
     int fanIn;
     int fanOut;
+    int channels;
+    int filterSize;
+    int stride;
+    int zeroPadding;
+    int inMapValuesCount;
+    int inZPMapValuesCount;
+    int outMapSize;
+    bool hasActivation;
     std::vector<Neuron*> neurons;
+    std::vector<Filter*> filters;
     Layer* nextLayer;
     Layer* prevLayer;
     double (*activation)(double, bool, Neuron*);
+    double (*activationF)(double, bool, Filter*);
 
     Layer (int netI, int s) {};
 
@@ -122,6 +138,33 @@ public:
     void resetDeltaWeights (void);
 };
 
+class ConvLayer : public Layer {
+public:
+
+    ConvLayer (int netI, int s);
+
+    ~ConvLayer (void);
+
+    void assignNext (Layer* l);
+
+    void assignPrev (Layer* l);
+
+    void init (int layerIndex);
+
+    void forward (void);
+
+    void backward (std::vector<double> expected) {
+        backward();
+    }
+
+    void backward (void);
+
+    void applyDeltaWeights (void);
+
+    void resetDeltaWeights (void);
+
+};
+
 
 class Neuron {
     public:
@@ -158,6 +201,10 @@ public:
     std::vector<std::vector<std::vector<double> > > weightGain;
     std::vector<std::vector<std::vector<double> > > weightsCache;
     std::vector<std::vector<std::vector<double> > > adadeltaCache;
+    std::vector<std::vector<double> > activationMap;
+    std::vector<std::vector<double> > sumMap;
+    std::vector<std::vector<double> > errorMap;
+    std::vector<std::vector<bool> > dropoutMap;
     double lreluSlope;
     double rreluSlope;
     double bias;
@@ -182,19 +229,26 @@ public:
 
 class NetMath {
 public:
-    static double sigmoid(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double sigmoid(double value, bool prime, T* neuron);
 
-    static double tanh(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double tanh(double value, bool prime, T* neuron);
 
-    static double lecuntanh(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double lecuntanh(double value, bool prime, T* neuron);
 
-    static double relu(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double relu(double value, bool prime, T* neuron);
 
-    static double lrelu(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double lrelu(double value, bool prime, T* neuron);
 
-    static double rrelu(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double rrelu(double value, bool prime, T* neuron);
 
-    static double elu(double value, bool prime, Neuron* neuron);
+    template <class T>
+    static double elu(double value, bool prime, T* neuron);
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 
@@ -204,13 +258,23 @@ public:
 
     static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
+    static double gain(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
+
     static double adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double adagrad(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
 
     static double rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
+    static double rmsprop(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
+
     static double adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
+    static double adam(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
+
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double adadelta(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
 
     static std::vector<double> uniform (int netInstance, int layerIndex, int size);
 
@@ -238,9 +302,22 @@ public:
 
     static std::vector<std::vector<double> > addZeroPadding (std::vector<std::vector<double> > map, int zP);
 
-    static std::vector<std::vector<double> > convolve(std::vector<std::vector<std::vector<double> > > input,
-     int zP, std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias);
+    static std::vector<std::vector<double> > convolve(std::vector<double> input, int zP,
+        std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias);
 
-    static std::vector<std::vector<std::vector<double> > > createVolume (int depth, int rows, int columns, int value);
+    static std::vector<std::vector<double> > arrayToMap (std::vector<double> array, int size);
+
+    static std::vector<std::vector<std::vector<double> > > arrayToVolume (std::vector<double> array, int channels);
+
+    template <class T>
+    static std::vector<std::vector<std::vector<T> > > createVolume (int depth, int rows, int columns, T value);
+
+    static void buildConvErrorMap (ConvLayer* layer, Layer* nextLayer, int filterI);
+
+    static void buildConvDWeights (ConvLayer* layer);
+
+    static std::vector<double> getActivations (Layer* layer);
+
+    static std::vector<double> getActivations (Layer* layer, int mapStartI, int mapSize);
 
 };

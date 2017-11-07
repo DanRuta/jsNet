@@ -3024,7 +3024,7 @@ describe("ConvLayer", () => {
         })
 
 
-        it("And thus gives every neuron an activation value", () => {
+        it("And thus sets the activation values in each filter's activationMap", () => {
             layer.filters.forEach(filter => filter.activationMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
             layer.forward()
             layer.filters.forEach(filter => {
@@ -5040,9 +5040,6 @@ describe("NetUtil", () => {
         const expectedFilter2Channel1DWeights = [[2.9, 0.4, 0.3], [1.8, -2.1, -1.2], [-4.9, -6.8, -7.5]]
         const expectedFilter2Channel2DWeights = [[5.4, 0.4, -2.2], [-5.7, -24.6, -16.2], [-17.4, -29.3, -25]]
         const expectedFilter2Channel3DWeights = [[7.9, 0.4, -4.7], [-13.2, -47.1, -31.2], [-29.9, -51.8, -42.5]]
-
-        const expectedFilter1DeltaBias = 4.5
-        const expectedFilter2DeltaBias = -0.9
 
         const filter1 = layer.filters[0]
         const filter2 = layer.filters[1]

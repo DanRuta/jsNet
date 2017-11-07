@@ -419,8 +419,6 @@ class Filter {
 
     init ({updateFn, activation, eluAlpha}={}) {
 
-        const size = this.weights.length
-
         this.deltaWeights = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
         this.deltaBias = 0
 
@@ -452,6 +450,7 @@ class Filter {
             case "adam":
                 this.m = 0
                 this.v = 0
+                break
         }
 
         if (activation=="rrelu") {
@@ -932,8 +931,8 @@ class NetUtil {
         errorMap.splice(errorMap.length-zeroPadding, errorMap.length)
 
         // Columns:
-        for (let emXI=0; emXI<errorMap.length; emXI++) {
-            errorMap[emXI] = errorMap[emXI].splice(zeroPadding, errorMap[emXI].length - zeroPadding*2)
+        for (let emYI=0; emYI<errorMap.length; emYI++) {
+            errorMap[emYI] = errorMap[emYI].splice(zeroPadding, errorMap[emYI].length - zeroPadding*2)
         }
     }
 

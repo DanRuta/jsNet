@@ -33,6 +33,47 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    float* testGetVolume (void) {
+
+        std::vector<std::vector<std::vector<float> > > test = { {{1,2},{3,4}}, {{5,6},{7,8}} };
+
+        int depth = test.size();
+        int rows = test[0].size();
+        int cols = test[0][0].size();
+        float values[depth * rows * cols];
+
+        for (int d=0; d<depth; d++) {
+            for (int r=0; r<rows; r++) {
+                for (int c=0; c<cols; c++) {
+                    values[d*rows*cols + r*cols + c] = test[d][r][c];
+                }
+            }
+        }
+
+        auto arrayPtr = &values[0];
+        return arrayPtr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    uint8_t* testGetSetVolume (uint8_t *buf, int total, int depth, int rows, int cols) {
+
+        std::vector<std::vector<std::vector<uint8_t> > > test = { {{1,2,3},{4,5,6}} };
+
+        uint8_t values[depth * rows * cols];
+
+        for (int d=0; d<depth; d++) {
+            for (int r=0; r<rows; r++) {
+                for (int c=0; c<cols; c++) {
+                    values[d*rows*cols + r*cols + c] = test[d][r][c] * buf[d*rows*cols + r*cols + c];
+                }
+            }
+        }
+
+        auto arrayPtr = &values[0];
+        return arrayPtr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     int32_t* get10Nums (void) {
 
         #include <cstdlib>

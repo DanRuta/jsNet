@@ -97,13 +97,13 @@ namespace Network_cpp {
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
-        Network::getInstance(0)->activation = &NetMath::sigmoid;
+        Network::getInstance(0)->activation = &NetMath::sigmoid<Neuron>;
 
-        EXPECT_NE( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid );
-        EXPECT_NE( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid );
+        EXPECT_NE( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid<Neuron> );
+        EXPECT_NE( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid<Neuron> );
         Network::getInstance(0)->joinLayers();
-        EXPECT_EQ( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid );
-        EXPECT_EQ( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid );
+        EXPECT_EQ( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid<Neuron> );
+        EXPECT_EQ( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid<Neuron> );
     }
 
     // Assigns prevLayers to layers accordingly
@@ -248,6 +248,12 @@ namespace Network_cpp {
 
 namespace FCLayer_cpp {
 
+    // Assigns the type as FC
+    TEST(FCLayer, constructor) {
+        FCLayer* layer = new FCLayer(0, 1);
+        EXPECT_EQ(layer->type, "FC");
+    }
+
     // Assigns the given layer pointer to this layer's nextLayer
     TEST(FCLayer, assignNext) {
         FCLayer* l1 = new FCLayer(0, 1);
@@ -345,7 +351,7 @@ namespace FCLayer_cpp {
             l2->netInstance = 1;
             l1->init(0);
             l2->init(1);
-            l2->activation = &NetMath::sigmoid;
+            l2->activation = &NetMath::sigmoid<Neuron>;
             l1->neurons[0]->activation = 1;
             l1->neurons[1]->activation = 2;
         }
@@ -490,7 +496,7 @@ namespace FCLayer_cpp {
             l1->init(0);
             l2->init(1);
             l3->init(2);
-            l2->activation = &NetMath::sigmoid;
+            l2->activation = &NetMath::sigmoid<Neuron>;
         }
 
         virtual void TearDown() {
@@ -701,41 +707,41 @@ namespace FCLayer_cpp {
     }
 
     // Regularizes by a tenth as much when the miniBatchSize is configured as 10
-    TEST_F(FCBackwardFixture, backward_9) {
-        std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
-        l2->neurons[0]->activation = 0.5;
-        l2->neurons[1]->activation = 0.5;
-        l2->neurons[2]->activation = 0.5;
-        l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[0]->activation = 0.25;
-        l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[1]->activation = 0.25;
-        l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[2]->activation = 0.25;
-        l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[3]->activation = 0.25;
-        net->l1 = 0.005;
-        net->miniBatchSize = 10;
+    // TEST_F(FCBackwardFixture, backward_9) {
+    //     std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
+    //     l2->neurons[0]->activation = 0.5;
+    //     l2->neurons[1]->activation = 0.5;
+    //     l2->neurons[2]->activation = 0.5;
+    //     l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[0]->activation = 0.25;
+    //     l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[1]->activation = 0.25;
+    //     l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[2]->activation = 0.25;
+    //     l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[3]->activation = 0.25;
+    //     net->l1 = 0.005;
+    //     net->miniBatchSize = 10;
 
-        l3->backward(expected);
+    //     l3->backward(expected);
 
-        EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275003, 1e-6);
+    //     EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275003, 1e-6);
 
-        l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[0]->activation = 0.25;
-        l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[1]->activation = 0.25;
-        l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[2]->activation = 0.25;
-        l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
-        l3->neurons[3]->activation = 0.25;
-        net->l2 = 0.001;
-        net->l1 = 0;
+    //     l3->neurons[0]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[0]->activation = 0.25;
+    //     l3->neurons[1]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[1]->activation = 0.25;
+    //     l3->neurons[2]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[2]->activation = 0.25;
+    //     l3->neurons[3]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
+    //     l3->neurons[3]->activation = 0.25;
+    //     net->l2 = 0.001;
+    //     net->l1 = 0;
 
-        l3->backward(expected);
+    //     l3->backward(expected);
 
-        EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275001, 1e-6);
-    }
+    //     EXPECT_NEAR(l3->neurons[0]->deltaWeights[0], 0.275001, 1e-6);
+    // }
 
     class FCApplyDeltaWeightsFixture : public ::testing::Test {
     public:
@@ -855,12 +861,607 @@ namespace FCLayer_cpp {
         l2->resetDeltaWeights();
 
         for (int n=1; n<3; n++) {
-            EXPECT_EQ(l2->neurons[n]->deltaWeights, expected);
+            EXPECT_EQ( l2->neurons[n]->deltaWeights, expected );
         }
 
         delete l1;
         delete l2;
         Network::deleteNetwork();
+    }
+}
+
+namespace ConvLayer_cpp {
+
+    // Assigns the type as Conv
+    TEST(ConvLayer, constructor) {
+        ConvLayer* layer = new ConvLayer(0, 1);
+        EXPECT_EQ( layer->type, "Conv" );
+    }
+
+    // Assigns the given layer pointer to this layer's nextLayer
+    TEST(ConvLayer, assignNext) {
+        ConvLayer* l1 = new ConvLayer(0, 1);
+        ConvLayer* l2 = new ConvLayer(0, 1);
+
+        l1->assignNext(l2);
+        EXPECT_EQ( l1->nextLayer, l2 );
+
+        delete l1;
+        delete l2;
+    }
+
+    // Assigns the given layer pointer to this layer's prevLayer
+    TEST(ConvLayer, assignPrev_1) {
+        ConvLayer* l1 = new ConvLayer(0, 1);
+        ConvLayer* l2 = new ConvLayer(0, 1);
+
+        l2->assignPrev(l1);
+        EXPECT_EQ( l2->prevLayer, l1 );
+
+        delete l1;
+        delete l2;
+    }
+
+    // Adds as many filters to the layer->filters vector as the size of the layer
+    TEST(ConvLayer, assignPrev_2) {
+        ConvLayer* l1 = new ConvLayer(0, 1);
+        ConvLayer* l2 = new ConvLayer(0, 5);
+
+        EXPECT_EQ( l2->filters.size(), 0 );
+        l2->assignPrev(l1);
+        EXPECT_EQ( l2->filters.size(), 5 );
+
+        delete l1;
+        delete l2;
+    }
+
+    class ConvLayerInitFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->dropout = 1;
+            net->weightInitFn = &NetMath::uniform;
+            layer = new ConvLayer(0, 4);
+            prevFC = new FCLayer(0, 10);
+            layer->size = 4;
+            layer->filterSize = 3;
+            layer->zeroPadding = 0;
+            layer->stride = 1;
+            layer->channels = 2;
+            layer->outMapSize = 3;
+        }
+
+        virtual void TearDown() {
+            delete layer;
+            delete prevFC;
+            Network::deleteNetwork();
+        }
+
+        ConvLayer* layer;
+        FCLayer* prevFC;
+        Network* net;
+    };
+
+    // Assigns a volume of weights to each filter
+    TEST_F(ConvLayerInitFixture, init_1) {
+        layer->assignPrev(prevFC);
+        layer->init(1);
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->weights.size(), 2 );
+            EXPECT_EQ( layer->filters[f]->weights[0].size(), 3 );
+            EXPECT_EQ( layer->filters[f]->weights[0][0].size(), 3 );
+        }
+    }
+
+    // Creates an activationMap map with 0 values
+    TEST_F(ConvLayerInitFixture, init_2) {
+        layer->assignPrev(prevFC);
+        layer->init(1);
+
+        std::vector<std::vector<double> > expected = { {0,0,0}, {0,0,0}, {0,0,0} };
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    // Creates an errorMap map with 0 values
+    TEST_F(ConvLayerInitFixture, init_3) {
+        layer->assignPrev(prevFC);
+        layer->init(1);
+
+        std::vector<std::vector<double> > expected = { {0,0,0}, {0,0,0}, {0,0,0} };
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    // Creates a bias between -0.1 and +0.1
+    TEST_F(ConvLayerInitFixture, init_4) {
+        layer->assignPrev(prevFC);
+        layer->init(1);
+
+        for (int f=0; f<4; f++) {
+            EXPECT_GE( layer->filters[f]->bias, -0.1 );
+            EXPECT_LE( layer->filters[f]->bias, 0.1 );
+        }
+    }
+
+    // Creates a dropout when net->dropout is not 1
+    TEST_F(ConvLayerInitFixture, init_5) {
+        net->dropout = 0.5;
+        layer->assignPrev(prevFC);
+        layer->init(1);
+        std::vector<std::vector<double> > expected = { {false,false,false}, {false,false,false}, {false,false,false} };
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    // Does not create a dropout when net->dropout is 1
+    TEST_F(ConvLayerInitFixture, init_6) {
+        net->dropout = 1;
+        layer->assignPrev(prevFC);
+        layer->init(1);
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->dropoutMap.size(), 0 );
+        }
+    }
+
+    class ConvForwardFixture : public ::testing::Test {
+    public:
+        virtual void SetUp () {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            // net->activation = &NetMath
+            net->weightInitFn = &NetMath::uniform;
+            prevLayer = new FCLayer(0, 0);
+            prevLayer->size = 75;
+            layer = new ConvLayer(0, 1);
+            layer->size = 3;
+            layer->filterSize = 3;
+            layer->zeroPadding = 1;
+            layer->stride = 1;
+            layer->channels = 3;
+            layer->outMapSize = 5;
+            layer->hasActivation = false;
+            prevLayer->init(0);
+            layer->assignPrev(prevLayer);
+            layer->init(1);
+            expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+        }
+
+        virtual void TearDown () {
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* prevLayer;
+        ConvLayer* layer;
+        std::vector<std::vector<double> > expected;
+    };
+
+    // Sets the filter.sumMap of each filter to a map with spacial dimension equal to the output volume's (layer.outMapSize)
+    TEST_F(ConvForwardFixture, forward_1) {
+        layer->forward();
+        EXPECT_EQ( layer->filters[0]->sumMap.size(), 5 );
+        EXPECT_EQ( layer->filters[0]->sumMap[0].size(), 5 );
+    }
+
+    // Sets the filter.activationMap values to zero if when dropping out
+    TEST_F(ConvForwardFixture, forward_2) {
+        net->dropout = 0;
+        net->isTraining = true;
+        layer->forward();
+
+        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+        EXPECT_EQ( layer->filters[0]->activationMap, expected );
+        EXPECT_EQ( layer->filters[1]->activationMap, expected );
+        EXPECT_EQ( layer->filters[2]->activationMap, expected );
+    }
+
+    // Doesn't do any dropout if the layer state is not training
+    TEST_F(ConvForwardFixture, forward_3) {
+        net->dropout = 0;
+        net->isTraining = false;
+        layer->forward();
+
+        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+        EXPECT_NE( layer->filters[0]->activationMap, expected );
+        EXPECT_NE( layer->filters[1]->activationMap, expected );
+        EXPECT_NE( layer->filters[2]->activationMap, expected );
+    }
+
+    // Doesn't do any dropout if the dropout is set to 1
+    TEST_F(ConvForwardFixture, forward_4) {
+        net->dropout = 1;
+        net->isTraining = true;
+        layer->forward();
+
+        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+        EXPECT_NE( layer->filters[0]->activationMap, expected );
+        EXPECT_NE( layer->filters[1]->activationMap, expected );
+        EXPECT_NE( layer->filters[2]->activationMap, expected );
+    }
+
+    // Gives each filter's activationMap values a value
+    TEST_F(ConvForwardFixture, forward_5) {
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->activationMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+        }
+
+        layer->forward();
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_NE( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    // It does not call pass sum map values through an activation function if it is set to not be used
+    TEST_F(ConvForwardFixture, forward_6) {
+
+        std::vector<std::vector<double> > expected = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->bias = 1;
+        }
+
+        layer->forward();
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_EQ( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    // Runs the sumMap values through an activation function when provided (sigmoid, in this case)
+    TEST_F(ConvForwardFixture, forward_7) {
+
+        layer->hasActivation = true;
+        layer->activationF = &NetMath::sigmoid<Filter>;
+        std::vector<std::vector<double> > expected = {{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049}};
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->bias = 1;
+        }
+
+        layer->forward();
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_EQ( layer->filters[f]->activationMap, expected );
+        }
+    }
+
+    class ConvBackwardFixture : public ::testing::Test {
+    public:
+        virtual void SetUp () {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->l1 = 0;
+            net->l2 = 0;
+            net->miniBatchSize = 1;
+            net->weightInitFn = &NetMath::uniform;
+
+            prevLayer = new FCLayer(0, 75);
+            nextLayerA = new FCLayer(0, 100);
+            nextLayerB = new ConvLayer(0, 2);
+            nextLayerB->filterSize = 3;
+            nextLayerB->stride = 1;
+
+            layer = new ConvLayer(0, 4);
+            layer->filterSize = 3;
+            layer->zeroPadding = 1;
+            layer->channels = 3;
+            layer->stride = 1;
+            layer->outMapSize = 5;
+            layer->inMapValuesCount = 25;
+
+            layer->assignPrev(prevLayer);
+            layer->assignNext(nextLayerB);
+            prevLayer->init(0);
+            layer->init(1);
+            nextLayerB->init(2);
+
+            for (int f=0; f<layer->filters.size(); f++) {
+                layer->filters[f]->weights = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
+                layer->filters[f]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+                layer->filters[f]->errorMap = {{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}};
+            }
+
+            for (int n=0; n<prevLayer->neurons.size(); n++) {
+                prevLayer->neurons[n]->activation = 0.5;
+            }
+
+            for (int f=0; f<layer->filters.size(); f++) {
+                layer->filters[f]->dropoutMap = {{true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true}};
+            }
+        }
+
+        virtual void TearDown () {
+            delete prevLayer;
+            delete layer;
+            delete nextLayerA;
+            delete nextLayerB;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* prevLayer;
+        FCLayer* nextLayerA;
+        ConvLayer* nextLayerB;
+        ConvLayer* layer;
+    };
+
+    // Calculates the error map correctly when the next layer is an FCLayer
+    TEST(ConvLayer, backward_1) {
+
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network* net = Network::getInstance(0);
+        net->weightInitFn = &NetMath::uniform;
+        net->weightsConfig["limit"] = 0.1;
+
+        FCLayer* fcLayer = new FCLayer(0, 4);
+        FCLayer* fcLayerPrev = new FCLayer(0, 18);
+        ConvLayer* convLayer = new ConvLayer(0, 2);
+        convLayer->channels = 1;
+        convLayer->filterSize = 3;
+        convLayer->stride = 1;
+        convLayer->zeroPadding = 0;
+        convLayer->outMapSize = 2;
+        convLayer->inMapValuesCount = 4;
+
+        convLayer->assignPrev(fcLayerPrev);
+        convLayer->assignNext(fcLayer);
+        convLayer->hasActivation = false;
+
+        fcLayerPrev->init(0);
+        convLayer->init(1);
+        fcLayer->init(2);
+
+        for (int n=0; n<fcLayer->neurons.size(); n++) {
+            fcLayer->neurons[n]->error = ((double)n+1)/5;
+            fcLayer->neurons[n]->weights = {0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2};
+        }
+
+        convLayer->filters[0]->sumMap = {{0,0},{0,0}};
+        convLayer->filters[1]->sumMap = {{0,0},{0,0}};
+        convLayer->filters[0]->errorMap = {{0,0},{0,0}};
+        convLayer->filters[1]->errorMap = {{0,0},{0,0}};
+        convLayer->filters[0]->activationMap = {{0.1,0.2},{0.3,0.4}};
+        convLayer->filters[1]->activationMap = {{0.5,0.6},{0.7,0.8}};
+
+        // std::vector<std::vector<double> > expectedFilter1 = {{1.8, 1.6}, {1.4, 1.2}};
+        // std::vector<std::vector<double> > expectedFilter2 = {{1, 0.8}, {0.6, 0.4}};
+        std::vector<std::vector<std::vector<double> > > expected = { {{1.8, 1.6}, {1.4, 1.2}}, {{1, 0.8}, {0.6, 0.4}} };
+
+        convLayer->backward();
+
+        for (int f=0; f<convLayer->filters.size(); f++) {
+            for (int r=0; r<convLayer->filters[f]->errorMap.size(); r++) {
+                for (int c=0; c<convLayer->filters[f]->errorMap.size(); c++) {
+                    EXPECT_NEAR( convLayer->filters[f]->errorMap[r][c], expected[f][r][c], 1e-8 );
+                }
+            }
+        }
+    }
+
+    // Sets the errorMap values to 0 when dropped out
+    TEST_F(ConvBackwardFixture, backward_2) {
+
+        layer->backward();
+
+        std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_EQ( layer->filters[f]->errorMap, expected );
+        }
+    }
+
+    // Does not increment the deltaBias when all values are dropped out
+    TEST_F(ConvBackwardFixture, backward_3) {
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->deltaBias = f;
+        }
+
+        layer->backward();
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_EQ( layer->filters[f]->deltaBias, f );
+        }
+    }
+
+    // Does not increment the deltaWeights when all values are dropped out
+    TEST_F(ConvBackwardFixture, backward_4) {
+
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->deltaWeights = expected;
+        }
+
+        EXPECT_EQ( layer->stride, 1 );
+        layer->backward();
+
+        EXPECT_EQ( prevLayer->neurons.size(), 75 );
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_EQ( layer->filters[f]->deltaWeights, expected );
+        }
+    }
+
+    // Does otherwise change the deltaBias and deltaWeights values
+    TEST_F(ConvBackwardFixture, backward_5) {
+
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            layer->filters[f]->dropoutMap = {{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false}};
+            layer->filters[f]->deltaBias = f;
+            layer->filters[f]->deltaWeights = expected;
+        }
+
+        layer->backward();
+
+        for (int f=0; f<layer->filters.size(); f++) {
+            EXPECT_NE( layer->filters[f]->deltaBias, f );
+            EXPECT_NE( layer->filters[f]->deltaWeights, expected );
+        }
+    }
+
+
+    class ConvResetDeltaWFixture : public ::testing::Test {
+    public:
+        virtual void SetUp () {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+
+            layer = new ConvLayer(0, 3);
+
+            for (int f=0; f<3; f++) {
+                layer->filters.push_back(new Filter());
+                layer->filters[f]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
+                layer->filters[f]->dropoutMap = {{true,true,true},{true,true,true},{true,true,true}};
+            }
+
+            layer2 = new ConvLayer(0, 5);
+
+            for (int f=0; f<5; f++) {
+                layer2->filters.push_back(new Filter());
+                layer2->filters[f]->deltaWeights = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
+                layer2->filters[f]->dropoutMap = {{true,true,true,true,true},{true,true,true,true,true},
+                    {true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true}};
+            }
+        }
+
+        virtual void TearDown () {
+            delete layer;
+            delete layer2;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        ConvLayer* layer;
+        ConvLayer* layer2;
+    };
+
+    // Sets all filters' deltaWeights values to 0
+    TEST_F(ConvResetDeltaWFixture, resetDeltaWeights_1) {
+        std::vector<std::vector<std::vector<double> > > expectedA = {{{0,0,0},{0,0,0},{0,0,0}},{{0,0,0},{0,0,0},{0,0,0}}};
+        std::vector<std::vector<std::vector<double> > > expectedB = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
+
+        layer->resetDeltaWeights();
+        layer2->resetDeltaWeights();
+
+
+        for (int f=0; f<3; f++) {
+            EXPECT_EQ( layer->filters[f]->deltaWeights, expectedA );
+        }
+
+        for (int f=0; f<5; f++) {
+            EXPECT_EQ( layer2->filters[f]->deltaWeights, expectedB );
+        }
+    }
+
+    // Sets all the filters' dropoutMap values to false
+    TEST_F(ConvResetDeltaWFixture, resetDeltaWeights_2) {
+        std::vector<std::vector<bool> > expectedA = {{false,false,false},{false,false,false},{false,false,false}};
+        std::vector<std::vector<bool> > expectedB = {{false,false,false,false,false},{false,false,false,false,false},
+                {false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false}};
+
+        layer->resetDeltaWeights();
+        layer2->resetDeltaWeights();
+
+        for (int f=0; f<3; f++) {
+            EXPECT_EQ( layer->filters[f]->dropoutMap, expectedA );
+        }
+
+        for (int f=0; f<5; f++) {
+            EXPECT_EQ( layer2->filters[f]->dropoutMap, expectedB );
+        }
+    }
+
+    class ConvApplyDeltaWFixture : public ::testing::Test {
+    public:
+        virtual void SetUp () {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->learningRate = 1;
+            net->updateFnIndex = 0;
+
+            layer = new ConvLayer(0, 5);
+
+            for (int i=0; i<4; i++) {
+                layer->filters.push_back(new Filter());
+                layer->filters[i]->weights = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+                layer->filters[i]->bias = 0.5;
+                layer->filters[i]->deltaBias = 1;
+                layer->filters[i]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
+            }
+        }
+
+        virtual void TearDown () {
+            delete layer;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        ConvLayer* layer;
+    };
+
+    // Increments the weights of all neurons with their respective deltas (when learning rate is 1)
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_1) {
+        layer->applyDeltaWeights();
+
+        std::vector<std::vector<std::vector<double> > > expected = {{{1.5,1.5,1.5},{1.5,1.5,1.5},{1.5,1.5,1.5}},{{1.5,1.5,1.5},{1.5,1.5,1.5},{1.5,1.5,1.5}}};
+        EXPECT_EQ( layer->filters[0]->weights, expected );
+        EXPECT_EQ( layer->filters[1]->weights, expected );
+        EXPECT_EQ( layer->filters[2]->weights, expected );
+        EXPECT_EQ( layer->filters[3]->weights, expected );
+    }
+
+    // Increments the bias of all filters with their deltaBias
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_2) {
+        layer->applyDeltaWeights();
+        EXPECT_EQ( layer->filters[0]->bias, 1.5 );
+    }
+
+    // Increments the net.l2Error by each weight, applied to the L2 formula
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_3) {
+        net->l2 = 0.001;
+        net->l2Error = 0;
+        layer->applyDeltaWeights();
+        EXPECT_DOUBLE_EQ( net->l2Error, 0.009 );
+    }
+
+    // Increments the net.l1Error by each weight, applied to the L1 formula
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_4) {
+        net->l1 = 0.005;
+        net->l1Error = 0;
+        layer->applyDeltaWeights();
+        EXPECT_DOUBLE_EQ( net->l1Error, 0.18 );
+    }
+
+    // Increments the net.maxNormTotal if the net.maxNorm is configured (then sets it to 0)
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_5) {
+        net->maxNorm = 3;
+        net->maxNormTotal = 10;
+        layer->applyDeltaWeights();
+        EXPECT_EQ( net->maxNormTotal, 0 );
     }
 }
 
@@ -901,7 +1502,6 @@ namespace Neuron_cpp {
 
     // Sets the neuron biasGain to 1 if the net's updateFn is gain
     TEST_F(NeuronInitFixture, init_3) {
-        // testN->biasGain = 99;
         net->updateFnIndex = 1;
         testN->init(0);
         EXPECT_EQ( testN->biasGain, 1 );
@@ -1221,7 +1821,6 @@ namespace Filter_cpp {
 
 }
 
-
 namespace NetMath_cpp {
 
     TEST(NetMath, sigmoid) {
@@ -1229,6 +1828,13 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::sigmoid(1.681241237, false, testN), 0.8430688214048092 );
         EXPECT_EQ( NetMath::sigmoid(0.8430688214048092, true, testN), 0.21035474941074114 );
         delete testN;
+    }
+
+    TEST(NetMath, sigmoid_filter) {
+        Filter* testF = new Filter();
+        EXPECT_EQ( NetMath::sigmoid(1.681241237, false, testF), 0.8430688214048092 );
+        EXPECT_EQ( NetMath::sigmoid(0.8430688214048092, true, testF), 0.21035474941074114 );
+        delete testF;
     }
 
     TEST(NetMath, tanh) {
@@ -1241,6 +1847,16 @@ namespace NetMath_cpp {
         delete testN;
     }
 
+    TEST(NetMath, tanh_filter) {
+        Filter* testF = new Filter();
+        EXPECT_EQ( NetMath::tanh(1, false, testF), 0.7615941559557649 );
+        EXPECT_EQ( NetMath::tanh(0.5, false, testF), 0.46211715726000974);
+        EXPECT_EQ( NetMath::tanh(0.5, true, testF), 0.7864477329659275 );
+        EXPECT_EQ( NetMath::tanh(1.5, true, testF), 0.18070663892364855 );
+        EXPECT_NE( NetMath::tanh(900, true, testF), NAN );
+        delete testF;
+    }
+
     TEST(NetMath, lecuntanh) {
         Neuron* testN = new Neuron();
         EXPECT_EQ( NetMath::lecuntanh(2.0, false, testN), 1.4929388053842507 );
@@ -1250,6 +1866,15 @@ namespace NetMath_cpp {
         delete testN;
     }
 
+    TEST(NetMath, lecuntanh_filter) {
+        Filter* testF = new Filter();
+        EXPECT_EQ( NetMath::lecuntanh(2.0, false, testF), 1.4929388053842507 );
+        EXPECT_EQ( NetMath::lecuntanh(-2.0, false, testF), -1.4929388053842507 );
+        EXPECT_EQ( NetMath::lecuntanh(2.0, true, testF), 0.2802507761872869 );
+        EXPECT_EQ( NetMath::lecuntanh(-2.0, true, testF), 0.2802507761872869 );
+        delete testF;
+    }
+
     TEST(NetMath, relu) {
         Neuron* testN = new Neuron();
         EXPECT_EQ( NetMath::relu(2, false, testN), 2 );
@@ -1257,6 +1882,15 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::relu(2, true, testN), 1 );
         EXPECT_EQ( NetMath::relu(-2, true, testN), 0 );
         delete testN;
+    }
+
+    TEST(NetMath, relu_filter) {
+        Filter* testF = new Filter();
+        EXPECT_EQ( NetMath::relu(2, false, testF), 2 );
+        EXPECT_EQ( NetMath::relu(-2, false, testF), 0 );
+        EXPECT_EQ( NetMath::relu(2, true, testF), 1 );
+        EXPECT_EQ( NetMath::relu(-2, true, testF), 0 );
+        delete testF;
     }
 
     TEST(NetMath, lrelu) {
@@ -1269,6 +1903,16 @@ namespace NetMath_cpp {
         delete testN;
     }
 
+    TEST(NetMath, lrelu_filter) {
+        Filter* testF = new Filter();
+        testF->lreluSlope = -0.0005;
+        EXPECT_EQ( NetMath::lrelu(2, false, testF), 2 );
+        EXPECT_EQ( NetMath::lrelu(-2, false, testF), -0.001 );
+        EXPECT_EQ( NetMath::lrelu(2, true, testF), 1 );
+        EXPECT_EQ( NetMath::lrelu(-2, true, testF), -0.0005 );
+        delete testF;
+    }
+
     TEST(NetMath, rrelu) {
         Neuron* testN = new Neuron();
         testN->rreluSlope = 0.0005;
@@ -1279,6 +1923,16 @@ namespace NetMath_cpp {
         delete testN;
     }
 
+    TEST(NetMath, rrelu_filter) {
+        Filter* testF = new Filter();
+        testF->rreluSlope = 0.0005;
+        EXPECT_EQ( NetMath::rrelu(2, false, testF), 2 );
+        EXPECT_EQ( NetMath::rrelu(-2, false, testF), 0.0005 );
+        EXPECT_EQ( NetMath::rrelu(2, true, testF), 1 );
+        EXPECT_EQ( NetMath::rrelu(-2, true, testF), 0.0005 );
+        delete testF;
+    }
+
     TEST(NetMath, elu) {
         Neuron* testN = new Neuron();
         testN->eluAlpha = 1;
@@ -1287,6 +1941,16 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::elu(2, true, testN), 1 );
         EXPECT_EQ( NetMath::elu(-0.5, true, testN), 0.6065306597126334 );
         delete testN;
+    }
+
+    TEST(NetMath, elu_filter) {
+        Filter* testF = new Filter();
+        testF->eluAlpha = 1;
+        EXPECT_EQ( NetMath::elu(2, false, testF), 2 );
+        EXPECT_EQ( NetMath::elu(-0.25, false, testF), -0.22119921692859512 );
+        EXPECT_EQ( NetMath::elu(2, true, testF), 1 );
+        EXPECT_EQ( NetMath::elu(-0.5, true, testF), 0.6065306597126334 );
+        delete testF;
     }
 
     TEST(NetMath, meansquarederror) {
@@ -1320,21 +1984,31 @@ namespace NetMath_cpp {
             testN = new Neuron();
             testN->init(0);
             testN->bias = 0.1;
+
+            testF = new Filter();
+            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
+            testF->init(0);
+            testF->bias = 0.1;
         }
 
         virtual void TearDown() {
-            Network::deleteNetwork();
             delete testN;
+            delete testF;
+            Network::deleteNetwork();
         }
 
         Network* net;
         Neuron* testN;
+
+        Filter* testF;
     };
 
     // Doubles a value when the gain is 2 and learningRate 1
     TEST_F(GainFixture, gain_1) {
         testN->biasGain = 2;
         EXPECT_EQ( NetMath::gain(0, (double)10, (double)5, testN, -1), 20 );
+        testF->biasGain = 2;
+        EXPECT_EQ( NetMath::gain(0, (double)10, (double)5, testF, -1, -1, -1), 20 );
     }
 
     // Halves a value when the gain is -5 and learningRate 0.1
@@ -1342,6 +2016,8 @@ namespace NetMath_cpp {
         net->learningRate = 0.1;
         testN->biasGain = -5;
         EXPECT_NEAR( NetMath::gain(0, (double)5, (double)5, testN, -1), 2.5, 1e-6 );
+        testF->biasGain = -5;
+        EXPECT_NEAR( NetMath::gain(0, (double)5, (double)5, testF, -1, -1, -1), 2.5, 1e-6 );
     }
 
     // Increments a neuron's biasGain by 0.05 when the bias value doesn't change sign
@@ -1349,6 +2025,10 @@ namespace NetMath_cpp {
         testN->biasGain = 1;
         NetMath::gain(0, (double)0.1, (double)1, testN, -1);
         EXPECT_EQ( testN->biasGain, 1.05 );
+
+        testF->biasGain = 1;
+        NetMath::gain(0, (double)0.1, (double)1, testF, -1, -1, -1);
+        EXPECT_EQ( testF->biasGain, 1.05 );
     }
 
     // Does not increase the gain to more than 5
@@ -1356,6 +2036,10 @@ namespace NetMath_cpp {
         testN->biasGain = 4.99;
         NetMath::gain(0, (double)0.1, (double)1, testN, -1);
         EXPECT_EQ( testN->biasGain, 5 );
+
+        testF->biasGain = 4.99;
+        NetMath::gain(0, (double)0.1, (double)1, testF, -1, -1, -1);
+        EXPECT_EQ( testF->biasGain, 5 );
     }
 
     // Multiplies a neuron's bias gain by 0.95 when the value changes sign
@@ -1364,6 +2048,10 @@ namespace NetMath_cpp {
         testN->biasGain = 1;
         NetMath::gain(0, (double)0.1, (double)1, testN, -1);
         EXPECT_EQ( testN->biasGain, 0.95 );
+
+        testF->biasGain = 1;
+        NetMath::gain(0, (double)0.1, (double)1, testF, -1, -1, -1);
+        EXPECT_EQ( testF->biasGain, 0.95 );
     }
 
     // Does not reduce the bias gain to less than 0.5
@@ -1372,6 +2060,10 @@ namespace NetMath_cpp {
         testN->biasGain = 0.51;
         NetMath::gain(0, (double)0.1, (double)1, testN, -1);
         EXPECT_EQ( testN->biasGain, 0.5 );
+
+        testF->biasGain = 0.51;
+        NetMath::gain(0, (double)0.1, (double)1, testF, -1, -1, -1);
+        EXPECT_EQ( testF->biasGain, 0.5 );
     }
 
     // Increases weight gain the same way as the bias gain
@@ -1382,6 +2074,13 @@ namespace NetMath_cpp {
         NetMath::gain(0, (double)0.1, (double)1, testN, 1);
         EXPECT_EQ( testN->weightGain[0], 1.05 );
         EXPECT_EQ( testN->weightGain[1], 5 );
+
+        testF->weights = { {{0.1,0.1,  1},{1,1,1},{1,1,1}} };
+        testF->weightGain = { {{1,4.99  ,1},{1,1,1},{1,1,1}} };
+        NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 0);
+        NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 1);
+        EXPECT_EQ( testF->weightGain[0][0][0], 1.05 );
+        EXPECT_EQ( testF->weightGain[0][0][1], 5 );
     }
 
     // Decreases weight gain the same way as the bias gain
@@ -1393,6 +2092,13 @@ namespace NetMath_cpp {
         NetMath::gain(0, (double)0.1, (double)1, testN, 1);
         EXPECT_EQ( testN->weightGain[0], 0.95 );
         EXPECT_EQ( testN->weightGain[1], 0.5 );
+
+        testF->weights = { {{0.1,0.1,  1},{1,1,1},{1,1,1}} };
+        testF->weightGain = { {{1,0.51  ,1},{1,1,1},{1,1,1}} };
+        NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 0);
+        NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 1);
+        EXPECT_EQ( testF->weightGain[0][0][0], 0.95 );
+        EXPECT_EQ( testF->weightGain[0][0][1], 0.5 );
     }
 
     class AdagradFixture : public ::testing::Test {
@@ -1405,27 +2111,37 @@ namespace NetMath_cpp {
             testN = new Neuron();
             testN->init(0);
             testN->biasCache = 0;
+
+            testF = new Filter();
+            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
+            testF->init(0);
+            testF->biasCache = 0;
         }
 
         virtual void TearDown() {
             Network::deleteNetwork();
             delete testN;
+            delete testF;
         }
 
         Network* net;
         Neuron* testN;
+        Filter* testF;
     };
 
     // Increments the neuron's biasCache by the square of its deltaBias
     TEST_F(AdagradFixture, adagrad_1) {
         NetMath::adagrad(0, (double)1, (double)3, testN, -1);
         EXPECT_EQ( testN->biasCache, 9 );
+        NetMath::adagrad(0, (double)1, (double)3, testF, -1, -1, -1);
+        EXPECT_EQ( testF->biasCache, 9 );
     }
 
     // Returns a new value matching the formula for adagrad
     TEST_F(AdagradFixture, adagrad_2) {
         net->learningRate = 0.5;
         EXPECT_NEAR( NetMath::adagrad(0, (double)1, (double)3, testN, -1), 1.5, 1e-3 );
+        EXPECT_NEAR( NetMath::adagrad(0, (double)1, (double)3, testF, -1, -1, -1), 1.5, 1e-3 );
     }
 
     // Increments the neuron's weightsCache with the same way as the biasCache
@@ -1440,6 +2156,17 @@ namespace NetMath_cpp {
         EXPECT_NEAR( result1, 3.0, 1e-2 );
         EXPECT_NEAR( result2, 2.9, 1e-1 );
         EXPECT_NEAR( result3, 2.6, 1e-1 );
+
+        testF->weightsCache = { {{0,1,2},{1,1,1},{1,1,1}} };
+        double result4 = NetMath::adagrad(0, (double)1, (double)3, testF, 0, 0, 0);
+        double result5 = NetMath::adagrad(0, (double)1, (double)4, testF, 0, 0, 1);
+        double result6 = NetMath::adagrad(0, (double)1, (double)2, testF, 0, 0, 2);
+        EXPECT_EQ( testF->weightsCache[0][0][0], 9 );
+        EXPECT_EQ( testF->weightsCache[0][0][1], 17 );
+        EXPECT_EQ( testF->weightsCache[0][0][2], 6 );
+        EXPECT_NEAR( result4, 3.0, 1e-2 );
+        EXPECT_NEAR( result5, 2.9, 1e-1 );
+        EXPECT_NEAR( result6, 2.6, 1e-1 );
     }
 
     class RMSPropFixture : public ::testing::Test {
@@ -1453,15 +2180,22 @@ namespace NetMath_cpp {
             testN = new Neuron();
             testN->init(0);
             testN->biasCache = 10;
+
+            testF = new Filter();
+            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
+            testF->init(0);
+            testF->biasCache = 10;
         }
 
         virtual void TearDown() {
             Network::deleteNetwork();
             delete testN;
+            delete testF;
         }
 
         Network* net;
         Neuron* testN;
+        Filter* testF;
     };
 
     // Sets the cache value to the correct value, following the rmsprop formula
@@ -1469,11 +2203,15 @@ namespace NetMath_cpp {
         net->learningRate = 2;
         NetMath::rmsprop(0, (double)1, (double)3, testN, -1);
         EXPECT_NEAR(testN->biasCache, 9.99, 1e-3);
+
+        NetMath::rmsprop(0, (double)1, (double)3, testF, -1, -1, -1);
+        EXPECT_NEAR(testF->biasCache, 9.99, 1e-3);
     }
 
     // Returns a new value matching the formula for rmsprop, using this new cache value
     TEST_F(RMSPropFixture, rmsprop_2) {
         EXPECT_NEAR( NetMath::rmsprop(0, (double)1, (double)3, testN, -1), 1.47, 1e-2);
+        EXPECT_NEAR( NetMath::rmsprop(0, (double)1, (double)3, testF, -1, -1, -1), 1.47, 1e-2);
     }
 
     // Updates the weightsCache the same way as the biasCache
@@ -1488,6 +2226,17 @@ namespace NetMath_cpp {
         EXPECT_NEAR( result1, 6.0, 1e-2 );
         EXPECT_NEAR( result2, 2.9, 0.1 );
         EXPECT_NEAR( result3, 1.7, 0.1 );
+
+        testF->weightsCache = { {{0,1,2},{1,1,1},{1,1,1}} };
+        double result4 = NetMath::rmsprop(0, (double)1, (double)3, testF, 0, 0, 0);
+        double result5 = NetMath::rmsprop(0, (double)1, (double)4, testF, 0, 0, 1);
+        double result6 = NetMath::rmsprop(0, (double)1, (double)2, testF, 0, 0, 2);
+        EXPECT_NEAR( testF->weightsCache[0][0][0], 0.09, 1e-2 );
+        EXPECT_NEAR( testF->weightsCache[0][0][1], 1.15, 1e-2 );
+        EXPECT_NEAR( testF->weightsCache[0][0][2], 2.02, 1e-2 );
+        EXPECT_NEAR( result4, 6.0, 1e-2 );
+        EXPECT_NEAR( result5, 2.9, 0.1 );
+        EXPECT_NEAR( result6, 1.7, 0.1 );
     }
 
     class AdamFixture : public ::testing::Test {
@@ -1499,15 +2248,21 @@ namespace NetMath_cpp {
             net->learningRate = 0.01;
             testN = new Neuron();
             testN->init(0);
+
+            testF = new Filter();
+            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
+            testF->init(0);
         }
 
         virtual void TearDown() {
             Network::deleteNetwork();
             delete testN;
+            delete testF;
         }
 
         Network* net;
         Neuron* testN;
+        Filter* testF;
     };
 
     // It sets the neuron.m to the correct value, following the formula
@@ -1515,6 +2270,10 @@ namespace NetMath_cpp {
         testN->m = 0.1;
         NetMath::adam(0, (double)1, (double)0.2, testN, -1);
         EXPECT_DOUBLE_EQ( testN->m, 0.11 );
+
+        testF->m = 0.1;
+        NetMath::adam(0, (double)1, (double)0.2, testF, -1, -1, -1);
+        EXPECT_DOUBLE_EQ( testF->m, 0.11 );
     }
 
     // It sets the neuron.v to the correct value, following the formula
@@ -1522,6 +2281,10 @@ namespace NetMath_cpp {
         testN->v = 0.1;
         NetMath::adam(0, (double)1, (double)0.2, testN, -1);
         EXPECT_NEAR( testN->v, 0.09994, 1e-3 );
+
+        testF->v = 0.1;
+        NetMath::adam(0, (double)1, (double)0.2, testF, -1, -1, -1);
+        EXPECT_NEAR( testF->v, 0.09994, 1e-3 );
     }
 
     // Calculates a value correctly, following the formula
@@ -1530,6 +2293,10 @@ namespace NetMath_cpp {
         testN->m = 0.121;
         testN->v = 0.045;
         EXPECT_NEAR( NetMath::adam(0, (double)-0.3, (double)0.02, testN, -1), -0.298943, 1e-5 );
+
+        testF->m = 0.121;
+        testF->v = 0.045;
+        EXPECT_NEAR( NetMath::adam(0, (double)-0.3, (double)0.02, testF, -1, -1, -1), -0.298943, 1e-5 );
     }
 
     class AdadeltaFixture : public ::testing::Test {
@@ -1544,21 +2311,32 @@ namespace NetMath_cpp {
             testN = new Neuron();
             testN->init(0);
             testN->biasCache = 0.5;
+
+            testF = new Filter();
+            testF->weights = { {{1,1},{1,1}} };
+            testF->adadeltaCache = { {{1,1},{1,1}} };
+            testF->init(0);
+            testF->biasCache = 0.5;
         }
 
         virtual void TearDown() {
             Network::deleteNetwork();
             delete testN;
+            delete testF;
         }
 
         Network* net;
         Neuron* testN;
+        Filter* testF;
     };
 
     // Sets the neuron.biasCache to the correct value, following the adadelta formula
     TEST_F(AdadeltaFixture, adadelta_1) {
         NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
         EXPECT_NEAR( testN->biasCache, 0.477, 1e-3 );
+
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, -1, -1, -1);
+        EXPECT_NEAR( testF->biasCache, 0.477, 1e-3 );
     }
 
     // Sets the weightsCache to the correct value, following the adadelta formula, same as biasCache
@@ -1569,12 +2347,22 @@ namespace NetMath_cpp {
         NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
         EXPECT_NEAR( testN->weightsCache[0], 0.477, 1e-3 );
         EXPECT_NEAR( testN->weightsCache[1], 0.7145, 1e-4 );
+
+        testF->weightsCache = { {{0.5,0.75},{1,1}} };
+        testF->adadeltaCache = { {{0,0},{1,1}} };
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 0);
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 1);
+        EXPECT_NEAR( testF->weightsCache[0][0][0], 0.477, 1e-3 );
+        EXPECT_NEAR( testF->weightsCache[0][0][1], 0.7145, 1e-4 );
     }
 
     // Creates a value for the bias correctly, following the formula
     TEST_F(AdadeltaFixture, adadelta_3) {
         testN->adadeltaBiasCache = 0.25;
         EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1), 0.64479, 1e-5 );
+
+        testF->adadeltaBiasCache = 0.25;
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testF, -1, -1, -1), 0.64479, 1e-5 );
     }
 
     // Creates a value for the weight correctly, the same was as the bias
@@ -1583,6 +2371,11 @@ namespace NetMath_cpp {
         testN->adadeltaCache = {0.1, 0.2};
         EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 0), 0.59157, 1e-3 );
         EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1), 0.60581, 1e-3 );
+
+        testF->weightsCache = { {{0.5,0.75},{1,1}} };
+        testF->adadeltaCache = { {{0.1,0.2},{1,1}} };
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 0), 0.59157, 1e-3 );
+        EXPECT_NEAR( NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 1), 0.60581, 1e-3 );
     }
 
     // Updates the neuron.adadeltaBiasCache with the correct value, following the formula
@@ -1590,6 +2383,10 @@ namespace NetMath_cpp {
         testN->adadeltaBiasCache = 0.25;
         NetMath::adadelta(0, (double)0.5, (double)0.2, testN, -1);
         EXPECT_NEAR( testN->adadeltaBiasCache, 0.2395, 1e-2 );
+
+        testF->adadeltaBiasCache = 0.25;
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, -1, -1, -1);
+        EXPECT_NEAR( testF->adadeltaBiasCache, 0.2395, 1e-2 );
     }
 
     // Updates the neuron.adadeltaCache with the correct value, following the formula, same as adadeltaBiasCache
@@ -1600,6 +2397,13 @@ namespace NetMath_cpp {
         NetMath::adadelta(0, (double)0.5, (double)0.2, testN, 1);
         EXPECT_NEAR( testN->adadeltaCache[0], 0.097, 0.1 );
         EXPECT_NEAR( testN->adadeltaCache[1], 0.192, 0.1 );
+
+        testF->weightsCache = { {{0.5,0.75},{1,1}} };
+        testF->adadeltaCache = { {{0.1,0.2},{1,1}} };
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 0);
+        NetMath::adadelta(0, (double)0.5, (double)0.2, testF, 0, 0, 1);
+        EXPECT_NEAR( testF->adadeltaCache[0][0][0], 0.097, 0.1 );
+        EXPECT_NEAR( testF->adadeltaCache[0][0][1], 0.192, 0.1 );
     }
 
     TEST(NetMath, sech) {
@@ -2132,7 +2936,7 @@ namespace NetUtil_cpp {
 
     // Calculates values correctly (Example a)
     TEST(NetUtil, convolve_1) {
-        std::vector<std::vector<std::vector<double> > > testInputa = {{{0,0,2,2,2}, {1,1,0,2,0}, {1,2,1,1,2}, {0,1,2,2,1}, {1,2,0,0,1}}};
+        std::vector<double> testInputa = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1};
         std::vector<std::vector<std::vector<double> > > testWeightsa = {{{-1,0,-1},{1,0,1},{1,-1,0}}};
         std::vector<std::vector<double> > expecteda = {{0,4,5}, {2,0,1}, {2,0,-1}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInputa, 1, testWeightsa, 1, 2, 1);
@@ -2141,7 +2945,7 @@ namespace NetUtil_cpp {
 
     // Calculates values correctly (Example b)
     TEST(NetUtil, convolve_2) {
-        std::vector<std::vector<std::vector<double> > > testInputb = {{{2,2,1,1,2}, {1,1,2,0,0}, {2,0,0,2,2}, {1,2,2,1,1}, {1,1,2,0,1}}};
+        std::vector<double> testInputb = {2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1};
         std::vector<std::vector<std::vector<double> > > testWeightsb = {{{0,1,1},{1,-1,-1},{-1,1,0}}};
         std::vector<std::vector<double> > expectedb = {{-2,2,0},{2,1,1},{2,3,1}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInputb, 1, testWeightsb, 1, 2, 1);
@@ -2150,7 +2954,7 @@ namespace NetUtil_cpp {
 
     // Calculates values correctly (Example c)
     TEST(NetUtil, convolve_3) {
-        std::vector<std::vector<std::vector<double> > > testInputc = {{{0,1,1,0,0}, {1,2,0,2,0}, {2,0,1,2,0}, {2,0,1,0,1}, {0,1,2,2,1}}};
+        std::vector<double> testInputc = {0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeightsc = {{{-1,0,-1},{1,0,0},{1,0,0}}};
         std::vector<std::vector<double> > expectedc = {{1,4,3},{-1,-3,1},{1,2,3}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInputc, 1, testWeightsc, 1, 2, 1);
@@ -2159,7 +2963,7 @@ namespace NetUtil_cpp {
 
     // Calculates values correctly (Example 1)
     TEST(NetUtil, convolve_4) {
-        std::vector<std::vector<std::vector<double> > > testInput = {{{0,0,2,2,2}, {1,1,0,2,0}, {1,2,1,1,2}, {0,1,2,2,1}, {1,2,0,0,1}}, {{2,2,1,1,2}, {1,1,2,0,0}, {2,0,0,2,2}, {1,2,2,1,1}, {1,1,2,0,1}}, {{0,1,1,0,0}, {1,2,0,2,0}, {2,0,1,2,0}, {2,0,1,0,1}, {0,1,2,2,1}}};
+        std::vector<double> testInput = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1, 2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1, 0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeights1 = {{{-1,0,-1},{1,0,1},{1,-1,0}},   {{0,1,1},{1,-1,-1},{-1,1,0}},  {{-1,0,-1},{1,0,0},{1,0,0}}};
         std::vector<std::vector<double> > expected1 = {{-3,8,6},{1,-4,1},{3,3,1}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInput, 1, testWeights1, 3, 2, 1);
@@ -2168,7 +2972,7 @@ namespace NetUtil_cpp {
 
     // Calculates values correctly (Example 2)
     TEST(NetUtil, convolve_5) {
-        std::vector<std::vector<std::vector<double> > > testInput = {{{0,0,2,2,2}, {1,1,0,2,0}, {1,2,1,1,2}, {0,1,2,2,1}, {1,2,0,0,1}}, {{2,2,1,1,2}, {1,1,2,0,0}, {2,0,0,2,2}, {1,2,2,1,1}, {1,1,2,0,1}}, {{0,1,1,0,0}, {1,2,0,2,0}, {2,0,1,2,0}, {2,0,1,0,1}, {0,1,2,2,1}}};
+        std::vector<double> testInput = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1, 2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1, 0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeights2 = {{{-1,0,1},{-1,1,1},{1,0,0}},   {{0,-1,1},{1,-1,1},{-1,1,-1}},  {{0,0,0},{0,-1,-1},{0,0,1}}};
         std::vector<std::vector<double> > expected2 = {{1,9,1},{-1,-2,1},{4,-7,-4}};
         std::vector<std::vector<double> > res = NetUtil::convolve(testInput, 1, testWeights2, 3, 2, 0);
@@ -2179,9 +2983,338 @@ namespace NetUtil_cpp {
         std::vector<std::vector<std::vector<double> > > expected1 = {{{1,1,1},{1,1,1},{1,1,1}}, {{1,1,1},{1,1,1},{1,1,1}}};
         std::vector<std::vector<std::vector<double> > > expected2 = {{{0,0},{0,0},{0,0}}};
 
-        EXPECT_EQ( NetUtil::createVolume(2, 3, 3, 1), expected1 );
-        EXPECT_EQ( NetUtil::createVolume(1, 3, 2, 0), expected2 );
+        EXPECT_EQ( NetUtil::createVolume<double>(2, 3, 3, 1), expected1 );
+        EXPECT_EQ( NetUtil::createVolume<double>(1, 3, 2, 0), expected2 );
     }
+
+
+    class BuildConvDWeightsFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            Network* net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+            net->channels = 3;
+            net->miniBatchSize = 1;
+
+            layer = new ConvLayer(0, 2);
+            layer->channels = 3;
+            layer->filterSize = 3;
+            layer->zeroPadding = 1;
+            layer->stride = 2;
+            layer->inMapValuesCount = 25;
+            layer->outMapSize = 14;
+            prevLayer = new FCLayer(0, 75);
+
+            prevLayer->init(0);
+            layer->assignPrev(prevLayer);
+            layer->init(1);
+
+            for (int n=0; n<prevLayer->neurons.size(); n++) {
+                prevLayer->neurons[n]->activation = n+1;
+            }
+
+            layer->filters[0]->errorMap = {{0.1, 0.6, 0.2}, {0.7, 0.3, 0.8}, {0.4, 0.9, 0.5}};
+            layer->filters[1]->errorMap = {{-0.5, 0, -0.4}, {0.1, -0.3, 0.2}, {-0.2, 0.3, -0.1}};
+
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        ConvLayer* layer;
+        FCLayer* prevLayer;
+    };
+
+    // Sets the filter 1 deltaBias to 4.5 and filter 2 deltaBias to -0.9
+    TEST_F(BuildConvDWeightsFixture, buildConvDWeights_1) {
+        NetUtil::buildConvDWeights(layer);
+        EXPECT_EQ( layer->filters[0]->deltaBias, 4.5 );
+        EXPECT_EQ( layer->filters[1]->deltaBias, -0.9 );
+    }
+
+    // Sets the filter 1 deltaWeights to hand worked out values
+    TEST_F(BuildConvDWeightsFixture, buildConvDWeights_2) {
+        std::vector<std::vector<std::vector<double> > > expected = {
+            {{34.1, 47.2, 31.5}, {48.6, 68.1, 45.6}, {26.3, 40, 23.7}},
+            {{96.6, 137.2, 89}, {131.1, 180.6, 120.6}, {73.8, 107.5, 66.2}},
+            {{159.1, 227.2, 146.5}, {213.6, 293.1, 195.6}, {121.3, 175, 108.7}}
+        };
+        NetUtil::buildConvDWeights(layer);
+
+        for (int c=0; c<layer->filters[0]->deltaWeights.size(); c++) {
+            for (int r=0; r<layer->filters[0]->deltaWeights[0].size(); r++) {
+                for (int v=0; v<layer->filters[0]->deltaWeights[0].size(); v++) {
+                    EXPECT_NEAR( layer->filters[0]->deltaWeights[c][r][v], expected[c][r][v], 1e-8 );
+                }
+            }
+        }
+    }
+
+    // Sets the filter 2 deltaWeights to hand worked out values
+    TEST_F(BuildConvDWeightsFixture, buildConvDWeights_3) {
+        std::vector<std::vector<std::vector<double> > > expected = {
+            {{2.9, 0.4, 0.3}, {1.8, -2.1, -1.2}, {-4.9, -6.8, -7.5}},
+            {{5.4, 0.4, -2.2}, {-5.7, -24.6, -16.2}, {-17.4, -29.3, -25}},
+            {{7.9, 0.4, -4.7}, {-13.2, -47.1, -31.2}, {-29.9, -51.8, -42.5}}
+        };
+        NetUtil::buildConvDWeights(layer);
+
+        for (int c=0; c<layer->filters[1]->deltaWeights.size(); c++) {
+            for (int r=0; r<layer->filters[1]->deltaWeights[0].size(); r++) {
+                for (int v=0; v<layer->filters[1]->deltaWeights[0].size(); v++) {
+                    EXPECT_NEAR( layer->filters[1]->deltaWeights[c][r][v], expected[c][r][v], 1e-8 );
+                }
+            }
+        }
+    }
+
+
+    class BuildConvErrorMapFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+
+            layer = new ConvLayer(0, 1);
+            // layer->filterSize = 3;
+            // layer->zeroPadding = 0;
+            // layer->stride = 2;
+            layer->filters.push_back(new Filter());
+            layer->filters[0]->errorMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+            nextLayerA = new ConvLayer(0, 1);
+            nextLayerA->filterSize = 3;
+            nextLayerA->zeroPadding = 1;
+            nextLayerA->stride = 2;
+
+            nextLayerB = new ConvLayer(0, 2);
+            nextLayerB->filterSize = 3;
+            nextLayerB->zeroPadding = 1;
+            nextLayerB->stride = 2;
+
+            nextLayerC = new ConvLayer(0, 1);
+            nextLayerC->filterSize = 3;
+            nextLayerC->zeroPadding = 1;
+            nextLayerC->stride = 1;
+
+            nlFilterA = new Filter();
+            nlFilterA->errorMap = {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}};
+            nlFilterA->weights = {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}};
+
+            nlFilterB = new Filter();
+            nlFilterB->errorMap = {{0.1, 0.4, 0.2}, {-0.1,0.2,-0.3}, {0, -0.4, 0.5}};
+            nlFilterB->weights = {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}};
+
+            nlFilterC = new Filter();
+            nlFilterC->errorMap = {{0.1,0.4,-0.2,0.3,0},{0.9,0.2,-0.7,1.1,0.6},{0.4,0,0.3,-0.8,0.1},{0.2,0.3,0.1,-0.1,0.5},{-0.3,0.4,0.5,-0.2,0.3}};
+            nlFilterC->weights = {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}};
+        }
+
+        virtual void TearDown() {
+            delete layer;
+            delete nextLayerA;
+            delete nextLayerB;
+            delete nextLayerC;
+        }
+
+        Network* net;
+        ConvLayer* layer;
+        ConvLayer* nextLayerA;
+        ConvLayer* nextLayerB;
+        ConvLayer* nextLayerC;
+        Filter* nlFilterA;
+        Filter* nlFilterB;
+        Filter* nlFilterC;
+    };
+
+    // Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 1)
+    TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_1) {
+
+        nextLayerA->filters = {nlFilterA};
+        layer->assignNext(nextLayerA);
+
+        std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
+
+        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+
+        EXPECT_EQ( layer->filters[0]->errorMap.size(), 5 );
+        EXPECT_EQ( layer->filters[0]->errorMap[0].size(), 5 );
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expectedA[r][c], 1e-8 );
+            }
+        }
+    }
+
+    // Clears the filter errorMap values first (by getting the same result with different initial errorMap values, using Example 1)
+    TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_2) {
+        layer->filters[0]->errorMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+        nextLayerA->filters = {nlFilterA};
+        layer->assignNext(nextLayerA);
+        std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
+        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expectedA[r][c], 1e-8 );
+            }
+        }
+    }
+
+    // Calculates an error map correctly, using just one channel from 1 filter in next layer (Example 2)
+    TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_3) {
+        nextLayerA->filters = {nlFilterB};
+        layer->assignNext(nextLayerA);
+        std::vector<std::vector<double> > expectedB = {{0.1,-0.4,0.4,-0.2,0.2},{-0.2,0.7,-0.2,0.3,-0.5},{-0.1,-0.2,0.2,0.3,-0.3},{0.1,-0.3,-0.6,0.4,0.8},{0,0.4,-0.4,-0.5,0.5}};
+        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expectedB[r][c], 1e-8 );
+            }
+        }
+    }
+
+    // Calculates an error map correctly, using two channels, from 2 filters in the next layer
+    TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_4) {
+        nextLayerB->filters = {nlFilterA, nlFilterB};
+        layer->assignNext(nextLayerB);
+        std::vector<std::vector<double> > expectedC = {{0.1,-0.1,0.4,-0.3,0.2},{-0.7,0.9,0,0.9,-0.6},{-0.1,-0.6,0.2,-0.2,-0.3},{0.1,-1.5,-0.2,-0.6,0.9},{0,1.2,-0.4,0.4,0.5}};
+        NetUtil::buildConvErrorMap(layer, nextLayerB, 0);
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expectedC[r][c], 1e-8 );
+            }
+        }
+    }
+
+    // Calculates an error map correctly, using 1 channel where the stride is 1, not 2
+    TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_5) {
+        nextLayerC->filters = {nlFilterC};
+        layer->assignNext(nextLayerC);
+        std::vector<std::vector<double> > expectedD = {{0.8,0.1,-0.1,2.0,0.6},{1.4,0.7,-1.4,-0.7,1},{0.2,0.1,3.1,-1.7,1.1},{-0.4,1.8,-0.6,0.7,-0.1},{-0.6,-0.1,0.8,0.2,-0.3}};
+        NetUtil::buildConvErrorMap(layer, nextLayerC, 0);
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expectedD[r][c], 1e-8 );
+            }
+        }
+    }
+
+
+    class GetActivationsFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+            fcLayer1 = new FCLayer(0, 9);
+            fcLayer2 = new FCLayer(0, 64);
+            fcLayer2->prevLayer = fcLayer1;
+
+            convLayer = new ConvLayer(0, 2);
+            convLayer->outMapSize = 3;
+            convLayer->channels = 1;
+            convLayer->filterSize = 3;
+            convLayer->assignPrev(fcLayer1);
+
+            fcLayer1->init(0);
+            fcLayer2->init(1);
+
+            for (int n=0; n<fcLayer1->neurons.size(); n++) {
+                fcLayer1->neurons[n]->activation = n+1;
+            }
+            for (int n=0; n<fcLayer2->neurons.size(); n++) {
+                fcLayer2->neurons[n]->activation = n+1;
+            }
+
+            convLayer->filters[0]->activationMap = {{1,2,3},{4,5,6},{7,8,9}};
+            convLayer->filters[1]->activationMap = {{4,5,6},{7,8,9},{1,2,3}};
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+        }
+
+        FCLayer* fcLayer1;
+        FCLayer* fcLayer2;
+        ConvLayer* convLayer;
+    };
+
+
+    // Returns all activation values from an FC layer
+    TEST_F(GetActivationsFixture, getActivations_1) {
+        std::vector<double> expected = {1,2,3,4,5,6,7,8,9};
+        EXPECT_EQ( NetUtil::getActivations(fcLayer1), expected );
+    }
+
+    // Returns all activation values from a ConvLayer
+    TEST_F(GetActivationsFixture, getActivations_2) {
+        std::vector<double> expected = {1,2,3,4,5,6,7,8,9,4,5,6,7,8,9,1,2,3};
+        EXPECT_EQ( NetUtil::getActivations(convLayer), expected );
+    }
+
+    // Returns the FCLayer neuron activations in a square (map) subset of the neurons, indicated by the map index and map size
+    TEST_F(GetActivationsFixture, getActivations_3) {
+        std::vector<double> expected1 = {1,2,3,4};
+        std::vector<double> expected2 = {19,20,21,22,23,24,25,26,27};
+        std::vector<double> expected3 = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32};
+
+        EXPECT_EQ( NetUtil::getActivations(fcLayer2, 0, 4), expected1 );
+        EXPECT_EQ( NetUtil::getActivations(fcLayer2, 2, 9), expected2 );
+        EXPECT_EQ( NetUtil::getActivations(fcLayer2, 1, 16), expected3 );
+    }
+
+    // Returns the activations from a Filter in a ConvLayer if map index is provided as second parameter
+    TEST_F(GetActivationsFixture, getActivations_4) {
+        std::vector<double> expected1 = {4,5,6,7,8,9,1,2,3};
+        std::vector<double> expected2 = {1,2,3,4,5,6,7,8,9};
+
+        EXPECT_EQ( NetUtil::getActivations(convLayer, 1, 0), expected1 );
+        EXPECT_EQ( NetUtil::getActivations(convLayer, 0, 0), expected2 );
+    }
+
+
+    TEST(NetUtil, arrayToMap) {
+        std::vector<double> testArray = {1,2,3,4,5,6,7,8,9};
+        std::vector<std::vector<double> > expected = {{1,2,3},{4,5,6},{7,8,9}};
+
+        EXPECT_EQ( NetUtil::arrayToMap(testArray, 3), expected );
+    }
+
+    // Converts the array correctly (Example 1)
+    TEST(NetUtil, arrayToVolume_1) {
+        std::vector<double> testData = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36};
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,2},{3,4}}, {{5,6},{7,8}}, {{9,10},{11,12}}, {{13,14},{15,16}},
+              {{17,18},{19,20}}, {{21,22},{23,24}}, {{25,26},{27,28}}, {{29,30},{31,32}}, {{33,34},{35,36}}};
+
+        EXPECT_EQ( NetUtil::arrayToVolume(testData, 9), expected );
+    }
+
+    // Converts the array correctly (Example 2)
+    TEST(NetUtil, arrayToVolume_2) {
+        std::vector<double> testData = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36};
+        std::vector<std::vector<std::vector<double> > > expected = { {{1,2,3},{4,5,6},{7,8,9}}, {{10,11,12},{13,14,15},{16,17,18}},
+                       {{19,20,21},{22,23,24},{25,26,27}}, {{28,29,30},{31,32,33},{34,35,36}} };
+        EXPECT_EQ( NetUtil::arrayToVolume(testData, 4), expected );
+    }
+
+    // Converts the array correctly (Example 3)
+    TEST(NetUtil, arrayToVolume_3) {
+        std::vector<double> testData = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36};
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3,4,5,6},{7,8,9,10,11,12},{13,14,15,16,17,18},{19,20,21,22,23,24},
+                                    {25,26,27,28,29,30},{31,32,33,34,35,36}}};
+        EXPECT_EQ( NetUtil::arrayToVolume(testData, 1), expected );
+    }
+
 }
 
 

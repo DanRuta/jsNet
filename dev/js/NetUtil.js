@@ -193,8 +193,8 @@ class NetUtil {
         errorMap.splice(errorMap.length-zeroPadding, errorMap.length)
 
         // Columns:
-        for (let emXI=0; emXI<errorMap.length; emXI++) {
-            errorMap[emXI] = errorMap[emXI].splice(zeroPadding, errorMap[emXI].length - zeroPadding*2)
+        for (let emYI=0; emYI<errorMap.length; emYI++) {
+            errorMap[emYI] = errorMap[emYI].splice(zeroPadding, errorMap[emYI].length - zeroPadding*2)
         }
     }
 

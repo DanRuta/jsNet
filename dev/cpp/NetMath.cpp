@@ -1,37 +1,44 @@
 // Activation functions
-double NetMath::sigmoid(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::sigmoid(double value, bool prime, T* neuron) {
     double val = 1 / (1+exp(-value));
     return prime ? val*(1-val)
                  : val;
 }
 
-double NetMath::tanh(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::tanh(double value, bool prime, T* neuron) {
     double ex = exp(2*value);
     double val = prime ? 4 / pow(exp(value)+exp(-value), 2) : (ex-1)/(ex+1);
     return val==0 ? 1e-18 : val;
 }
 
-double NetMath::lecuntanh(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::lecuntanh(double value, bool prime, T* neuron) {
   return prime ? 1.15333 * pow(NetMath::sech((2.0/3.0) * value), 2)
                : 1.7159 * NetMath::tanh((2.0/3.0) * value, false, neuron);
 }
 
-double NetMath::relu(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::relu(double value, bool prime, T* neuron) {
     return prime ? (value > 0 ? 1 : 0)
                  : (value>=0 ? value : 0);
 }
 
-double NetMath::lrelu(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::lrelu(double value, bool prime, T* neuron) {
     return prime ? value > 0 ? 1 : neuron->lreluSlope
                  : fmax(neuron->lreluSlope * fabs(value), value);
 }
 
-double NetMath::rrelu(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::rrelu(double value, bool prime, T* neuron) {
     return prime ? value > 0 ? 1 : neuron->rreluSlope
                  : fmax(neuron->rreluSlope, value);
 }
 
-double NetMath::elu(double value, bool prime, Neuron* neuron) {
+template <class T>
+double NetMath::elu(double value, bool prime, T* neuron) {
     return prime ? value >= 0 ? 1 : elu(value, false, neuron) + neuron->eluAlpha
                  : value >= 0 ? value : neuron->eluAlpha * (exp(value) - 1);
 }
@@ -59,8 +66,7 @@ double NetMath::crossentropy (std::vector<double> target, std::vector<double> ou
 
 // Weight update functions
 double NetMath::vanillaupdatefn (int netInstance, double value, double deltaValue) {
-    Network* net = Network::getInstance(netInstance);
-    return value + net->learningRate * deltaValue;
+    return value + Network::getInstance(netInstance)->learningRate * deltaValue;
 }
 
 double NetMath::gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
@@ -85,6 +91,28 @@ double NetMath::gain(int netInstance, double value, double deltaValue, Neuron* n
     return newVal;
 }
 
+double NetMath::gain(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+    double newVal = value + net->learningRate * deltaValue * (c < 0 ? filter->biasGain : filter->weightGain[c][r][v]);
+
+    if ((newVal<=0 && value>0) || (newVal>=0 && value<0)) {
+        if (c>-1) {
+            filter->weightGain[c][r][v] = fmax(filter->weightGain[c][r][v]*0.95, 0.5);
+        } else {
+            filter->biasGain = fmax(filter->biasGain*0.95, 0.5);
+        }
+    } else {
+        if (c>-1) {
+            filter->weightGain[c][r][v] = fmin(filter->weightGain[c][r][v]+0.05, 5);
+        } else {
+            filter->biasGain = fmin(filter->biasGain+0.05, 5);
+        }
+    }
+
+    return newVal;
+}
+
 double NetMath::adagrad(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
 
     if (weightIndex>-1) {
@@ -96,6 +124,20 @@ double NetMath::adagrad(int netInstance, double value, double deltaValue, Neuron
     Network* net = Network::getInstance(netInstance);
     return value + net->learningRate * deltaValue / (1e-6 + sqrt(weightIndex>-1 ? neuron->weightsCache[weightIndex]
                                                                                 : neuron->biasCache));
+}
+
+double NetMath::adagrad(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    if (c>-1) {
+        filter->weightsCache[c][r][v] += pow(deltaValue, 2);
+    } else {
+        filter->biasCache += pow(deltaValue, 2);
+    }
+
+    return value + net->learningRate * deltaValue / (1e-6 + sqrt(c>-1 ? filter->weightsCache[c][r][v]
+                                                                      : filter->biasCache));
 }
 
 double NetMath::rmsprop(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
@@ -112,6 +154,20 @@ double NetMath::rmsprop(int netInstance, double value, double deltaValue, Neuron
                                                                                 : neuron->biasCache));
 }
 
+double NetMath::rmsprop(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    if (c>-1) {
+        filter->weightsCache[c][r][v] = net->rmsDecay * filter->weightsCache[c][r][v] + (1 - net->rmsDecay) * pow(deltaValue, 2);
+    } else {
+        filter->biasCache = net->rmsDecay * filter->biasCache + (1 - net->rmsDecay) * pow(deltaValue, 2);
+    }
+
+    return value + net->learningRate * deltaValue / (1e-6 + sqrt(c>-1 ? filter->weightsCache[c][r][v]
+                                                                      : filter->biasCache));
+}
+
 double NetMath::adam(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
 
     Network* net = Network::getInstance(netInstance);
@@ -121,6 +177,19 @@ double NetMath::adam(int netInstance, double value, double deltaValue, Neuron* n
 
     neuron->v = 0.999 * neuron->v + (1-0.999) * pow(deltaValue, 2);
     double vt = neuron->v / (1 - pow(0.999, net->iterations + 1));
+
+    return value + net->learningRate * mt / (sqrt(vt) + 1e-6);
+}
+
+double NetMath::adam(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    filter->m = 0.9 * filter->m + (1-0.9) * deltaValue;
+    double mt = filter->m / (1 - pow(0.9, net->iterations + 1));
+
+    filter->v = 0.999 * filter->v + (1-0.999) * pow(deltaValue, 2);
+    double vt = filter->v / (1 - pow(0.999, net->iterations + 1));
 
     return value + net->learningRate * mt / (sqrt(vt) + 1e-6);
 }
@@ -138,6 +207,23 @@ double NetMath::adadelta(int netInstance, double value, double deltaValue, Neuro
         neuron->biasCache = rho * neuron->biasCache + (1-rho) * pow(deltaValue, 2);
         double newVal = value + sqrt((neuron->adadeltaBiasCache + 1e-6) / (neuron->biasCache + 1e-6)) * deltaValue;
         neuron->adadeltaBiasCache = rho * neuron->adadeltaBiasCache + (1-rho) * pow(deltaValue, 2);
+        return newVal;
+    }
+}
+
+double NetMath::adadelta(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    double rho = Network::getInstance(netInstance)->rho;
+
+    if (c>-1) {
+        filter->weightsCache[c][r][v] = rho * filter->weightsCache[c][r][v] + (1-rho) * pow(deltaValue, 2);
+        double newVal = value + sqrt((filter->adadeltaCache[c][r][v] + 1e-6) / (filter->weightsCache[c][r][v] + 1e-6)) * deltaValue;
+        filter->adadeltaCache[c][r][v] = rho * filter->adadeltaCache[c][r][v] + (1-rho) * pow(deltaValue, 2);
+        return newVal;
+    } else {
+        filter->biasCache = rho * filter->biasCache + (1-rho) * pow(deltaValue, 2);
+        double newVal = value + sqrt((filter->adadeltaBiasCache + 1e-6) / (filter->biasCache + 1e-6)) * deltaValue;
+        filter->adadeltaBiasCache = rho * filter->adadeltaBiasCache + (1-rho) * pow(deltaValue, 2);
         return newVal;
     }
 }

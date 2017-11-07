@@ -6,8 +6,6 @@ class Filter {
 
     init ({updateFn, activation, eluAlpha}={}) {
 
-        const size = this.weights.length
-
         this.deltaWeights = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
         this.deltaBias = 0
 
@@ -39,6 +37,7 @@ class Filter {
             case "adam":
                 this.m = 0
                 this.v = 0
+                break
         }
 
         if (activation=="rrelu") {

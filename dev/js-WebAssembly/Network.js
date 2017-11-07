@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -15,6 +15,7 @@ class Network {
 
         NetUtil.Module = Module
         this.Module = Module
+        this.conv = {}
         this.netInstance = this.Module.ccall("newNetwork", null, null, null)
         this.state = "not-defined"
 
@@ -47,33 +48,47 @@ class Network {
             this.maxNorm = typeof maxNorm=="boolean" && maxNorm ? 1000 : maxNorm
         }
 
+        if (channels) {
+            NetUtil.defineProperty(this, "channels", ["number"], [this.netInstance])
+            this.channels = channels
+        }
+
+        if (conv) {
+
+            if (conv.filterSize != undefined) {
+                NetUtil.defineProperty(this.conv, "filterSize", ["number"], [this.netInstance])
+                this.conv.filterSize = conv.filterSize
+            }
+
+            if (conv.zeroPadding != undefined) {
+                NetUtil.defineProperty(this.conv, "zeroPadding", ["number"], [this.netInstance])
+                this.conv.zeroPadding = conv.zeroPadding
+            }
+
+            if (conv.stride != undefined) {
+                NetUtil.defineProperty(this.conv, "stride", ["number"], [this.netInstance])
+                this.conv.stride = conv.stride
+            }
+        }
+
         Object.defineProperty(this, "error", {
             get: () => Module.ccall("getError", "number", ["number"], [this.netInstance])
         })
 
         // Activation function get / set
-        const activationsIndeces = {
-            sigmoid: 0,
-            tanh: 1,
-            lecuntanh: 2,
-            relu: 3,
-            lrelu: 4,
-            rrelu: 5,
-            elu: 6
-        }
-        let activationName = NetUtil.format(activation)
+        this.activationName = NetUtil.format(activation)
         Object.defineProperty(this, "activation", {
-            get: () => `WASM ${activationName}`,
+            get: () => `WASM ${this.activationName}`,
             set: activation => {
 
-                if (activationsIndeces[activation] == undefined) {
+                if (NetUtil.activationsIndeces[activation] == undefined) {
                     throw new Error(`The ${activation} activation function does not exist`)
                 }
-                activationName = activation
-                this.Module.ccall("setActivation", null, ["number", "number"], [this.netInstance, activationsIndeces[activation]])
+                this.activationName = activation
+                this.Module.ccall("setActivation", null, ["number", "number"], [this.netInstance, NetUtil.activationsIndeces[activation]])
             }
         })
-        this.activation = activationName
+        this.activation = this.activationName
 
         // Cost function get / set
         const costIndeces = {
@@ -161,7 +176,7 @@ class Network {
 
                 if (learningRate==undefined) {
 
-                    switch (activationName) {
+                    switch (this.activationName) {
                         case "relu":
                         case "lrelu":
                         case "rrelu":
@@ -185,10 +200,10 @@ class Network {
             this.rmsDecay = rmsDecay===undefined ? 0.99 : rmsDecay
         }
 
-        if (activationName=="lrelu") {
+        if (this.activationName=="lrelu") {
             NetUtil.defineProperty(this, "lreluSlope", ["number"], [this.netInstance])
             this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
-        } else if (activationName=="elu") {
+        } else if (this.activationName=="elu") {
             NetUtil.defineProperty(this, "eluAlpha", ["number"], [this.netInstance])
             this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
         }
@@ -239,10 +254,17 @@ class Network {
 
             const layer = this.layers[l]
 
-            if (layer instanceof FCLayer) {
-                this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
-                this.joinLayer(layer, l)
+            switch (true) {
+                case layer instanceof FCLayer:
+                    this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
+                    break
+
+                case layer instanceof ConvLayer:
+                    this.Module.ccall("addConvLayer", null, ["number", "number"], [this.netInstance, layer.size])
+                    break
             }
+
+            this.joinLayer(layer, l)
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
@@ -255,7 +277,7 @@ class Network {
 
         if (layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
-            layer.assignPrev(this.netInstance, this.layers[layerIndex-1], layerIndex)
+            layer.assignPrev(this.layers[layerIndex-1], layerIndex)
             layer.init()
         }
     }

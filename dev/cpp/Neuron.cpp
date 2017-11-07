@@ -38,11 +38,11 @@ void Neuron::init (int netInstance) {
             break;
     }
 
-    if (net->activation == &NetMath::lrelu) {
+    if (net->activation == &NetMath::lrelu<Neuron>) {
         lreluSlope = net->lreluSlope;
-    } else if (net->activation == &NetMath::rrelu) {
+    } else if (net->activation == &NetMath::rrelu<Neuron>) {
         rreluSlope = ((double) rand() / (RAND_MAX))/5 - 0.1;
-    } else if (net->activation == &NetMath::elu) {
+    } else if (net->activation == &NetMath::elu<Neuron>) {
         eluAlpha = net->eluAlpha;
     }
 }

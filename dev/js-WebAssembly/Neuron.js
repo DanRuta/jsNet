@@ -6,8 +6,9 @@ class Neuron {
 
     init (netInstance, layerIndex, neuronIndex, {updateFn}) {
 
-        NetUtil.defineArrayProperty(this, "weights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
         NetUtil.defineProperty(this, "bias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+        NetUtil.defineArrayProperty(this, "weights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+        NetUtil.defineProperty(this, "deltaBias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
         NetUtil.defineArrayProperty(this, "deltaWeights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
 
         switch (updateFn) {
@@ -32,9 +33,7 @@ class Neuron {
                 NetUtil.defineProperty(this, "v", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
                 break
         }
-
     }
-
 }
 
 typeof window=="undefined" && (exports.Neuron = Neuron)

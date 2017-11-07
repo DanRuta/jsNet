@@ -89,6 +89,61 @@ class NetUtil {
         }
     }
 
+    static ccallVolume (func, returnType, paramTypes=[], params=[], {heapIn="HEAPF32", heapOut="HEAPF32", depth=1, rows=1, columns=rows}={}) {
+
+        const totalValues = depth * rows * columns
+        const parameters = []
+        const parameterTypes = []
+
+        // Loop through parameters, check if they are volumes, flatten them, and send them along with their dimensions
+        for (let p=0; p<params.length; p++) {
+
+            let parameter = params[p]
+            const isVolume = Array.isArray(parameter) && Array.isArray(parameter[0]) && Array.isArray(parameter[0][0])
+
+            if (paramTypes[p] == "volume" || isVolume) {
+                const flat = []
+
+                for (let d=0; d<parameter.length; d++) {
+                    for (let r=0; r<parameter[d].length; r++) {
+                        for (let c=0; c<parameter[d][r].length; c++) {
+                            flat.push(parameter[d][r][c])
+                        }
+                    }
+                }
+
+                parameters.splice(parameters.length, 0, flat, parameter.length, parameter[0].length, parameter[0][0].length)
+                parameterTypes.splice(parameterTypes.length, 0, "array", "number", "number", "number")
+
+            } else {
+                parameters.push(parameter)
+                parameterTypes.push(paramTypes[p])
+            }
+        }
+
+        const res = NetUtil.ccallArrays(func, returnType=="volume" ? "array" : returnType, parameterTypes, parameters, {heapIn, heapOut, returnArraySize: totalValues})
+        const vol = []
+
+        if (returnType == "volume") {
+            for (let d=0; d<depth; d++) {
+                const map = []
+
+                for (let r=0; r<rows; r++) {
+                    const row = []
+
+                    for (let c=0; c<columns; c++) {
+                        row.push(res[d * rows * columns + r * columns + c])
+                    }
+                    map.push(row)
+                }
+                vol.push(map)
+            }
+            return vol
+        }
+
+        return res
+    }
+
     static format (value, type="string") {
         switch (true) {
 
@@ -121,10 +176,10 @@ class NetUtil {
         return value
     }
 
-    static defineProperty (self, prop, valTypes=[], values=[], {getCallback=x=>x, setCallback=x=>x}={}) {
+    static defineProperty (self, prop, valTypes=[], values=[], {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
         Object.defineProperty(self, prop, {
-            get: () => getCallback(this.Module.ccall(`get_${prop}`, "number", valTypes, values)),
-            set: val => this.Module.ccall(`set_${prop}`, null, valTypes.concat("number"), values.concat(setCallback(val)))
+            get: () => getCallback(this.Module.ccall(`get_${pre}${prop}`, "number", valTypes, values)),
+            set: val => this.Module.ccall(`set_${pre}${prop}`, null, valTypes.concat("number"), values.concat(setCallback(val)))
         })
     }
 
@@ -135,6 +190,22 @@ class NetUtil {
         })
     }
 
+    static defineVolumeProperty (self, prop, valTypes, values, depth, rows, columns, {pre=""}={}) {
+        Object.defineProperty(self, prop, {
+            get: () => NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"}),
+            set: (value) => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+        })
+    }
+}
+
+NetUtil.activationsIndeces = {
+    sigmoid: 0,
+    tanh: 1,
+    lecuntanh: 2,
+    relu: 3,
+    lrelu: 4,
+    rrelu: 5,
+    elu: 6
 }
 
 typeof window=="undefined" && (exports.NetUtil = NetUtil)

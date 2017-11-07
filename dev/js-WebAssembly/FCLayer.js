@@ -12,8 +12,8 @@ class FCLayer {
         this.nextLayer = layer
     }
 
-    assignPrev (netInstance, layer, layerIndex) {
-        this.netInstance = netInstance
+    assignPrev (layer, layerIndex) {
+        this.netInstance = this.net.netInstance
         this.prevLayer = layer
         this.layerIndex = layerIndex
     }
@@ -24,6 +24,10 @@ class FCLayer {
 
                 case this.prevLayer instanceof FCLayer:
                     neuron.size = this.prevLayer.size
+                    break
+
+                case this.prevLayer instanceof ConvLayer:
+                    neuron.size = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
                     break
             }
 

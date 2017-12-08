@@ -445,7 +445,7 @@ More and more features will be added, as time goes by, and I learn more. General
 Check the changelog to see the history of added features.
 
 ##### Short term
-The next big feature will be WebAssembly support. This will arive in version 3.0, when feature parity with the JavaScript version will be reached (Pool layers are left). You can keep track of progress on the dev branch.
+The next big feature will be WebAssembly support. This will arive in version 3.0, when feature parity with the JavaScript version will be reached. You can keep track of progress on the dev branch.
 
 ##### Long term
 Once that is done, I will be experimenting with some further, equally effective optimizations.

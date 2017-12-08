@@ -262,6 +262,10 @@ class Network {
                 case layer instanceof ConvLayer:
                     this.Module.ccall("addConvLayer", null, ["number", "number"], [this.netInstance, layer.size])
                     break
+
+                case layer instanceof PoolLayer:
+                    this.Module.ccall("addPoolLayer", null, ["number", "number"], [this.netInstance, layer.size])
+                    break
             }
 
             this.joinLayer(layer, l)
@@ -278,8 +282,8 @@ class Network {
         if (layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1], layerIndex)
-            layer.init()
         }
+        layer.init()
     }
 
     forward (data) {
@@ -356,7 +360,9 @@ class Network {
             this.Module.ccall("loadTrainingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
 
-            this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            if (shuffle) {
+                this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            }
 
             if (callback) {
 

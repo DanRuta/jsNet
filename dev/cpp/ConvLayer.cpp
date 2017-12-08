@@ -65,13 +65,16 @@ void ConvLayer::forward (void) {
         for (int sumY=0; sumY<filters[f]->sumMap.size(); sumY++) {
             for (int sumX=0; sumX<filters[f]->sumMap.size(); sumX++) {
 
-                filters[f]->dropped = (double) rand() / (RAND_MAX) > net->dropout;
+                if (net->dropout != 1) {
+                    filters[f]->dropoutMap[sumY][sumX] = (double) rand() / (RAND_MAX) > net->dropout;
+                }
 
-                if (net->isTraining && filters[f]->dropped) {
+                if (net->dropout != 1 && net->isTraining && filters[f]->dropoutMap[sumY][sumX]) {
                     filters[f]->activationMap[sumY][sumX] = 0;
 
                 } else if (hasActivation) {
-                    filters[f]->activationMap[sumY][sumX] = activationF(filters[f]->sumMap[sumY][sumX], false, filters[f]);
+
+                    filters[f]->activationMap[sumY][sumX] = activationC(filters[f]->sumMap[sumY][sumX], false, filters[f]) / net->dropout;
 
                 } else {
                     filters[f]->activationMap[sumY][sumX] = filters[f]->sumMap[sumY][sumX];
@@ -83,7 +86,7 @@ void ConvLayer::forward (void) {
 
 void ConvLayer::backward () {
 
-    if (prevLayer->type == "FC") {
+    if (nextLayer->type == "FC") {
 
         // For each filter, build the errorMap from the weighted neuron errors in the next FCLayer corresponding to each value in the activation map
         for (int f=0; f<filters.size(); f++) {
@@ -100,10 +103,21 @@ void ConvLayer::backward () {
             }
         }
 
-    } else if (prevLayer->type == "Conv") {
+    } else if (nextLayer->type == "Conv") {
 
         for (int f=0; f<filters.size(); f++) {
-            NetUtil::buildConvErrorMap(this, nextLayer, f);
+            filters[f]->errorMap = NetUtil::buildConvErrorMap(outMapSize + nextLayer->zeroPadding*2, nextLayer, f);
+        }
+
+    } else {
+
+        for (int f=0; f<filters.size(); f++) {
+
+            for (int r=0; r<filters[f]->errorMap.size(); r++) {
+                for (int v=0; v<filters[f]->errorMap.size(); v++) {
+                    filters[f]->errorMap[r][v] = nextLayer->errors[f][r][v];
+                }
+            }
         }
     }
 
@@ -115,7 +129,7 @@ void ConvLayer::backward () {
                 if (filters[f]->dropoutMap.size() && filters[f]->dropoutMap[row][col]) {
                     filters[f]->errorMap[row][col] = 0;
                 } else if (hasActivation) {
-                    filters[f]->errorMap[row][col] *= activationF(filters[f]->sumMap[row][col], true, filters[f]);
+                    filters[f]->errorMap[row][col] *= activationC(filters[f]->sumMap[row][col], true, filters[f]);
                 }
             }
         }

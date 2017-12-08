@@ -28,14 +28,14 @@ class ConvLayer {
         this.prevLayer = layer
         this.layerIndex = layerIndex
 
+        const stride = this.stride || this.net.conv.stride || 1
+        const filterSize = this.filterSize || this.net.conv.filterSize || 3
+        let zeroPadding = this.zeroPadding
+
         NetUtil.defineProperty(this, "channels", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "filterSize", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "stride", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "zeroPadding", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
-
-        const stride = this.stride || this.net.conv.stride || 1
-        const filterSize = this.filterSize || this.net.conv.filterSize || 3
-        let zeroPadding = this.zeroPadding
 
         this.size = this.size || 4
         let channels
@@ -47,6 +47,10 @@ class ConvLayer {
 
             case layer instanceof ConvLayer:
                 channels = layer.size
+                break
+
+            case layer instanceof PoolLayer:
+                channels = layer.activations.length
                 break
         }
 
@@ -78,7 +82,7 @@ class ConvLayer {
 
         if (this.activation != false) {
             this.net.Module.ccall("setConvActivation", null, ["number", "number", "number"],
-                [this.netInstance, NetUtil.activationsIndeces[this.activation||this.net.activationName], layerIndex])
+                [this.netInstance, layerIndex, NetUtil.activationsIndeces[this.activation||this.net.activationName]])
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
@@ -86,6 +90,18 @@ class ConvLayer {
 
     init () {
         this.filters.forEach((filter, fi) => {
+
+            const paramTypes = ["number", "number", "number"]
+            const params = [this.netInstance, this.layerIndex, fi]
+
+            NetUtil.defineMapProperty(filter, "activationMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "errorMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "sumMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "dropoutMap", paramTypes, params, this.outMapSize, this.outMapSize, {
+                pre: "filter_",
+                getCallback: m => m.map(row => row.map(v => v==1))
+            })
+
             filter.init(this.netInstance, this.layerIndex, fi, {
                 updateFn: this.net.updateFn,
                 filterSize: this.filterSize,

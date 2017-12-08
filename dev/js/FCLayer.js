@@ -22,16 +22,16 @@ class FCLayer {
 
             let weightsCount
 
-            switch (this.prevLayer.constructor.name) {
-                case "FCLayer":
+            switch (true) {
+                case this.prevLayer instanceof FCLayer:
                     weightsCount = this.prevLayer.size
                     break
 
-                case "ConvLayer":
+                case this.prevLayer instanceof ConvLayer:
                     weightsCount = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
                     break
 
-                case "PoolLayer":
+                case this.prevLayer instanceof PoolLayer:
                     weightsCount = this.prevLayer.activations.length * this.prevLayer.outMapSize**2
                     break
             }
@@ -76,7 +76,7 @@ class FCLayer {
                     neuron.error = expected[ni] - neuron.activation
                 } else {
                     neuron.derivative = this.activation(neuron.sum, true, neuron)
-                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]|0))
+                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))
                                                                              .reduce((p,c) => p+c, 0)
                 }
 

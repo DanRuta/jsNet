@@ -21,15 +21,24 @@ void FCLayer::assignPrev (Layer* l) {
 
 void FCLayer::init (int layerIndex) {
     for (int n=0; n<size; n++) {
+
         Neuron* neuron = new Neuron();
 
         if (layerIndex) {
 
-            for (int pn=0; pn<prevLayer->size; pn++) {
-                neuron->weights.push_back(((double) rand() / (RAND_MAX))/5 - 0.1);
+            int weightsCount = 0;
+
+            if (prevLayer->type == "FC") {
+                weightsCount = prevLayer->size;
+            } else if (prevLayer->type == "Conv") {
+                /*TEST*/
+                weightsCount = prevLayer->filters.size() * prevLayer->outMapSize * prevLayer->outMapSize;
+            } else {
+                /*TEST*/
+                weightsCount = prevLayer->activations.size() * prevLayer->outMapSize * prevLayer->outMapSize;
             }
 
-            neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, prevLayer->size);
+            neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, weightsCount);
             neuron->bias = ((double) rand() / (RAND_MAX))/5 - 0.1;
         }
 
@@ -57,10 +66,17 @@ void FCLayer::forward (void) {
                     neurons[n]->sum += prevLayer->neurons[pn]->activation * neurons[n]->weights[pn];
                 }
             } else if (prevLayer->type == "Conv") {
-                for (int pf=0; pf<prevLayer->filters.size(); pf++) {
-                    for (int r=0; r<prevLayer->filters[pf]->activationMap.size(); r++) {
-                        for (int c=0; c<prevLayer->filters[pf]->activationMap.size(); c++) {
-                            neurons[n]->sum += prevLayer->filters[pf]->activationMap[r][c] * neurons[n]->weights[pf];
+
+                std::vector<double> activations = NetUtil::getActivations(prevLayer);
+
+                for (int ai=0; ai<activations.size(); ai++) {
+                    neurons[n]->sum += activations[ai] * neurons[n]->weights[ai];
+                }
+            } else {
+                for (int c=0; c<prevLayer->channels; c++) {
+                    for (int r=0; r<prevLayer->outMapSize; r++) {
+                        for (int v=0; v<prevLayer->outMapSize; v++) {
+                            neurons[n]->sum += prevLayer->activations[c][r][v] * neurons[n]->weights[c * prevLayer->outMapSize * prevLayer->outMapSize + r * prevLayer->outMapSize + v ];
                         }
                     }
                 }
@@ -109,7 +125,16 @@ void FCLayer::backward (std::vector<double> expected) {
 
                 for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
                     neurons[n]->deltaWeights[wi] += neurons[n]->error * activations[wi] *
-                                                        (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
+                        (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
+                }
+            } else {
+
+                //  duplicate with above?
+                std::vector<double> activations = NetUtil::getActivations(prevLayer);
+
+                for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
+                    neurons[n]->deltaWeights[wi] += neurons[n]->error * activations[wi] *
+                        (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
                 }
             }
 

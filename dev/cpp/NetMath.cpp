@@ -16,7 +16,7 @@ double NetMath::tanh(double value, bool prime, T* neuron) {
 template <class T>
 double NetMath::lecuntanh(double value, bool prime, T* neuron) {
   return prime ? 1.15333 * pow(NetMath::sech((2.0/3.0) * value), 2)
-               : 1.7159 * NetMath::tanh((2.0/3.0) * value, false, neuron);
+               : 1.7159 * NetMath::tanh<T>((2.0/3.0) * value, false, neuron);
 }
 
 template <class T>
@@ -319,8 +319,34 @@ std::vector<double> NetMath::softmax (std::vector<double> values) {
     return values;
 }
 
-double NetMath::sech(double value) {
-    return (2 * exp(-value)) / (1+exp(-2*value));
+void NetMath::maxPool (PoolLayer* layer, int channel) {
+
+    std::vector<double> activations = NetUtil::getActivations(layer->prevLayer, channel, layer->inMapValuesCount);
+
+    for (int r=0; r<layer->outMapSize; r++) {
+        for (int col=0; col<layer->outMapSize; col++) {
+
+            int rowStart = r * layer->stride;
+            int colStart = col * layer->stride;
+
+            // The first value
+            double activation = activations[rowStart*layer->prevLayerOutWidth + colStart];
+
+            for (int filterRow=0; filterRow<layer->size; filterRow++) {
+                for (int filterCol=0; filterCol<layer->size; filterCol++) {
+
+                    double value = activations[ ((rowStart+filterRow) * layer->prevLayerOutWidth) + (colStart+filterCol) ];
+
+                    if (value > activation) {
+                        activation = value;
+                        layer->indeces[channel][r][col] = {filterRow, filterCol};
+                    }
+                }
+            }
+
+            layer->activations[channel][r][col] = activation;
+        }
+    }
 }
 
 void NetMath::maxNorm(int netInstance) {
@@ -340,4 +366,8 @@ void NetMath::maxNorm(int netInstance) {
     }
 
     net->maxNormTotal = 0;
+}
+
+double NetMath::sech(double value) {
+    return (2 * exp(-value)) / (1+exp(-2*value));
 }

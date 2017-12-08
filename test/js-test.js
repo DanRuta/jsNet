@@ -3052,7 +3052,7 @@ describe("ConvLayer", () => {
 
         const prevLayer = new FCLayer(75)
         const nextLayerA = new FCLayer(100)
-        const nextLayerB = new ConvLayer(2, {filterSize: 3, stride: 1})
+        const nextLayerB = new ConvLayer(2, {filterSize: 3, stride: 1, zeroPadding: 1})
 
         let net, layer
 
@@ -3418,6 +3418,15 @@ describe("PoolLayer", () => {
         })
     })
 
+    describe("assignNext", () => {
+        it("Sets the layer.nextLayer to the given layer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2)
+            layer2.assignNext(layer1)
+            expect(layer2.nextLayer).to.equal(layer1)
+        })
+    })
+
     describe("assignPrev", () => {
 
         it("Sets the layer.prevLayer to the given layer", () => {
@@ -3477,7 +3486,6 @@ describe("PoolLayer", () => {
             expect(layer2.stride).to.equal(1)
         })
 
-
         it("Sets the layer.channels to the last layer's filters count when the last layer is Conv", () => {
             const layer1 = new ConvLayer(5)
             const layer2 = new PoolLayer(2, {stride: 2})
@@ -3494,7 +3502,7 @@ describe("PoolLayer", () => {
             expect(layer2.channels).to.equal(3)
         })
 
-        it("Sets the layer.channels to the last layer's channels valuess if the last layer is Pool", () => {
+        it("Sets the layer.channels to the last layer's channels values if the last layer is Pool", () => {
             const layer1 = new PoolLayer(2, {stride: 2})
             const layer2 = new PoolLayer(2, {stride: 2})
             layer1.channels = 34
@@ -3511,7 +3519,7 @@ describe("PoolLayer", () => {
             expect(layer2.outMapSize).to.equal(8)
         })
 
-        it("Sets the layer.outMapSize to the correctly calculated value (Example 1)", () => {
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 2)", () => {
             const layer1 = new ConvLayer(1)
             const layer2 = new PoolLayer(3, {stride: 3})
             layer1.outMapSize = 15
@@ -3810,7 +3818,7 @@ describe("PoolLayer", () => {
                 [0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0]
             ]]
             layer.indeces = [[
                 [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
@@ -3940,15 +3948,6 @@ describe("PoolLayer", () => {
             layer.nextLayer = fcLayer
             layer.backward()
             expect(layer.errors).to.deep.equal(expectedErrorsFCWithActivation)
-        })
-    })
-
-    describe("assignNext", () => {
-        it("Sets the layer.nextLayer to the given layer", () => {
-            const layer1 = new ConvLayer()
-            const layer2 = new PoolLayer(2)
-            layer2.assignNext(layer1)
-            expect(layer2.nextLayer).to.equal(layer1)
         })
     })
 

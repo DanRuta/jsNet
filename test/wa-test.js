@@ -789,7 +789,7 @@ describe("Network", () => {
             expect(layer2.assignPrev).to.be.calledWith(layer1, 1)
         })
 
-        it("Calls the init function on all layers but the first", () => {
+        it("Calls the init function on all layers", () => {
             const layer3 = new FCLayer(10)
             net.layers = [layer1]
             sinon.stub(layer3, "init")
@@ -797,7 +797,7 @@ describe("Network", () => {
             net.joinLayer(layer1, 0)
             net.joinLayer(layer2, 1)
             net.joinLayer(layer3, 1)
-            expect(layer1.init).to.not.be.called
+            expect(layer1.init).to.be.called
             expect(layer2.init).to.be.called
             expect(layer3.init).to.be.called
         })
@@ -1325,7 +1325,7 @@ describe("FCLayer", () => {
             expect(layer.neurons[2].size).to.equal(123)
         })
 
-        it("Sets the neuron.size to the number of outgoing activations from the last layer, if it is a ConvLayer", () => {
+        it("Sets the neuron.size to the number of filters in the last layer, if it is a ConvLayer", () => {
             const convLayer = new ConvLayer(3)
             const layer2 = new FCLayer(2)
             convLayer.filters = [new Filter(),new Filter(),new Filter()]
@@ -1335,6 +1335,18 @@ describe("FCLayer", () => {
             layer2.init()
             expect(layer2.neurons[0].weights.length).to.equal(147) // 3 * 7 * 7
         })
+
+        it("Sets the neuron.size to the number of outgoing activations from the last layer, if it is a ConvLayer", () => {
+            const poolLayer = new PoolLayer(2)
+            const layer2 = new FCLayer(2)
+            poolLayer.channels = 3
+            poolLayer.outMapSize = 3
+            layer2.net = {netInstance: 123}
+            layer2.assignPrev(poolLayer, 14)
+            layer2.init()
+            expect(layer2.neurons[0].size).to.equal(27) // 3 * 3**2
+        })
+
     })
 
     describe("toJSON", () => {
@@ -1389,14 +1401,14 @@ describe("FCLayer", () => {
             expect(net.layers[1].fromJSON.bind(net.layers[1], testData.layers[1], 1)).to.throw("Mismatched weights count. Given: 2 Existing: 3. At layers[1], neurons[0]")
         })
 
-        it("CCalls the WASM module's set_weights and set_bias functions", () => {
+        it("CCalls the WASM module's set_neuron_weights and set_neuron_bias functions", () => {
             const net = new Network({Module: fakeModule, layers: [new FCLayer(2), new FCLayer(3)]})
             sinon.stub(fakeModule, "ccall")
 
             net.layers[1].fromJSON(testData.layers[1], 1)
 
-            expect(fakeModule.ccall).to.be.calledWith("set_weights")
-            expect(fakeModule.ccall).to.be.calledWith("set_bias")
+            expect(fakeModule.ccall).to.be.calledWith("set_neuron_weights")
+            expect(fakeModule.ccall).to.be.calledWith("set_neuron_bias")
 
             fakeModule.ccall.restore()
         })
@@ -1408,12 +1420,15 @@ describe("Neuron", () => {
     describe("init", () => {
 
         let neuron
+        const paramTypes = ["number", "number", "number"]
+        const params = [789, 1, 13]
 
         beforeEach(() => {
             neuron = new Neuron()
             neuron.size = 5
             sinon.stub(NetUtil, "defineArrayProperty")
             sinon.stub(NetUtil, "defineProperty")
+
         })
 
         afterEach(() => {
@@ -1421,103 +1436,149 @@ describe("Neuron", () => {
             NetUtil.defineProperty.restore()
         })
 
+
+        it("Calls the NetUtil.defineProperty for neuron.sum", () => {
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "sum", paramTypes, params, {pre: "neuron_"})
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.dropped", () => {
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "dropped", paramTypes, params)
+        })
+
+        it("Getting a neuron.dropped value returns a boolean", () => {
+            NetUtil.defineProperty.restore()
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(neuron.dropped).to.be.boolean
+            sinon.stub(NetUtil, "defineProperty")
+        })
+
+        it("Sets a neuron.dropped value as a 1 or 0", () => {
+            NetUtil.defineProperty.restore()
+            sinon.stub(NetUtil.Module, "ccall")
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.dropped = true
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_neuron_dropped", null, ["number", "number", "number", "number"], [789, 1, 13, 1])
+            neuron.dropped = false
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_neuron_dropped", null, ["number", "number", "number", "number"], [789, 1, 13, 0])
+
+            NetUtil.Module.ccall.restore()
+            sinon.stub(NetUtil, "defineProperty")
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.activation", () => {
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "activation", paramTypes, params, {pre: "neuron_"})
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.error", () => {
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "error", paramTypes, params, {pre: "neuron_"})
+        })
+
+        it("Calls the NetUtil.defineProperty for neuron.derivative", () => {
+            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "derivative", paramTypes, params, {pre: "neuron_"})
+        })
+
         it("Calls the NetUtil.defineArrayProperty for neuron.weights", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weights")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.bias", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "bias")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "bias", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.deltaWeights", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.biasGain when the updateFn is gain", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "gain"})
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasGain")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasGain when the updateFn is not gain", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is gain", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "gain"})
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightGain")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightGain", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is not gain", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightGain")
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightGain", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.biasCache when the updateFn is adagrad", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "adagrad"})
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache when the updateFn is not adagrad", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is adagrad", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "adagrad"})
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is not adagrad", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache")
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.m and neuron.v if the updateFn is adam", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "adam"})
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "m")
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "v")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "m", paramTypes, params, {pre: "neuron_"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "v", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.m and neuron.v if the updateFn is not adam", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "something not adam"})
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "m")
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "v")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "m", paramTypes, params, {pre: "neuron_"})
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "v", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is adadelta", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "adadelta"})
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache")
-            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "adadeltaBiasCache")
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "biasCache", paramTypes, params, {pre: "neuron_"})
+            expect(NetUtil.defineProperty).to.be.calledWith(neuron, "adadeltaBiasCache", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is not adadelta", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain")
-            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "adadeltaBiasCache")
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
+            expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "adadeltaBiasCache", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is adadelta", () => {
             const neuron = new Neuron()
             neuron.init(789, 1, 13, {updateFn: "adadelta"})
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache")
-            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "adadeltaCache")
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weightsCache", paramTypes, params, neuron.size, {pre: "neuron_"})
+            expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "adadeltaCache", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is not adadelta", () => {
             neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
-            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache")
-            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "adadeltaCache")
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, neuron.size, {pre: "neuron_"})
+            expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "adadeltaCache", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
     })
 })
@@ -1756,12 +1817,12 @@ describe("ConvLayer", () => {
             expect(NetUtil.defineProperty).to.be.calledWith(layer2, "filterSize", ["number", "number"], [132, 14], {pre: "conv_"})
         })
 
-        it("Calls the NetUtil.defineProperty for conv_stride", () => {
+        it("Calls the NetUtil.defineProperty for stride", () => {
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.defineProperty).to.be.calledWith(layer2, "stride", ["number", "number"], [132, 14], {pre: "conv_"})
         })
 
-        it("Calls the NetUtil.defineProperty for conv_zeroPadding", () => {
+        it("Calls the NetUtil.defineProperty for zeroPadding", () => {
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.defineProperty).to.be.calledWith(layer2, "zeroPadding", ["number", "number"], [132, 14], {pre: "conv_"})
         })
@@ -1782,6 +1843,7 @@ describe("ConvLayer", () => {
             NetUtil.Module.ccall.restore()
             sinon.stub(NetUtil.Module, "ccall")
             defaultValues["get_conv_filterSize"] = 0
+            layer2.filterSize = undefined
             layer2.net.conv.filterSize = 5
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_filterSize", null, ["number", "number", "number"], [132, 14, 5])
@@ -1789,6 +1851,7 @@ describe("ConvLayer", () => {
 
         it("Defaults the layer.filterSize to 3 if there is no filterSize value for either layer or net", () => {
             defaultValues["get_conv_filterSize"] = 0
+            layer2.filterSize = undefined
             layer2.net.conv.filterSize = undefined
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_filterSize", null, ["number", "number", "number"], [132, 14, 3])
@@ -1796,6 +1859,7 @@ describe("ConvLayer", () => {
 
         it("Keeps the same filterSize value if it has already been assigned to layer", () => {
             defaultValues["get_conv_filterSize"] = 101
+            layer2.filterSize = 101
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_filterSize", null, ["number", "number", "number"], [132, 14, 101])
         })
@@ -1819,6 +1883,7 @@ describe("ConvLayer", () => {
             defaultValues["get_conv_zeroPadding"] = 1
             const layer = new ConvLayer()
             layer.net = {conv: {}, netInstance: 132, Module: {ccall: () => {}}}
+            layer.stride = 3
             layer.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_stride", null, ["number", "number", "number"], [132, 14, 3])
         })
@@ -1843,8 +1908,17 @@ describe("ConvLayer", () => {
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_channels", null, ["number", "number", "number"], [132, 14, 10])
         })
 
+        it("Sets the layer channels to the prevLayer.activations count if the prevLayer is a PoolLayer", () => {
+            const poolLayer = new PoolLayer(2)
+            poolLayer.activations = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+            poolLayer.outMapSize = 16
+            layer2.assignPrev(poolLayer, 14)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_channels", null, ["number", "number", "number"], [132, 14, 16])
+        })
+
         it("Defaults the layer.zeroPadding to the net.zeroPadding value, if there's no layer.zeroPadding, but there is one for net, and sets the cpp value", () => {
             defaultValues["get_conv_zeroPadding"] = undefined
+            layer2.zeroPadding = undefined
             layer2.net.conv.zeroPadding = 2
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_zeroPadding", null, ["number", "number", "number"], [132, 14, 2])
@@ -1852,6 +1926,7 @@ describe("ConvLayer", () => {
 
         it("Defaults the layer.zeroPadding to rounded down half the filterSize if there is no zeroPadding value for either layer or net (test 1)", () => {
             defaultValues["get_conv_zeroPadding"] = undefined
+            layer2.zeroPadding = undefined
             layer2.net.conv.zeroPadding = undefined
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_zeroPadding", null, ["number", "number", "number"], [132, 14, 1])
@@ -1860,13 +1935,17 @@ describe("ConvLayer", () => {
         it("Defaults the layer.zeroPadding to rounded down half the filterSize if there is no zeroPadding value for either layer or net (test 2)", () => {
             defaultValues["get_conv_zeroPadding"] = undefined
             defaultValues["get_conv_filterSize"] = 5
+            layer2.zeroPadding = undefined
             layer2.net.conv.zeroPadding = undefined
+            layer2.net.conv.filterSize = 5
+            layer2.filterSize = 5
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_zeroPadding", null, ["number", "number", "number"], [132, 14, 2])
         })
 
         it("Keeps the same zeroPadding value if it has already been assigned to layer", () => {
             defaultValues["get_conv_zeroPadding"] = 1
+            layer2.zeroPadding = 1
             layer2.assignPrev(layer1, 14)
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_zeroPadding", null, ["number", "number", "number"], [132, 14, 1])
         })
@@ -2020,7 +2099,7 @@ describe("ConvLayer", () => {
             layer1.activation = "tanh"
             sinon.stub(layer1.net.Module, "ccall")
             layer1.assignPrev(layer1, 14)
-            expect(layer1.net.Module.ccall).to.be.calledWith("setConvActivation", null, ["number", "number", "number"], [132, 1, 14])
+            expect(layer1.net.Module.ccall).to.be.calledWith("setConvActivation", null, ["number", "number", "number"], [132, 14, 1])
             layer1.net.Module.ccall.restore()
         })
 
@@ -2047,21 +2126,34 @@ describe("ConvLayer", () => {
 
     describe("init", () => {
 
-        before(() => sinon.stub(NetUtil.Module, "ccall").callsFake(fn => ({
+        let convLayer
+        let fcLayer
+        const paramTypes = ["number", "number", "number"]
+
+        before(() => {
+            convLayer = new ConvLayer(3, {filterSize: 3, stride: 1})
+            fcLayer = new FCLayer(21)
+            convLayer.net = {netInstance: 123, conv: {}, updateFn: "gain", Module: {ccall: () => {}}}
+            convLayer.assignPrev(fcLayer, 2)
+            convLayer.outMapSize = 456
+
+            sinon.stub(NetUtil.Module, "ccall").callsFake(fn => ({
                 get_conv_filterSize: 3,
                 get_conv_size: 3,
                 get_conv_stride: 1,
                 get_conv_zeroPadding: 0,
-                get_conv_channels: 1
-            })[fn]))
+                get_conv_channels: 1,
+                get_conv_outMapSize: 456
+            })[fn])
+            sinon.stub(NetUtil, "defineMapProperty")
+        })
 
-        after(() => NetUtil.Module.ccall.restore())
+        after(() => {
+            NetUtil.Module.ccall.restore()
+            NetUtil.defineMapProperty.restore()
+        })
 
         it("Calls every filter's init function with the layer's netInstance, its layer index, the filter index and layer data", () => {
-            const convLayer = new ConvLayer(3, {filterSize: 3, stride: 1})
-            const fcLayer = new FCLayer(21)
-            convLayer.net = {netInstance: 123, conv: {}, updateFn: "gain", Module: {ccall: () => {}}}
-            convLayer.assignPrev(fcLayer, 2)
 
             sinon.stub(convLayer.filters[0], "init")
             sinon.stub(convLayer.filters[1], "init")
@@ -2072,7 +2164,58 @@ describe("ConvLayer", () => {
             expect(convLayer.filters[0].init).to.be.calledWith(123, 2, 0, {updateFn: "gain", filterSize: 3, channels: 1})
             expect(convLayer.filters[1].init).to.be.calledWith(123, 2, 1, {updateFn: "gain", filterSize: 3, channels: 1})
             expect(convLayer.filters[2].init).to.be.calledWith(123, 2, 2, {updateFn: "gain", filterSize: 3, channels: 1})
+        })
 
+        it("Defines filters' activationMap property with the correct values", () => {
+
+            convLayer.init()
+
+            for (let f=0; f<3; f++) {
+                expect(NetUtil.defineMapProperty).to.be.calledWith(convLayer.filters[f], "activationMap", paramTypes,
+                    [123, 2, f], 456, 456, {pre: "filter_"})
+            }
+        })
+
+        it("Defines filters' errorMap property with the correct values", () => {
+
+            convLayer.init()
+
+            for (let f=0; f<3; f++) {
+                expect(NetUtil.defineMapProperty).to.be.calledWith(convLayer.filters[f], "errorMap", paramTypes,
+                    [123, 2, f], 456, 456, {pre: "filter_"})
+            }
+        })
+
+        it("Defines filters' sumMap property with the correct values", () => {
+
+            convLayer.init()
+
+            for (let f=0; f<3; f++) {
+                expect(NetUtil.defineMapProperty).to.be.calledWith(convLayer.filters[f], "sumMap", paramTypes,
+                    [123, 2, f], 456, 456, {pre: "filter_"})
+            }
+        })
+
+        it("Defines filters' dropoutMap property with the correct values", () => {
+
+            convLayer.init()
+
+            for (let f=0; f<3; f++) {
+                expect(NetUtil.defineMapProperty).to.be.calledWith(convLayer.filters[f], "dropoutMap", paramTypes,
+                    [123, 2, f], 456, 456)
+            }
+        })
+
+        it("Returns an array with 2 items when accessing the layer.dropoutMap", () => {
+            NetUtil.defineMapProperty.restore()
+
+            sinon.stub(NetUtil, "ccallVolume").callsFake(() => [[[1, 0, 1]]])
+
+            convLayer.init()
+            expect(convLayer.filters[0].dropoutMap).to.deep.equal([[true, false, true]])
+
+            sinon.stub(NetUtil, "defineMapProperty")
+            NetUtil.ccallVolume.restore()
         })
     })
 
@@ -2153,6 +2296,296 @@ describe("ConvLayer", () => {
             const net = new Network({Module: fakeModule, channels: 4, layers: [new FCLayer(16), new ConvLayer(2, {filterSize: 3})]})
             expect(net.layers[1].fromJSON.bind(net.layers[1], testDataConv, 1)).to.throw("Mismatched weights size. Given: 2 Existing: 3. At: layers[1], filters[0]")
             NetUtil.ccallVolume.restore()
+        })
+    })
+})
+
+describe("PoolLayer", () => {
+
+    describe("constructor", () => {
+
+        it("Sets the layer.size to the size given", () => {
+            const layer = new PoolLayer(3)
+            expect(layer.size).to.equal(3)
+        })
+
+        it("Does not set the size to anything if not given", () => {
+            const layer = new PoolLayer()
+            expect(layer.size).to.be.undefined
+        })
+
+        it("Sets the layer.stride to the value given", () => {
+            const layer = new PoolLayer(2, {stride: 3})
+            expect(layer.stride).to.equal(3)
+        })
+
+        it("Does not set the stride to anything if not given", () => {
+            const layer = new PoolLayer(2)
+            expect(layer.stride).to.be.undefined
+        })
+
+        it("Throws an error if setting activation to something other than a string", () => {
+            const wrapperFn = () => new PoolLayer(1, {activation: x => x})
+            const wrapperFn2 = () => new PoolLayer(1, {activation: 2})
+            expect(wrapperFn).to.throw("Only string activation functions available in the WebAssembly version")
+            expect(wrapperFn2).to.throw("Only string activation functions available in the WebAssembly version")
+        })
+
+        it("Otherwise sets the given activation string to the layer", () => {
+            const layer = new PoolLayer(1, {activation: "test"})
+            expect(layer.activation).to.equal("test")
+        })
+
+        it("Sets the activation to false if nothing is provided", () => {
+            const layer = new PoolLayer()
+            expect(layer.activation).to.be.false
+        })
+
+        it("Allows setting the activation function to false by setting it to false", () => {
+            const layer = new PoolLayer(5, {activation: false})
+            expect(layer.activation).to.be.false
+        })
+
+    })
+
+    describe("assignNext", () => {
+        it("Sets the layer.nextLayer to the given layer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2)
+            layer2.assignNext(layer1)
+            expect(layer2.nextLayer).to.equal(layer1)
+        })
+    })
+
+    describe("assignPrev", () => {
+
+        let layer1, layer2
+
+        beforeEach(() => {
+            layer1 = new ConvLayer(5)
+            layer1.outMapSize = 16
+            layer2 = new PoolLayer(2, {stride: 2})
+            layer2.net = {netInstance: 123, pool: {}}
+            sinon.spy(NetUtil, "defineProperty")
+            sinon.spy(NetUtil, "defineMapProperty")
+            sinon.stub(NetUtil, "defineVolumeProperty")
+
+            sinon.stub(NetUtil.Module, "ccall")//.callsFake(fn => defaultValues[fn])
+        })
+
+        afterEach(() => {
+            NetUtil.defineProperty.restore()
+            NetUtil.defineMapProperty.restore()
+            NetUtil.defineVolumeProperty.restore()
+            NetUtil.Module.ccall.restore()
+        })
+
+        it("Sets the layer.netInstance to the net.netInstance", () => {
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.netInstance).to.equal(123)
+        })
+
+        it("Sets the layer.prevLayer to the given layer", () => {
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1)
+            expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Assigns the layer2.layerIndex to the value given", () => {
+            layer2.assignPrev(layer1, 5)
+            expect(layer2.layerIndex).to.equal(5)
+        })
+
+        it("Calls the NetUtil.defineProperty for channels", () => {
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "channels", ["number", "number"], [123, 5], {pre: "pool_"})
+        })
+
+        it("Calls the NetUtil.defineProperty for stride", () => {
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "stride", ["number", "number"], [123, 5], {pre: "pool_"})
+        })
+
+        it("Sets the layer.size to the net.pool.size if not already defined, but existing in net.pool", () => {
+            layer2.size = undefined
+            layer2.stride = 1
+            layer2.net.pool.size = 3
+            layer2.assignPrev(layer1, 5)
+            expect(layer2.size).to.equal(3)
+        })
+
+        it("Defaults the layer.size to 2 if not defined and not present in net.pool", () => {
+            layer2.size = undefined
+            layer2.net.pool.size = undefined
+            layer2.assignPrev(layer1, 5)
+            expect(layer2.size).to.equal(2)
+        })
+
+        it("Keeps the same size value if it has already been assigned to layer", () => {
+            layer2.size = 10
+            layer2.assignPrev(layer1, 5)
+            expect(layer2.size).to.equal(10)
+        })
+
+        it("Sets the layer.stride to the net.pool.stride if not already defined, but existing in net.pool", () => {
+            layer2.size = 1
+            layer2.stride = undefined
+            layer2.net.pool.stride = 3
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_stride", null, ["number", "number", "number"], [123, 5, 3])
+        })
+
+        it("Defaults the layer.stride to the layer.size if not defined and not in net.pool", () => {
+            layer2.size = 1
+            layer2.stride = undefined
+            layer2.net.pool.stride = undefined
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_stride", null, ["number", "number", "number"], [123, 5, 1])
+        })
+
+        it("Sets the layer.channels to the last layer's filters count when the last layer is Conv", () => {
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_channels", null, ["number", "number", "number"], [123, 5, 5])
+        })
+
+        it("Sets the layer.channels to the net.channels if the prev layer is an FCLayer", () => {
+            layer2.size = 2
+            layer2.stride = 2
+            layer2.net.channels = 3
+            layer2.assignPrev(new FCLayer(108), 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_channels", null, ["number", "number", "number"], [123, 5, 3])
+        })
+
+        it("Sets the layer.channels to the last layer's channels values if the last layer is Pool", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_channels", null, ["number", "number", "number"], [123, 5, 34])
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 1)", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.net = {netInstance: 123}
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_outMapSize", null, ["number", "number", "number"], [123, 5, 8])
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 2)", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(3, {stride: 3})
+            layer1.outMapSize = 15
+            layer2.net = {netInstance: 123}
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_outMapSize", null, ["number", "number", "number"], [123, 5, 5])
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value when prevLayer is FCLayer", () => {
+            const layer1 = new FCLayer(108)
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer2.net = {channels: 3, netInstance: 123}
+            layer2.assignPrev(layer1, 5 )
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_outMapSize", null, ["number", "number", "number"], [123, 5, 3])
+        })
+
+        it("Sets the layer.outMapSize to the correctly calculated value when prevLayer is PoolLayer", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.net = {channels: 3, netInstance: 123}
+            layer2.assignPrev(layer1, 5 )
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_outMapSize", null, ["number", "number", "number"], [123, 5, 8])
+        })
+
+        it("Calls the NetUtil.defineProperty for prevLayerOutWidth", () => {
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "prevLayerOutWidth", ["number", "number"], [123, 5], {pre: "pool_"})
+        })
+
+        it("Sets the layer.inMapValuesCount to the square value of the input map width value", () => {
+            const layer1 = new PoolLayer(2, {stride: 2})
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.channels = 34
+            layer1.outMapSize = 16
+            layer2.net = {channels: 3, netInstance: 123}
+            layer2.assignPrev(layer1, 5)
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_outMapSize", null, ["number", "number", "number"], [123, 5, 8])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_inMapValuesCount", null, ["number", "number", "number"], [123, 5, 256])
+        })
+
+        it("Throws an error if the hyperparameters are misconfigured to not produce an output volume with integer dimensions", () => {
+            const layer1 = new ConvLayer(1)
+            const layer2 = new PoolLayer(3, {stride: 3})
+            layer2.net = {channels: 3, netInstance: 123}
+            layer1.outMapSize = 16
+            expect(layer2.assignPrev.bind(layer2, layer1)).to.throw("Misconfigured hyperparameters. Activation volume dimensions would be ")
+        })
+
+        it("Calls the NetUtil.defineVolumeProperty function for layer.errors", () => {
+            layer2.assignPrev(layer1, 14)
+            expect(NetUtil.defineVolumeProperty).to.be.calledWith(layer2, "errors", ["number", "number"], [123, 14], 5, 16, 16, {pre: "pool_"})
+        })
+
+        it("Calls the NetUtil.defineVolumeProperty function for layer.activations", () => {
+            layer2.assignPrev(layer1, 14)
+            expect(NetUtil.defineVolumeProperty).to.be.calledWith(layer2, "activations", ["number", "number"], [123, 14], 5, 8, 8, {pre: "pool_"})
+        })
+
+        it("Calls the NetUtil.defineVolumeProperty function for layer.indeces", () => {
+            layer1.outMapSize = 14
+            layer2.assignPrev(layer1, 14)
+            expect(NetUtil.defineVolumeProperty).to.be.calledWith(layer2, "indeces", ["number", "number"], [123, 14], 5, 7, 7)
+        })
+
+        it("Returns layer.indeces values as arrays with two elements", () => {
+            NetUtil.defineVolumeProperty.restore()
+            sinon.stub(NetUtil, "ccallVolume").callsFake(() => [[[3]]])
+            layer1.outMapSize = 14
+            layer2.assignPrev(layer1, 14)
+
+            expect(layer2.indeces).to.deep.equal([[[[1,1]]]])
+
+            NetUtil.ccallVolume.restore()
+            sinon.stub(NetUtil, "defineVolumeProperty")
+        })
+
+        it("Sets layer.indeces values as single digits", () => {
+            NetUtil.defineVolumeProperty.restore()
+            sinon.stub(NetUtil, "ccallVolume")
+            layer1.outMapSize = 14
+            layer2.assignPrev(layer1, 14)
+
+            layer2.indeces = [[[[1,1]]]]
+            expect(NetUtil.ccallVolume).to.be.calledWith("set_pool_indeces", null, ["number", "number", "array"], [123, 14, [[[3]]]])
+
+
+            NetUtil.ccallVolume.restore()
+            sinon.stub(NetUtil, "defineVolumeProperty")
+        })
+
+    })
+
+    describe("init", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.init()).to.be.undefined
+        })
+    })
+
+    describe("toJSON", () => {
+        it("Exports an empty object", () => {
+            const layer = new PoolLayer()
+            expect(layer.toJSON()).to.deep.equal({})
+        })
+    })
+
+    describe("fromJSON", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.fromJSON()).to.be.undefined
         })
     })
 })
@@ -2433,6 +2866,56 @@ describe("NetUtil", () => {
             scope.stuff = [1,2,3,4,5]
             expect(NetUtil.ccallArrays).to.be.calledWith("set_stuff", null, ["number", "number", "array"], [1,2,[1,2,3,4,5]])
         })
+
+        it("Sets the given property to the given scope, calling with the provided 'pre' string as a prefix", () => {
+            expect(scope.stuff2).to.be.undefined
+            NetUtil.defineArrayProperty(scope, "stuff2", ["number", "number"], [1,2], 5, {pre: "TEST_"})
+            expect(scope.stuff2).to.not.be.undefined
+            expect(NetUtil.ccallArrays).to.be.calledWith("get_TEST_stuff2")
+        })
+    })
+
+    describe("defineMapProperty", () => {
+
+        beforeEach(() => {
+            sinon.stub(fakeModule, "ccall")
+            sinon.spy(NetUtil, "ccallArrays")
+            sinon.spy(NetUtil, "ccallVolume")
+        })
+
+        afterEach(() => {
+            fakeModule.ccall.restore()
+            NetUtil.ccallArrays.restore()
+            NetUtil.ccallVolume.restore()
+        })
+
+        const scope = {}
+
+        it("Sets the given property to the given scope", () => {
+            expect(scope.stuff).to.be.undefined
+            NetUtil.defineMapProperty(scope, "stuff", ["number", "number"], [1,2], 5, 5)
+            expect(scope.stuff).to.not.be.undefined
+        })
+
+        it("Setting a value passes the value through the setCallback first", () => {
+            expect(scope.stuff2).to.be.undefined
+            NetUtil.defineMapProperty(scope, "stuff2", ["number", "number"], [1,2], 5, 5, {setCallback: x => 20})
+            scope.stuff2 = 10
+            expect(NetUtil.ccallVolume).to.be.calledWith("set_stuff2", null, ["number", "number", "array"], [1,2,20])
+        })
+
+        it("Getting a value passes it through the getCallback first", () => {
+            expect(scope.stuff3).to.be.undefined
+            NetUtil.defineMapProperty(scope, "stuff3", ["number", "number"], [1,2], 5, 5, {getCallback: x => 20})
+            expect(scope.stuff3).to.equal(20)
+        })
+
+        it("Not providing a getCallback function just returns the value as is", () => {
+            expect(scope.stuff4).to.be.undefined
+            NetUtil.defineMapProperty(scope, "stuff4", ["number", "number"], [1,2], 5, 5)
+            scope.stuff4 = 123
+            expect(scope.stuff4).to.have.lengthOf(5)
+        })
     })
 
     describe("defineVolumeProperty", () => {
@@ -2468,6 +2951,17 @@ describe("NetUtil", () => {
         it("The getter calls the NetUtil.ccallArrays function with the correct parameters", () => {
             scope.stuff = [1,2,3,4,5]
             expect(NetUtil.ccallArrays).to.be.calledWith("set_stuff", null, ["number", "number", "array"], [1,2,[1,2,3,4,5]])
+        })
+
+        it("Setting a value calls the setCallback function with the value first", () => {
+            NetUtil.defineVolumeProperty(scope, "stuff2", ["number", "number"], [1,2], 5, 5, 5, {setCallback: x => 123})
+            scope.stuff2 = [1,2,3,4,5]
+            expect(NetUtil.ccallArrays).to.be.calledWith("set_stuff2", null, ["number", "number", "array"], [1,2,123])
+        })
+
+        it("Getting a value passes it through the getCallback first", () => {
+            NetUtil.defineVolumeProperty(scope, "stuff3", ["number", "number"], [1,2], 5, 5, 5, {getCallback: x => 321})
+            expect(scope.stuff3).to.equal(321)
         })
     })
 })

@@ -118,7 +118,7 @@ class NetUtil {
         const paddedLength = inputVol[0].length + zeroPadding*2
         const fSSpread = Math.floor(weights[0].length / 2)
 
-        // For each input channels,
+        // For each input channel,
         for (let di=0; di<channels; di++) {
             inputVol[di] = NetUtil.addZeroPadding(inputVol[di], zeroPadding)
             // For each inputY without ZP

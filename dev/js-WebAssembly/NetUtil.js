@@ -183,17 +183,24 @@ class NetUtil {
         })
     }
 
-    static defineArrayProperty (self, prop, valTypes, values, returnSize) {
+    static defineArrayProperty (self, prop, valTypes, values, returnSize, {pre=""}={}) {
         Object.defineProperty(self, prop, {
-            get: () => NetUtil.ccallArrays(`get_${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
-            set: (value) => NetUtil.ccallArrays(`set_${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+            get: () => NetUtil.ccallArrays(`get_${pre}${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
+            set: value => NetUtil.ccallArrays(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
         })
     }
 
-    static defineVolumeProperty (self, prop, valTypes, values, depth, rows, columns, {pre=""}={}) {
+    static defineMapProperty (self, prop, valTypes, values, rows, columns, {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
         Object.defineProperty(self, prop, {
-            get: () => NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"}),
-            set: (value) => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+            get: () => getCallback(NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth: 1, rows, columns, heapOut: "HEAPF64"})[0]),
+            set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
+        })
+    }
+
+    static defineVolumeProperty (self, prop, valTypes, values, depth, rows, columns, {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
+        Object.defineProperty(self, prop, {
+            get: () => getCallback(NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"})),
+            set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
         })
     }
 }

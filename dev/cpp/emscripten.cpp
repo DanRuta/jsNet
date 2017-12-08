@@ -306,6 +306,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void addPoolLayer (int instanceIndex, int size) {
+        Network::getInstance(instanceIndex)->layers.push_back(new PoolLayer(instanceIndex, size));
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void initLayers (int instanceIndex) {
         Network::getInstance(instanceIndex)->joinLayers();
     }
@@ -502,32 +507,191 @@ extern "C" {
 
         switch (activationFnIndex) {
             case 0:
-                layer->activationF = &NetMath::sigmoid<Filter>;
+                layer->activationC = &NetMath::sigmoid<Filter>;
                 break;
             case 1:
-                layer->activationF = &NetMath::tanh<Filter>;
+                layer->activationC = &NetMath::tanh<Filter>;
                 break;
             case 2:
-                layer->activationF = &NetMath::lecuntanh<Filter>;
+                layer->activationC = &NetMath::lecuntanh<Filter>;
                 break;
             case 3:
-                layer->activationF = &NetMath::relu<Filter>;
+                layer->activationC = &NetMath::relu<Filter>;
                 break;
             case 4:
-                layer->activationF = &NetMath::lrelu<Filter>;
+                layer->activationC = &NetMath::lrelu<Filter>;
                 break;
             case 5:
-                layer->activationF = &NetMath::rrelu<Filter>;
+                layer->activationC = &NetMath::rrelu<Filter>;
                 break;
             case 6:
-                layer->activationF = &NetMath::elu<Filter>;
+                layer->activationC = &NetMath::elu<Filter>;
                 break;
         }
     }
 
+
+    /* PoolLayer */
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_channels (int instanceIndex, int layerIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->channels;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_channels (int instanceIndex, int layerIndex, int value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->channels = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_stride (int instanceIndex, int layerIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->stride;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_stride (int instanceIndex, int layerIndex, int value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->stride = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_inMapValuesCount (int instanceIndex, int layerIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->inMapValuesCount;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_inMapValuesCount (int instanceIndex, int layerIndex, int value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->inMapValuesCount = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_outMapSize (int instanceIndex, int layerIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->outMapSize;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_outMapSize (int instanceIndex, int layerIndex, int value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->outMapSize = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_prevLayerOutWidth (int instanceIndex, int layerIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->prevLayerOutWidth;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_prevLayerOutWidth (int instanceIndex, int layerIndex, int value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->prevLayerOutWidth = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_pool_errors (int instanceIndex, int layerIndex) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        int mapDepth = layer->errors.size();
+        int mapSpan = layer->errors[0].size();
+        double errors[mapDepth * mapSpan * mapSpan];
+
+        for (int d=0; d<mapDepth; d++) {
+            for (int r=0; r<mapSpan; r++) {
+                for (int c=0; c<mapSpan; c++) {
+                    errors[d*mapSpan*mapSpan + r*mapSpan + c] = layer->errors[d][r][c];
+                }
+            }
+        }
+
+        auto ptr = &errors[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_errors (int instanceIndex, int layerIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        for (int d=0; d<depth; d++) {
+            for (int r=0; r<rows; r++) {
+                for (int c=0; c<cols; c++) {
+                    layer->errors[d][r][c] = buf[d*rows*cols + r*cols + c];
+                }
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_pool_activations (int instanceIndex, int layerIndex) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        int mapDepth = layer->activations.size();
+        int mapSpan = layer->activations[0].size();
+        double activations[mapDepth * mapSpan * mapSpan];
+
+        for (int d=0; d<mapDepth; d++) {
+            for (int r=0; r<mapSpan; r++) {
+                for (int c=0; c<mapSpan; c++) {
+                    activations[d*mapSpan*mapSpan + r*mapSpan + c] = layer->activations[d][r][c];
+                }
+            }
+        }
+
+        auto ptr = &activations[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_activations (int instanceIndex, int layerIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        for (int d=0; d<depth; d++) {
+            for (int r=0; r<rows; r++) {
+                for (int c=0; c<cols; c++) {
+                    layer->activations[d][r][c] = buf[d*rows*cols + r*cols + c];
+                }
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_pool_indeces (int instanceIndex, int layerIndex) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        int mapDepth = layer->indeces.size();
+        int mapSpan = layer->indeces[0].size();
+        double indeces[mapDepth * mapSpan * mapSpan];
+
+        for (int d=0; d<mapDepth; d++) {
+            for (int r=0; r<mapSpan; r++) {
+                for (int c=0; c<mapSpan; c++) {
+                    indeces[d*mapSpan*mapSpan + r*mapSpan + c] = layer->indeces[d][r][c][0]*2 + layer->indeces[d][r][c][1];
+                }
+            }
+        }
+
+        auto ptr = &indeces[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_indeces (int instanceIndex, int layerIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+
+        for (int d=0; d<depth; d++) {
+            for (int r=0; r<rows; r++) {
+                for (int c=0; c<cols; c++) {
+                    layer->indeces[d][r][c][0] = (int) buf[r*cols + c] / 2;
+                    layer->indeces[d][r][c][1] = (int) fmod(buf[d*rows*cols + r*cols + c], 2);
+                }
+            }
+        }
+    }
+
+
     /* Neuron */
     EMSCRIPTEN_KEEPALIVE
-    double* get_weights (int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_neuron_weights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weights.size();
@@ -542,7 +706,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_weights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_neuron_weights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int w=0; w<bufSize; w++) {
@@ -551,17 +715,17 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_bias (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_bias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* get_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_neuron_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights.size();
@@ -576,7 +740,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_neuron_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
@@ -585,17 +749,17 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_deltaBias (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_deltaBias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* get_weightGain (int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_neuron_weightGain (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weightGain.size();
@@ -610,7 +774,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_weightGain (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_neuron_weightGain (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
@@ -619,7 +783,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* get_weightsCache (int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_neuron_weightsCache (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weightsCache.size();
@@ -634,7 +798,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_weightsCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_neuron_weightsCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
@@ -643,57 +807,57 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_biasGain (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_biasGain (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasGain = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_biasGain (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_biasGain (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasGain;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_biasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_biasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasCache = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_biasCache (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_biasCache (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->biasCache;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_m (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_m (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->m = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_m (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_m (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->m;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_v (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_v (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->v = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_v (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_v (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->v;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+    void set_neuron_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->adadeltaBiasCache = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double get_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex) {
+    double get_neuron_adadeltaBiasCache (int instanceIndex, int layerIndex, int neuronIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->adadeltaBiasCache;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* get_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex) {
+    double* get_neuron_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
         int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->adadeltaCache.size();
@@ -708,12 +872,62 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
+    void set_neuron_adadeltaCache (int instanceIndex, int layerIndex, int neuronIndex, double *buf, int bufSize) {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
             net->layers[layerIndex]->neurons[neuronIndex]->adadeltaCache[dw] = buf[dw];
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_neuron_dropped (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->dropped;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_neuron_dropped (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->dropped = value==1;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_neuron_error (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_neuron_error (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double get_neuron_derivative (int instanceIndex, int layerIndex, int neuronIndex) {
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->derivative;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_neuron_derivative (int instanceIndex, int layerIndex, int neuronIndex, double value) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->derivative = value;
     }
 
     /* Filter */
@@ -820,7 +1034,7 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    double* get_filterWeightGain (int instanceIndex, int layerIndex, int filterIndex) {
+    double* get_filter_weightGain (int instanceIndex, int layerIndex, int filterIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
@@ -965,5 +1179,129 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_v (int instanceIndex, int layerIndex, int filterIndex, double value) {
         Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->v = value;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        int activationMapDepth = filter->activationMap.size();
+        int activationMapSpan = filter->activationMap[0].size();
+        double activationMap[activationMapDepth * activationMapSpan * activationMapSpan];
+
+        for (int r=0; r<activationMapSpan; r++) {
+            for (int c=0; c<activationMapSpan; c++) {
+                activationMap[r*activationMapSpan + c] = filter->activationMap[r][c];
+            }
+        }
+
+        auto ptr = &activationMap[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        for (int r=0; r<rows; r++) {
+            for (int c=0; c<cols; c++) {
+                filter->activationMap[r][c] = buf[r*cols + c];
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        int errorMapDepth = filter->errorMap.size();
+        int errorMapSpan = filter->errorMap[0].size();
+        double errorMap[errorMapDepth * errorMapSpan * errorMapSpan];
+
+        for (int r=0; r<errorMapSpan; r++) {
+            for (int c=0; c<errorMapSpan; c++) {
+                errorMap[r*errorMapSpan + c] = filter->errorMap[r][c];
+            }
+        }
+
+        auto ptr = &errorMap[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        for (int r=0; r<rows; r++) {
+            for (int c=0; c<cols; c++) {
+                filter->errorMap[r][c] = buf[r*cols + c];
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_filter_sumMap (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        int sumMapDepth = filter->sumMap.size();
+        int sumMapSpan = filter->sumMap[0].size();
+        double sumMap[sumMapDepth * sumMapSpan * sumMapSpan];
+
+        for (int r=0; r<sumMapSpan; r++) {
+            for (int c=0; c<sumMapSpan; c++) {
+                sumMap[r*sumMapSpan + c] = filter->sumMap[r][c];
+            }
+        }
+
+        auto ptr = &sumMap[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_filter_sumMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        for (int r=0; r<rows; r++) {
+            for (int c=0; c<cols; c++) {
+                filter->sumMap[r][c] = buf[r*cols + c];
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_filter_dropoutMap (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        int dropoutMapDepth = filter->dropoutMap.size();
+        int dropoutMapSpan = filter->dropoutMap[0].size();
+        double dropoutMap[dropoutMapDepth * dropoutMapSpan * dropoutMapSpan];
+
+        for (int r=0; r<dropoutMapSpan; r++) {
+            for (int c=0; c<dropoutMapSpan; c++) {
+                dropoutMap[r*dropoutMapSpan + c] = filter->dropoutMap[r][c];
+            }
+        }
+
+        auto ptr = &dropoutMap[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_filter_dropoutMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
+
+        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+
+        for (int r=0; r<rows; r++) {
+            for (int c=0; c<cols; c++) {
+                filter->dropoutMap[r][c] = buf[r*cols + c]==1;
+            }
+        }
     }
 }

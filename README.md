@@ -44,10 +44,12 @@ This makes it easier to use in nodejs.
 
 Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
 
-I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ### Constructing
 ---
+
+I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
+
 A network can be built in three different ways:
 
 ##### 1
@@ -280,7 +282,7 @@ net = new Network({activation: x => x})
 ```
 You can set your own activation functions. They are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias
-- If the function should calculate the prime (during back prop) - boolean
+- If the function should calculate the prime (during backprop) - boolean
 - A reference to the neuron/filter being activated (in pool layers, the reference is to the net).
 
 The network is bound as the function's scope, meaning you can access its data through ```this```.
@@ -354,7 +356,7 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 |:-------------:| :-----:| :-----:| :---: |
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
 | zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
-| stride | How many pixels to move between convolutions | Any number | 1 |
+| stride | How many values to move between convolutions | Any number | 1 |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
 
 You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions.
@@ -393,7 +395,7 @@ The second is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| stride | How many pixels to move between pooling | Any number | layer.size |
+| stride | How many values to move between pooling | Any number | layer.size |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
 
 The pooling operation used is max pool.
@@ -443,7 +445,7 @@ More and more features will be added, as time goes by, and I learn more. General
 Check the changelog to see the history of added features.
 
 ##### Short term
-The next big feature will be WebAssembly support. This will arive in version 3.0, when feature parity with the JavaScript version will be reached. You can keep track of progress on the dev branch.
+The next big feature will be WebAssembly support. This will arive in version 3.0, when feature parity with the JavaScript version will be reached (Pool layers are left). You can keep track of progress on the dev branch.
 
 ##### Long term
 Once that is done, I will be experimenting with some further, equally effective optimizations.

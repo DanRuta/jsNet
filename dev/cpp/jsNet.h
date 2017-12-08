@@ -88,13 +88,18 @@ public:
     int inMapValuesCount;
     int inZPMapValuesCount;
     int outMapSize;
+    int prevLayerOutWidth;
     bool hasActivation;
     std::vector<Neuron*> neurons;
     std::vector<Filter*> filters;
+    std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
+    std::vector<std::vector<std::vector<double> > > errors;
+    std::vector<std::vector<std::vector<double> > > activations;
     Layer* nextLayer;
     Layer* prevLayer;
     double (*activation)(double, bool, Neuron*);
-    double (*activationF)(double, bool, Filter*);
+    double (*activationC)(double, bool, Filter*);
+    double (*activationP)(double, bool, Network*);
 
     Layer (int netI, int s) {};
 
@@ -163,6 +168,32 @@ public:
 
     void resetDeltaWeights (void);
 
+};
+
+class PoolLayer : public Layer {
+public:
+
+    PoolLayer (int netI, int s);
+
+    ~PoolLayer (void);
+
+    void assignNext (Layer* l);
+
+    void assignPrev (Layer* l);
+
+    void init (int layerIndex);
+
+    void forward (void);
+
+    void backward (std::vector<double> expected) {
+        backward();
+    }
+
+    void backward (void);
+
+    void applyDeltaWeights (void) {};
+
+    void resetDeltaWeights (void) {};
 };
 
 
@@ -290,6 +321,8 @@ public:
 
     static std::vector<double> softmax (std::vector<double> values);
 
+    static void maxPool (PoolLayer* layer, int channels);
+
     static void maxNorm(int netInstance);
 
     static double sech (double value);
@@ -312,7 +345,7 @@ public:
     template <class T>
     static std::vector<std::vector<std::vector<T> > > createVolume (int depth, int rows, int columns, T value);
 
-    static void buildConvErrorMap (ConvLayer* layer, Layer* nextLayer, int filterI);
+    static std::vector<std::vector<double> > buildConvErrorMap (int paddedLength, Layer* nextLayer, int filterI);
 
     static void buildConvDWeights (ConvLayer* layer);
 

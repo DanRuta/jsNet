@@ -28,14 +28,14 @@ class ConvLayer {
         this.prevLayer = layer
         this.layerIndex = layerIndex
 
+        const stride = this.stride || this.net.conv.stride || 1
+        const filterSize = this.filterSize || this.net.conv.filterSize || 3
+        let zeroPadding = this.zeroPadding
+
         NetUtil.defineProperty(this, "channels", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "filterSize", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "stride", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
         NetUtil.defineProperty(this, "zeroPadding", ["number", "number"], [this.netInstance, layerIndex], {pre: "conv_"})
-
-        const stride = this.stride || this.net.conv.stride || 1
-        const filterSize = this.filterSize || this.net.conv.filterSize || 3
-        let zeroPadding = this.zeroPadding
 
         this.size = this.size || 4
         let channels
@@ -47,6 +47,10 @@ class ConvLayer {
 
             case layer instanceof ConvLayer:
                 channels = layer.size
+                break
+
+            case layer instanceof PoolLayer:
+                channels = layer.activations.length
                 break
         }
 
@@ -78,7 +82,7 @@ class ConvLayer {
 
         if (this.activation != false) {
             this.net.Module.ccall("setConvActivation", null, ["number", "number", "number"],
-                [this.netInstance, NetUtil.activationsIndeces[this.activation||this.net.activationName], layerIndex])
+                [this.netInstance, layerIndex, NetUtil.activationsIndeces[this.activation||this.net.activationName]])
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
@@ -86,6 +90,18 @@ class ConvLayer {
 
     init () {
         this.filters.forEach((filter, fi) => {
+
+            const paramTypes = ["number", "number", "number"]
+            const params = [this.netInstance, this.layerIndex, fi]
+
+            NetUtil.defineMapProperty(filter, "activationMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "errorMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "sumMap", paramTypes, params, this.outMapSize, this.outMapSize, {pre: "filter_"})
+            NetUtil.defineMapProperty(filter, "dropoutMap", paramTypes, params, this.outMapSize, this.outMapSize, {
+                pre: "filter_",
+                getCallback: m => m.map(row => row.map(v => v==1))
+            })
+
             filter.init(this.netInstance, this.layerIndex, fi, {
                 updateFn: this.net.updateFn,
                 filterSize: this.filterSize,
@@ -155,6 +171,10 @@ class FCLayer {
 
                 case this.prevLayer instanceof ConvLayer:
                     neuron.size = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
+                    break
+
+                case this.prevLayer instanceof PoolLayer:
+                    neuron.size = this.prevLayer.channels * this.prevLayer.outMapSize**2
                     break
             }
 
@@ -439,17 +459,24 @@ class NetUtil {
         })
     }
 
-    static defineArrayProperty (self, prop, valTypes, values, returnSize) {
+    static defineArrayProperty (self, prop, valTypes, values, returnSize, {pre=""}={}) {
         Object.defineProperty(self, prop, {
-            get: () => NetUtil.ccallArrays(`get_${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
-            set: (value) => NetUtil.ccallArrays(`set_${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+            get: () => NetUtil.ccallArrays(`get_${pre}${prop}`, "array", valTypes, values, {returnArraySize: returnSize, heapOut: "HEAPF64"}),
+            set: value => NetUtil.ccallArrays(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
         })
     }
 
-    static defineVolumeProperty (self, prop, valTypes, values, depth, rows, columns, {pre=""}={}) {
+    static defineMapProperty (self, prop, valTypes, values, rows, columns, {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
         Object.defineProperty(self, prop, {
-            get: () => NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"}),
-            set: (value) => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([value]), {heapIn: "HEAPF64"})
+            get: () => getCallback(NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth: 1, rows, columns, heapOut: "HEAPF64"})[0]),
+            set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
+        })
+    }
+
+    static defineVolumeProperty (self, prop, valTypes, values, depth, rows, columns, {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
+        Object.defineProperty(self, prop, {
+            get: () => getCallback(NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"})),
+            set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
         })
     }
 }
@@ -729,6 +756,10 @@ class Network {
                 case layer instanceof ConvLayer:
                     this.Module.ccall("addConvLayer", null, ["number", "number"], [this.netInstance, layer.size])
                     break
+
+                case layer instanceof PoolLayer:
+                    this.Module.ccall("addPoolLayer", null, ["number", "number"], [this.netInstance, layer.size])
+                    break
             }
 
             this.joinLayer(layer, l)
@@ -745,8 +776,8 @@ class Network {
         if (layerIndex) {
             this.layers[layerIndex-1].assignNext(layer)
             layer.assignPrev(this.layers[layerIndex-1], layerIndex)
-            layer.init()
         }
+        layer.init()
     }
 
     forward (data) {
@@ -823,7 +854,9 @@ class Network {
             this.Module.ccall("loadTrainingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
 
-            this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            if (shuffle) {
+                this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            }
 
             if (callback) {
 
@@ -1013,31 +1046,45 @@ class Neuron {
 
     init (netInstance, layerIndex, neuronIndex, {updateFn}) {
 
-        NetUtil.defineProperty(this, "bias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-        NetUtil.defineArrayProperty(this, "weights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
-        NetUtil.defineProperty(this, "deltaBias", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-        NetUtil.defineArrayProperty(this, "deltaWeights", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+        const paramTypes = ["number", "number", "number"]
+        const params = [netInstance, layerIndex, neuronIndex]
+
+        NetUtil.defineProperty(this, "sum", paramTypes, params, {pre: "neuron_"})
+        NetUtil.defineProperty(this, "dropped", paramTypes, params, {
+            pre: "neuron_",
+            getCallback: v => v==1,
+            setCallback: v => v ? 1 : 0
+        })
+        NetUtil.defineProperty(this, "activation", paramTypes, params, {pre: "neuron_"})
+        NetUtil.defineProperty(this, "error", paramTypes, params, {pre: "neuron_"})
+        NetUtil.defineProperty(this, "derivative", paramTypes, params, {pre: "neuron_"})
+
+        NetUtil.defineProperty(this, "bias", paramTypes, params, {pre: "neuron_"})
+        NetUtil.defineArrayProperty(this, "weights", paramTypes, params, this.size, {pre: "neuron_"})
+
+        NetUtil.defineProperty(this, "deltaBias", paramTypes, params, {pre: "neuron_"})
+        NetUtil.defineArrayProperty(this, "deltaWeights", paramTypes, params, this.size, {pre: "neuron_"})
 
         switch (updateFn) {
             case "gain":
-                NetUtil.defineProperty(this, "biasGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-                NetUtil.defineArrayProperty(this, "weightGain", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                NetUtil.defineProperty(this, "biasGain", paramTypes, params, {pre: "neuron_"})
+                NetUtil.defineArrayProperty(this, "weightGain", paramTypes, params, this.size, {pre: "neuron_"})
                 break
             case "adagrad":
             case "rmsprop":
             case "adadelta":
-                NetUtil.defineProperty(this, "biasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-                NetUtil.defineArrayProperty(this, "weightsCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                NetUtil.defineProperty(this, "biasCache", paramTypes, params, {pre: "neuron_"})
+                NetUtil.defineArrayProperty(this, "weightsCache", paramTypes, params, this.size, {pre: "neuron_"})
 
                 if (updateFn=="adadelta") {
-                    NetUtil.defineProperty(this, "adadeltaBiasCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-                    NetUtil.defineArrayProperty(this, "adadeltaCache", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex], this.size)
+                    NetUtil.defineProperty(this, "adadeltaBiasCache", paramTypes, params, {pre: "neuron_"})
+                    NetUtil.defineArrayProperty(this, "adadeltaCache", paramTypes, params, this.size, {pre: "neuron_"})
                 }
                 break
 
             case "adam":
-                NetUtil.defineProperty(this, "m", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
-                NetUtil.defineProperty(this, "v", ["number", "number", "number"], [netInstance, layerIndex, neuronIndex])
+                NetUtil.defineProperty(this, "m", paramTypes, params, {pre: "neuron_"})
+                NetUtil.defineProperty(this, "v", paramTypes, params, {pre: "neuron_"})
                 break
         }
     }
@@ -1047,6 +1094,88 @@ typeof window=="undefined" && (exports.Neuron = Neuron)
 "use strict"
 
 class PoolLayer {
+
+    constructor (size, {stride, activation}={}) {
+
+        if (size)   this.size = size
+        if (stride) this.stride = stride
+
+        if (activation != undefined && activation!=false) {
+            if (typeof activation != "string") {
+                throw new Error("Only string activation functions available in the WebAssembly version")
+            }
+            this.activation = NetUtil.format(activation)
+        } else {
+            this.activation = false
+        }
+    }
+
+    assignNext (layer) {
+        this.nextLayer = layer
+    }
+
+    assignPrev (layer, layerIndex) {
+
+        this.netInstance = this.net.netInstance
+        this.prevLayer = layer
+        this.layerIndex = layerIndex
+
+        let channels
+        let prevLayerOutWidth = layer.outMapSize
+        const size = this.size || this.net.pool.size || 2
+        const stride = this.stride || this.net.pool.stride || this.size
+
+        NetUtil.defineProperty(this, "channels", ["number", "number"], [this.netInstance, layerIndex], {pre: "pool_"})
+        NetUtil.defineProperty(this, "stride", ["number", "number"], [this.netInstance, layerIndex], {pre: "pool_"})
+        this.size = size
+        this.stride = stride
+
+        switch (true) {
+
+            case layer instanceof FCLayer:
+                channels = this.net.channels
+                prevLayerOutWidth = Math.max(Math.floor(Math.sqrt(layer.size/channels)), 1)
+                break
+
+            case layer instanceof ConvLayer:
+                channels = layer.size
+                break
+
+            case layer instanceof PoolLayer:
+                channels = layer.channels
+                break
+        }
+
+        this.channels = channels
+
+        NetUtil.defineProperty(this, "prevLayerOutWidth", ["number", "number"], [this.netInstance, layerIndex], {pre: "pool_"})
+        NetUtil.defineProperty(this, "inMapValuesCount", ["number", "number"], [this.netInstance, layerIndex], {pre: "pool_"})
+        NetUtil.defineProperty(this, "outMapSize", ["number", "number"], [this.netInstance, layerIndex], {pre: "pool_"})
+        NetUtil.defineVolumeProperty(this, "errors", ["number", "number"], [this.netInstance, layerIndex], channels, prevLayerOutWidth, prevLayerOutWidth, {pre: "pool_"})
+
+        const outMapSize = (prevLayerOutWidth - size) / stride + 1
+        this.outMapSize = outMapSize
+        this.inMapValuesCount = prevLayerOutWidth ** 2
+
+        NetUtil.defineVolumeProperty(this, "activations", ["number", "number"], [this.netInstance, layerIndex], channels, outMapSize, outMapSize, {pre: "pool_"})
+        NetUtil.defineVolumeProperty(this, "indeces", ["number", "number"], [this.netInstance, layerIndex], channels, outMapSize, outMapSize, {
+            pre: "pool_",
+            getCallback: vol => vol.map(map => map.map(row => row.map(val => [parseInt(val/2), val%2]))),
+            setCallback: vol => vol.map(map => map.map(row => row.map(([x,y]) => 2*x+y)))
+        })
+
+        if (outMapSize%1 != 0) {
+            throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${outMapSize} in pool layer at index ${layerIndex}`)
+        }
+    }
+
+    init () {}
+
+    toJSON () {
+        return {}
+    }
+
+    fromJSON() {}
 
 }
 

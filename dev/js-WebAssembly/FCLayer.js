@@ -29,6 +29,10 @@ class FCLayer {
                 case this.prevLayer instanceof ConvLayer:
                     neuron.size = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
                     break
+
+                case this.prevLayer instanceof PoolLayer:
+                    neuron.size = this.prevLayer.channels * this.prevLayer.outMapSize**2
+                    break
             }
 
             neuron.init(this.netInstance, this.layerIndex, ni, {

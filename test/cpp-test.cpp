@@ -673,9 +673,9 @@ namespace FCLayer_cpp {
         EXPECT_EQ( net->l2, 0.001 );
 
         for (int n=0; n<4; n++) {
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.27500625, 1e-3 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.27500625, 1e-3 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.27500625, 1e-3 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.27500625, 1e-2 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.27500625, 1e-2 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.27500625, 1e-2 );
         }
     }
 
@@ -700,9 +700,9 @@ namespace FCLayer_cpp {
         l3->backward(expected);
 
         for (int n=0; n<4; n++) {
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.275031, 1e-4 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.275031, 1e-4 );
-            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.275031, 1e-4 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[0], 0.275031, 1e-2 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[1], 0.275031, 1e-2 );
+            EXPECT_NEAR( l3->neurons[n]->deltaWeights[2], 0.275031, 1e-2 );
         }
     }
 
@@ -876,6 +876,7 @@ namespace ConvLayer_cpp {
     TEST(ConvLayer, constructor) {
         ConvLayer* layer = new ConvLayer(0, 1);
         EXPECT_EQ( layer->type, "Conv" );
+        delete layer;
     }
 
     // Assigns the given layer pointer to this layer's nextLayer
@@ -1020,9 +1021,9 @@ namespace ConvLayer_cpp {
             Network::deleteNetwork();
             Network::newNetwork();
             net = Network::getInstance(0);
-            // net->activation = &NetMath
             net->weightInitFn = &NetMath::uniform;
-            prevLayer = new FCLayer(0, 0);
+            net->isTraining = false;
+            prevLayer = new FCLayer(0, 75);
             prevLayer->size = 75;
             layer = new ConvLayer(0, 1);
             layer->size = 3;
@@ -1061,8 +1062,6 @@ namespace ConvLayer_cpp {
         net->isTraining = true;
         layer->forward();
 
-        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
-
         EXPECT_EQ( layer->filters[0]->activationMap, expected );
         EXPECT_EQ( layer->filters[1]->activationMap, expected );
         EXPECT_EQ( layer->filters[2]->activationMap, expected );
@@ -1074,8 +1073,6 @@ namespace ConvLayer_cpp {
         net->isTraining = false;
         layer->forward();
 
-        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
-
         EXPECT_NE( layer->filters[0]->activationMap, expected );
         EXPECT_NE( layer->filters[1]->activationMap, expected );
         EXPECT_NE( layer->filters[2]->activationMap, expected );
@@ -1086,8 +1083,6 @@ namespace ConvLayer_cpp {
         net->dropout = 1;
         net->isTraining = true;
         layer->forward();
-
-        // std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
 
         EXPECT_NE( layer->filters[0]->activationMap, expected );
         EXPECT_NE( layer->filters[1]->activationMap, expected );
@@ -1101,6 +1096,7 @@ namespace ConvLayer_cpp {
             layer->filters[f]->activationMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
         }
 
+        net->isTraining = false;
         layer->forward();
 
         for (int f=0; f<layer->filters.size(); f++) {
@@ -1108,7 +1104,7 @@ namespace ConvLayer_cpp {
         }
     }
 
-    // It does not call pass sum map values through an activation function if it is set to not be used
+    // It does not pass sum map values through an activation function if it is set to not be used
     TEST_F(ConvForwardFixture, forward_6) {
 
         std::vector<std::vector<double> > expected = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
@@ -1117,6 +1113,8 @@ namespace ConvLayer_cpp {
             layer->filters[f]->bias = 1;
         }
 
+        net->isTraining = false;
+        layer->hasActivation = false;
         layer->forward();
 
         for (int f=0; f<layer->filters.size(); f++) {
@@ -1128,13 +1126,15 @@ namespace ConvLayer_cpp {
     TEST_F(ConvForwardFixture, forward_7) {
 
         layer->hasActivation = true;
-        layer->activationF = &NetMath::sigmoid<Filter>;
+        layer->activationC = &NetMath::sigmoid<Filter>;
         std::vector<std::vector<double> > expected = {{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049}};
 
         for (int f=0; f<layer->filters.size(); f++) {
             layer->filters[f]->bias = 1;
         }
 
+        net->isTraining = false;
+        net->dropout = 1;
         layer->forward();
 
         for (int f=0; f<layer->filters.size(); f++) {
@@ -1156,8 +1156,11 @@ namespace ConvLayer_cpp {
             prevLayer = new FCLayer(0, 75);
             nextLayerA = new FCLayer(0, 100);
             nextLayerB = new ConvLayer(0, 2);
-            nextLayerB->filterSize = 3;
+            nextLayerB->filterSize = 5;
+            nextLayerB->zeroPadding = 1;
+            nextLayerB->channels = 4;
             nextLayerB->stride = 1;
+            nextLayerB->outMapSize = 5;
 
             layer = new ConvLayer(0, 4);
             layer->filterSize = 3;
@@ -1169,6 +1172,7 @@ namespace ConvLayer_cpp {
 
             layer->assignPrev(prevLayer);
             layer->assignNext(nextLayerB);
+            nextLayerB->assignPrev(layer);
             prevLayer->init(0);
             layer->init(1);
             nextLayerB->init(2);
@@ -1177,6 +1181,16 @@ namespace ConvLayer_cpp {
                 layer->filters[f]->weights = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
                 layer->filters[f]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
                 layer->filters[f]->errorMap = {{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}};
+            }
+
+            for (int f=0; f<nextLayerB->filters.size(); f++) {
+                nextLayerB->filters[f]->weights = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
+                nextLayerB->filters[f]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+                nextLayerB->filters[f]->errorMap = {{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}};
             }
 
             for (int n=0; n<prevLayer->neurons.size(); n++) {
@@ -1224,6 +1238,7 @@ namespace ConvLayer_cpp {
 
         convLayer->assignPrev(fcLayerPrev);
         convLayer->assignNext(fcLayer);
+        fcLayer->assignPrev(convLayer);
         convLayer->hasActivation = false;
 
         fcLayerPrev->init(0);
@@ -1242,8 +1257,6 @@ namespace ConvLayer_cpp {
         convLayer->filters[0]->activationMap = {{0.1,0.2},{0.3,0.4}};
         convLayer->filters[1]->activationMap = {{0.5,0.6},{0.7,0.8}};
 
-        // std::vector<std::vector<double> > expectedFilter1 = {{1.8, 1.6}, {1.4, 1.2}};
-        // std::vector<std::vector<double> > expectedFilter2 = {{1, 0.8}, {0.6, 0.4}};
         std::vector<std::vector<std::vector<double> > > expected = { {{1.8, 1.6}, {1.4, 1.2}}, {{1, 0.8}, {0.6, 0.4}} };
 
         convLayer->backward();
@@ -1260,6 +1273,7 @@ namespace ConvLayer_cpp {
     // Sets the errorMap values to 0 when dropped out
     TEST_F(ConvBackwardFixture, backward_2) {
 
+        layer->outMapSize = 5;
         layer->backward();
 
         std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
@@ -1276,6 +1290,7 @@ namespace ConvLayer_cpp {
             layer->filters[f]->deltaBias = f;
         }
 
+        layer->outMapSize = 5;
         layer->backward();
 
         for (int f=0; f<layer->filters.size(); f++) {
@@ -1313,12 +1328,118 @@ namespace ConvLayer_cpp {
             layer->filters[f]->deltaWeights = expected;
         }
 
+        layer->outMapSize = 5;
         layer->backward();
 
         for (int f=0; f<layer->filters.size(); f++) {
             EXPECT_NE( layer->filters[f]->deltaBias, f );
             EXPECT_NE( layer->filters[f]->deltaWeights, expected );
         }
+    }
+
+    // Calculates errormap values correctly when the next layer is Conv
+    TEST_F(ConvBackwardFixture, backward_6) {
+        nextLayerB->filterSize = 3;
+        nextLayerB->size = 1;
+        nextLayerB->stride = 2;
+
+        Filter* filter = new Filter();
+        filter->weights = {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}, {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}};
+        filter->init(0);
+        filter->errorMap = {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}};
+
+        nextLayerB->filters = {filter};
+        layer->filters = {new Filter(), new Filter()};
+        layer->filters[0]->weights = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
+        layer->filters[0]->init(0);
+        layer->filters[0]->errorMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+        layer->filters[1]->weights = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
+        layer->filters[1]->init(0);
+        layer->filters[1]->errorMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+
+        layer->backward();
+
+        std::vector<std::vector<double> > expected = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
+
+        for (int r=0; r<5; r++) {
+            for (int c=0; c<5; c++) {
+                EXPECT_NEAR( layer->filters[0]->errorMap[r][c], expected[r][c], 1e-8 );
+                EXPECT_NEAR( layer->filters[1]->errorMap[r][c], expected[r][c], 1e-8 );
+            }
+        }
+        delete filter;
+    }
+
+    // Maps the errors in the PoolLayer, 1 to 1, to the filters' errorMap values
+    TEST(ConvLayer, backward_7) {
+
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network* net = Network::getInstance(0);
+        net->dropout = 1;
+        net->weightInitFn = &NetMath::uniform;
+        net->weightsConfig["limit"] = 0.1;
+
+        FCLayer* prevLayer = new FCLayer(0, 75);
+
+        ConvLayer* convLayer = new ConvLayer(0, 2);
+        convLayer->channels = 1;
+        convLayer->filterSize = 3;
+        convLayer->stride = 1;
+        convLayer->zeroPadding = 0;
+        convLayer->outMapSize = 2;
+        convLayer->inMapValuesCount = 4;
+        convLayer->hasActivation = false;
+
+
+        PoolLayer* poolLayer = new PoolLayer(0, 2);
+        poolLayer->stride = 2;
+
+        prevLayer->assignNext(convLayer);
+        convLayer->assignPrev(prevLayer);
+        convLayer->assignNext(poolLayer);
+        poolLayer->assignPrev(convLayer);
+
+        prevLayer->init(0);
+        convLayer->init(1);
+        poolLayer->init(2);
+
+        convLayer->filters[0]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+        convLayer->filters[0]->errorMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+        convLayer->filters[1]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+        convLayer->filters[1]->errorMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+
+        poolLayer->errors = {{
+            {1,2,3,4,5},
+            {5,4,3,2,1},
+            {1,2,3,4,5},
+            {5,4,3,2,1},
+            {1,2,3,4,5}
+        }, {
+            {6,7,8,8,9},
+            {6,7,8,8,9},
+            {0,9,8,7,6},
+            {6,7,8,8,9},
+            {0,9,8,7,6}
+        }};
+
+        for (int n=0; n<75; n++) {
+            prevLayer->neurons[n]->activation = 0.5;
+        }
+
+        std::vector<std::vector<double> > expected1 = {{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5}};
+        std::vector<std::vector<double> > expected2 = {{6,7,8,8,9},{6,7,8,8,9},{0,9,8,7,6},{6,7,8,8,9},{0,9,8,7,6}};
+
+        convLayer->backward();
+
+        EXPECT_EQ( convLayer->filters[0]->errorMap, expected1 );
+        EXPECT_EQ( convLayer->filters[1]->errorMap, expected2 );
+
+        delete prevLayer;
+        delete convLayer;
+        delete poolLayer;
+
+        Network::deleteNetwork();
     }
 
 
@@ -1465,6 +1586,511 @@ namespace ConvLayer_cpp {
     }
 }
 
+namespace PoolLayer_cpp {
+
+    // Assigns the type as Pool
+    TEST(PoolLayer, constructor) {
+        PoolLayer* layer = new PoolLayer(0, 1);
+        EXPECT_EQ( layer->type, "Pool" );
+        delete layer;
+    }
+
+    // Assigns the given layer pointer to this layer's nextLayer
+    TEST(PoolLayer, assignNext) {
+        PoolLayer* l1 = new PoolLayer(0, 1);
+        PoolLayer* l2 = new PoolLayer(0, 1);
+
+        l1->assignNext(l2);
+        EXPECT_EQ( l1->nextLayer, l2 );
+
+        delete l1;
+        delete l2;
+    }
+
+    // Assigns the given layer pointer to this layer's prevLayer
+    TEST(PoolLayer, assignPrev) {
+        PoolLayer* l1 = new PoolLayer(0, 1);
+        PoolLayer* l2 = new PoolLayer(0, 1);
+
+        l2->assignPrev(l1);
+        EXPECT_EQ( l2->prevLayer, l1 );
+
+        delete l1;
+        delete l2;
+    }
+
+    // Inits an activations volume with dimensions channels x outMapSize x outMapSize, with 0 values
+    TEST(PoolLayer, init_1) {
+        PoolLayer* layer = new PoolLayer(0, 1);
+        layer->channels = 3;
+        layer->outMapSize = 2;
+        layer->inMapValuesCount = 9;
+
+        std::vector<std::vector<std::vector<double> > > expected = { {{0,0},{0,0}}, {{0,0},{0,0}}, {{0,0},{0,0}} };
+        layer->init(0);
+
+        EXPECT_EQ( layer->activations, expected );
+        delete layer;
+    }
+
+    // Inits an errors volume with dimensions channels x prevLayerOutWidth x prevLayerOutWidth, with 0 values
+    TEST(PoolLayer, init_2) {
+        PoolLayer* layer = new PoolLayer(0, 1);
+        layer->channels = 2;
+        layer->outMapSize = 2;
+        layer->inMapValuesCount = 9;
+
+        std::vector<std::vector<std::vector<double> > > expected = { {{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}} };
+        layer->init(0);
+
+        EXPECT_EQ( layer->errors, expected );
+        delete layer;
+    }
+
+    // Inits an indeces volume with the dimensions as the activations volume, with {0,0} values
+    TEST(PoolLayer, init_3) {
+        PoolLayer* layer = new PoolLayer(0, 1);
+        layer->channels = 1;
+        layer->outMapSize = 2;
+        layer->inMapValuesCount = 4;
+
+        std::vector<std::vector<std::vector<std::vector<int> > > > expected = { { {{0,0},{0,0}}, {{0,0},{0,0}} } };
+        layer->init(0);
+        EXPECT_EQ( layer->indeces, expected );
+
+        delete layer;
+    }
+
+    // Sets the layer->prevLayerOutWidth to the square root of the inMapValuesCount
+    TEST(PoolLayer, init_4) {
+        PoolLayer* layer = new PoolLayer(0, 1);
+        layer->channels = 1;
+        layer->outMapSize = 2;
+
+        layer->inMapValuesCount = 4;
+        layer->init(0);
+        EXPECT_EQ( layer->prevLayerOutWidth, 2 );
+
+        layer->inMapValuesCount = 9;
+        layer->init(0);
+        EXPECT_EQ( layer->prevLayerOutWidth, 3 );
+
+        delete layer;
+    }
+
+
+    // Does not apply activation function if not provided
+    TEST(PoolLayer, forward_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        PoolLayer* layer = new PoolLayer(0, 2);
+        FCLayer* prevLayer = new FCLayer(0, 18);
+        layer->hasActivation = false;
+        layer->channels = 2;
+        layer->stride = 2;
+        layer->outMapSize = 2;
+        layer->inMapValuesCount = 9;
+        layer->prevLayerOutWidth = 9;
+        layer->activations = { {{1,2},{3,4}}, {{5,6},{7,8}} };
+        prevLayer->assignNext(layer);
+        layer->assignPrev(prevLayer);
+        prevLayer->init(0);
+        layer->init(1);
+
+        for (int i=0; i<prevLayer->size; i++) {
+            prevLayer->neurons[i]->activation = i%9;
+        }
+
+        layer->forward();
+
+        std::vector<std::vector<std::vector<double> > > expected = { {{4,6},{7,8}}, {{4,6},{7,8}} };
+        EXPECT_EQ( layer->activations, expected );
+
+        delete layer;
+        delete prevLayer;
+    }
+
+    // Applies activation function if provided (using sigmoid for test)
+    TEST(PoolLayer, forward_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        PoolLayer* layer = new PoolLayer(0, 2);
+        FCLayer* prevLayer = new FCLayer(0, 18);
+        layer->hasActivation = true;
+        layer->activationP = &NetMath::sigmoid<Network>;
+        layer->channels = 2;
+        layer->stride = 2;
+        layer->outMapSize = 2;
+        layer->inMapValuesCount = 9;
+        layer->prevLayerOutWidth = 9;
+        layer->activations = { {{1,2},{3,4}}, {{5,6},{7,8}} };
+
+        layer->assignPrev(prevLayer);
+        prevLayer->init(0);
+        layer->init(1);
+
+        for (int i=0; i<prevLayer->size; i++) {
+            prevLayer->neurons[i]->activation = i%9;
+        }
+
+        layer->forward();
+
+        std::vector<std::vector<std::vector<double> > > expected = { {{0.982014,0.997527},{0.999089,0.999665}}, {{0.982014,0.997527},{0.999089,0.999665}} };
+        for (int r=0; r<2; r++) {
+            for (int c=0; c<2; c++) {
+                EXPECT_NEAR( layer->activations[0][r][c], expected[0][r][c], 1e-3 );
+                EXPECT_NEAR( layer->activations[1][r][c], expected[1][r][c], 1e-3 );
+            }
+        }
+        delete layer;
+        delete prevLayer;
+    }
+
+
+    class PoolBackwardFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+
+            poolLayer = new PoolLayer(0, 2);
+            poolLayer->size = 2;
+            poolLayer->stride = 2;
+            poolLayer->channels = 1;
+            poolLayer->outMapSize = 6;
+            poolLayer->inMapValuesCount = 144;
+            poolLayer->prevLayerOutWidth = 12;
+            poolLayer->hasActivation = false;
+
+            convLayer = new ConvLayer(0, 1);
+            convLayer->filterSize = 3;
+            convLayer->zeroPadding = 1;
+            convLayer->stride = 1;
+
+            fcLayer = new FCLayer(0, 36);
+            fcLayer->size = 36;
+        }
+
+        virtual void TearDown() {
+            delete poolLayer;
+            delete convLayer;
+            delete fcLayer;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        PoolLayer* poolLayer;
+        ConvLayer* convLayer;
+        FCLayer* fcLayer;
+    };
+
+
+    // Creates the error map correctly when the next layer is an FCLayer
+    TEST_F(PoolBackwardFixture, backward_1) {
+
+        PoolLayer* layer = new PoolLayer(0, 2);
+        layer->stride = 2;
+        layer->channels = 1;
+        layer->outMapSize = 6;
+        layer->inMapValuesCount = 36;
+        layer->hasActivation = false;
+
+        layer->assignNext(fcLayer);
+        fcLayer->assignPrev(layer);
+        layer->init(0);
+        fcLayer->init(1);
+
+        layer->errors = {{
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0}
+        }};
+
+        layer->indeces = {{
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}},
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}}
+        }};
+
+        for (double n=0; n<fcLayer->size; n++) {
+            fcLayer->neurons[n]->error = n ? n / 100 : 0;
+            fcLayer->neurons[n]->weights = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
+        }
+
+        layer->backward();
+
+        std::vector<std::vector<std::vector<double> > > expected = {{
+            {0,0, 0,6.3, 0,12.6, 0,18.9, 0,25.2, 0,31.5},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,50.4, 0,0, 0,0, 0,0},
+            {0,37.8, 0,44.1, 0,0, 0,56.7, 0,0, 0,6.3},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,12.6, 0,18.9, 0,25.2, 0,31.5, 0,37.8, 0,44.1},
+            {0,50.4, 0,56.7, 0,0, 0,6.3, 0,12.6, 0,18.9},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,37.8, 0,0, 0,0, 0,0},
+            {0,25.2, 0,31.5, 0,0, 0,44.1, 0,50.4, 0,56.7},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,6.3, 0,12.6, 0,18.9, 0,25.2, 0,31.5}
+        }};
+
+        for (int i=0; i<12; i++) {
+            EXPECT_EQ( layer->errors[0][i].size(), expected[0][i].size() );
+            for (int j=0; j<12; j++) {
+                EXPECT_DOUBLE_EQ( layer->errors[0][i][j], expected[0][i][j] );
+            }
+        }
+    }
+
+    // Creates the error map correctly when the next layer is a ConvLayer
+    TEST_F(PoolBackwardFixture, backward_2) {
+
+        PoolLayer* layer = new PoolLayer(0, 3);
+        layer->channels = 1;
+        layer->stride = 2;
+        layer->outMapSize = 6;
+        layer->inMapValuesCount = 169;
+
+        layer->assignNext(convLayer);
+        layer->init(0);
+        convLayer->init(1);
+
+        convLayer->filters.push_back(new Filter());
+
+        convLayer->filters[0]->errorMap = {
+            {1,2,3,4,5,6},
+            {7,4,7,2,9,2},
+            {1,9,3,7,3,6},
+            {2,5,2,6,8,3},
+            {8,2,4,9,2,7},
+            {1,7,3,7,3,5}
+        };
+        convLayer->filters[0]->weights = {{
+            {1,2,3},
+            {4,5,2},
+            {3,2,1}
+        }};
+
+        layer->errors = {{
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0,0}
+        }};
+
+        layer->indeces = {{
+            {{0,1},{2,1},{0,2},{2,2},{0,1},{0,0}},
+            {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}},
+            {{0,1},{2,1},{0,2},{2,2},{0,1},{0,0}},
+            {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}},
+            {{0,1},{0,2},{1,1},{2,0},{0,2},{2,1}},
+            {{1,1},{0,0},{2,2},{1,1},{0,0},{1,1}}
+        }};
+
+        layer->backward();
+
+        std::vector<std::vector<std::vector<double> > > expected = {{
+            {0, 31,  0,  0,  0,  0, 63,  0,  0, 83, 71,  0,  0},
+            {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+            {70,  0,100, 60,111,  0,112,  0,202,  0, 66,  0,  0},
+            {0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+            {0, 76,  0,  0,  0,  0,110,  0,  0,116, 79,  0,  0},
+            {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+            {77,  0, 97,113,103,  0,124,  0,250,  0, 66,  0,  0},
+            {0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+            {0, 76,  0,  0, 80,  0,  0,  0,  0,  0,119,  0,  0},
+            {0, 0,  0,  0,  0,121,  0,  0,  0,  0,  0,  0,  0},
+            {0,  0, 73,  0,  0,  0,125,  0, 83,  0,  0, 72,  0},
+            {0, 55,  0,  0,  0,  0,  0, 81,  0,  0,  0, 47,  0},
+            {0,  0,  0,  0,  0,  0, 94,  0,  0,  0,  0,  0,  0}
+        }};
+
+        EXPECT_EQ( layer->errors[0][0].size(), 13 );
+        EXPECT_EQ( expected[0][0].size(), 13 );
+        EXPECT_EQ( layer->errors, expected );
+    }
+
+    // Creates the error map correctly when the next layer is a PoolLayer
+    TEST_F(PoolBackwardFixture, backward_3) {
+
+        PoolLayer* layer = new PoolLayer(0, 3);
+        layer->stride = 3;
+        layer->channels = 2;
+        layer->outMapSize = 3;
+        layer->inMapValuesCount = 81;
+        layer->hasActivation = false;
+
+        layer->assignNext(poolLayer);
+        layer->init(0);
+        poolLayer->init(1);
+
+        layer->errors = {{
+            {0,0,0, 0,0,0, 0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+        }, {
+            {0,0,0, 0,0,0, 0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+        }};
+
+        layer->indeces = {{
+            {{2,2},{0,1},{1,1}},
+            {{0,1},{2,0},{0,2}},
+            {{0,1},{0,1},{0,1}}
+        }, {
+            {{0,0},{0,0},{0,0}},
+            {{1,2},{2,1},{0,1}},
+            {{0,0},{0,2},{0,1}}
+        }};
+
+        poolLayer->errors = {{
+            {1,2,3},
+            {4,5,6},
+            {7,8,9}
+        }, {
+            {5,9,3},
+            {8,2,4},
+            {6,7,1}
+        }};
+
+        layer->backward();
+
+        std::vector<std::vector<std::vector<double> > > expected = {{
+            {0,0,0,0,2,0,0,0,0},
+            {0,0,0,0,0,0,0,3,0},
+            {0,0,1,0,0,0,0,0,0},
+            {0,4,0,0,0,0,0,0,6},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,5,0,0,0,0,0},
+            {0,7,0,0,8,0,0,9,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0}
+        }, {
+            {5,0,0,9,0,0,3,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,4,0},
+            {0,0,8,0,0,0,0,0,0},
+            {0,0,0,0,2,0,0,0,0},
+            {6,0,0,0,0,7,0,1,0},
+            {0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0}
+        }};
+
+        EXPECT_EQ( layer->errors, expected );
+    }
+
+    // Applies activation derivative when the activation is sigmoid
+    TEST_F(PoolBackwardFixture, backward_4) {
+
+        Network::getInstance(0)->weightsConfig["limit"] = 0.1;
+        PoolLayer* layer = new PoolLayer(0, 2);
+        layer->stride = 2;
+        layer->channels = 1;
+        layer->outMapSize = 6;
+        layer->inMapValuesCount = 36;
+        layer->hasActivation = true;
+        layer->activationP = &NetMath::sigmoid;
+
+        layer->assignNext(fcLayer);
+        fcLayer->assignPrev(layer);
+        layer->init(0);
+        fcLayer->init(1);
+
+        for (double n=0; n<fcLayer->size; n++) {
+            fcLayer->neurons[n]->error = n ? n / 100 : 0;
+            fcLayer->neurons[n]->weights = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
+        }
+
+        layer->errors = {{
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+            {0,0,0,0,0,0,0,0,0,0,0,0},
+        }};
+        layer->indeces = {{
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}},
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}}
+        }};
+
+        layer->backward();
+        std::vector<std::vector<std::vector<double> > > expected = {{
+            {0,0, 0, 0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0.011526349447153203},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13, 0,0, 0,0},
+            {0,0, 0,0, 0,0, 0,0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,2.865355952475672e-10, 0,6.57474075183004e-13, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0, 0,0, 0,0, 0,0, 0,0},
+            {0,0, 0,0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13}
+        }};
+
+        EXPECT_EQ( fcLayer->neurons[0]->weights.size(), 36 );
+
+        for (int i=0; i<12; i++) {
+            EXPECT_EQ( layer->errors[0][i].size(), expected[0][i].size() );
+            for (int j=0; j<12; j++) {
+                EXPECT_NEAR( layer->errors[0][i][j], expected[0][i][j], 1e-8 );
+            }
+        }
+    }
+}
 
 namespace Neuron_cpp {
 
@@ -1818,7 +2444,6 @@ namespace Filter_cpp {
         testFilter->init(0);
         EXPECT_EQ( testFilter->eluAlpha, 123 );
     }
-
 }
 
 namespace NetMath_cpp {
@@ -2781,6 +3406,80 @@ namespace NetMath_cpp {
         EXPECT_GE( total, -0.1 );
         EXPECT_LE( total, 0.1 );
     }
+
+
+    TEST(NetMath, maxPool) {
+
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network* net = Network::getInstance(0);
+        net->updateFnIndex = 0;
+        net->activation = &NetMath::sigmoid;
+        net->weightInitFn = &NetMath::uniform;
+
+        std::vector<double> testData = {
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            1,2,4,5,7,8,10,11,13,14,16,17,
+
+            1,2,4,5,7,9,10,11,13,14,16,17,
+            2,3,5,6,8,8,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            2,3,5,6,8,9,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            1,2,4,5,7,8,10,11,13,14,16,17,
+
+            1,2,4,5,7,9,10,11,13,14,16,17,
+            2,3,5,6,8,8,11,12,14,15,17,18,
+
+            1,2,4,5,7,8,10,11,13,14,16,17,
+            2,3,5,6,8,9,11,12,14,15,17,18
+        };
+
+        std::vector<std::vector<std::vector<double> > > expectedActivationMap = {{
+            {2,5,8,11,14,17},
+            {3,6,9,12,15,18},
+            {3,6,9,12,15,18},
+            {2,5,8,11,14,17},
+            {3,6,9,12,15,18},
+            {3,6,9,12,15,18}
+        }};
+        std::vector<std::vector<std::vector<std::vector<int> > > > expectedIndeces = {{
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}},
+            {{0,1},{0,1},{0,1},{0,1},{0,1},{0,1}},
+            {{1,1},{1,1},{0,1},{1,1},{1,1},{1,1}},
+            {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}}
+        }};
+
+        PoolLayer* layer = new PoolLayer(0, 2);
+        layer->channels = 1;
+        layer->stride = 2;
+        layer->inMapValuesCount = 144;
+        layer->prevLayerOutWidth = 12;
+        layer->outMapSize = 6;
+
+        FCLayer* prevLayer = new FCLayer(0, 144);
+        prevLayer->assignNext(layer);
+        layer->assignPrev(prevLayer);
+
+        prevLayer->init(0);
+        layer->init(1);
+
+        for (int i=0; i<144; i++) {
+            prevLayer->neurons[i]->activation = testData[i];
+        }
+
+        NetMath::maxPool(layer, 0);
+
+        EXPECT_EQ( layer->activations, expectedActivationMap );
+        EXPECT_EQ( layer->indeces, expectedIndeces );
+
+        delete layer;
+        delete prevLayer;
+    }
 }
 
 namespace NetUtil_cpp {
@@ -3081,9 +3780,6 @@ namespace NetUtil_cpp {
             net->weightInitFn = &NetMath::uniform;
 
             layer = new ConvLayer(0, 1);
-            // layer->filterSize = 3;
-            // layer->zeroPadding = 0;
-            // layer->stride = 2;
             layer->filters.push_back(new Filter());
             layer->filters[0]->errorMap = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
 
@@ -3139,8 +3835,7 @@ namespace NetUtil_cpp {
         layer->assignNext(nextLayerA);
 
         std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
-
-        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+        layer->filters[0]->errorMap = NetUtil::buildConvErrorMap(5+2, nextLayerA, 0);
 
         EXPECT_EQ( layer->filters[0]->errorMap.size(), 5 );
         EXPECT_EQ( layer->filters[0]->errorMap[0].size(), 5 );
@@ -3158,7 +3853,7 @@ namespace NetUtil_cpp {
         nextLayerA->filters = {nlFilterA};
         layer->assignNext(nextLayerA);
         std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
-        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+        layer->filters[0]->errorMap = NetUtil::buildConvErrorMap(5+2, nextLayerA, 0);
 
         for (int r=0; r<5; r++) {
             for (int c=0; c<5; c++) {
@@ -3172,7 +3867,7 @@ namespace NetUtil_cpp {
         nextLayerA->filters = {nlFilterB};
         layer->assignNext(nextLayerA);
         std::vector<std::vector<double> > expectedB = {{0.1,-0.4,0.4,-0.2,0.2},{-0.2,0.7,-0.2,0.3,-0.5},{-0.1,-0.2,0.2,0.3,-0.3},{0.1,-0.3,-0.6,0.4,0.8},{0,0.4,-0.4,-0.5,0.5}};
-        NetUtil::buildConvErrorMap(layer, nextLayerA, 0);
+        layer->filters[0]->errorMap = NetUtil::buildConvErrorMap(5+2, nextLayerA, 0);
 
         for (int r=0; r<5; r++) {
             for (int c=0; c<5; c++) {
@@ -3186,7 +3881,7 @@ namespace NetUtil_cpp {
         nextLayerB->filters = {nlFilterA, nlFilterB};
         layer->assignNext(nextLayerB);
         std::vector<std::vector<double> > expectedC = {{0.1,-0.1,0.4,-0.3,0.2},{-0.7,0.9,0,0.9,-0.6},{-0.1,-0.6,0.2,-0.2,-0.3},{0.1,-1.5,-0.2,-0.6,0.9},{0,1.2,-0.4,0.4,0.5}};
-        NetUtil::buildConvErrorMap(layer, nextLayerB, 0);
+        layer->filters[0]->errorMap = NetUtil::buildConvErrorMap(5+2, nextLayerB, 0);
 
         for (int r=0; r<5; r++) {
             for (int c=0; c<5; c++) {
@@ -3200,7 +3895,7 @@ namespace NetUtil_cpp {
         nextLayerC->filters = {nlFilterC};
         layer->assignNext(nextLayerC);
         std::vector<std::vector<double> > expectedD = {{0.8,0.1,-0.1,2.0,0.6},{1.4,0.7,-1.4,-0.7,1},{0.2,0.1,3.1,-1.7,1.1},{-0.4,1.8,-0.6,0.7,-0.1},{-0.6,-0.1,0.8,0.2,-0.3}};
-        NetUtil::buildConvErrorMap(layer, nextLayerC, 0);
+        layer->filters[0]->errorMap = NetUtil::buildConvErrorMap(5+2, nextLayerC, 0);
 
         for (int r=0; r<5; r++) {
             for (int c=0; c<5; c++) {
@@ -3282,6 +3977,37 @@ namespace NetUtil_cpp {
         EXPECT_EQ( NetUtil::getActivations(convLayer, 0, 0), expected2 );
     }
 
+    // Returns all the activations from a PoolLayer correctly
+    TEST_F(GetActivationsFixture, getActivations_5) {
+        PoolLayer* poolLayer = new PoolLayer(0, 2);
+        poolLayer->activations = {{
+            {2,5,8,11,14,17},
+            {3,6,9,12,15,18},
+            {3,6,9,12,15,18},
+            {2,5,8,11,14,17},
+            {3,6,9,12,15,18},
+            {3,6,9,12,15,18}
+        }};
+
+        std::vector<double> expected = {2,5,8,11,14,17,3,6,9,12,15,18,3,6,9,12,15,18,2,5,8,11,14,17,3,6,9,12,15,18,3,6,9,12,15,18};
+
+        EXPECT_EQ( NetUtil::getActivations(poolLayer), expected );
+    }
+
+    // Returns just one activation map from a PoolLayer when called with a map index parameter
+    TEST_F(GetActivationsFixture, getActivations_6) {
+        PoolLayer* poolLayer = new PoolLayer(0, 2);
+        poolLayer->activations = {
+            {{1,2},{3,4}},
+            {{5,6},{7,8}}
+        };
+
+        std::vector<double> expected1 = {1,2,3,4};
+        std::vector<double> expected2 = {5,6,7,8};
+
+        EXPECT_EQ( NetUtil::getActivations(poolLayer, 0, 0), expected1 );
+        EXPECT_EQ( NetUtil::getActivations(poolLayer, 1, 0), expected2 );
+    }
 
     TEST(NetUtil, arrayToMap) {
         std::vector<double> testArray = {1,2,3,4,5,6,7,8,9};
@@ -3314,7 +4040,6 @@ namespace NetUtil_cpp {
                                     {25,26,27,28,29,30},{31,32,33,34,35,36}}};
         EXPECT_EQ( NetUtil::arrayToVolume(testData, 1), expected );
     }
-
 }
 
 

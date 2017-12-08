@@ -165,11 +165,10 @@ std::vector<std::vector<std::vector<T> > > NetUtil::createVolume (int depth, int
     return volume;
 }
 
-void NetUtil::buildConvErrorMap (ConvLayer* layer, Layer* nextLayer, int filterI) {
+std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, Layer* nextLayer, int filterI) {
 
     // Cache / convenience
     int zeroPadding = nextLayer->zeroPadding;
-    int paddedLength = layer->filters[filterI]->errorMap.size() + zeroPadding*2;
     int fsSpread = floor(nextLayer->filterSize / 2);
 
     std::vector<std::vector<double> > errorMap;
@@ -215,7 +214,7 @@ void NetUtil::buildConvErrorMap (ConvLayer* layer, Layer* nextLayer, int filterI
         errorMap[eY].erase(errorMap[eY].end()-zeroPadding, errorMap[eY].end());
     }
 
-    layer->filters[filterI]->errorMap = errorMap;
+    return errorMap;
 }
 
 void NetUtil::buildConvDWeights (ConvLayer* layer) {
@@ -293,6 +292,7 @@ std::vector<double> NetUtil::getActivations (Layer* layer) {
     std::vector<double> activations;
 
     if (layer->type == "FC") {
+
         for (int n=0; n<layer->size; n++) {
             activations.push_back(layer->neurons[n]->activation);
         }
@@ -303,6 +303,16 @@ std::vector<double> NetUtil::getActivations (Layer* layer) {
             for (int r=0; r<layer->filters[f]->activationMap.size(); r++) {
                 for (int c=0; c<layer->filters[f]->activationMap[r].size(); c++) {
                     activations.push_back(layer->filters[f]->activationMap[r][c]);
+                }
+            }
+        }
+
+    } else {
+
+        for (int c=0; c<layer->activations.size(); c++) {
+            for (int r=0; r<layer->activations[0].size(); r++) {
+                for (int v=0; v<layer->activations[0].size(); v++) {
+                    activations.push_back(layer->activations[c][r][v]);
                 }
             }
         }
@@ -328,6 +338,15 @@ std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int ma
                 activations.push_back(layer->filters[mapStartI]->activationMap[r][c]);
             }
         }
+
+    } else {
+
+        for (int r=0; r<layer->activations[mapStartI].size(); r++) {
+            for (int v=0; v<layer->activations[mapStartI].size(); v++) {
+                activations.push_back(layer->activations[mapStartI][r][v]);
+            }
+        }
+
     }
 
     return activations;

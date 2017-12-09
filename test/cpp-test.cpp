@@ -1367,7 +1367,7 @@ namespace ConvLayer_cpp {
                 EXPECT_NEAR( layer->filters[1]->errorMap[r][c], expected[r][c], 1e-8 );
             }
         }
-        delete filter;
+        // delete filter;
     }
 
     // Maps the errors in the PoolLayer, 1 to 1, to the filters' errorMap values

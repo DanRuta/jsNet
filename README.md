@@ -1,11 +1,14 @@
-# jsNet
-[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;[![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master)
+jsNet
+=
+[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++ [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
+---
 
 [![NPM](https://nodei.co/npm/jsnet.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jsnet/)
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
-Check the github dev branch to keep track of WebAssembly progress.
+## Current WebAssembly version: 2.0 beta.
+The current version has reached feature parity with the JavaScript only version 2.0. There are some known issues with convolutional layers, hence the beta tag. Once these get ironed out, general release 3.0 will be released.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
@@ -13,6 +16,9 @@ Check the github dev branch to keep track of WebAssembly progress.
 https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
 
 ##  Usage
+There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version. To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. To use WebAssembly, you must also include the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
+
+### JavaScript
 When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just ```npm install jsnet``` and  require it like so:
 ```javascript
 const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("jsNet")
@@ -20,16 +26,40 @@ const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, N
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
 
-I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
+### WebAssembly
+
+I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server.
+
+The second difference is that the wasm gets lazy loaded, meaning you have to wait for it to be loaded before you can create the network. You can listen for the ```jsNetWASMLoaded``` event to know when it's ready, like so:
+
+```javascript
+window.addEventListener("jsNetWASMLoaded", () => { /* ready */ })
+```
+
+Finally, you need to assign the module when creating the network, like so:
+```javascript
+const net = new Network({Module: Module})
+```
+This makes it easier to use in nodejs.
+
+Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
+
 
 ### Constructing
 ---
+
+I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
+
 A network can be built in three different ways:
 
 ##### 1
 With absolutely no parameters, and it will build a 3 FCLayer net. It will figure out some appropriate sizes for them once you pass it some data.
 ```javascript
 const net = new Network()
+
+// WebAssembly
+const net = new Network({Module: Module})
+// This config must always be included when using the  WebAssembly version
 ```
 ##### 2
 By giving a list of numbers, and the network will configure some FCLayers with that many neurons.
@@ -250,11 +280,11 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 net = new Network({activation: "sigmoid"})
 net = new Network({activation: "lrelu", lreluSlope: 0.99})
 net = new Network({activation: "elu", eluAlpha: 1})
-net = new Network({activation: x => x, eluAlpha: 1})
+net = new Network({activation: x => x})
 ```
 You can set your own activation functions. They are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias
-- If the function should calculate the prime (during back prop) - boolean
+- If the function should calculate the prime (during backprop) - boolean
 - A reference to the neuron/filter being activated (in pool layers, the reference is to the net).
 
 The network is bound as the function's scope, meaning you can access its data through ```this```.
@@ -328,7 +358,7 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 |:-------------:| :-----:| :-----:| :---: |
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
 | zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
-| stride | How many pixels to move between convolutions | Any number | 1 |
+| stride | How many values to move between convolutions | Any number | 1 |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
 
 You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions.
@@ -367,7 +397,7 @@ The second is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| stride | How many pixels to move between pooling | Any number | layer.size |
+| stride | How many values to move between pooling | Any number | layer.size |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
 
 The pooling operation used is max pool.
@@ -417,7 +447,7 @@ More and more features will be added, as time goes by, and I learn more. General
 Check the changelog to see the history of added features.
 
 ##### Short term
-The next big feature will be WebAssembly support. This will arive in version 3.0, when feature parity with the JavaScript version will be reached. You can keep track of progress on the dev branch.
+The next big feature will be WebAssembly support. This will arive in version 3.0, after some more testing is done on the existing beta version. You can keep track of progress on the dev branch.
 
 ##### Long term
 Once that is done, I will be experimenting with some further, equally effective optimizations.

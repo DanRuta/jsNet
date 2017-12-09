@@ -1,3 +1,7 @@
+# Upcoming - 3.0 - WebAssembly
+---
+- jsNet version 1.5 feature parity
+
 # 2.1.0 - Optimizations
 ---
 #### NetUtil

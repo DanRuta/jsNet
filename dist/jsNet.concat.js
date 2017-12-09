@@ -30,6 +30,7 @@ class ConvLayer {
 
         this.prevLayer = layer
 
+        this.layerIndex = layerIndex
         this.size = this.size || 4
         this.filterSize = this.filterSize || this.net.conv.filterSize || 3
         this.stride = this.stride || this.net.conv.stride || 1
@@ -276,8 +277,9 @@ class FCLayer {
         this.nextLayer = layer
     }
 
-    assignPrev (layer) {
+    assignPrev (layer, layerIndex) {
         this.prevLayer = layer
+        this.layerIndex = layerIndex
     }
 
     init () {
@@ -285,16 +287,16 @@ class FCLayer {
 
             let weightsCount
 
-            switch (this.prevLayer.constructor.name) {
-                case "FCLayer":
+            switch (true) {
+                case this.prevLayer instanceof FCLayer:
                     weightsCount = this.prevLayer.size
                     break
 
-                case "ConvLayer":
+                case this.prevLayer instanceof ConvLayer:
                     weightsCount = this.prevLayer.filters.length * this.prevLayer.outMapSize**2
                     break
 
-                case "PoolLayer":
+                case this.prevLayer instanceof PoolLayer:
                     weightsCount = this.prevLayer.activations.length * this.prevLayer.outMapSize**2
                     break
             }
@@ -339,7 +341,7 @@ class FCLayer {
                     neuron.error = expected[ni] - neuron.activation
                 } else {
                     neuron.derivative = this.activation(neuron.sum, true, neuron)
-                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]|0))
+                    neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))
                                                                              .reduce((p,c) => p+c, 0)
                 }
 
@@ -417,8 +419,6 @@ class Filter {
 
     init ({updateFn, activation, eluAlpha}={}) {
 
-        const size = this.weights.length
-
         this.deltaWeights = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
         this.deltaBias = 0
 
@@ -450,6 +450,7 @@ class Filter {
             case "adam":
                 this.m = 0
                 this.v = 0
+                break
         }
 
         if (activation=="rrelu") {
@@ -589,7 +590,7 @@ class NetMath {
         neuron.m = 0.9*neuron.m + (1-0.9) * deltaValue
         const mt = neuron.m / (1-Math.pow(0.9, this.iterations + 1))
 
-        neuron.v = 0.999*neuron.v + (1-0.999)*(Math.pow(deltaValue, 2))
+        neuron.v = 0.999*neuron.v + (1-0.999) * Math.pow(deltaValue, 2)
         const vt = neuron.v / (1-Math.pow(0.999, this.iterations + 1))
 
         return value + this.learningRate * mt / (Math.sqrt(vt) + 1e-8)
@@ -627,7 +628,7 @@ class NetMath {
 
         // Polar Box Muller
         for (let i=0; i<size; i++) {
-            let x1, x2, r, y
+            let x1, x2, r
 
             do {
                 x1 = 2 * Math.random() -1
@@ -855,7 +856,7 @@ class NetUtil {
         const paddedLength = inputVol[0].length + zeroPadding*2
         const fSSpread = Math.floor(weights[0].length / 2)
 
-        // For each input channels,
+        // For each input channel,
         for (let di=0; di<channels; di++) {
             inputVol[di] = NetUtil.addZeroPadding(inputVol[di], zeroPadding)
             // For each inputY without ZP
@@ -930,8 +931,8 @@ class NetUtil {
         errorMap.splice(errorMap.length-zeroPadding, errorMap.length)
 
         // Columns:
-        for (let emXI=0; emXI<errorMap.length; emXI++) {
-            errorMap[emXI] = errorMap[emXI].splice(zeroPadding, errorMap[emXI].length - zeroPadding*2)
+        for (let emYI=0; emYI<errorMap.length; emYI++) {
+            errorMap[emYI] = errorMap[emYI].splice(zeroPadding, errorMap[emYI].length - zeroPadding*2)
         }
     }
 
@@ -1186,7 +1187,6 @@ class Network {
             this.weightsInitFn = NetMath[this.weightsConfig.distribution]
         }
 
-        // State
         if (layers.length) {
 
             switch (true) {
@@ -1303,7 +1303,8 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
+                // this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
+                this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
             this.layers.forEach(layer => layer.state = "training")
@@ -1469,7 +1470,7 @@ class Network {
     }
 
     static get version () {
-        return "2.0.0"
+        return "2.1.1"
     }
 }
 
@@ -1569,6 +1570,7 @@ class PoolLayer {
         this.prevLayer = layer
         this.size = this.size || this.net.pool.size || 2
         this.stride = this.stride || this.net.pool.stride || this.size
+        this.layerIndex = layerIndex
 
         let prevLayerOutWidth = layer.outMapSize
 
@@ -1640,8 +1642,6 @@ class PoolLayer {
 
                         const rowI = this.indeces[channel][row][col][0] + row * this.stride
                         const colI = this.indeces[channel][row][col][1] + col * this.stride
-                        const neuronI = channel * this.outMapSize**2 + row * this.outMapSize + col
-
                         const weightIndex = channel * this.outMapSize**2 + row * this.outMapSize + col
 
                         for (let neuron=0; neuron<this.nextLayer.neurons.length; neuron++) {

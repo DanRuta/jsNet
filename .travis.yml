@@ -1,6 +1,24 @@
-sudo: false
-language: node_js
+sudo: required
+language:
+  - cpp
+
 node_js:
-  - 7.5.0
+  - 8.4.0
+
+before_install:
+  - npm install -g codecov
+
+script:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v8.7.0
+  - mkdir build
+  - cd build
+  - cmake ..
+  - npm install
+  - npm test
+  - make
+  - ./cpp-tests
+
 after_success:
-- npm run coverage
+  - npm run coverage
+  - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
+  - codecov

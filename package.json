@@ -3,9 +3,13 @@
   "version": "2.1.1",
   "description": "Javascript based deep learning framework for basic and convolutional neural networks.",
   "scripts": {
-    "test": "nyc mocha",
+    "test": "npm run js-tests && npm run wa-tests",
+    "js-tests": "nyc mocha test/js-test.js",
+    "wa-tests": "nyc mocha test/wa-test.js",
+    "cpp-tests": "cd ./build && make && cpp-tests",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls"
+    "coveralls": "npm run coverage -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
+    "build": "rm -rf build && mkdir build && cd build && cmake -G\"MSYS Makefiles\" .. && npm install"
   },
   "repository": {
     "type": "git",
@@ -17,6 +21,7 @@
     "learning",
     "neural",
     "network",
+    "webassembly",
     "javascript"
   ],
   "main": "dist/jsNet.min.js",
@@ -27,7 +32,7 @@
     "url": "https://github.com/DanRuta/jsNet/issues"
   },
   "engines": {
-    "node": ">= 7.5.0"
+    "node": ">= 8.4.0"
   },
   "homepage": "https://github.com/DanRuta/jsNet#readme",
   "devDependencies": {
@@ -41,8 +46,10 @@
     "grunt-babel": "*",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-uglify": "*",
+    "grunt-contrib-uglify": "git://github.com/gruntjs/grunt-contrib-uglify.git#harmony",
     "grunt-contrib-watch": "^1.0.0",
+    "grunt-exec": "^3.0.0",
+    "grunt-text-replace": "^0.4.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
     "mocha-lcov-reporter": "^1.3.0",

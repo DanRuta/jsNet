@@ -25,6 +25,7 @@ class PoolLayer {
         this.prevLayer = layer
         this.size = this.size || this.net.pool.size || 2
         this.stride = this.stride || this.net.pool.stride || this.size
+        this.layerIndex = layerIndex
 
         let prevLayerOutWidth = layer.outMapSize
 
@@ -96,8 +97,6 @@ class PoolLayer {
 
                         const rowI = this.indeces[channel][row][col][0] + row * this.stride
                         const colI = this.indeces[channel][row][col][1] + col * this.stride
-                        const neuronI = channel * this.outMapSize**2 + row * this.outMapSize + col
-
                         const weightIndex = channel * this.outMapSize**2 + row * this.outMapSize + col
 
                         for (let neuron=0; neuron<this.nextLayer.neurons.length; neuron++) {

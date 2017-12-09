@@ -7,7 +7,7 @@ const expect = chai.expect
 const sinonChai = require("sinon-chai")
 const sinon = require("sinon")
 chai.use(sinonChai)
-chai.use(chaiAsPromised);
+chai.use(chaiAsPromised)
 
 const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNet.concat.js")
 
@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("2.0.0")
+        expect(Network.version).to.equal("2.1.1")
     })
 })
 
@@ -99,7 +99,7 @@ describe("Network", () => {
                 expect(net2.rmsDecay).to.be.undefined
             })
 
-            it("Defaults the learning rate to 0.01 if the updateFn is rmsprop", () => {
+            it("Defaults the learning rate to 0.001 if the updateFn is rmsprop", () => {
                 const net2 = new Network({updateFn: "rmsprop"})
                 expect(net2.learningRate).to.equal(0.001)
             })
@@ -1142,16 +1142,6 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function when the net state is not 'initialised'", () => {
-            const network = new Network({updateFn: null})
-            sinon.stub(network, "forward")
-            sinon.spy(network, "initLayers")
-
-            return network.train(testData).then(() => {
-                expect(network.initLayers).to.have.been.called
-            })
-        })
-
         it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
             const network = new Network({updateFn: null})
             sinon.stub(network, "forward")
@@ -1316,7 +1306,7 @@ describe("Network", () => {
             })
         })
 
-        it("Accepts test date with output key instead of expected", () => {
+        it("Accepts test data with output key instead of expected", () => {
             return net.test(testDataOutput).then(() => {
                 expect(net.cost.callCount).to.equal(4)
             })
@@ -1389,6 +1379,13 @@ describe("FCLayer", () => {
             const layer2 = new Layer(3)
             layer2.assignPrev(layer1)
             expect(layer2.prevLayer).to.equal(layer1)
+        })
+
+        it("Assigns the layer.layerIndex to the value given", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(3)
+            layer2.assignPrev(layer1, 12345)
+            expect(layer2.layerIndex).to.equal(12345)
         })
     })
 
@@ -2567,6 +2564,14 @@ describe("ConvLayer", () => {
             expect(layer2.prevLayer).to.equal(layer1)
         })
 
+        it("Sets the layer.layerIndex to the given value", () => {
+            const layer = new ConvLayer(3)
+            const net = new Network({conv: {filterSize: 5}})
+            layer.net = net
+            layer.assignPrev(layer1, 12345)
+            expect(layer.layerIndex).to.equal(12345)
+        })
+
         it("Defaults the layer.filterSize to the net.filterSize value, if there's no layer.filterSize, but there is one for net", () => {
             const layer = new ConvLayer(3)
             const net = new Network({conv: {filterSize: 5}})
@@ -3019,7 +3024,7 @@ describe("ConvLayer", () => {
         })
 
 
-        it("And thus gives every neuron an activation value", () => {
+        it("And thus sets the activation values in each filter's activationMap", () => {
             layer.filters.forEach(filter => filter.activationMap = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]])
             layer.forward()
             layer.filters.forEach(filter => {
@@ -3047,7 +3052,7 @@ describe("ConvLayer", () => {
 
         const prevLayer = new FCLayer(75)
         const nextLayerA = new FCLayer(100)
-        const nextLayerB = new ConvLayer(2, {filterSize: 3, stride: 1})
+        const nextLayerB = new ConvLayer(2, {filterSize: 3, stride: 1, zeroPadding: 1})
 
         let net, layer
 
@@ -3413,6 +3418,15 @@ describe("PoolLayer", () => {
         })
     })
 
+    describe("assignNext", () => {
+        it("Sets the layer.nextLayer to the given layer", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2)
+            layer2.assignNext(layer1)
+            expect(layer2.nextLayer).to.equal(layer1)
+        })
+    })
+
     describe("assignPrev", () => {
 
         it("Sets the layer.prevLayer to the given layer", () => {
@@ -3422,6 +3436,15 @@ describe("PoolLayer", () => {
             layer2.assignPrev(layer1)
             expect(layer2.prevLayer).to.equal(layer1)
         })
+
+        it("Sets the layer.layerIndex to the value given", () => {
+            const layer1 = new ConvLayer()
+            const layer2 = new PoolLayer(2, {stride: 2})
+            layer1.outMapSize = 16
+            layer2.assignPrev(layer1, 12345)
+            expect(layer2.layerIndex).to.equal(12345)
+        })
+
 
         it("Sets the layer.size to the net.pool.size if not already defined, but existing in net.pool", () => {
             const layer1 = new ConvLayer()
@@ -3463,7 +3486,6 @@ describe("PoolLayer", () => {
             expect(layer2.stride).to.equal(1)
         })
 
-
         it("Sets the layer.channels to the last layer's filters count when the last layer is Conv", () => {
             const layer1 = new ConvLayer(5)
             const layer2 = new PoolLayer(2, {stride: 2})
@@ -3480,7 +3502,7 @@ describe("PoolLayer", () => {
             expect(layer2.channels).to.equal(3)
         })
 
-        it("Sets the layer.channels to the last layer's channels valuess if the last layer is Pool", () => {
+        it("Sets the layer.channels to the last layer's channels values if the last layer is Pool", () => {
             const layer1 = new PoolLayer(2, {stride: 2})
             const layer2 = new PoolLayer(2, {stride: 2})
             layer1.channels = 34
@@ -3497,7 +3519,7 @@ describe("PoolLayer", () => {
             expect(layer2.outMapSize).to.equal(8)
         })
 
-        it("Sets the layer.outMapSize to the correctly calculated value (Example 1)", () => {
+        it("Sets the layer.outMapSize to the correctly calculated value (Example 2)", () => {
             const layer1 = new ConvLayer(1)
             const layer2 = new PoolLayer(3, {stride: 3})
             layer1.outMapSize = 15
@@ -3796,7 +3818,7 @@ describe("PoolLayer", () => {
                 [0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0],
                 [0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0]
             ]]
             layer.indeces = [[
                 [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]],
@@ -3926,15 +3948,6 @@ describe("PoolLayer", () => {
             layer.nextLayer = fcLayer
             layer.backward()
             expect(layer.errors).to.deep.equal(expectedErrorsFCWithActivation)
-        })
-    })
-
-    describe("assignNext", () => {
-        it("Sets the layer.nextLayer to the given layer", () => {
-            const layer1 = new ConvLayer()
-            const layer2 = new PoolLayer(2)
-            layer2.assignNext(layer1)
-            expect(layer2.nextLayer).to.equal(layer1)
         })
     })
 
@@ -4264,7 +4277,7 @@ describe("Netmath", () => {
             expect(result.toFixed(1)).to.equal("1.5")
         })
 
-        it("Increments the neuron's weightsCache the same was as the biasCache", () => {
+        it("Increments the neuron's weightsCache the same way as the biasCache", () => {
             neuron.weightsCache = [0, 1, 2]
             const result1 = NetMath.adagrad.bind({learningRate: 2}, 1, 3, neuron, 0)()
             const result2 = NetMath.adagrad.bind({learningRate: 2}, 1, 4, neuron, 1)()
@@ -4288,7 +4301,7 @@ describe("Netmath", () => {
             neuron.init({updateFn: "rmsprop"})
         })
 
-        it("Sets the cache value to the correct formula", () => {
+        it("Sets the cache value to the correct value, following the rmsprop formula", () => {
             neuron.biasCache = 10
             NetMath.rmsprop.bind({learningRate: 2, rmsDecay: 0.99}, 1, 3, neuron)()
             expect(neuron.biasCache).to.equal(9.99) // 9.9 + 0.01 * 9
@@ -4321,23 +4334,23 @@ describe("Netmath", () => {
 
         beforeEach(() => neuron = new Neuron())
 
-        it("Sets the neuron.m to the correct value, following the algorithm", () => {
+        it("Sets the neuron.m to the correct value, following the formula", () => {
             neuron.m = 0.1
             NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
             expect(neuron.m.toFixed(2)).to.equal("0.11") // 0.9 * 0.1 + (1-0.9) * 0.2
         })
 
-        it("Sets the neuron.v to the correct value, following the algorithm", () => {
+        it("Sets the neuron.v to the correct value, following the formula", () => {
             neuron.v = 0.1
             NetMath.adam.bind({learningRate: 0.01}, 1, 0.2, neuron)()
             expect(neuron.v.toFixed(5)).to.equal("0.09994") // 0.999 * 0.1 + (1-0.999) * 0.2*0.2
         })
 
-        it("Calculates a value correctly, following the algorithm", () => {
+        it("Calculates a value correctly, following the formula", () => {
             neuron.m = 0.121
             neuron.v = 0.045
-            const result = NetMath.adam.bind({learningRate: 0.01, iterations: 0.2}, -0.3, 0.02, neuron)()
-            expect(result.toFixed(6)).to.equal("-0.298474")
+            const result = NetMath.adam.bind({learningRate: 0.01, iterations: 2}, -0.3, 0.02, neuron)()
+            expect(result.toFixed(6)).to.equal("-0.298943")
         })
     })
 
@@ -4366,7 +4379,7 @@ describe("Netmath", () => {
             expect(neuron.weightsCache[1].toFixed(4)).to.equal("0.7145")
         })
 
-        it("Creates a value for the bias correctly, following the algorithm", () => {
+        it("Creates a value for the bias correctly, following the formula", () => {
             neuron.biasCache = 0.5
             neuron.adadeltaBiasCache = 0.25
             const newValue = NetMath.adadelta.bind({rho: 0.95}, 0.5, 0.2, neuron)()
@@ -4511,7 +4524,7 @@ describe("Netmath", () => {
             expect(result.length).to.equal(10)
         })
 
-        it("The standard deviation of the weights is roughly 0.05 when the fanIn is 5", () => {
+        it("The standard deviation of the weights is roughly 0.5 when the fanIn is 5", () => {
             const result = NetMath.lecunnormal(1000, {fanIn: 5})
             const std = NetMath.standardDeviation(result)
             expect(Math.round(std*1000)/1000).to.be.at.most(0.60)
@@ -5026,9 +5039,6 @@ describe("NetUtil", () => {
         const expectedFilter2Channel1DWeights = [[2.9, 0.4, 0.3], [1.8, -2.1, -1.2], [-4.9, -6.8, -7.5]]
         const expectedFilter2Channel2DWeights = [[5.4, 0.4, -2.2], [-5.7, -24.6, -16.2], [-17.4, -29.3, -25]]
         const expectedFilter2Channel3DWeights = [[7.9, 0.4, -4.7], [-13.2, -47.1, -31.2], [-29.9, -51.8, -42.5]]
-
-        const expectedFilter1DeltaBias = 4.5
-        const expectedFilter2DeltaBias = -0.9
 
         const filter1 = layer.filters[0]
         const filter2 = layer.filters[1]

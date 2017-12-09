@@ -9,16 +9,17 @@ before_install:
   - npm install -g codecov
 
 script:
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v8.7.0
   - mkdir build
   - cd build
   - cmake ..
   - npm install
-  - npm test
+  - npm install -g codecov
+  - npm install -g istanbul
+  - npm run js-tests
   - make
   - ./cpp-tests
-
-after_success:
   - npm run coverage
   - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
-  - codecov
+  - codecov -t 9e112855-f0ea-4f9e-a941-908859898c6b
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v9.2.0
+  - npm run wa-tests

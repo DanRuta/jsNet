@@ -5,11 +5,16 @@ language:
 node_js:
   - 8.4.0
 
-before_install:
-  - npm install -g codecov
-  - npm install -g istanbul
+# before_install:
+#   - npm install -g codecov
+#   - npm install -g istanbul
 
 script:
+  - node -v
+  - nvm install v9.2.0
+  - node -v
+  - npm install -g codecov
+  - npm install -g istanbul
   - mkdir build
   - cd build
   - cmake ..
@@ -20,6 +25,6 @@ script:
   - npm run coverage
   # - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
   - codecov
-  - nvm version
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v9.2.0
+  - node -v
+  # - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install v9.2.0
   - npm run wa-tests

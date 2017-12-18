@@ -191,6 +191,7 @@ class ConvLayer {
         for (let filterI=0; filterI<this.filters.length; filterI++) {
 
             const filter = this.filters[filterI]
+            filter.deltaBias = 0
 
             for (let channel=0; channel<filter.deltaWeights.length; channel++) {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
@@ -798,7 +799,7 @@ class NetUtil {
         for (let col=0; col<data.length; col++) {
             for (let i=0; i<zP; i++) {
                 data[col].splice(0, 0, 0)
-                data[col].splice(data.length+1, data.length, 0)
+                data[col].splice(data[col].length+1, data[col].length, 0)
             }
         }
 

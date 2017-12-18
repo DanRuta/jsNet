@@ -12,8 +12,9 @@ The current version has reached feature parity with the JavaScript only version 
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
-## Demo
-https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
+## Demos
+https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLayers only.
+https://ai.danruta.co.uk/webassembly - Performance comparison between JS and WebAssembly (v2.0) versions.
 
 ##  Usage
 There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version. To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. To use WebAssembly, you must also include the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
@@ -355,7 +356,7 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
-| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
+| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2, keeping dimensions the same (equivalent to 'SAME' in TensorFlow) |
 | stride | How many values to move between convolutions | Any number | 1 |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
 

@@ -142,6 +142,8 @@ void ConvLayer::resetDeltaWeights (void) {
 
     for (int f=0; f<filters.size(); f++) {
 
+        filters[f]->deltaBias = 0;
+
         for (int c=0; c<filters[f]->deltaWeights.size(); c++) {
             for (int r=0; r<filters[f]->deltaWeights[0].size(); r++) {
                 for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {

@@ -191,6 +191,7 @@ class ConvLayer {
         for (let filterI=0; filterI<this.filters.length; filterI++) {
 
             const filter = this.filters[filterI]
+            filter.deltaBias = 0
 
             for (let channel=0; channel<filter.deltaWeights.length; channel++) {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {

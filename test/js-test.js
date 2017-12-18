@@ -3301,6 +3301,22 @@ describe("ConvLayer", () => {
             expect(filter5.dropoutMap).to.deep.equal([[false,false,false,false,false],[false,false,false,false,false],
                 [false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]])
         })
+
+        it("Sets all the filters' deltaBias to 0", () => {
+
+            layer.resetDeltaWeights()
+            layer2.resetDeltaWeights()
+
+            expect(filter1.deltaBias).to.equal(0)
+            expect(filter2.deltaBias).to.equal(0)
+            expect(filter3.deltaBias).to.equal(0)
+
+            expect(filter1b.deltaBias).to.equal(0)
+            expect(filter2b.deltaBias).to.equal(0)
+            expect(filter3b.deltaBias).to.equal(0)
+            expect(filter4.deltaBias).to.equal(0)
+            expect(filter5.deltaBias).to.equal(0)
+        })
     })
 
     describe("applyDeltaWeights", () => {
@@ -4803,13 +4819,29 @@ describe("NetUtil", () => {
         it("Returns a map with 1 level of zeroes padded on the edges when zero padding of 1 is given", () => {
             const result = NetUtil.addZeroPadding(testData, 1)
             expect(result.length).to.equal(7)
-            expect(result[0].length).to.equal(7)
+
+            result.forEach(row => expect(row.length).to.equal(7))
+
             expect(result[0]).to.deep.equal([0,0,0,0,0,0,0])
+            expect(result[6]).to.deep.equal([0,0,0,0,0,0,0])
+        })
+
+        it("Returns a map with 2 levels of zeroes padded on the edges when zero padding of 2 is given", () => {
+            const result = NetUtil.addZeroPadding(testData, 2)
+            expect(result.length).to.equal(9)
+
+            result.forEach(row => expect(row.length).to.equal(9))
+
+            expect(result[0]).to.deep.equal([0,0,0,0,0,0,0,0,0])
+            expect(result[8]).to.deep.equal([0,0,0,0,0,0,0,0,0])
         })
 
         it("Returns a map with 3 level of zeroes padded on the edges when zero padding of 3 is given", () => {
             const result = NetUtil.addZeroPadding(testData, 3)
             expect(result.length).to.equal(11)
+
+            result.forEach(row => expect(row.length).to.equal(11))
+
             expect(result[0].length).to.equal(11)
             expect(result[0]).to.deep.equal([0,0,0,0,0,0,0,0,0,0,0])
         })

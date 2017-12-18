@@ -60,7 +60,7 @@ class NetUtil {
         for (let col=0; col<data.length; col++) {
             for (let i=0; i<zP; i++) {
                 data[col].splice(0, 0, 0)
-                data[col].splice(data.length+1, data.length, 0)
+                data[col].splice(data[col].length+1, data[col].length, 0)
             }
         }
 

@@ -833,6 +833,7 @@ namespace FCLayer_cpp {
 
     // Increments the l1Error by the l1 formula applied to all weights
     TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_4) {
+        Network::getInstance(l4->netInstance)->l1Error = 0;
         l4->neurons[0]->weights = {0.25, 0.25};
         l4->neurons[0]->deltaWeights = {0.5, 0.5};
 
@@ -1512,6 +1513,21 @@ namespace ConvLayer_cpp {
 
         for (int f=0; f<5; f++) {
             EXPECT_EQ( layer2->filters[f]->dropoutMap, expectedB );
+        }
+    }
+
+    // Sets the filters' deltaBias to 0
+    TEST_F(ConvResetDeltaWFixture, resetDeltaWeights_3) {
+
+        layer->resetDeltaWeights();
+        layer2->resetDeltaWeights();
+
+        for (int f=0; f<3; f++) {
+            EXPECT_EQ( layer->filters[f]->deltaBias, 0 );
+        }
+
+        for (int f=0; f<5; f++) {
+            EXPECT_EQ( layer2->filters[f]->deltaBias, 0 );
         }
     }
 
@@ -3595,8 +3611,27 @@ namespace NetUtil_cpp {
         EXPECT_EQ( res[res.size()-1], zeroRow );
     }
 
-    // Returns a map with 3 levels of 0 values padded, when zero padding of 3 is given
+    // Returns a map with 2 levels of 0 values padded, when zero padding of 2 is given
     TEST_F(AddZPaddingFixture, addZeroPadding_3) {
+        std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 2);
+        std::vector<double> zeroRow = {0,0,0,0,0,0,0,0,0};
+
+        EXPECT_EQ( res.size(), 9 );
+        EXPECT_EQ( res[0], zeroRow );
+        EXPECT_EQ( res[1], zeroRow );
+        EXPECT_NE( res[2], zeroRow );
+
+        for (int r=0; r<9; r++) {
+            EXPECT_EQ( res[r].size(), 9 );
+        }
+
+        EXPECT_NE( res[res.size()-3], zeroRow );
+        EXPECT_EQ( res[res.size()-2], zeroRow );
+        EXPECT_EQ( res[res.size()-1], zeroRow );
+    }
+
+    // Returns a map with 3 levels of 0 values padded, when zero padding of 3 is given
+    TEST_F(AddZPaddingFixture, addZeroPadding_4) {
         std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 3);
         std::vector<double> zeroRow = {0,0,0,0,0,0,0,0,0,0,0};
 
@@ -3612,7 +3647,7 @@ namespace NetUtil_cpp {
     }
 
     // Keeps the same data, apart for the zeroes
-    TEST_F(AddZPaddingFixture, addZeroPadding_4) {
+    TEST_F(AddZPaddingFixture, addZeroPadding_5) {
         std::vector<std::vector<double> > res = NetUtil::addZeroPadding(testData, 1);
 
         res[1].erase(res[1].begin());
@@ -3716,6 +3751,15 @@ namespace NetUtil_cpp {
 
             layer->filters[0]->errorMap = {{0.1, 0.6, 0.2}, {0.7, 0.3, 0.8}, {0.4, 0.9, 0.5}};
             layer->filters[1]->errorMap = {{-0.5, 0, -0.4}, {0.1, -0.3, 0.2}, {-0.2, 0.3, -0.1}};
+
+            for (int c=0; c<layer->filters[0]->deltaWeights.size(); c++) {
+                for (int r=0; r<layer->filters[0]->deltaWeights[0].size(); r++) {
+                    for (int v=0; v<layer->filters[0]->deltaWeights[0].size(); v++) {
+                        layer->filters[0]->deltaWeights[c][r][v] = 0;
+                        layer->filters[1]->deltaWeights[c][r][v] = 0;
+                    }
+                }
+            }
 
         }
 

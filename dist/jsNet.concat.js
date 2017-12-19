@@ -694,16 +694,28 @@ class NetMath {
 
     // Other
     static softmax (values) {
-        let total = 0
+
+        let maxValue = values[0]
+
+        for (let i=1; i<values.length; i++) {
+            if (values[i] > maxValue) {
+                maxValue = values[i]
+            }
+        }
+
+        // Exponentials
+        const exponentials = new Array(values.length)
+        let exponentialsSum = 0.0
 
         for (let i=0; i<values.length; i++) {
-            total += values[i]
+            let e = Math.exp(values[i] - maxValue)
+            exponentialsSum += e
+            exponentials[i] = e
         }
 
         for (let i=0; i<values.length; i++) {
-            if (total) {
-                values[i] /= total
-            }
+            exponentials[i] /= exponentialsSum
+            values[i] = exponentials[i]
         }
 
         return values
@@ -859,13 +871,19 @@ class NetUtil {
 
         // For each input channel,
         for (let di=0; di<channels; di++) {
+
             inputVol[di] = NetUtil.addZeroPadding(inputVol[di], zeroPadding)
+
             // For each inputY without ZP
             for (let inputY=fSSpread; inputY<paddedLength-fSSpread; inputY+=stride) {
+
                 outputMap[(inputY-fSSpread)/stride] = outputMap[(inputY-fSSpread)/stride] || []
+
                 // For each inputX without zP
                 for (let inputX=fSSpread; inputX<paddedLength-fSSpread; inputX+=stride) {
+
                     let sum = 0
+
                     // For each weightsY on input
                     for (let weightsY=0; weightsY<weights[0].length; weightsY++) {
                         // For each weightsX on input
@@ -873,6 +891,10 @@ class NetUtil {
                             sum += inputVol[di][inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] * weights[di][weightsY][weightsX]
                         }
                     }
+
+                        // TEMP
+                        // sum /= weights[0].length*weights[0].length
+
 
                     outputMap[(inputY-fSSpread)/stride][(inputX-fSSpread)/stride] = (outputMap[(inputY-fSSpread)/stride][(inputX-fSSpread)/stride]||0) + sum
                 }
@@ -1264,7 +1286,7 @@ class Network {
         }
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
-        this.layers.forEach((layer, li) => li && layer.forward(data))
+        this.layers.forEach((layer, li) => li && layer.forward())
         return this.layers[this.layers.length-1].neurons.map(n => n.activation)
     }
 

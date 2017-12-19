@@ -209,16 +209,28 @@ class NetMath {
 
     // Other
     static softmax (values) {
-        let total = 0
+
+        let maxValue = values[0]
+
+        for (let i=1; i<values.length; i++) {
+            if (values[i] > maxValue) {
+                maxValue = values[i]
+            }
+        }
+
+        // Exponentials
+        const exponentials = new Array(values.length)
+        let exponentialsSum = 0.0
 
         for (let i=0; i<values.length; i++) {
-            total += values[i]
+            let e = Math.exp(values[i] - maxValue)
+            exponentialsSum += e
+            exponentials[i] = e
         }
 
         for (let i=0; i<values.length; i++) {
-            if (total) {
-                values[i] /= total
-            }
+            exponentials[i] /= exponentialsSum
+            values[i] = exponentials[i]
         }
 
         return values

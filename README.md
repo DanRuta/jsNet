@@ -1,6 +1,6 @@
 jsNet
 =
-[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++ [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
+[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++: [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
 ---
 
 [![NPM](https://nodei.co/npm/jsnet.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jsnet/)
@@ -14,6 +14,7 @@ The current version has reached feature parity with the JavaScript only version 
 
 ## Demos
 https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLayers only.
+
 https://ai.danruta.co.uk/webassembly - Performance comparison between JS and WebAssembly (v2.0) versions.
 
 ##  Usage

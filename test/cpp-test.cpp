@@ -3496,6 +3496,20 @@ namespace NetMath_cpp {
         delete layer;
         delete prevLayer;
     }
+
+
+    TEST(NetMath, softmax_1) {
+        std::vector<double> values = {1, 2, 3, 4, 1, 2, 3};
+        std::vector<double> expected = {0.02364054302159139, 0.06426165851049616, 0.17468129859572226, 0.47483299974438037, 0.02364054302159139, 0.06426165851049616, 0.17468129859572226};
+        EXPECT_EQ( NetMath::softmax(values), expected );
+    }
+
+    TEST(NetMath, softmax_2) {
+        std::vector<double> values = {23, 54, 167, 3};
+        std::vector<double> expected = {2.8946403116483003e-63, 8.408597124803643e-50, 1, 5.96629836401057e-72};
+        EXPECT_EQ( NetMath::softmax(values), expected );
+    }
+
 }
 
 namespace NetUtil_cpp {

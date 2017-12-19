@@ -304,16 +304,28 @@ std::vector<double> NetMath::xaviernormal (int netInstance, int layerIndex, int 
 
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
-    double total = 0.0;
+
+    double maxValue = values[0];
+
+    for (int i=1; i<values.size(); i++) {
+        if (values[i] > maxValue) {
+            maxValue = values[i];
+        }
+    }
+
+    // Exponentials
+    std::vector<double> exponentials;
+    double exponentialsSum = 0;
 
     for (int i=0; i<values.size(); i++) {
-        total += values[i];
+        double e = exp(values[i] - maxValue);
+        exponentialsSum += e;
+        exponentials.push_back(e);
     }
 
     for (int i=0; i<values.size(); i++) {
-        if (total) {
-            values[i] /= total;
-        }
+        exponentials[i] /= exponentialsSum;
+        values[i] = exponentials[i];
     }
 
     return values;

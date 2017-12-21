@@ -272,13 +272,13 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
-| lreluSlope | Slope for lrelu, when used | Any number | 0.99 |
+| lreluSlope | Slope for lrelu, when used | Any number |  |
 | eluAlpha | Alpha value for elu, when used | Any number | 1 |
 
 ##### Examples
 ```javascript
 net = new Network({activation: "sigmoid"})
-net = new Network({activation: "lrelu", lreluSlope: 0.99})
+net = new Network({activation: "lrelu", lreluSlope: -0.0005})
 net = new Network({activation: "elu", eluAlpha: 1})
 net = new Network({activation: x => x})
 ```

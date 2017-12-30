@@ -39,7 +39,7 @@ void FCLayer::init (int layerIndex) {
             }
 
             neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, weightsCount);
-            neuron->bias = ((double) rand() / (RAND_MAX))/5 - 0.1;
+            neuron->bias = 1;
         }
 
         neuron->init(netInstance);

@@ -77,7 +77,7 @@ class ConvLayer {
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.bias = Math.random()*0.2-0.1
+            filter.bias = 0
 
             if (this.net.dropout != 1) {
                 filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
@@ -303,7 +303,7 @@ class FCLayer {
             }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
-            neuron.bias = Math.random()*0.2-0.1
+            neuron.bias = 0
 
             neuron.init({
                 updateFn: this.net.updateFn,
@@ -693,8 +693,9 @@ class NetMath {
     }
 
     // Other
-    static softmax (values) {
+    static softmax (v) {
 
+        const values = v.slice(0)
         let maxValue = values[0]
 
         for (let i=1; i<values.length; i++) {
@@ -871,19 +872,13 @@ class NetUtil {
 
         // For each input channel,
         for (let di=0; di<channels; di++) {
-
             inputVol[di] = NetUtil.addZeroPadding(inputVol[di], zeroPadding)
-
             // For each inputY without ZP
             for (let inputY=fSSpread; inputY<paddedLength-fSSpread; inputY+=stride) {
-
                 outputMap[(inputY-fSSpread)/stride] = outputMap[(inputY-fSSpread)/stride] || []
-
                 // For each inputX without zP
                 for (let inputX=fSSpread; inputX<paddedLength-fSSpread; inputX+=stride) {
-
                     let sum = 0
-
                     // For each weightsY on input
                     for (let weightsY=0; weightsY<weights[0].length; weightsY++) {
                         // For each weightsX on input
@@ -891,10 +886,6 @@ class NetUtil {
                             sum += inputVol[di][inputY+(weightsY-fSSpread)][inputX+(weightsX-fSSpread)] * weights[di][weightsY][weightsX]
                         }
                     }
-
-                        // TEMP
-                        // sum /= weights[0].length*weights[0].length
-
 
                     outputMap[(inputY-fSSpread)/stride][(inputX-fSSpread)/stride] = (outputMap[(inputY-fSSpread)/stride][(inputX-fSSpread)/stride]||0) + sum
                 }

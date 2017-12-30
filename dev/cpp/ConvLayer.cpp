@@ -43,7 +43,7 @@ void ConvLayer::init (int layerIndex) {
 
         filters[f]->activationMap = NetUtil::createVolume<double>(1, outMapSize, outMapSize, 0)[0];
         filters[f]->errorMap = NetUtil::createVolume<double>(1, outMapSize, outMapSize, 0)[0];
-        filters[f]->bias = ((double) rand() / (RAND_MAX))/5 - 0.1;
+        filters[f]->bias = 1;
 
         if (net->dropout != 1) {
             filters[f]->dropoutMap = NetUtil::createVolume<bool>(1, outMapSize, outMapSize, 0)[0];

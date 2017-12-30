@@ -1415,12 +1415,10 @@ describe("FCLayer", () => {
             expect(layer2.neurons[0].weights.length).to.equal(2)
         })
 
-        it("Gives the neuron a bias value between -0.1 and +0.1", () => {
+        it("Sets the bias to 0", () => {
             layer2.assignPrev(layer1)
             layer2.init()
-            expect(layer2.neurons[0].bias).to.not.be.undefined
-            expect(layer2.neurons[0].bias).to.be.at.most(0.1)
-            expect(layer2.neurons[0].bias).to.be.at.least(-0.1)
+            expect(layer2.neurons[0].bias).to.equal(1)
         })
 
         it("Inits all the neurons in the layer's neurons array", () => {
@@ -2882,14 +2880,12 @@ describe("ConvLayer", () => {
             layer2.net.weightsInitFn.restore()
         })
 
-        it("Sets each filter bias to a number between -0.1 and 0.1", () => {
+        it("Sets each filter bias to 0", () => {
             layer2.filters[0].bias = undefined
             layer2.filters[1].bias = undefined
             layer2.init()
-            expect(layer2.filters[0].bias).to.be.at.least(-0.1)
-            expect(layer2.filters[0].bias).to.be.at.most(0.1)
-            expect(layer2.filters[1].bias).to.be.at.least(-0.1)
-            expect(layer2.filters[1].bias).to.be.at.most(0.1)
+            expect(layer2.filters[0].bias).to.equal(1)
+            expect(layer2.filters[1].bias).to.equal(1)
         })
 
         it("Calls the filter's init function with updateFn and activation", () => {

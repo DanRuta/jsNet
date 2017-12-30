@@ -77,7 +77,7 @@ class ConvLayer {
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.bias = Math.random()*0.2-0.1
+            filter.bias = 1
 
             if (this.net.dropout != 1) {
                 filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))

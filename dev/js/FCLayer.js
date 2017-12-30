@@ -37,7 +37,7 @@ class FCLayer {
             }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
-            neuron.bias = Math.random()*0.2-0.1
+            neuron.bias = 1
 
             neuron.init({
                 updateFn: this.net.updateFn,

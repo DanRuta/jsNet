@@ -311,13 +311,12 @@ namespace FCLayer_cpp {
         EXPECT_EQ( l2->neurons.size(), 5 );
     }
 
-    // Sets the bias of every neuron to a number between -0.1 and 0.1
+    // Sets the bias of every neuron to 0
     TEST_F(InitFixture, init_2) {
         l2->init(1);
 
         for (int n=0; n<5; n++) {
-            EXPECT_GE( l2->neurons[n]->bias, -0.1 );
-            EXPECT_LE( l2->neurons[n]->bias, 0.1 );
+            EXPECT_EQ( l2->neurons[n]->bias, 1 );
         }
     }
 
@@ -982,14 +981,13 @@ namespace ConvLayer_cpp {
         }
     }
 
-    // Creates a bias between -0.1 and +0.1
+    // Sets the bias to 0
     TEST_F(ConvLayerInitFixture, init_4) {
         layer->assignPrev(prevFC);
         layer->init(1);
 
         for (int f=0; f<4; f++) {
-            EXPECT_GE( layer->filters[f]->bias, -0.1 );
-            EXPECT_LE( layer->filters[f]->bias, 0.1 );
+            EXPECT_EQ( layer->filters[f]->bias, 1 );
         }
     }
 

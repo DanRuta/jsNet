@@ -208,8 +208,9 @@ class NetMath {
     }
 
     // Other
-    static softmax (values) {
+    static softmax (v) {
 
+        const values = v.slice(0)
         let maxValue = values[0]
 
         for (let i=1; i<values.length; i++) {

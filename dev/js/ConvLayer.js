@@ -201,6 +201,12 @@ class ConvLayer {
                 }
             }
 
+            for (let row=0; row<filter.errorMap.length; row++) {
+                for (let col=0; col<filter.errorMap.length; col++) {
+                    filter.errorMap[row][col] = 0
+                }
+            }
+
             if (filter.dropoutMap) {
                 for (let row=0; row<filter.dropoutMap.length; row++) {
                     for (let col=0; col<filter.dropoutMap[0].length; col++) {

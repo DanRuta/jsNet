@@ -3243,6 +3243,7 @@ describe("ConvLayer", () => {
             layer.filters = [filter1, filter2, filter3]
 
             layer.filters.forEach(filter => {
+                filter.errorMap = [[1,2,3],[1,2,3],[1,2,3]]
                 filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
                 filter.dropoutMap = [[true,true,true],[true,true,true],[true,true,true]]
             })
@@ -3256,6 +3257,7 @@ describe("ConvLayer", () => {
             layer2.filters = [filter1b, filter2b, filter3b, filter4, filter5]
 
             layer2.filters.forEach(filter => {
+                filter.errorMap = [[1,2,3],[1,2,3],[1,2,3]]
                 filter.deltaWeights = [[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]]
                 filter.dropoutMap = [[true,true,true,true,true],[true,true,true,true,true],
                 [true,true,true,true,true],[true,true,true,true,true],[true,true,true,true,true]]
@@ -3275,7 +3277,15 @@ describe("ConvLayer", () => {
             expect(filter3b.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
             expect(filter4.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
             expect(filter5.deltaWeights).to.deep.equal([[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]])
+        })
 
+        it("Clears the errorMap values", () => {
+            layer.resetDeltaWeights()
+            layer2.resetDeltaWeights()
+
+            expect(filter1.errorMap).to.deep.equal([[0,0,0],[0,0,0],[0,0,0]])
+            expect(filter2.errorMap).to.deep.equal([[0,0,0],[0,0,0],[0,0,0]])
+            expect(filter3.errorMap).to.deep.equal([[0,0,0],[0,0,0],[0,0,0]])
         })
 
         it("Sets all the filters' dropoutMap values to false", () => {

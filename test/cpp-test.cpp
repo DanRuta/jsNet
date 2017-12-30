@@ -1453,6 +1453,7 @@ namespace ConvLayer_cpp {
 
             for (int f=0; f<3; f++) {
                 layer->filters.push_back(new Filter());
+                layer->filters[f]->errorMap = {{1,1,1},{1,1,1},{1,1,1}};
                 layer->filters[f]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
                 layer->filters[f]->dropoutMap = {{true,true,true},{true,true,true},{true,true,true}};
             }
@@ -1461,6 +1462,7 @@ namespace ConvLayer_cpp {
 
             for (int f=0; f<5; f++) {
                 layer2->filters.push_back(new Filter());
+                layer2->filters[f]->errorMap = {{1,1,1},{1,1,1},{1,1,1}};
                 layer2->filters[f]->deltaWeights = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
                 layer2->filters[f]->dropoutMap = {{true,true,true,true,true},{true,true,true,true,true},
                     {true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true}};
@@ -1526,6 +1528,22 @@ namespace ConvLayer_cpp {
 
         for (int f=0; f<5; f++) {
             EXPECT_EQ( layer2->filters[f]->deltaBias, 0 );
+        }
+    }
+
+    TEST_F(ConvResetDeltaWFixture, resetDeltaWeights_4) {
+
+        layer->resetDeltaWeights();
+        layer2->resetDeltaWeights();
+
+        std::vector<std::vector<double> > expected = {{0,0,0},{0,0,0},{0,0,0}};
+
+        for (int f=0; f<3; f++) {
+            EXPECT_EQ( layer->filters[f]->errorMap, expected );
+        }
+
+        for (int f=0; f<5; f++) {
+            EXPECT_EQ( layer2->filters[f]->errorMap, expected );
         }
     }
 

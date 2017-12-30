@@ -77,7 +77,7 @@ class ConvLayer {
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.bias = 0
+            filter.bias = 1
 
             if (this.net.dropout != 1) {
                 filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
@@ -201,6 +201,12 @@ class ConvLayer {
                 }
             }
 
+            for (let row=0; row<filter.errorMap.length; row++) {
+                for (let col=0; col<filter.errorMap.length; col++) {
+                    filter.errorMap[row][col] = 0
+                }
+            }
+
             if (filter.dropoutMap) {
                 for (let row=0; row<filter.dropoutMap.length; row++) {
                     for (let col=0; col<filter.dropoutMap[0].length; col++) {
@@ -303,7 +309,7 @@ class FCLayer {
             }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
-            neuron.bias = 0
+            neuron.bias = 1
 
             neuron.init({
                 updateFn: this.net.updateFn,

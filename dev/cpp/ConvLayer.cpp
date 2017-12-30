@@ -152,6 +152,12 @@ void ConvLayer::resetDeltaWeights (void) {
             }
         }
 
+        for (int row=0; row<filters[f]->errorMap.size(); row++) {
+            for (int col=0; col<filters[f]->errorMap.size(); col++) {
+                filters[f]->errorMap[row][col] = 0;
+            }
+        }
+
         if (filters[f]->dropoutMap.size()) {
             for (int r=0; r<filters[f]->dropoutMap.size(); r++) {
                 for (int c=0; c<filters[f]->dropoutMap[0].size(); c++) {

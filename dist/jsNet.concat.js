@@ -72,7 +72,7 @@ class ConvLayer {
         this.filters.forEach(filter => {
 
             filter.weights = [...new Array(this.channels)].map(channelWeights => {
-                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize * (this.prevLayer.channels||1), this.weightsConfig))
+                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize, this.weightsConfig))
             })
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))

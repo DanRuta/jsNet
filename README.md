@@ -91,6 +91,8 @@ The usual arrangement of layers would folow something like this:
 In words, an FCLayer, maybe followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
 The first FCLayer needs to have as many neurons in it as there are data points per iteration, and the last FCLayer needs to have as many neurons as there are classes for your data set.
 
+When building a convolutional network, make sure that the number of neurons in the FC layer following a Conv or Pool layer matches the number of outgoing activations in the layer preceding it. See below for a tip on easily calculating that number.
+
 ### Training
 ----
 
@@ -450,7 +452,7 @@ Check the changelog to see the history of added features.
 The next big feature will be WebAssembly support. This will arive in version 3.0, after some more testing is done on the existing beta version. You can keep track of progress on the dev branch.
 
 ##### Long term
-Once that is done, I will be experimenting with some further, equally effective optimizations.
+Once that is done, I will be experimenting with WebGL shaders to run computations on the GPU.
 
 ## Contributing
 ---

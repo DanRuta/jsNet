@@ -14,17 +14,6 @@ module.exports = function(grunt){
             }
         },
 
-        babel: {
-            options: {
-                presets: ["es2015", "stage-3"]
-            },
-            dist: {
-                files: {
-                    "dist/jsNet.min.js": ["dist/jsNet.concat.js"]
-                }
-            }
-        },
-
         uglify: {
             my_target: {
                 options: {
@@ -52,7 +41,7 @@ module.exports = function(grunt){
             },
             js: {
                 files: ["dev/js/*.js"],
-                tasks: ["concatNoWebAssembly", "babel", "uglify"]
+                tasks: ["concatNoWebAssembly", "uglify"]
             },
             wa: {
                 files: ["dev/js-WebAssembly/*.js"],
@@ -76,10 +65,9 @@ module.exports = function(grunt){
         }
     })
 
-    grunt.loadNpmTasks("grunt-babel")
     grunt.loadNpmTasks("grunt-contrib-watch")
     grunt.loadNpmTasks('grunt-contrib-concat')
-    grunt.loadNpmTasks('grunt-contrib-uglify')
+    grunt.loadNpmTasks('grunt-contrib-uglify-es')
     grunt.loadNpmTasks('grunt-text-replace')
     grunt.loadNpmTasks("grunt-exec")
 

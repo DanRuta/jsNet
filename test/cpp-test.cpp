@@ -597,10 +597,13 @@ namespace FCLayer_cpp {
         }
     }
 
-    // Sets the neurons' deltaBias to their errors
+    // Increments the neurons' deltaBias to their errors
     TEST_F(FCBackwardFixture, backward_5) {
         std::vector<double> expected = {1,2,3};
 
+        l2->neurons[0]->deltaBias = 1;
+        l2->neurons[1]->deltaBias = 1;
+        l2->neurons[2]->deltaBias = 1;
         l2->neurons[0]->activation = 0;
         l2->neurons[1]->activation = 1;
         l2->neurons[2]->activation = 0;
@@ -611,11 +614,11 @@ namespace FCLayer_cpp {
         l2->backward(expected);
 
         EXPECT_EQ( l2->neurons[0]->error, 1 );
-        EXPECT_EQ( l2->neurons[0]->deltaBias, 1 );
         EXPECT_EQ( l2->neurons[1]->error, 1 );
-        EXPECT_EQ( l2->neurons[1]->deltaBias, 1 );
         EXPECT_EQ( l2->neurons[2]->error, 3 );
-        EXPECT_EQ( l2->neurons[2]->deltaBias, 3 );
+        EXPECT_EQ( l2->neurons[0]->deltaBias, 2 );
+        EXPECT_EQ( l2->neurons[1]->deltaBias, 2 );
+        EXPECT_EQ( l2->neurons[2]->deltaBias, 4 );
     }
 
     // Sets the neurons' error and deltaBias values to 0 when they are dropped
@@ -841,8 +844,35 @@ namespace FCLayer_cpp {
         EXPECT_NEAR( Network::getInstance(l4->netInstance)->l1Error, 0.0025 , 1e-6 );
     }
 
+    // Clears the neurons' deltaBias
+    TEST(FCLayer, resetDeltaWeights_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 2);
+        FCLayer* l2 = new FCLayer(0, 3);
+        l2->assignPrev(l1);
+        l2->prevLayer = l1;
+        l2->neurons.push_back(new Neuron());
+        l2->neurons.push_back(new Neuron());
+        l2->neurons.push_back(new Neuron());
+
+        for (int n=1; n<3; n++) {
+            l2->neurons[n]->deltaBias = 1;
+        }
+
+        l2->resetDeltaWeights();
+
+        for (int n=1; n<3; n++) {
+            EXPECT_EQ( l2->neurons[n]->deltaBias, 0 );
+        }
+
+        delete l1;
+        delete l2;
+        Network::deleteNetwork();
+    }
+
     // Sets all deltaWeight values to 0
-    TEST(FCLayer, resetDeltaWeights) {
+    TEST(FCLayer, resetDeltaWeights_2) {
         Network::deleteNetwork();
         Network::newNetwork();
         FCLayer* l1 = new FCLayer(0, 2);

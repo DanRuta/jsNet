@@ -138,10 +138,22 @@ void FCLayer::backward (std::vector<double> expected) {
                 }
             }
 
-            neurons[n]->deltaBias = neurons[n]->error;
+            neurons[n]->deltaBias += neurons[n]->error;
         }
     }
 }
+
+void FCLayer::resetDeltaWeights (void) {
+    for(int n=0; n<neurons.size(); n++) {
+
+        neurons[n]->deltaBias = 0;
+
+        for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
+            neurons[n]->deltaWeights[dw] = 0;
+        }
+    }
+}
+
 
 void FCLayer::applyDeltaWeights (void) {
 
@@ -228,13 +240,5 @@ void FCLayer::applyDeltaWeights (void) {
     if (net->maxNorm) {
         net->maxNormTotal = sqrt(net->maxNormTotal);
         NetMath::maxNorm(netInstance);
-    }
-}
-
-void FCLayer::resetDeltaWeights (void) {
-    for(int n=0; n<neurons.size(); n++) {
-        for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
-            neurons[n]->deltaWeights[dw] = 0;
-        }
     }
 }

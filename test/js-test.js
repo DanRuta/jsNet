@@ -1611,10 +1611,13 @@ describe("FCLayer", () => {
             expect(layer3.neurons[3].deltaWeights).to.deep.equal([1.75, 1.75, 1.75])
         })
 
-        it("Sets each neuron's deltaBias to the its error", () => {
-            layer3.neurons.forEach(neuron => neuron.activation = 0.5)
+        it("Increments each neuron's deltaBias to the its error", () => {
+            layer3.neurons.forEach(neuron => {
+                neuron.deltaBias = 1
+                neuron.activation = 0.5
+            })
             layer3.backward([1,2,3,4])
-            expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([0.5, 1.5, 2.5, 3.5])
+            expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([1.5, 2.5, 3.5, 4.5])
         })
 
         it("Sets the neuron error to 0 if dropped", () => {
@@ -1660,7 +1663,7 @@ describe("FCLayer", () => {
 
             layer2.backward()
 
-            expect(layer2.neurons[0].deltaBias).to.equal(0)
+            expect(layer2.neurons[0].deltaBias).to.equal("test0")
             expect(layer2.neurons[0].deltaWeights).to.deep.equal(["test", "test"])
             expect(layer2.neurons[0].derivative).to.equal("test")
         })
@@ -1712,6 +1715,17 @@ describe("FCLayer", () => {
     })
 
     describe("resetDeltaWeights", () => {
+
+        it("Clears the neuron deltaBias", () => {
+            const layer1 = new Layer(2)
+            const layer2 = new Layer(2)
+            const net = new Network({layers: [layer1, layer2]})
+            layer2.neurons.forEach(neuron => neuron.deltaBias = 1)
+
+            layer2.resetDeltaWeights()
+            expect(layer2.neurons[0].deltaBias).to.equal(0)
+            expect(layer2.neurons[1].deltaBias).to.equal(0)
+        })
 
         it("Sets the delta weights of all neurons to 0", () => {
             const layer1 = new Layer(2)

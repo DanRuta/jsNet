@@ -342,7 +342,7 @@ class FCLayer {
 
             if (neuron.dropped) {
                 neuron.error = 0
-                neuron.deltaBias = 0
+                neuron.deltaBias += 0
             } else {
                 if (typeof expected !== "undefined") {
                     neuron.error = expected[ni] - neuron.activation
@@ -359,13 +359,16 @@ class FCLayer {
                         (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
                 }
 
-                neuron.deltaBias = neuron.error
+                neuron.deltaBias += neuron.error
             }
         })
     }
 
     resetDeltaWeights () {
         for (let n=0; n<this.neurons.length; n++) {
+
+            this.neurons[n].deltaBias = 0
+
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
                 this.neurons[n].deltaWeights[dwi] = 0
             }

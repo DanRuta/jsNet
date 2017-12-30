@@ -244,6 +244,10 @@ describe("Network", () => {
                 expect(net.l2).to.be.undefined
             })
 
+            it("Doesn't set the net.l2 to anything if the l2 parameter is not given", () => {
+                expect(net.l2).to.be.undefined
+            })
+
             it("Sets the l2 value to 0.001 if the configuration given is boolean true", () => {
                 const net = new Network({l2: true})
                 expect(net.l2).to.equal(0.001)
@@ -262,6 +266,10 @@ describe("Network", () => {
             it("Sets the l1 value to 0.005 if the configuration given is boolean true", () => {
                 const net = new Network({l1: true})
                 expect(net.l1).to.equal(0.005)
+            })
+
+            it("Doesn't set the net.l1 to anything if the l1 parameter is not given", () => {
+                expect(net.l1).to.be.undefined
             })
 
             it("Sets the net.maxNorm value to the value given as configuration, if given", () => {

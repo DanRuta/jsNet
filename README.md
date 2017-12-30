@@ -204,8 +204,8 @@ const net = new Network({
     learningRate: 0.2,
     cost: "meansquarederror",
     dropout: 1,
-    l2: 0.001,
-    l1: 0.005,
+    l2: undefined,
+    l1: undefined,
     layers: [ /* 3 FCLayers */ ]
     updateFn: "vanillaupdatefn",
     weightsConfig: {
@@ -295,9 +295,9 @@ The function needs to return a single number.
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| dropout | Probability a neuron will **not** be dropped | Any number, or false to disable (equivalent to 1) | 1 |
-| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | 0.001 |
-| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | 0.005 |
+| dropout | Probability a neuron will **not** be dropped | Any number, or false to disable (equivalent to 1) | 1 (disabled) |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
 | maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
 ##### Examples

@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")

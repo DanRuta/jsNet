@@ -3,6 +3,7 @@
 - jsNet version 1.5 feature parity
 - Global bug fixes
 - Removed babel transpilation (it's 2018)
+- Removed default configuration values: l1, l2
 
 # 2.1.0 - Optimizations
 ---

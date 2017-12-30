@@ -352,9 +352,9 @@ describe("Network", () => {
                 expect(net.dropout).to.equal(0.6)
             })
 
-            it("Defaults l2 to 0.001", () => {
+            it("Doesn't set the l2 to anything if not defined", () => {
                 const net = new Network({Module: fakeModule})
-                expect(net.l2).to.equal(0.001)
+                expect(net.l2).to.be.undefined
             })
 
             it("Allows setting l2 to true, which sets it to 0.001", () => {
@@ -373,13 +373,13 @@ describe("Network", () => {
             })
 
             it("Defines the net l2Error", () => {
-                const net = new Network({Module: fakeModule})
+                const net = new Network({Module: fakeModule, l2: 0.001})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "l2Error")
             })
 
-            it("Defaults l1 to 0.005", () => {
+            it("Doesn't set the l1 to anything if not defined", () => {
                 const net = new Network({Module: fakeModule})
-                expect(net.l1).to.equal(0.005)
+                expect(net.l1).to.be.undefined
             })
 
             it("Allows setting l1 to true, which sets it to 0.005", () => {
@@ -398,7 +398,7 @@ describe("Network", () => {
             })
 
             it("Defines the net l1Error", () => {
-                const net = new Network({Module: fakeModule})
+                const net = new Network({Module: fakeModule, l1: 0.005})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "l1Error")
             })
 
@@ -840,7 +840,7 @@ describe("Network", () => {
         let net
 
         beforeEach(() => {
-            net = new Network({Module: fakeModule, layers: [2,3,2]})
+            net = new Network({Module: fakeModule, layers: [2,3,2], l1: 0.005, l2: 0.001})
         })
 
         const testData = [
@@ -972,7 +972,7 @@ describe("Network", () => {
         })
 
         it("Sets the l2Error to 0 with each epoch", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l2: 0.01})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -990,7 +990,7 @@ describe("Network", () => {
         })
 
         it("Sets the l2Error to 0 with each epoch (with callbacks)", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l2: 0.01})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -1009,7 +1009,7 @@ describe("Network", () => {
 
 
         it("Sets the l1Error to 0 with each epoch", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l1: 0.005})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
@@ -1027,7 +1027,7 @@ describe("Network", () => {
         })
 
         it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l1: 0.005})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)

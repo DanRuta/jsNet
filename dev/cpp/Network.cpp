@@ -16,6 +16,7 @@ Network::~Network () {
 int Network::newNetwork(void) {
     Network* net = new Network();
     net->iterations = 0;
+    net->rreluSlope = ((double) rand() / (RAND_MAX)) * 0.001;
     netInstances.push_back(net);
     net->instanceIndex = netInstances.size()-1;
     return net->instanceIndex;

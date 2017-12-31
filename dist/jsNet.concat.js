@@ -1195,6 +1195,7 @@ class Network {
         }
 
         this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.rreluSlope = Math.random() * 0.001
         this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom

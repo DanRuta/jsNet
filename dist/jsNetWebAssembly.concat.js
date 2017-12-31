@@ -518,7 +518,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -531,6 +531,7 @@ class Network {
         NetUtil.Module = Module
         this.Module = Module
         this.conv = {}
+        this.pool = {}
         this.netInstance = this.Module.ccall("newNetwork", null, null, null)
         this.state = "not-defined"
 

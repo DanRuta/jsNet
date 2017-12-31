@@ -165,6 +165,11 @@ describe("Network", () => {
                 expect(net.lreluSlope).to.equal(-0.001)
             })
 
+            it("Sets the net.rreluSlope to a random number between 0 and 0.001", () => {
+                expect(net.rreluSlope).to.be.at.least(0)
+                expect(net.rreluSlope).to.be.at.most(0.001)
+            })
+
             it("Defaults the learningRate to 0.01 when activation is lrelu", () => {
                 const net = new Network({activation: "lrelu"})
                 expect(net.learningRate).to.equal(0.01)

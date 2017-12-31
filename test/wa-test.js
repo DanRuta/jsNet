@@ -437,34 +437,39 @@ describe("Network", () => {
                 expect(net.conv).to.deep.equal({})
             })
 
-            it("Defines the net.conv.filterSize when configured", () => {
-                const net = new Network({Module: fakeModule, conv: {filterSize: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "filterSize")
-            })
-
-            it("Sets the net channels to the given value", () => {
+            it("Sets the net conv filterSize to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {filterSize: 1357}})
                 expect(net.conv.filterSize).to.equal(1357)
             })
 
-            it("Defines the net.conv.zeroPadding when configured", () => {
-                const net = new Network({Module: fakeModule, conv: {zeroPadding: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "zeroPadding")
-            })
-
-            it("Sets the net channels to the given value", () => {
+            it("Sets the net conv zeroPadding to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {zeroPadding: 1357}})
                 expect(net.conv.zeroPadding).to.equal(1357)
             })
 
-            it("Defines the net.conv.stride when configured", () => {
+            it("Sets the net conv stride to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {stride: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "stride")
+                expect(net.conv.stride).to.equal(1357)
+            })
+
+            it("Creates a net.pool {} object if the pool parameter is given", () => {
+                const net = new Network({Module: fakeModule, pool: {}})
+                expect(net.pool).to.deep.equal({})
+            })
+
+            it("Sets the net pool size to the given value", () => {
+                const net = new Network({Module: fakeModule, pool: {size: 1357}})
+                expect(net.pool.size).to.equal(1357)
+            })
+
+            it("Sets the net pool stride to the given value", () => {
+                const net = new Network({Module: fakeModule, pool: {stride: 1357}})
+                expect(net.pool.stride).to.equal(1357)
             })
 
             it("Sets the net channels to the given value", () => {
-                const net = new Network({Module: fakeModule, conv: {stride: 1357}})
-                expect(net.conv.stride).to.equal(1357)
+                const net = new Network({Module: fakeModule, pool: {size: 1357}})
+                expect(net.pool.size).to.equal(1357)
             })
 
             it("Defines the net weightsConfig distribution", () => {

@@ -193,36 +193,6 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_filterSize  (int instanceIndex, float filterSize) {
-        Network::getInstance(instanceIndex)->filterSize = filterSize;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_filterSize (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->filterSize;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_zeroPadding  (int instanceIndex, float zeroPadding) {
-        Network::getInstance(instanceIndex)->zeroPadding = zeroPadding;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_zeroPadding (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->zeroPadding;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_stride  (int instanceIndex, float stride) {
-        Network::getInstance(instanceIndex)->stride = stride;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_stride (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->stride;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
     void set_distribution  (int instanceIndex, int distribution) {
 
         Network* net = Network::getInstance(instanceIndex);

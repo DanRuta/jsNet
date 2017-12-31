@@ -55,21 +55,14 @@ class Network {
         }
 
         if (conv) {
+            if (conv.filterSize!=undefined)     this.conv.filterSize = conv.filterSize
+            if (conv.zeroPadding!=undefined)    this.conv.zeroPadding = conv.zeroPadding
+            if (conv.stride!=undefined)         this.conv.stride = conv.stride
+        }
 
-            if (conv.filterSize != undefined) {
-                NetUtil.defineProperty(this.conv, "filterSize", ["number"], [this.netInstance])
-                this.conv.filterSize = conv.filterSize
-            }
-
-            if (conv.zeroPadding != undefined) {
-                NetUtil.defineProperty(this.conv, "zeroPadding", ["number"], [this.netInstance])
-                this.conv.zeroPadding = conv.zeroPadding
-            }
-
-            if (conv.stride != undefined) {
-                NetUtil.defineProperty(this.conv, "stride", ["number"], [this.netInstance])
-                this.conv.stride = conv.stride
-            }
+        if (pool) {
+            if (pool.size)      this.pool.size = pool.size
+            if (pool.stride)    this.pool.stride = pool.stride
         }
 
         Object.defineProperty(this, "error", {

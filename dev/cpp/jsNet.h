@@ -16,9 +16,6 @@ public:
     int iterations;
     int miniBatchSize;
     int channels;
-    int filterSize;
-    int zeroPadding;
-    int stride;
     float learningRate;
     float rmsDecay;
     float rho;

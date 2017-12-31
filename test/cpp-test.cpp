@@ -88,7 +88,7 @@ namespace Network_cpp {
         EXPECT_EQ( Network::netInstances.size(), 0 );
     }
 
-    // Assigns the network activation function to each layer
+    // Assigns prevLayers to layers accordingly
     TEST(Network, joinLayers_1) {
         Network::deleteNetwork();
         Network::newNetwork();
@@ -97,29 +97,20 @@ namespace Network_cpp {
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
         Network::getInstance(0)->layers.push_back(new FCLayer(0, 3));
-        Network::getInstance(0)->activation = &NetMath::sigmoid<Neuron>;
-
-        EXPECT_NE( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid<Neuron> );
-        EXPECT_NE( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid<Neuron> );
         Network::getInstance(0)->joinLayers();
-        EXPECT_EQ( Network::getInstance(0)->layers[0]->activation, &NetMath::sigmoid<Neuron> );
-        EXPECT_EQ( Network::getInstance(0)->layers[1]->activation, &NetMath::sigmoid<Neuron> );
-    }
 
-    // Assigns prevLayers to layers accordingly
-    TEST(Network, joinLayers_2) {
         EXPECT_EQ( Network::getInstance(0)->layers[1]->prevLayer, Network::getInstance(0)->layers[0] );
         EXPECT_EQ( Network::getInstance(0)->layers[2]->prevLayer, Network::getInstance(0)->layers[1] );
     }
 
     // Assigns nextLayers to layers accordingly
-    TEST(Network, joinLayers_3) {
+    TEST(Network, joinLayers_2) {
         EXPECT_EQ( Network::getInstance(0)->layers[0]->nextLayer, Network::getInstance(0)->layers[1] );
         EXPECT_EQ( Network::getInstance(0)->layers[1]->nextLayer, Network::getInstance(0)->layers[2] );
     }
 
     // Assigns fanIn and fanOut correctly
-    TEST(Network, joinLayers_4) {
+    TEST(Network, joinLayers_3) {
         EXPECT_EQ( Network::getInstance(0)->layers[0]->fanIn,-1 );
         EXPECT_EQ( Network::getInstance(0)->layers[0]->fanOut, 3 );
         EXPECT_EQ( Network::getInstance(0)->layers[1]->fanIn, 3 );
@@ -346,6 +337,7 @@ namespace FCLayer_cpp {
             l2 = new FCLayer(1, 5);
             net->layers.push_back(l1);
             net->layers.push_back(l2);
+            l2->hasActivation = true;
             l2->prevLayer = l1;
             l2->netInstance = 1;
             l1->init(0);
@@ -411,8 +403,28 @@ namespace FCLayer_cpp {
         EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 0.9990889488055994 );
     }
 
-    // Sets the neurons' dropped value to true and activation to 0 if the net is training and dropout is set to 0
+    // Sets the layer's neurons' activation to the sum when there is no activation function
     TEST_F(FCForwardFixture, forward_3) {
+
+        l2->hasActivation = false;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->weights = {1,2};
+            l2->neurons[n]->bias = n;
+        }
+
+        net->isTraining = false;
+        net->dropout = 1;
+        l2->forward();
+
+        EXPECT_FALSE( net->isTraining );
+        EXPECT_DOUBLE_EQ( l2->neurons[0]->activation, 5 );
+        EXPECT_DOUBLE_EQ( l2->neurons[1]->activation, 6 );
+        EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 7 );
+    }
+
+    // Sets the neurons' dropped value to true and activation to 0 if the net is training and dropout is set to 0
+    TEST_F(FCForwardFixture, forward_4) {
 
         for (int n=0; n<3; n++) {
             l2->neurons[n]->weights = {1,2};
@@ -438,7 +450,7 @@ namespace FCLayer_cpp {
     }
 
     // Does not set neurons to dropped if the net is not training
-    TEST_F(FCForwardFixture, forward_4) {
+    TEST_F(FCForwardFixture, forward_5) {
         for (int n=0; n<3; n++) {
             l2->neurons[n]->weights = {1,2};
             l2->neurons[n]->bias = n;
@@ -459,7 +471,7 @@ namespace FCLayer_cpp {
     }
 
     // Divides the activation values by the dropout
-    TEST_F(FCForwardFixture, forward_5) {
+    TEST_F(FCForwardFixture, forward_6) {
         for (int n=0; n<3; n++) {
             l2->neurons[n]->weights = {1,2};
             l2->neurons[n]->bias = n;
@@ -495,6 +507,7 @@ namespace FCLayer_cpp {
             l1->init(0);
             l2->init(1);
             l3->init(2);
+            l2->hasActivation = true;
             l2->activation = &NetMath::sigmoid<Neuron>;
         }
 
@@ -547,8 +560,27 @@ namespace FCLayer_cpp {
         EXPECT_EQ( l2->neurons[2]->derivative, 0.25 );
     }
 
-    // Sets the neurons' errors to their derivative multiplied by weighted errors in next layer, when no expected data is passed
+    // Sets the neurons' derivatives to 1 when no activation function is configured
     TEST_F(FCBackwardFixture, backward_3) {
+
+        l2->hasActivation = false;
+        std::vector<double> emptyVec;
+
+        l2->neurons[0]->sum = 0;
+        l2->neurons[1]->sum = 1;
+        l2->neurons[2]->sum = 0;
+        l2->neurons[0]->dropped = false;
+        l2->neurons[1]->dropped = false;
+        l2->neurons[2]->dropped = false;
+        l2->backward(emptyVec);
+
+        EXPECT_EQ( l2->neurons[0]->derivative, 1 );
+        EXPECT_EQ( l2->neurons[1]->derivative, 1 );
+        EXPECT_EQ( l2->neurons[2]->derivative, 1 );
+    }
+
+    // Sets the neurons' errors to their derivative multiplied by weighted errors in next layer, when no expected data is passed
+    TEST_F(FCBackwardFixture, backward_4) {
         std::vector<double> emptyVec;
 
         l2->neurons[0]->sum = 0.5;
@@ -571,7 +603,7 @@ namespace FCLayer_cpp {
     }
 
     // Increments each of its delta weights by its error * the respective weight's neuron's activation
-    TEST_F(FCBackwardFixture, backward_4) {
+    TEST_F(FCBackwardFixture, backward_5) {
         std::vector<double> expected = {1,2,3,4};
 
         Network::getInstance(0)->l2 = 0;
@@ -598,7 +630,7 @@ namespace FCLayer_cpp {
     }
 
     // Increments the neurons' deltaBias to their errors
-    TEST_F(FCBackwardFixture, backward_5) {
+    TEST_F(FCBackwardFixture, backward_6) {
         std::vector<double> expected = {1,2,3};
 
         l2->neurons[0]->deltaBias = 1;
@@ -622,7 +654,7 @@ namespace FCLayer_cpp {
     }
 
     // Sets the neurons' error and deltaBias values to 0 when they are dropped
-    TEST_F(FCBackwardFixture, backward_6) {
+    TEST_F(FCBackwardFixture, backward_7) {
         std::vector<double> expected = {1,2,3};
 
         l2->neurons[0]->activation = 0;
@@ -651,7 +683,7 @@ namespace FCLayer_cpp {
     }
 
     // Increments the deltaWeights by the orig value, multiplied by the l2 amount * existing deltaWeight value
-    TEST_F(FCBackwardFixture, backward_7) {
+    TEST_F(FCBackwardFixture, backward_8) {
         std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
         net->l2 = 0.001;
 
@@ -682,7 +714,7 @@ namespace FCLayer_cpp {
     }
 
     // Increments the deltaWeights by the orig value, multiplied by the l1 amount * existing deltaWeight value
-    TEST_F(FCBackwardFixture, backward_8) {
+    TEST_F(FCBackwardFixture, backward_9) {
         std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
         net->l1 = 0.005;
 
@@ -709,7 +741,7 @@ namespace FCLayer_cpp {
     }
 
     // Regularizes by a tenth as much when the miniBatchSize is configured as 10
-    // TEST_F(FCBackwardFixture, backward_9) {
+    // TEST_F(FCBackwardFixture, backward_10) {
     //     std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
     //     l2->neurons[0]->activation = 0.5;
     //     l2->neurons[1]->activation = 0.5;

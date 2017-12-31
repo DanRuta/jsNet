@@ -37,7 +37,6 @@ Network* Network::getInstance(int i) {
 
 void Network::joinLayers(void) {
     for (int l=0; l<layers.size(); l++) {
-        layers[l]->activation = activation;
 
         layers[l]->fanIn = -1;
         layers[l]->fanOut = -1;

@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("2.1.1")
+        expect(Network.version).to.equal("3.0.0")
     })
 })
 
@@ -1368,6 +1368,22 @@ describe("FCLayer", () => {
             const layer = new Layer(10)
             expect(layer.state).to.equal("not-initialised")
         })
+
+        it("Allows setting the activation function to a custom function", () => {
+            const customFn = x => x
+            const layer = new FCLayer(2, {activation: customFn})
+            expect(layer.activation).to.equal(customFn)
+        })
+
+        it("Allows setting the activation to false by giving the value false", () => {
+            const layer = new FCLayer(5, {activation: false})
+            expect(layer.activation).to.be.false
+        })
+
+        it("Allows setting the activation function to a function from NetMath using a string", () => {
+            const layer = new FCLayer(5, {activation: "relu"})
+            expect(layer.activation.name).to.equal("bound relu")
+        })
     })
 
     describe("assignNext", () => {
@@ -1521,6 +1537,21 @@ describe("FCLayer", () => {
             expect(layer2.neurons[2].activation).to.equal(NetMath.sigmoid(layer2.neurons[2].sum))
         })
 
+        it("Sets the neuron's activation to its sum when no activation function has been set", () => {
+            const net = new Network({
+                activation: "sigmoid",
+                layers: [layer1, layer2],
+                weightsConfig: {limit: 0.1},
+                dropout: 1
+            })
+            layer2.activation = false
+
+            net.forward([1,2])
+            expect(layer2.neurons[0].activation).to.equal(layer2.neurons[0].sum)
+            expect(layer2.neurons[1].activation).to.equal(layer2.neurons[1].sum)
+            expect(layer2.neurons[2].activation).to.equal(layer2.neurons[2].sum)
+        })
+
         it("Sets some neurons's .dropped value to true", () => {
             const net = new Network({layers: [new Layer(5), new Layer(15)], dropout: 0.5})
             net.layers[0].neurons.forEach(neuron => neuron.activation = Math.random())
@@ -1593,6 +1624,14 @@ describe("FCLayer", () => {
             const expectedDerivatives = [...new Array(3)].map(v => NetMath.sigmoid(0.5, true))
 
             expect(layer2.neurons.map(n => n.derivative)).to.deep.equal(expectedDerivatives)
+        })
+
+        it("Sets the neuron derivative to 1 when no activation function has been set", () => {
+            layer2.activation = false
+            layer2.neurons.forEach(neuron => neuron.sum = 0.5)
+            net.backward([1,2,3,4])
+
+            expect(layer2.neurons.map(n => n.derivative)).to.deep.equal([1,1,1])
         })
 
         it("Sets each neuron's error to the derivative * next layer's neurons' weighted errors (in hidden layers)", () => {
@@ -4026,7 +4065,7 @@ describe("PoolLayer", () => {
 
 describe("Netmath", () => {
 
-    describe("Sigmoid", () => {
+    describe("sigmoid", () => {
 
         it("sigmoid(1.681241237) == 0.8430688214048092", () => {
             expect(NetMath.sigmoid(1.681241237)).to.equal(0.8430688214048092)
@@ -4037,7 +4076,7 @@ describe("Netmath", () => {
         })
     })
 
-    describe("Tanh", () => {
+    describe("tanh", () => {
 
         it("tanh(1)==0.7615941559557649", () => {
             expect(NetMath.tanh(1)).to.equal(0.7615941559557649)

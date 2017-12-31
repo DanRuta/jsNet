@@ -2,10 +2,18 @@
 
 class FCLayer {
 
-    constructor (size) {
+    constructor (size, {activation}={}) {
         this.size = size
         this.neurons = [...new Array(size)].map(n => new Neuron())
         this.state = "not-initialised"
+
+        if (activation!=undefined) {
+            if (typeof activation=="boolean" && !activation) {
+                this.activation = false
+            } else {
+                this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+            }
+        }
     }
 
     assignNext (layer) {
@@ -60,7 +68,7 @@ class FCLayer {
                     neuron.sum += activations[ai] * neuron.weights[ai]
                 }
 
-                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.net.dropout||1)
+                neuron.activation = (this.activation ? this.activation(neuron.sum, false, neuron) : neuron.sum) / (this.net.dropout||1)
             }
         })
     }
@@ -75,7 +83,7 @@ class FCLayer {
                 if (typeof expected !== "undefined") {
                     neuron.error = expected[ni] - neuron.activation
                 } else {
-                    neuron.derivative = this.activation(neuron.sum, true, neuron)
+                    neuron.derivative = this.activation ? this.activation(neuron.sum, true, neuron) : 1
                     neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))
                                                                              .reduce((p,c) => p+c, 0)
                 }

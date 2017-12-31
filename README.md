@@ -352,6 +352,32 @@ net = new Network({weightsConfig: {distribution: "lecunUniform"}})
 net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
 
+### FCLayer (Fully connected layer)
+The first parameter, an integer, is for how many neurons the layer will have. The second, is an object where the configurations below go.
+
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | The net's activation function |
+
+##### Examples
+```javascript
+// 20 neurons, sigmoid activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [new FCLayer(20)]
+})
+// 100 neurons, no activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [new FCLayer(20, {activation: false})]
+})
+// 15 neurons, tanh activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [new FCLayer(20, {activation: "tanh"})]
+})
+```
+
 ### ConvLayer (Convolutional layer)
 
 The first parameter, an integer, is for how many filters to use in the layer. The second, is an object where the configurations below go.
@@ -361,7 +387,7 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
 | zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2, keeping dimensions the same (equivalent to 'SAME' in TensorFlow) |
 | stride | How many values to move between convolutions | Any number | 1 |
-| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | false |
 
 You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions.
 
@@ -400,7 +426,7 @@ The second is an object where the configurations below go.
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | stride | How many values to move between pooling | Any number | layer.size |
-| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | false |
 
 The pooling operation used is max pool.
 

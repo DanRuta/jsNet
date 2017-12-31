@@ -23,6 +23,7 @@ public:
     float rmsDecay;
     float rho;
     float lreluSlope;
+    float rreluSlope;
     float eluAlpha;
     bool isTraining;
     float dropout;

@@ -3,6 +3,7 @@ FCLayer::FCLayer (int netI, int s) : Layer(netI, s) {
     netInstance = netI;
     size = s;
     type = "FC";
+    hasActivation = false;
 }
 
 FCLayer::~FCLayer (void) {
@@ -82,7 +83,11 @@ void FCLayer::forward (void) {
                 }
             }
 
-            neurons[n]->activation = activation(neurons[n]->sum, false, neurons[n]) / net->dropout;
+            if (hasActivation) {
+                neurons[n]->activation = activation(neurons[n]->sum, false, neurons[n]) / net->dropout;
+            } else {
+                neurons[n]->activation = neurons[n]->sum / net->dropout;
+            }
         }
     }
 }
@@ -103,7 +108,11 @@ void FCLayer::backward (std::vector<double> expected) {
             if (expected.size()) {
                 neurons[n]->error = expected[n] - neurons[n]->activation;
             } else {
-                neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
+                if (hasActivation) {
+                    neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
+                } else {
+                    neurons[n]->derivative = 1;
+                }
 
                 double weightedErrors = 0.0;
 
@@ -119,17 +128,9 @@ void FCLayer::backward (std::vector<double> expected) {
                     neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation *
                             (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
                 }
-            } else if (prevLayer->type == "Conv") {
 
-                std::vector<double> activations = NetUtil::getActivations(prevLayer);
-
-                for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
-                    neurons[n]->deltaWeights[wi] += neurons[n]->error * activations[wi] *
-                        (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
-                }
             } else {
 
-                //  duplicate with above?
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);
 
                 for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
@@ -166,7 +167,7 @@ void FCLayer::applyDeltaWeights (void) {
         }
     }
 
-    // Function pointers are far too slow, for this
+    // Function pointers are far too slow for this
     // Using code repetitive switch statements makes a substantial perf difference
     switch (net->updateFnIndex) {
         case 0: // vanilla

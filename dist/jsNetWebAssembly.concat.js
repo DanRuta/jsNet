@@ -10,11 +10,14 @@ class ConvLayer {
         this.layerIndex = 0
         this.zeroPadding = zeroPadding
 
-        if (activation != undefined) {
+        this.activation = false
+        this.activationName = activation
+
+        if (activation) {
             if (typeof activation != "string") {
-                throw new Error("Only string activation functions available in the WebAssembly version")
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
             }
-            this.activation = NetUtil.format(activation)
+            this.activationName = NetUtil.format(activation)
         }
     }
 
@@ -80,9 +83,12 @@ class ConvLayer {
             throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${outSize} in conv layer at index ${layerIndex}`)
         }
 
-        if (this.activation != false) {
-            this.net.Module.ccall("setConvActivation", null, ["number", "number", "number"],
-                [this.netInstance, layerIndex, NetUtil.activationsIndeces[this.activation||this.net.activationName]])
+        if (this.activationName !== false && this.net.activationName !== false) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "conv_",
+                getCallback: _ => `WASM ${this.activationName||this.net.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName||this.net.activationName]
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())
@@ -145,10 +151,17 @@ typeof window=="undefined" && (exports.ConvLayer = ConvLayer)
 
 class FCLayer {
 
-    constructor (size) {
+    constructor (size, {activation}={}) {
         this.size = size
         this.neurons = [...new Array(size)].map(n => new Neuron())
         this.layerIndex = 0
+
+        if (activation != undefined) {
+            if (typeof activation != "string") {
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
+            }
+            this.activationName = NetUtil.format(activation)
+        }
     }
 
     assignNext (layer) {
@@ -159,6 +172,14 @@ class FCLayer {
         this.netInstance = this.net.netInstance
         this.prevLayer = layer
         this.layerIndex = layerIndex
+
+        if (this.activationName || this.net.activationName) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "fc_",
+                getCallback: _ => `WASM ${this.activationName||this.net.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName||this.net.activationName]
+        }
     }
 
     init () {
@@ -1033,7 +1054,7 @@ class Network {
     }
 
     static get version () {
-        return "2.1.1"
+        return "3.0.0"
     }
 }
 
@@ -1100,13 +1121,14 @@ class PoolLayer {
         if (size)   this.size = size
         if (stride) this.stride = stride
 
-        if (activation != undefined && activation!=false) {
+        this.activation = false
+        this.activationName = activation
+
+        if (activation) {
             if (typeof activation != "string") {
-                throw new Error("Only string activation functions available in the WebAssembly version")
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
             }
-            this.activation = NetUtil.format(activation)
-        } else {
-            this.activation = false
+            this.activationName = NetUtil.format(activation)
         }
     }
 
@@ -1166,6 +1188,14 @@ class PoolLayer {
 
         if (outMapSize%1 != 0) {
             throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${outMapSize} in pool layer at index ${layerIndex}`)
+        }
+
+        if (this.activationName) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "pool_",
+                getCallback: _ => `WASM ${this.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName]
         }
     }
 

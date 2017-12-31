@@ -7,13 +7,14 @@ class PoolLayer {
         if (size)   this.size = size
         if (stride) this.stride = stride
 
-        if (activation != undefined && activation!=false) {
+        this.activation = false
+        this.activationName = activation
+
+        if (activation) {
             if (typeof activation != "string") {
-                throw new Error("Only string activation functions available in the WebAssembly version")
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
             }
-            this.activation = NetUtil.format(activation)
-        } else {
-            this.activation = false
+            this.activationName = NetUtil.format(activation)
         }
     }
 
@@ -73,6 +74,14 @@ class PoolLayer {
 
         if (outMapSize%1 != 0) {
             throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${outMapSize} in pool layer at index ${layerIndex}`)
+        }
+
+        if (this.activationName) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "pool_",
+                getCallback: _ => `WASM ${this.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName]
         }
     }
 

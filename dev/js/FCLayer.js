@@ -73,15 +73,15 @@ class FCLayer {
         })
     }
 
-    backward (expected) {
+    backward (errors) {
         this.neurons.forEach((neuron, ni) => {
 
             if (neuron.dropped) {
                 neuron.error = 0
                 neuron.deltaBias += 0
             } else {
-                if (typeof expected !== "undefined") {
-                    neuron.error = expected[ni] - neuron.activation
+                if (typeof errors !== "undefined") {
+                    neuron.error = errors[ni]
                 } else {
                     neuron.derivative = this.activation ? this.activation(neuron.sum, true, neuron) : 1
                     neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))

@@ -27,7 +27,6 @@ void ConvLayer::assignPrev (Layer* l) {
 void ConvLayer::init (int layerIndex) {
 
     Network* net = Network::getInstance(netInstance);
-
     for (int f=0; f<filters.size(); f++) {
 
         // Weights

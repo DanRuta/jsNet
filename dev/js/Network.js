@@ -174,11 +174,18 @@ class Network {
             layer.assignPrev(this.layers[layerIndex-1], layerIndex)
 
             layer.weightsConfig.fanIn = layer.prevLayer.size
-            layer.prevLayer.weightsConfig.fanOut = layer.size
+
+            if (layerIndex<this.layers.length-1) {
+                layer.weightsConfig.fanOut = this.layers[layerIndex+1].size
+            }
 
             layer.init()
-            layer.state = "initialised"
+
+        } else if (this.layers.length > 1) {
+            layer.weightsConfig.fanOut = this.layers[1].size
         }
+
+        layer.state = "initialised"
     }
 
     forward (data) {
@@ -197,20 +204,20 @@ class Network {
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
         this.layers.forEach((layer, li) => li && layer.forward())
-        return this.layers[this.layers.length-1].neurons.map(n => n.activation)
+        return NetMath.softmax(this.layers[this.layers.length-1].neurons.map(n => n.sum))
     }
 
-    backward (expected) {
+    backward (errors) {
 
-        if (expected === undefined) {
+        if (errors === undefined) {
             throw new Error("No data passed to Network.backward()")
         }
 
-        if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.", expected)
+        if (errors.length != this.layers[this.layers.length-1].neurons.length) {
+            console.warn("Expected data length did not match output layer neurons count.", errors)
         }
 
-        this.layers[this.layers.length-1].backward(expected)
+        this.layers[this.layers.length-1].backward(errors)
 
         for (let layerIndex=this.layers.length-2; layerIndex>0; layerIndex--) {
             this.layers[layerIndex].backward()
@@ -236,7 +243,6 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                // this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
                 this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
@@ -267,7 +273,12 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
-                this.backward(target)
+                const errors = []
+                for (let n=0; n<output.length; n++) {
+                    errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                this.backward(errors)
 
                 if (++iterationIndex%this.miniBatchSize==0) {
                     this.applyDeltaWeights()

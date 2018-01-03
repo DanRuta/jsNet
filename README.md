@@ -109,6 +109,9 @@ const net = new Network()
 net.train(training) // This on its own is enough
 .then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
+
+Until more options are implemented, softmax is used by default during training, on the last layer. As such, activation configurations are not used there.
+
 ##### Options
 ###### Epochs
 By default, this is ```1``` and represents how many times the data passed will be used.
@@ -185,11 +188,8 @@ Once the network has been trained, tested and imported into your page, you can u
 const userInput = [1,0,1,0,0.5] // Example input
 const netResult = net.forward(userInput)
 ```
-This will return an array of the activations in the output layer.
-You can run them through a softmax function by using NetMath.
-```javascript
-const normalizedResults = NetMath.softmax(netResult)
-```
+This will return an array of the softmax activations in the output layer.
+
 
 ## Configurations
 ---
@@ -364,19 +364,21 @@ The first parameter, an integer, is for how many neurons the layer will have. Th
 // 20 neurons, sigmoid activation function
 net = new Network({
     activation: "sigmoid",
-    layers: [new FCLayer(20)]
+    layers: [..., new FCLayer(20), ...]
 })
 // 100 neurons, no activation function
 net = new Network({
     activation: "sigmoid",
-    layers: [new FCLayer(20, {activation: false})]
+    layers: [..., new FCLayer(20, {activation: false}), ...]
 })
 // 15 neurons, tanh activation function
 net = new Network({
     activation: "sigmoid",
-    layers: [new FCLayer(20, {activation: "tanh"})]
+    layers: [..., new FCLayer(20, {activation: "tanh"}), ...]
 })
 ```
+
+Softmax is used by default on the last layer. Activation configurations are therefore not used there.
 
 ### ConvLayer (Convolutional layer)
 

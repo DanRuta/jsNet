@@ -276,7 +276,6 @@ std::vector<double> NetMath::lecunnormal (int netInstance, int layerIndex, int s
 }
 
 std::vector<double> NetMath::xavieruniform (int netInstance, int layerIndex, int size) {
-
     Network* net = Network::getInstance(netInstance);
 
     if (net->layers[layerIndex]->fanOut) {

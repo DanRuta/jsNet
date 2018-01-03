@@ -9,6 +9,7 @@ class ConvLayer {
         if (size)           this.size = size
 
         this.zeroPadding = zeroPadding
+        this.activationName = activation
 
         if (activation!=undefined) {
 
@@ -85,7 +86,7 @@ class ConvLayer {
 
             filter.init({
                 updateFn: this.net.updateFn,
-                activation: this.net.activationConfig,
+                activation: this.activationName || this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
         })

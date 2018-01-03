@@ -178,15 +178,15 @@ namespace Network_cpp {
     }
 
 
-    // Returns a vector of activations in the last layer
+    // Returns a vector of softmax-ed sums in the last layer
     TEST_F(ForwardFixture, forward_3) {
 
-        l2->neurons[0]->activation = 1;
-        l2->neurons[1]->activation = 2;
+        l2->neurons[0]->sum = 1;
+        l2->neurons[1]->sum = 2;
 
         std::vector<double> returned = Network::getInstance(0)->forward(testInput);
 
-        std::vector<double> actualValues = {1, 2};
+        std::vector<double> actualValues = NetMath::softmax({1, 2});
 
 
         EXPECT_EQ( returned, actualValues );
@@ -524,22 +524,18 @@ namespace FCLayer_cpp {
         FCLayer* l3;
     };
 
-    // Sets the neurons' errors to difference between their activations and expected values, when provided
+    // Sets the neurons' errors to the given error values
     TEST_F(FCBackwardFixture, backward_1) {
-        std::vector<double> expected = {1,2,3};
-
-        l2->neurons[0]->activation = 0;
-        l2->neurons[1]->activation = 1;
-        l2->neurons[2]->activation = 0;
+        std::vector<double> errors = {1,2,3};
 
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
 
-        l2->backward(expected);
+        l2->backward(errors);
 
         EXPECT_EQ( l2->neurons[0]->error, 1 );
-        EXPECT_EQ( l2->neurons[1]->error, 1 );
+        EXPECT_EQ( l2->neurons[1]->error, 2 );
         EXPECT_EQ( l2->neurons[2]->error, 3 );
     }
 
@@ -604,7 +600,7 @@ namespace FCLayer_cpp {
 
     // Increments each of its delta weights by its error * the respective weight's neuron's activation
     TEST_F(FCBackwardFixture, backward_5) {
-        std::vector<double> expected = {1,2,3,4};
+        std::vector<double> errors = {0.5,1.5,2.5,3.5};
 
         Network::getInstance(0)->l2 = 0;
 
@@ -616,11 +612,7 @@ namespace FCLayer_cpp {
         l3->neurons[2]->dropped = false;
         l3->neurons[3]->dropped = false;
 
-        for (int i=0; i<4; i++) {
-            l3->neurons[i]->activation = 0.5;
-        }
-
-        l3->backward(expected);
+        l3->backward(errors);
 
         for (int n=0; n<4; n++) {
             EXPECT_EQ( l3->neurons[n]->deltaWeights[0], 0.25 + n * 0.5 );
@@ -631,14 +623,11 @@ namespace FCLayer_cpp {
 
     // Increments the neurons' deltaBias to their errors
     TEST_F(FCBackwardFixture, backward_6) {
-        std::vector<double> expected = {1,2,3};
+        std::vector<double> expected = {1,1,3};
 
         l2->neurons[0]->deltaBias = 1;
         l2->neurons[1]->deltaBias = 1;
         l2->neurons[2]->deltaBias = 1;
-        l2->neurons[0]->activation = 0;
-        l2->neurons[1]->activation = 1;
-        l2->neurons[2]->activation = 0;
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
@@ -684,7 +673,7 @@ namespace FCLayer_cpp {
 
     // Increments the deltaWeights by the orig value, multiplied by the l2 amount * existing deltaWeight value
     TEST_F(FCBackwardFixture, backward_8) {
-        std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
+        std::vector<double> expected = {0.05, 0.05, 0.05, 0.05};
         net->l2 = 0.001;
 
         l2->neurons[0]->activation = 0.5;
@@ -696,7 +685,6 @@ namespace FCLayer_cpp {
         l3->neurons[3]->dropped = false;
 
         for (int i=0; i<4; i++) {
-            l3->neurons[i]->activation = 0.25;
             l3->neurons[i]->deltaWeights[0] = 0.25;
             l3->neurons[i]->deltaWeights[1] = 0.25;
             l3->neurons[i]->deltaWeights[2] = 0.25;
@@ -715,7 +703,7 @@ namespace FCLayer_cpp {
 
     // Increments the deltaWeights by the orig value, multiplied by the l1 amount * existing deltaWeight value
     TEST_F(FCBackwardFixture, backward_9) {
-        std::vector<double> expected = {0.3, 0.3, 0.3, 0.3};
+        std::vector<double> expected = {0.05, 0.05, 0.05, 0.05};
         net->l1 = 0.005;
 
         l2->neurons[0]->activation = 0.5;
@@ -727,7 +715,6 @@ namespace FCLayer_cpp {
         l3->neurons[3]->dropped = false;
 
         for (int i=0; i<4; i++) {
-            l3->neurons[i]->activation = 0.25;
             l3->neurons[i]->deltaWeights = {0.25, 0.25, 0.25, 0.25};
         }
 

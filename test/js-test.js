@@ -672,10 +672,10 @@ describe("Network", () => {
         })
 
         it("Assigns the layer2 weightsConfig.fanOut to the number of neurons in layer3", () => {
-            net.layers = [layer1, layer2]
+            net.layers = [layer1, layer2, layer3]
             layer2.weightsConfig = {}
             layer3.weightsConfig = {}
-            net.joinLayer(layer3, 2)
+            net.joinLayer(layer2, 1)
             expect(layer2.weightsConfig.fanOut).to.equal(4)
         })
 
@@ -738,16 +738,16 @@ describe("Network", () => {
             expect(layer3.forward).to.have.been.called
         })
 
-        it("Returns the activations of the neurons in the last layer", () => {
+        it("Returns the softmax of the neurons in the last layer", () => {
             const layer1 = new Layer(3)
             const layer2 = new Layer(4)
             const layer3 = new Layer(7)
             const net = new Network({layers: [layer1, layer2, layer3]})
 
             const result = net.forward([1,2,3])
-            const activations = net.layers[2].neurons.map(n => n.activation)
+            const activations = net.layers[2].neurons.map(n => n.sum)
 
-            expect(result).to.deep.equal(activations)
+            expect(result).to.deep.equal(NetMath.softmax(activations))
         })
     })
 
@@ -1117,6 +1117,12 @@ describe("Network", () => {
             })
         })
 
+        it("Calls the backward function with the errors, calculated as target-output, inverted for the correct classes", () => {
+            return net.train([testData[1]]).then(() => {
+                expect(net.backward).to.be.calledWith([-1, 0])
+            })
+        })
+
         it("Calls the applyDeltaWeights function for each iteration", () => {
             return net.train(testData, {}, true).then(() => {
                 expect(net.applyDeltaWeights.callCount).to.equal(4)
@@ -1147,7 +1153,7 @@ describe("Network", () => {
 
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
             const network = new Network({updateFn: null})
-            sinon.stub(network, "forward")
+            sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
             return network.train(testData).then(() => {
@@ -1157,7 +1163,7 @@ describe("Network", () => {
 
         it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
             const network = new Network({updateFn: null})
-            sinon.stub(network, "forward")
+            sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
             return network.train(testDataWithOutput).then(() => {
@@ -1615,12 +1621,12 @@ describe("FCLayer", () => {
             net = new Network({layers: [layer1, layer2, layer3], activation: "sigmoid", dropout: 0})
         })
 
-        it("Sets each neurons' error to expected - their activation, in output layer", () => {
+        it("Sets each neurons' error to the given error, in output layer", () => {
             const net = new Network({layers: [layer1, layer2]})
 
             layer2.neurons.forEach(neuron => neuron.activation = 0.5)
             net.backward([1,2,3])
-            expect(layer2.neurons.map(n => n.error)).to.deep.equal([0.5, 1.5, 2.5])
+            expect(layer2.neurons.map(n => n.error)).to.deep.equal([1, 2, 3])
         })
 
         it("Sets each neurons' derivative to the layer's activation function prime of the neuron's sum", () => {
@@ -1657,10 +1663,10 @@ describe("FCLayer", () => {
             layer3.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.net = {miniBatchSize: 1}
             layer3.backward([1,2,3,4])
-            expect(layer3.neurons[0].deltaWeights).to.deep.equal([0.25, 0.25, 0.25])
-            expect(layer3.neurons[1].deltaWeights).to.deep.equal([0.75, 0.75, 0.75])
-            expect(layer3.neurons[2].deltaWeights).to.deep.equal([1.25, 1.25, 1.25])
-            expect(layer3.neurons[3].deltaWeights).to.deep.equal([1.75, 1.75, 1.75])
+            expect(layer3.neurons[0].deltaWeights).to.deep.equal([0.5, 0.5, 0.5])
+            expect(layer3.neurons[1].deltaWeights).to.deep.equal([1, 1, 1])
+            expect(layer3.neurons[2].deltaWeights).to.deep.equal([1.5, 1.5, 1.5])
+            expect(layer3.neurons[3].deltaWeights).to.deep.equal([2, 2, 2])
         })
 
         it("Increments each neuron's deltaBias to the its error", () => {
@@ -1669,7 +1675,7 @@ describe("FCLayer", () => {
                 neuron.activation = 0.5
             })
             layer3.backward([1,2,3,4])
-            expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([1.5, 2.5, 3.5, 4.5])
+            expect(layer3.neurons.map(n => n.deltaBias)).to.deep.equal([2, 3, 4, 5])
         })
 
         it("Sets the neuron error to 0 if dropped", () => {
@@ -1729,7 +1735,7 @@ describe("FCLayer", () => {
             layer3.net = {l2: 0.001, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275006")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400038")
         })
 
         it("Sets weight deltas to the normal delta + the l1 value", () => {
@@ -1741,7 +1747,7 @@ describe("FCLayer", () => {
             layer3.net = {l1: 0.005, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275031")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400188")
         })
 
         it("Regularizes by a tenth as much when the miniBatchSize is configured as 10", () => {
@@ -1753,7 +1759,7 @@ describe("FCLayer", () => {
             layer3.net = {l1: 0.005, miniBatchSize: 10}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275003")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400019")
 
             layer3.neurons.forEach(neuron => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
@@ -1762,7 +1768,7 @@ describe("FCLayer", () => {
             layer3.net.l2 = 0.001
             layer3.net.l1 = 0
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.275001")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400004")
         })
     })
 
@@ -2596,6 +2602,13 @@ describe("ConvLayer", () => {
         it("Allows setting the activation function to a function from NetMath using a string", () => {
             const layer = new ConvLayer(5, {activation: "relu"})
             expect(layer.activation.name).to.equal("bound relu")
+        })
+
+        it("Sets the given activation config value to layer.activationName", () => {
+            const layer = new ConvLayer(5, {activation: "relu"})
+            expect(layer.activationName).to.equal("relu")
+            const layer2 = new ConvLayer(5, {activation: "elu"})
+            expect(layer2.activationName).to.equal("elu")
         })
     })
 

@@ -92,7 +92,7 @@ void FCLayer::forward (void) {
     }
 }
 
-void FCLayer::backward (std::vector<double> expected) {
+void FCLayer::backward (std::vector<double> errors) {
 
     Network* net = Network::getInstance(netInstance);
 
@@ -105,8 +105,8 @@ void FCLayer::backward (std::vector<double> expected) {
 
         } else {
 
-            if (expected.size()) {
-                neurons[n]->error = expected[n] - neurons[n]->activation;
+            if (errors.size()) {
+                neurons[n]->error = errors[n];
             } else {
                 if (hasActivation) {
                     neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);

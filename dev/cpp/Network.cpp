@@ -148,8 +148,4 @@ void Network::applyDeltaWeights (void) {
     }
 }
 
-Layer* Network::getLayer(int i) {
-    return layers[i];
-}
-
 std::vector<Network*> Network::netInstances = {};

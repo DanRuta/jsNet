@@ -324,6 +324,44 @@ namespace FCLayer_cpp {
         }
     }
 
+    // Inits the neurons' weights vector with as many weights as there are outgoing values in every filter in a prev Conv layer
+    TEST_F(InitFixture, init_4) {
+
+        ConvLayer* c = new ConvLayer(0, 2);
+        c->outMapSize = 3;
+        c->filters = {};
+        c->filters.push_back(new Filter());
+        c->filters.push_back(new Filter());
+        c->size = 2;
+
+        l2->prevLayer = c;
+        l2->init(1);
+
+        for (int n=0; n<5; n++) {
+            EXPECT_EQ( l2->neurons[n]->weights.size(), 18 );
+        }
+
+        delete c;
+    }
+
+    // Inits the neurons' weights vector with as many weights as there are outgoing values in a prev Pool layer
+    TEST_F(InitFixture, init_5) {
+
+        PoolLayer* p = new PoolLayer(0, 2);
+        p->outMapSize = 3;
+        std::vector<std::vector<double> > testData = {{1}};
+        p->activations = {testData, testData, testData, testData, testData};
+
+        l2->prevLayer = p;
+        l2->init(1);
+
+        for (int n=0; n<5; n++) {
+            EXPECT_EQ( l2->neurons[n]->weights.size(), 45 );
+        }
+
+        delete p;
+    }
+
 
     class FCForwardFixture : public ::testing::Test {
     public:
@@ -773,7 +811,7 @@ namespace FCLayer_cpp {
             l2 = new FCLayer(0, 3);
             l3 = new FCLayer(0, 1);
             l4 = new FCLayer(0, 1);
-            Network* net = Network::getInstance(0);
+            net = Network::getInstance(0);
             net->l2 = 0.001;
             net->l2Error = 0;
             net->l1 = 0.005;
@@ -862,6 +900,30 @@ namespace FCLayer_cpp {
 
         EXPECT_NEAR( Network::getInstance(l4->netInstance)->l1Error, 0.0025 , 1e-6 );
     }
+
+    // Increments the bias by the deltaBias following the gain function
+    TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_5) {
+
+        net->updateFnIndex = 1;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->bias = n;
+            l2->neurons[n]->deltaBias = n*2;
+            l2->neurons[n]->biasGain = 1;
+
+            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
+                l2->neurons[n]->weightGain[i] = 0.5;
+            }
+        }
+
+        l2->applyDeltaWeights();
+        l2->applyDeltaWeights();
+
+        EXPECT_EQ( l2->neurons[0]->bias, 0 );
+        EXPECT_EQ( l2->neurons[1]->bias, 5.1 );
+        EXPECT_EQ( l2->neurons[2]->bias, 10.2 );
+    }
+
 
     // Clears the neurons' deltaBias
     TEST(FCLayer, resetDeltaWeights_1) {

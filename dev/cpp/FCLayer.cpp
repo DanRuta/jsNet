@@ -32,10 +32,8 @@ void FCLayer::init (int layerIndex) {
             if (prevLayer->type == "FC") {
                 weightsCount = prevLayer->size;
             } else if (prevLayer->type == "Conv") {
-                /*TEST*/
                 weightsCount = prevLayer->filters.size() * prevLayer->outMapSize * prevLayer->outMapSize;
             } else {
-                /*TEST*/
                 weightsCount = prevLayer->activations.size() * prevLayer->outMapSize * prevLayer->outMapSize;
             }
 

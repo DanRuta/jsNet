@@ -67,11 +67,9 @@ public:
 
     void applyDeltaWeights (void);
 
-    Layer* getLayer(int i);
 };
 
 
-// template <typename T>
 class Layer {
 public:
     int netInstance;

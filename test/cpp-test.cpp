@@ -933,10 +933,6 @@ namespace FCLayer_cpp {
             l2->neurons[n]->bias = n;
             l2->neurons[n]->deltaBias = n*2;
             l2->neurons[n]->biasCache = 1;
-
-            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
-                l2->neurons[n]->weightsCache[i] = 0.5;
-            }
         }
 
         l2->applyDeltaWeights();
@@ -956,10 +952,6 @@ namespace FCLayer_cpp {
             l2->neurons[n]->bias = n;
             l2->neurons[n]->deltaBias = n*2;
             l2->neurons[n]->biasCache = 1;
-
-            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
-                l2->neurons[n]->weightsCache[i] = 0.5;
-            }
         }
 
         l2->applyDeltaWeights();
@@ -1000,11 +992,6 @@ namespace FCLayer_cpp {
             l2->neurons[n]->deltaBias = n*2;
             l2->neurons[n]->biasCache = 1;
             l2->neurons[n]->adadeltaBiasCache = 1;
-
-            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
-                l2->neurons[n]->weightsCache[i] = 0.5;
-                l2->neurons[n]->adadeltaCache[i] = 0.5;
-            }
         }
 
         l2->applyDeltaWeights();

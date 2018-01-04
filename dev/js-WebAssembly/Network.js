@@ -537,4 +537,6 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (exports.Network = Network)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Network = Network)
+exports.Network = Network

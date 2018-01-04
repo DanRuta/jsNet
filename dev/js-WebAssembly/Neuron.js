@@ -50,4 +50,6 @@ class Neuron {
     }
 }
 
-typeof window=="undefined" && (exports.Neuron = Neuron)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Neuron = Neuron)
+exports.Neuron = Neuron

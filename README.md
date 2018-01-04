@@ -7,6 +7,8 @@ jsNet
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
+*Note: The npm package defaults to the JavaScript only version, for now.*
+
 ## Current WebAssembly version: 3.0.
 The WebAssembly version is now finished, and fully matches the JavaScript feature set. This notice will be removed in general release 3.1.
 
@@ -18,7 +20,8 @@ https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLay
 https://ai.danruta.co.uk/webassembly - Performance comparison between JS and WebAssembly (v2.0) versions.
 
 ##  Usage
-There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version. To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. To use WebAssembly, you must also include the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
+There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version.
+To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. You will also need the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
 
 ### JavaScript
 When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just ```npm install jsnet``` and  require it like so:
@@ -29,6 +32,8 @@ const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, N
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
 
 ### WebAssembly
+
+For the WebAssembly version, you will need the ```jsNetWebAssembly.min.js```, ```NetWASM.js``` and ```NetWASM.wasm``` files, found in the dist folder.
 
 I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server.
 
@@ -352,6 +357,7 @@ net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 
 ### FCLayer (Fully connected layer)
 ```FCLayer(int num_neurons[, object configs])```
+
 The first parameter, an integer, is for how many neurons the layer will have. The second, is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
@@ -381,6 +387,7 @@ Softmax is used by default on the last layer. Activation configurations are ther
 
 ### ConvLayer (Convolutional layer)
 ```ConvLayer(int num_filters[, object configs])```
+
 The first parameter, an integer, is for how many filters to use in the layer. The second, is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
@@ -390,7 +397,7 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 | stride | How many values to move between convolutions | Any number | 1 |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | false |
 
-You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions.
+You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwise decimal outgoing spacial dimensions.
 
 ### Tip
 You can calculate the spacial dimensions of a convolution layer's outgoing activation volume with the following formula:
@@ -421,6 +428,7 @@ net = new Network({
 
 ### PoolLayer
 ```PoolLayer(int span[, object configs])```
+
 The first parameter, an integer, is for the size of area to pool across (Eg, 2, for a 2x2 area). The default value is 2.
 The second is an object where the configurations below go.
 
@@ -452,7 +460,7 @@ net = new Network({
 ### Tip
 When using Pool layers following a convolutional layer, it is more computationally efficient to perform the activation function in the pool layer instead of doing it in the conv layer. This is only true for increasing functions (the included activation functions are ok). The logic behind it is that max pooling will pick the highest value out of a set of values. It makes sense to only compute the activation of a single value instead of a group of them, as the pooling choice would not be affected by an increasing function.
 
-For example, using the following set-up compared to the one above, the training was about 18% (average of 4) faster (with nearly identical results). This optimisation may be even more dramatic for Pool layers with bigger sizes.
+For example, using the following set-up compared to the one above, the training was about 18% (average of 4) faster (with nearly identical results). This optimization may be even more dramatic for Pool layers with bigger sizes.
 ```javascript
 net = new Network({
     layers: [
@@ -471,10 +479,10 @@ net = new Network({
 
 ## Future plans
 ---
-More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
+More and more features will be added, as time goes by, and I learn more. General improvements and optimizations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
 ##### Short term
-The WebAssembly version, a complete re-write has just shipped in general release version 3.0. Next, in 3.1, I'll be going through a list of optimizations ideas I've racked up. You can keep track of progress on the dev branch.
+The WebAssembly version, a complete re-write, has just shipped in general release version 3.0. Next, in 3.1, I'll be going through a list of optimizations ideas I've racked up. You can keep track of progress on the dev branch.
 
 ##### Long term
 Once that is done, I will be experimenting with a WebGL version, using shaders to run computations on the GPU.

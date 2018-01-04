@@ -162,6 +162,7 @@ namespace Network_cpp {
 
         EXPECT_CALL(*l3, forward()).Times(1);
 
+        net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
         net->forward(testInput);
 
         delete l3;
@@ -170,6 +171,7 @@ namespace Network_cpp {
     // Sets the first layer's neurons' activations to the input given
     TEST_F(ForwardFixture, forward_2) {
 
+        net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
         net->forward(testInput);
 
         EXPECT_EQ( l1->neurons[0]->activation, 1);
@@ -184,13 +186,135 @@ namespace Network_cpp {
         l2->neurons[0]->sum = 1;
         l2->neurons[1]->sum = 2;
 
-        std::vector<double> returned = Network::getInstance(0)->forward(testInput);
-
+        net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
+        std::vector<double> returned = net->forward(testInput);
         std::vector<double> actualValues = NetMath::softmax({1, 2});
-
 
         EXPECT_EQ( returned, actualValues );
     }
+
+    // Calls the last layer's backward function with errors, and every other layer'ss except the first with an empty vector
+    TEST(Network, backward) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
+
+        std::vector<double> emptyVec;
+        std::vector<double> errors = {1,2,3};
+
+        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
+        EXPECT_CALL(*l2, backward(emptyVec)).Times(1);
+        EXPECT_CALL(*l3, backward(errors)).Times(1);
+
+        Network::getInstance(0)->backward(errors);
+
+        delete l1;
+        delete l2;
+        delete l3;
+        Network::deleteNetwork();
+    }
+
+    // Forward, backward, resetDeltaWeights and applyDeltaWeights functions are called appropriately
+    TEST(Network, train) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network::getInstance(0)->costFunction = NetMath::meansquarederror;
+
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData = {};
+        std::tuple<std::vector<double>, std::vector<double> > data;
+        std::get<0>(data) = {};
+        std::get<1>(data) = {};
+        trainingData.push_back(data);
+        trainingData.push_back(data);
+
+        Network::getInstance(0)->trainingData = trainingData;
+        Network::getInstance(0)->miniBatchSize = 1;
+
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
+
+        std::vector<double> emptyVec;
+
+        l1->neurons = {};
+        l3->neurons = {};
+
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
+        EXPECT_CALL(*l2, backward(emptyVec)).Times(1);
+        EXPECT_CALL(*l3, backward(emptyVec)).Times(1);
+        EXPECT_CALL(*l1, resetDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l1, applyDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, applyDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, applyDeltaWeights()).Times(1);
+
+        Network::getInstance(0)->train(1, 0);
+
+        delete l1;
+        delete l2;
+        delete l3;
+        Network::deleteNetwork();
+    }
+
+    // The forward and backward functions are called appropriately
+    TEST(Network, test) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        Network::getInstance(0)->costFunction = NetMath::meansquarederror;
+
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData = {};
+        std::tuple<std::vector<double>, std::vector<double> > data;
+        std::get<0>(data) = {};
+        std::get<1>(data) = {};
+        testData.push_back(data);
+        testData.push_back(data);
+
+        Network::getInstance(0)->testData = testData;
+
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
+
+        std::vector<double> emptyVec;
+
+        l1->neurons = {};
+        l3->neurons = {};
+
+
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
+        EXPECT_CALL(*l2, backward(emptyVec)).Times(0);
+        EXPECT_CALL(*l3, backward(emptyVec)).Times(0);
+
+        Network::getInstance(0)->test(1, 0);
+
+        delete l1;
+        delete l2;
+        delete l3;
+        Network::deleteNetwork();
+    }
+
 
     // Calls the resetDeltaWeights function of each layer except the first's
     TEST(Network, resetDeltaWeights){

@@ -304,7 +304,7 @@ std::vector<double> NetMath::xaviernormal (int netInstance, int layerIndex, int 
 // Other
 std::vector<double> NetMath::softmax (std::vector<double> values) {
 
-    double maxValue = values[0];
+    double maxValue = -1/0.0; // -infinity
 
     for (int i=1; i<values.size(); i++) {
         if (values[i] > maxValue) {

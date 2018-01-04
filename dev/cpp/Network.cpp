@@ -117,7 +117,6 @@ void Network::train (int its, int startI) {
         } else if (i >= trainingData.size()) {
             applyDeltaWeights();
         }
-
     }
 
     isTraining = false;

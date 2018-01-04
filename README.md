@@ -7,8 +7,8 @@ jsNet
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
-## Current WebAssembly version: 2.0 beta.
-The current version has reached feature parity with the JavaScript only version 2.0. There are some known issues with convolutional layers, hence the beta tag. Once these get ironed out, general release 3.0 will be released.
+## Current WebAssembly version: 3.0.
+The WebAssembly version is now finished, and fully matches the JavaScript feature set. This notice will be removed in general release 3.1.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
@@ -43,8 +43,6 @@ Finally, you need to assign the module when creating the network, like so:
 const net = new Network({Module: Module})
 ```
 This makes it easier to use in nodejs.
-
-Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
 
 
 ### Constructing
@@ -188,12 +186,12 @@ Once the network has been trained, tested and imported into your page, you can u
 const userInput = [1,0,1,0,0.5] // Example input
 const netResult = net.forward(userInput)
 ```
-This will return an array of the softmax activations in the output layer.
+This will return an array of the **softmax** activations in the output layer.
 
 
 ## Configurations
 ---
-String configs are case/space/underscore insensitive.
+**String configs are case/space/underscore insensitive.**
 
 Without setting any configs, the default values are equivalent to the following configuration:
 ```javascript
@@ -284,7 +282,7 @@ net = new Network({activation: "lrelu", lreluSlope: -0.0005})
 net = new Network({activation: "elu", eluAlpha: 1})
 net = new Network({activation: x => x})
 ```
-You can set your own activation functions. They are given as parameters:
+You can set your own activation functions in the JavaScript version (but not the WebAssebly version). The functions are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias
 - If the function should calculate the prime (during backprop) - boolean
 - A reference to the neuron/filter being activated (in pool layers, the reference is to the net).
@@ -353,6 +351,7 @@ net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
 
 ### FCLayer (Fully connected layer)
+```FCLayer(int num_neurons[, object configs])```
 The first parameter, an integer, is for how many neurons the layer will have. The second, is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
@@ -381,7 +380,7 @@ net = new Network({
 Softmax is used by default on the last layer. Activation configurations are therefore not used there.
 
 ### ConvLayer (Convolutional layer)
-
+```ConvLayer(int num_filters[, object configs])```
 The first parameter, an integer, is for how many filters to use in the layer. The second, is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
@@ -402,7 +401,7 @@ size out = (size in - filter size + 2 * zero padding) / stride + 1
 #### About the activation function
 Sometimes, you may read about ReLU layers being used, and such. However, it made much more sense in the implementation to just do the activation in the ConvLayer, as it would be more computationally efficient than using a dedicated layer. Therefore there are no such 'activation' layers, as you just specify the activation in the network configs.
 
-By default, the Conv layer will use the activation configured with the network. However, you can set it to ```false```  to disable activations on a particular Conv layer. You can also provide a custom function, or use the string name of an existing activation function, similar to configuring the network activation. (See above)
+By default, the Conv layer activation is turned off (similar to configuring with ```false```). However, you can configure it via the activation key. You can provide a custom function (in the JavaScript only version), or use the string name of an existing activation function, similar to configuring the network activation. (See above)
 
 ##### Examples
 ```javascript
@@ -421,7 +420,7 @@ net = new Network({
 ```
 
 ### PoolLayer
-
+```PoolLayer(int span[, object configs])```
 The first parameter, an integer, is for the size of area to pool across (Eg, 2, for a 2x2 area). The default value is 2.
 The second is an object where the configurations below go.
 
@@ -472,19 +471,19 @@ net = new Network({
 
 ## Future plans
 ---
-More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented.
-
-Check the changelog to see the history of added features.
+More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
 ##### Short term
-The next big feature will be WebAssembly support. This will arive in version 3.0, after some more testing is done on the existing beta version. You can keep track of progress on the dev branch.
+The WebAssembly version, a complete re-write has just shipped in general release version 3.0. Next, in 3.1, I'll be going through a list of optimizations ideas I've racked up. You can keep track of progress on the dev branch.
 
 ##### Long term
-Once that is done, I will be experimenting with WebGL shaders to run computations on the GPU.
+Once that is done, I will be experimenting with a WebGL version, using shaders to run computations on the GPU.
 
 ## Contributing
 ---
-Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
+I am always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
 
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.
+
+To build the WebAssembly version, you will need to be able to use emscripten to compile locally. Check out [this article](https://medium.com/statuscode/setting-up-the-ultimate-webassembly-c-workflow-6484efa3e162) I wrote if you need any help setting it up. Once set up, run ```npm run build``` to set up the environment. Grunt will do the compilation during development.

@@ -219,25 +219,9 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
 
 void NetUtil::buildConvDWeights (ConvLayer* layer) {
 
-    Network* net = Network::getInstance(layer->netInstance);
     int weightsCount = layer->filters[0]->weights[0].size();
     int fsSpread = floor(weightsCount / 2);
     int channelsCount = layer->filters[0]->weights.size();
-
-    // Adding an intermediary step to allow regularization to work
-    std::vector<std::vector<double> > deltaDeltaWeights;
-
-    // Filling the deltaDeltaWeights with 0 values
-    for (int weightsY=0; weightsY<weightsCount; weightsY++) {
-
-        std::vector<double> deltaDeltaWeightsRow;
-
-        for (int weightsX=0; weightsX<weightsCount; weightsX++) {
-            deltaDeltaWeightsRow.push_back(0);
-        }
-
-        deltaDeltaWeights.push_back(deltaDeltaWeightsRow);
-    }
 
     // For each filter
     for (int f=0; f<layer->filters.size(); f++) {
@@ -252,25 +236,13 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
             for (int inY=fsSpread; inY<inputMap.size()-fsSpread; inY+= layer->stride) {
                 for (int inX=fsSpread; inX<inputMap.size()-fsSpread; inX+= layer->stride) {
 
+                    double error = layer->filters[f]->errorMap[(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
+
                     // ...and at each location...
                     for (int wY=0; wY<weightsCount; wY++) {
                         for (int wX=0; wX<weightsCount; wX++) {
-
-                            double activation = inputMap[inY-fsSpread+wY][inX-fsSpread+wX];
-
-                            // Increment and regularize the delta delta weights by the input activation (later multiplied by the error)
-                            deltaDeltaWeights[wY][wX] += activation *
-                                (1 + ((net->l2+net->l1)/net->miniBatchSize) * layer->filters[f]->weights[c][wY][wX]);
-                        }
-                    }
-
-                    double error = layer->filters[f]->errorMap[(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
-
-                    // Applying and resetting the deltaDeltaWeights
-                    for (int wY=0; wY<weightsCount; wY++) {
-                        for (int wX=0; wX<weightsCount; wX++) {
-                            layer->filters[f]->deltaWeights[c][wY][wX] += deltaDeltaWeights[wY][wX] * error;
-                            deltaDeltaWeights[wY][wX] = 0;
+                            // activation * error
+                            layer->filters[f]->deltaWeights[c][wY][wX] += inputMap[inY-fsSpread+wY][inX-fsSpread+wX] * error;
                         }
                     }
                 }

@@ -91,8 +91,7 @@ class FCLayer {
                 const activations = NetUtil.getActivations(this.prevLayer)
 
                 for (let wi=0; wi<neuron.weights.length; wi++) {
-                    neuron.deltaWeights[wi] += (neuron.error * activations[wi]) *
-                        (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
+                    neuron.deltaWeights[wi] += (neuron.error * activations[wi])
                 }
 
                 neuron.deltaBias += neuron.error
@@ -118,10 +117,14 @@ class FCLayer {
 
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
-                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
-                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+                if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
+                const regularized = (neuron.deltaWeights[dwi]
+                    + this.net.l2 * neuron.weights[dwi]
+                    + this.net.l1 * (neuron.weights[dwi] > 0 ? 1 : -1)) / this.net.miniBatchSize
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], regularized, neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
             }

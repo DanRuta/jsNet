@@ -227,11 +227,15 @@ class ConvLayer {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
 
-                        if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
-                        if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+                        if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
+                        if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+
+                        const regularized = (filter.deltaWeights[channel][row][col]
+                            + this.net.l2 * filter.weights[channel][row][col]
+                            + this.net.l1 * (filter.weights[channel][row][col] > 0 ? 1 : -1)) / this.net.miniBatchSize
 
                         filter.weights[channel][row][col] = this.net.weightUpdateFn.bind(this.net, filter.weights[channel][row][col],
-                                                                filter.deltaWeights[channel][row][col], filter, [channel, row, col])()
+                                                                regularized, filter, [channel, row, col])()
 
                         if (this.net.maxNorm!=undefined) this.net.maxNormTotal += filter.weights[channel][row][col]**2
                     }
@@ -364,8 +368,7 @@ class FCLayer {
                 const activations = NetUtil.getActivations(this.prevLayer)
 
                 for (let wi=0; wi<neuron.weights.length; wi++) {
-                    neuron.deltaWeights[wi] += (neuron.error * activations[wi]) *
-                        (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
+                    neuron.deltaWeights[wi] += (neuron.error * activations[wi])
                 }
 
                 neuron.deltaBias += neuron.error
@@ -391,10 +394,14 @@ class FCLayer {
 
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
-                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
-                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+                if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
+                const regularized = (neuron.deltaWeights[dwi]
+                    + this.net.l2 * neuron.weights[dwi]
+                    + this.net.l1 * (neuron.weights[dwi] > 0 ? 1 : -1)) / this.net.miniBatchSize
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], regularized, neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
             }
@@ -974,17 +981,6 @@ class NetUtil {
         const fSSpread = Math.floor(weightsCount / 2)
         const channelsCount = layer.filters[0].weights.length
 
-        // Adding an intermediary step to allow regularization to work
-        const deltaDeltaWeights = []
-
-        // Filling the deltaDeltaWeights with 0 values
-        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-            deltaDeltaWeights[weightsY] = []
-            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                deltaDeltaWeights[weightsY][weightsX] = 0
-            }
-        }
-
         // For each filter
         for (let filterI=0; filterI<layer.filters.length; filterI++) {
 
@@ -1000,25 +996,13 @@ class NetUtil {
                 for (let inputY=fSSpread; inputY<inputMap.length-fSSpread; inputY+=layer.stride) {
                     for (let inputX=fSSpread; inputX<inputMap.length-fSSpread; inputX+=layer.stride) {
 
+                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
+
                         // ...and at each location...
                         for (let weightsY=0; weightsY<weightsCount; weightsY++) {
                             for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-
                                 const activation = inputMap[inputY-fSSpread+weightsY][inputX-fSSpread+weightsX]
-
-                                // Increment and regularize the delta delta weights by the input activation (later multiplied by the error)
-                                deltaDeltaWeights[weightsY][weightsX] += activation *
-                                     (1 + (((layer.net.l2||0)+(layer.net.l1||0))/layer.net.miniBatchSize) * filter.weights[channelI][weightsY][weightsX])
-                            }
-                        }
-
-                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
-
-                        // Applying and resetting the deltaDeltaWeights
-                        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-                            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                                filter.deltaWeights[channelI][weightsY][weightsX] += deltaDeltaWeights[weightsY][weightsX] * error
-                                deltaDeltaWeights[weightsY][weightsX] = 0
+                                filter.deltaWeights[channelI][weightsY][weightsX] += activation * error
                             }
                         }
                     }
@@ -1116,15 +1100,17 @@ class Network {
         activation = NetUtil.format(activation)
         updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
-
-        if (l2) {
-            this.l2 = typeof l2=="boolean" ? 0.001 : l2
-            this.l2Error = 0
-        }
+        this.l1 = 0
+        this.l2 = 0
 
         if (l1) {
             this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
+        }
+
+        if (l2) {
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
+            this.l2Error = 0
         }
 
         if (maxNorm) {
@@ -1407,8 +1393,8 @@ class Network {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {

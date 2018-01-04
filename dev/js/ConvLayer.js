@@ -227,11 +227,15 @@ class ConvLayer {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
 
-                        if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
-                        if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+                        if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
+                        if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+
+                        const regularized = (filter.deltaWeights[channel][row][col]
+                            + this.net.l2 * filter.weights[channel][row][col]
+                            + this.net.l1 * (filter.weights[channel][row][col] > 0 ? 1 : -1)) / this.net.miniBatchSize
 
                         filter.weights[channel][row][col] = this.net.weightUpdateFn.bind(this.net, filter.weights[channel][row][col],
-                                                                filter.deltaWeights[channel][row][col], filter, [channel, row, col])()
+                                                                regularized, filter, [channel, row, col])()
 
                         if (this.net.maxNorm!=undefined) this.net.maxNormTotal += filter.weights[channel][row][col]**2
                     }

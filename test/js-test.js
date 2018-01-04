@@ -244,13 +244,13 @@ describe("Network", () => {
                 expect(net.l2).to.equal(0.0005)
             })
 
-            it("Doesn't set the net.l2 to anything if the l2 parameter is set to false", () => {
+            it("Leaves the net.l2 at 0 if the l2 parameter is set to false", () => {
                 const net = new Network({l2: false})
-                expect(net.l2).to.be.undefined
+                expect(net.l2).to.be.equal(0)
             })
 
-            it("Doesn't set the net.l2 to anything if the l2 parameter is not given", () => {
-                expect(net.l2).to.be.undefined
+            it("Leaves the net.l2 at 0 if the l2 parameter is not given", () => {
+                expect(net.l2).to.be.equal(0)
             })
 
             it("Sets the l2 value to 0.001 if the configuration given is boolean true", () => {
@@ -263,9 +263,9 @@ describe("Network", () => {
                 expect(net.l1).to.equal(0.0005)
             })
 
-            it("Doesn't set the net.l1 to anything if the l1 parameter is set to false", () => {
+            it("Leaves the net.l1 value a 0 if the l1 parameter is set to false", () => {
                 const net = new Network({l1: false})
-                expect(net.l1).to.be.undefined
+                expect(net.l1).to.be.equal(0)
             })
 
             it("Sets the l1 value to 0.005 if the configuration given is boolean true", () => {
@@ -273,8 +273,8 @@ describe("Network", () => {
                 expect(net.l1).to.equal(0.005)
             })
 
-            it("Doesn't set the net.l1 to anything if the l1 parameter is not given", () => {
-                expect(net.l1).to.be.undefined
+            it("Leaves the net.l1 value a 0 if the l1 parameter is not given", () => {
+                expect(net.l1).to.be.equal(0)
             })
 
             it("Sets the net.maxNorm value to the value given as configuration, if given", () => {
@@ -1726,7 +1726,8 @@ describe("FCLayer", () => {
             expect(layer2.neurons[0].derivative).to.equal("test")
         })
 
-        it("Sets weight deltas to the normal delta + the l2 value", () => {
+        // it("Sets weight deltas to the normal delta + the l2 value", () => {
+        it("Sets weight deltas to the normal delta", () => {
             layer2.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.neurons.forEach(neuron => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
@@ -1735,10 +1736,10 @@ describe("FCLayer", () => {
             layer3.net = {l2: 0.001, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400038")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400000")
         })
 
-        it("Sets weight deltas to the normal delta + the l1 value", () => {
+        it("Sets weight deltas to the normal delta", () => {
             layer2.neurons.forEach(neuron => neuron.activation = 0.5)
             layer3.neurons.forEach(neuron => {
                 neuron.deltaWeights = [0.25,0.25,0.25,0.25]
@@ -1747,28 +1748,7 @@ describe("FCLayer", () => {
             layer3.net = {l1: 0.005, miniBatchSize: 1}
 
             layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400188")
-        })
-
-        it("Regularizes by a tenth as much when the miniBatchSize is configured as 10", () => {
-            layer2.neurons.forEach(neuron => neuron.activation = 0.5)
-            layer3.neurons.forEach(neuron => {
-                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
-                neuron.activation = 0.25
-            })
-            layer3.net = {l1: 0.005, miniBatchSize: 10}
-
-            layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400019")
-
-            layer3.neurons.forEach(neuron => {
-                neuron.deltaWeights = [0.25,0.25,0.25,0.25]
-                neuron.activation = 0.25
-            })
-            layer3.net.l2 = 0.001
-            layer3.net.l1 = 0
-            layer3.backward([0.3, 0.3, 0.3, 0.3])
-            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400004")
+            expect(layer3.neurons[0].deltaWeights[0].toFixed(6)).to.equal("0.400000")
         })
     })
 
@@ -1803,6 +1783,7 @@ describe("FCLayer", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
             const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
+            net.miniBatchSize = 1
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
             layer2.neurons.forEach(neuron => neuron.deltaWeights = [0.5, 0.5])
@@ -3418,22 +3399,22 @@ describe("ConvLayer", () => {
             layer.filters = [filter1, filter2, filter3, filter4]
 
             layer.filters.forEach(filter => {
-                filter.weights = [[[0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]],[[0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]]]
+                filter.weights = [[[-0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]],[[0.5,0.5,0.5],[0.5,0.5,0.5],[0.5,0.5,0.5]]]
                 filter.bias = 0.5
                 filter.deltaBias = 1
                 filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
             })
 
-            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillaupdatefn}
+            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillaupdatefn, miniBatchSize: 1, l2: 0, l1: 0}
         })
 
 
-        it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
+        it("Increments the weights of all filters with their respective deltas (when learning rate is 1)", () => {
             layer.applyDeltaWeights()
-            expect(layer.filters[0].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
-            expect(layer.filters[1].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
-            expect(layer.filters[2].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
-            expect(layer.filters[3].weights).to.deep.equal([[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[0].weights).to.deep.equal([[[0.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[1].weights).to.deep.equal([[[0.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[2].weights).to.deep.equal([[[0.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
+            expect(layer.filters[3].weights).to.deep.equal([[[0.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]],[[1.5,1.5,1.5],[1.5,1.5,1.5],[1.5,1.5,1.5]]])
         })
 
         it("Increments the bias of all filters with their deltaBias", () => {

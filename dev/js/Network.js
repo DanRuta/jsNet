@@ -16,15 +16,17 @@ class Network {
         activation = NetUtil.format(activation)
         updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
-
-        if (l2) {
-            this.l2 = typeof l2=="boolean" ? 0.001 : l2
-            this.l2Error = 0
-        }
+        this.l1 = 0
+        this.l2 = 0
 
         if (l1) {
             this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
+        }
+
+        if (l2) {
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
+            this.l2Error = 0
         }
 
         if (maxNorm) {
@@ -307,8 +309,8 @@ class Network {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {

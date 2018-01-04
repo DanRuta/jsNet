@@ -1666,6 +1666,7 @@ namespace ConvLayer_cpp {
             net = Network::getInstance(0);
             net->learningRate = 1;
             net->updateFnIndex = 0;
+            net->miniBatchSize = 1;
 
             layer = new ConvLayer(0, 5);
 

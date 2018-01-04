@@ -206,6 +206,7 @@ class NetUtil {
 }
 
 NetUtil.activationsIndeces = {
+    noactivation: -1,
     sigmoid: 0,
     tanh: 1,
     lecuntanh: 2,

@@ -13,7 +13,10 @@ class ConvLayer {
         this.activation = false
         this.activationName = activation
 
-        if (activation) {
+        if (activation != undefined) {
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
+            }
             if (typeof activation != "string") {
                 throw new Error("Custom activation functions are not available in the WebAssembly version")
             }
@@ -157,6 +160,9 @@ class FCLayer {
         this.layerIndex = 0
 
         if (activation != undefined) {
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
+            }
             if (typeof activation != "string") {
                 throw new Error("Custom activation functions are not available in the WebAssembly version")
             }
@@ -503,6 +509,7 @@ class NetUtil {
 }
 
 NetUtil.activationsIndeces = {
+    noactivation: -1,
     sigmoid: 0,
     tanh: 1,
     lecuntanh: 2,
@@ -1118,7 +1125,10 @@ class PoolLayer {
         this.activation = false
         this.activationName = activation
 
-        if (activation) {
+        if (activation != undefined) {
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
+            }
             if (typeof activation != "string") {
                 throw new Error("Custom activation functions are not available in the WebAssembly version")
             }

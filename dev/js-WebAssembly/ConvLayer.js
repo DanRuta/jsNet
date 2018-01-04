@@ -13,7 +13,10 @@ class ConvLayer {
         this.activation = false
         this.activationName = activation
 
-        if (activation) {
+        if (activation != undefined) {
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
+            }
             if (typeof activation != "string") {
                 throw new Error("Custom activation functions are not available in the WebAssembly version")
             }

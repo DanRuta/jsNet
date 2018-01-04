@@ -1274,6 +1274,11 @@ describe("FCLayer", () => {
             const layer = new FCLayer(1, {activation: "test"})
             expect(layer.activationName).to.equal("test")
         })
+
+        it("Sets the activation function to noActivation when configuring it with false", () => {
+            const layer = new FCLayer(1, {activation: false})
+            expect(layer.activationName).to.equal("noactivation")
+        })
     })
 
     describe("assignNext", () => {
@@ -1805,6 +1810,11 @@ describe("ConvLayer", () => {
             expect(layer.filterSize).to.equal(3)
             expect(layer.stride).to.equal(2)
             expect(layer.zeroPadding).to.equal(5)
+        })
+
+        it("Sets the activation function to noActivation when configuring it with false", () => {
+            const layer = new ConvLayer(1, {activation: false, filterSize: 3, stride: 2, zeroPadding: 5})
+            expect(layer.activationName).to.equal("noactivation")
         })
     })
 
@@ -2404,11 +2414,10 @@ describe("PoolLayer", () => {
             expect(layer.activation).to.be.false
         })
 
-        it("Allows setting the activation function to false by setting it to false", () => {
+        it("Sets the activation function to noActivation when configuring it with false", () => {
             const layer = new PoolLayer(5, {activation: false})
-            expect(layer.activation).to.be.false
+            expect(layer.activationName).to.equal("noactivation")
         })
-
     })
 
     describe("assignNext", () => {

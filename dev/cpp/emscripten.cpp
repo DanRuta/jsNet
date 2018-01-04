@@ -406,6 +406,9 @@ extern "C" {
         layer->hasActivation = true;
 
         switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
             case 0:
                 layer->activation = &NetMath::sigmoid<Neuron>;
                 break;
@@ -514,6 +517,9 @@ extern "C" {
         layer->hasActivation = true;
 
         switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
             case 0:
                 layer->activationC = &NetMath::sigmoid<Filter>;
                 break;
@@ -553,6 +559,9 @@ extern "C" {
         layer->hasActivation = true;
 
         switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
             case 0:
                 layer->activationP = &NetMath::sigmoid<Network>;
                 break;

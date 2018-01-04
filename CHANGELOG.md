@@ -1,4 +1,4 @@
-# Upcoming - 3.0 - WebAssembly
+# 3.0.0 - WebAssembly
 ---
 #### WebAssembly
 - Complete, rewritten, WebAssembly version of jsNet

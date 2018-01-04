@@ -1034,10 +1034,6 @@ namespace FCLayer_cpp {
             l2->neurons[n]->bias = n;
             l2->neurons[n]->deltaBias = n*2;
             l2->neurons[n]->biasGain = 1;
-
-            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
-                l2->neurons[n]->weightGain[i] = 0.5;
-            }
         }
 
         l2->applyDeltaWeights();
@@ -3537,16 +3533,12 @@ namespace NetMath_cpp {
         Network::newNetwork();
         Network::getInstance(0)->weightsConfig["limit"] = 0.1;
 
-        bool ok = true;
         std::vector<double> values = NetMath::uniform(0, 0, 100);
 
         for (int i=0; i<100; i++) {
-            if (values[i] > 0.1 || values[i]<=-0.1) {
-                ok = false;
-            }
+            EXPECT_LE( values[i], 0.1 );
+            EXPECT_GT( values[i], -0.1 );
         }
-
-        EXPECT_TRUE( ok );
     }
 
     // There are some weights bigger than |0.1| when the limit is 1000
@@ -3665,15 +3657,10 @@ namespace NetMath_cpp {
     TEST_F(LeCunUniformFixture, lecununiform_2) {
         std::vector<double> values = NetMath::lecununiform(0, 0, 1000);
 
-        bool ok = true;
-
         for (int i=0; i<1000; i++) {
-            if (values[i] > 0.5 || values[i] < -0.5 ) {
-                ok = false;
-            }
+            EXPECT_LE( values[i], 0.5 );
+            EXPECT_GT( values[i], -0.5 );
         }
-
-        EXPECT_TRUE( ok );
     }
 
     // Some weights are at values bigger than |0.5| when fanIn is smaller (8)
@@ -3768,15 +3755,10 @@ namespace NetMath_cpp {
         l1->fanOut = 15;
         std::vector<double> values = NetMath::xavieruniform(0, 0, 1000);
 
-        bool ok = true;
-
         for (int i=0; i<1000; i++) {
-            if (values[i] > 0.5 || values[i] < -0.5 ) {
-                ok = false;
-            }
+            EXPECT_LE( values[i], 0.5 );
+            EXPECT_GT( values[i], -0.5 );
         }
-
-        EXPECT_TRUE( ok );
     }
 
     // Inits some weights at values bigger |0.5| when fanIn+fanOut is smaller
@@ -4000,13 +3982,9 @@ namespace NetUtil_cpp {
 
         for (int i=0; i<3; i++) {
 
-            bool ok = true;
+            bool bad = values[i] != original[0] && values[i] != original[1] && values[i] != original[2];
 
-            if (values[i] != original[0] && values[i] != original[1] && values[i] != original[2]) {
-                ok = false;
-            }
-
-            EXPECT_TRUE(ok);
+            EXPECT_FALSE( bad );
         }
     }
 

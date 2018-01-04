@@ -2,10 +2,18 @@
 
 class FCLayer {
 
-    constructor (size) {
+    constructor (size, {activation}={}) {
         this.size = size
         this.neurons = [...new Array(size)].map(n => new Neuron())
         this.state = "not-initialised"
+
+        if (activation!=undefined) {
+            if (typeof activation=="boolean" && !activation) {
+                this.activation = false
+            } else {
+                this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+            }
+        }
     }
 
     assignNext (layer) {
@@ -37,7 +45,7 @@ class FCLayer {
             }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
-            neuron.bias = Math.random()*0.2-0.1
+            neuron.bias = 1
 
             neuron.init({
                 updateFn: this.net.updateFn,
@@ -60,22 +68,22 @@ class FCLayer {
                     neuron.sum += activations[ai] * neuron.weights[ai]
                 }
 
-                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.net.dropout||1)
+                neuron.activation = (this.activation ? this.activation(neuron.sum, false, neuron) : neuron.sum) / (this.net.dropout||1)
             }
         })
     }
 
-    backward (expected) {
+    backward (errors) {
         this.neurons.forEach((neuron, ni) => {
 
             if (neuron.dropped) {
                 neuron.error = 0
-                neuron.deltaBias = 0
+                neuron.deltaBias += 0
             } else {
-                if (typeof expected !== "undefined") {
-                    neuron.error = expected[ni] - neuron.activation
+                if (typeof errors !== "undefined") {
+                    neuron.error = errors[ni]
                 } else {
-                    neuron.derivative = this.activation(neuron.sum, true, neuron)
+                    neuron.derivative = this.activation ? this.activation(neuron.sum, true, neuron) : 1
                     neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))
                                                                              .reduce((p,c) => p+c, 0)
                 }
@@ -83,17 +91,19 @@ class FCLayer {
                 const activations = NetUtil.getActivations(this.prevLayer)
 
                 for (let wi=0; wi<neuron.weights.length; wi++) {
-                    neuron.deltaWeights[wi] += (neuron.error * activations[wi]) *
-                        (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
+                    neuron.deltaWeights[wi] += (neuron.error * activations[wi])
                 }
 
-                neuron.deltaBias = neuron.error
+                neuron.deltaBias += neuron.error
             }
         })
     }
 
     resetDeltaWeights () {
         for (let n=0; n<this.neurons.length; n++) {
+
+            this.neurons[n].deltaBias = 0
+
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
                 this.neurons[n].deltaWeights[dwi] = 0
             }
@@ -107,10 +117,14 @@ class FCLayer {
 
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
-                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
-                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+                if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
+                const regularized = (neuron.deltaWeights[dwi]
+                    + this.net.l2 * neuron.weights[dwi]
+                    + this.net.l1 * (neuron.weights[dwi] > 0 ? 1 : -1)) / this.net.miniBatchSize
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], regularized, neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
             }

@@ -9,6 +9,7 @@ class ConvLayer {
         if (size)           this.size = size
 
         this.zeroPadding = zeroPadding
+        this.activationName = activation
 
         if (activation!=undefined) {
 
@@ -72,12 +73,12 @@ class ConvLayer {
         this.filters.forEach(filter => {
 
             filter.weights = [...new Array(this.channels)].map(channelWeights => {
-                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize * (this.prevLayer.channels||1), this.weightsConfig))
+                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize, this.weightsConfig))
             })
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.bias = Math.random()*0.2-0.1
+            filter.bias = 1
 
             if (this.net.dropout != 1) {
                 filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
@@ -85,7 +86,7 @@ class ConvLayer {
 
             filter.init({
                 updateFn: this.net.updateFn,
-                activation: this.net.activationConfig,
+                activation: this.activationName || this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
         })
@@ -191,12 +192,19 @@ class ConvLayer {
         for (let filterI=0; filterI<this.filters.length; filterI++) {
 
             const filter = this.filters[filterI]
+            filter.deltaBias = 0
 
             for (let channel=0; channel<filter.deltaWeights.length; channel++) {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
                         filter.deltaWeights[channel][row][col] = 0
                     }
+                }
+            }
+
+            for (let row=0; row<filter.errorMap.length; row++) {
+                for (let col=0; col<filter.errorMap.length; col++) {
+                    filter.errorMap[row][col] = 0
                 }
             }
 
@@ -219,11 +227,15 @@ class ConvLayer {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
 
-                        if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
-                        if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+                        if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
+                        if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+
+                        const regularized = (filter.deltaWeights[channel][row][col]
+                            + this.net.l2 * filter.weights[channel][row][col]
+                            + this.net.l1 * (filter.weights[channel][row][col] > 0 ? 1 : -1)) / this.net.miniBatchSize
 
                         filter.weights[channel][row][col] = this.net.weightUpdateFn.bind(this.net, filter.weights[channel][row][col],
-                                                                filter.deltaWeights[channel][row][col], filter, [channel, row, col])()
+                                                                regularized, filter, [channel, row, col])()
 
                         if (this.net.maxNorm!=undefined) this.net.maxNormTotal += filter.weights[channel][row][col]**2
                     }

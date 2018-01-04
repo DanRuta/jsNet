@@ -1,6 +1,19 @@
-# Upcoming - 3.0 - WebAssembly
+# 3.0.0 - WebAssembly
 ---
-- jsNet version 1.5 feature parity
+#### WebAssembly
+- Complete, rewritten, WebAssembly version of jsNet
+
+#### Global
+- Many bug fixes
+- Removed default configuration values: l1, l2
+- Added layer specific activation function config for FC layers, and ability to turn it off
+- Reworked regularization algorithm
+- Reworked layer specific activation function assignments
+- Reworked net error propagation, using softmax
+- net.forward() function now returns softmax activations by default
+
+#### JavaScript
+- Removed babel transpilation (it's 2018)
 
 # 2.1.0 - Optimizations
 ---

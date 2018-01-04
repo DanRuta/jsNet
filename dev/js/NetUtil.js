@@ -60,7 +60,7 @@ class NetUtil {
         for (let col=0; col<data.length; col++) {
             for (let i=0; i<zP; i++) {
                 data[col].splice(0, 0, 0)
-                data[col].splice(data.length+1, data.length, 0)
+                data[col].splice(data[col].length+1, data[col].length, 0)
             }
         }
 
@@ -204,17 +204,6 @@ class NetUtil {
         const fSSpread = Math.floor(weightsCount / 2)
         const channelsCount = layer.filters[0].weights.length
 
-        // Adding an intermediary step to allow regularization to work
-        const deltaDeltaWeights = []
-
-        // Filling the deltaDeltaWeights with 0 values
-        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-            deltaDeltaWeights[weightsY] = []
-            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                deltaDeltaWeights[weightsY][weightsX] = 0
-            }
-        }
-
         // For each filter
         for (let filterI=0; filterI<layer.filters.length; filterI++) {
 
@@ -230,25 +219,13 @@ class NetUtil {
                 for (let inputY=fSSpread; inputY<inputMap.length-fSSpread; inputY+=layer.stride) {
                     for (let inputX=fSSpread; inputX<inputMap.length-fSSpread; inputX+=layer.stride) {
 
+                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
+
                         // ...and at each location...
                         for (let weightsY=0; weightsY<weightsCount; weightsY++) {
                             for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-
                                 const activation = inputMap[inputY-fSSpread+weightsY][inputX-fSSpread+weightsX]
-
-                                // Increment and regularize the delta delta weights by the input activation (later multiplied by the error)
-                                deltaDeltaWeights[weightsY][weightsX] += activation *
-                                     (1 + (((layer.net.l2||0)+(layer.net.l1||0))/layer.net.miniBatchSize) * filter.weights[channelI][weightsY][weightsX])
-                            }
-                        }
-
-                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
-
-                        // Applying and resetting the deltaDeltaWeights
-                        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-                            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                                filter.deltaWeights[channelI][weightsY][weightsX] += deltaDeltaWeights[weightsY][weightsX] * error
-                                deltaDeltaWeights[weightsY][weightsX] = 0
+                                filter.deltaWeights[channelI][weightsY][weightsX] += activation * error
                             }
                         }
                     }

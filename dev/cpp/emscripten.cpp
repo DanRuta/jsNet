@@ -193,36 +193,6 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_filterSize  (int instanceIndex, float filterSize) {
-        Network::getInstance(instanceIndex)->filterSize = filterSize;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_filterSize (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->filterSize;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_zeroPadding  (int instanceIndex, float zeroPadding) {
-        Network::getInstance(instanceIndex)->zeroPadding = zeroPadding;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_zeroPadding (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->zeroPadding;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_stride  (int instanceIndex, float stride) {
-        Network::getInstance(instanceIndex)->stride = stride;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_stride (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->stride;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
     void set_distribution  (int instanceIndex, int distribution) {
 
         Network* net = Network::getInstance(instanceIndex);
@@ -428,6 +398,47 @@ extern "C" {
         Network::getInstance(instanceIndex)->resetDeltaWeights();
     }
 
+    /* FCLayer */
+    EMSCRIPTEN_KEEPALIVE
+    void set_fc_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+        layer->hasActivation = true;
+
+        switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
+            case 0:
+                layer->activation = &NetMath::sigmoid<Neuron>;
+                break;
+            case 1:
+                layer->activation = &NetMath::tanh<Neuron>;
+                break;
+            case 2:
+                layer->activation = &NetMath::lecuntanh<Neuron>;
+                break;
+            case 3:
+                layer->activation = &NetMath::relu<Neuron>;
+                break;
+            case 4:
+                layer->activation = &NetMath::lrelu<Neuron>;
+                break;
+            case 5:
+                layer->activation = &NetMath::rrelu<Neuron>;
+                break;
+            case 6:
+                layer->activation = &NetMath::elu<Neuron>;
+                break;
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_fc_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
+        // Do nothing
+        return 0;
+    }
+
     /* ConvLayer */
     EMSCRIPTEN_KEEPALIVE
     int get_conv_channels (int instanceIndex, int layerIndex) {
@@ -500,12 +511,15 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void setConvActivation (int instanceIndex, int layerIndex, int activationFnIndex) {
+    void set_conv_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
 
         Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
         layer->hasActivation = true;
 
         switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
             case 0:
                 layer->activationC = &NetMath::sigmoid<Filter>;
                 break;
@@ -530,8 +544,54 @@ extern "C" {
         }
     }
 
+    EMSCRIPTEN_KEEPALIVE
+    int get_conv_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
+        // Do nothing
+        return 0;
+    }
+
 
     /* PoolLayer */
+    EMSCRIPTEN_KEEPALIVE
+    void set_pool_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
+
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
+        layer->hasActivation = true;
+
+        switch (activationFnIndex) {
+            case -1:
+                layer->hasActivation = false;
+                break;
+            case 0:
+                layer->activationP = &NetMath::sigmoid<Network>;
+                break;
+            case 1:
+                layer->activationP = &NetMath::tanh<Network>;
+                break;
+            case 2:
+                layer->activationP = &NetMath::lecuntanh<Network>;
+                break;
+            case 3:
+                layer->activationP = &NetMath::relu<Network>;
+                break;
+            case 4:
+                layer->activationP = &NetMath::lrelu<Network>;
+                break;
+            case 5:
+                layer->activationP = &NetMath::rrelu<Network>;
+                break;
+            case 6:
+                layer->activationP = &NetMath::elu<Network>;
+                break;
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    int get_pool_activation (int instanceIndex, int layerIndex, int activationFnIndex) {
+        // Do nothing
+        return 0;
+    }
+
     EMSCRIPTEN_KEEPALIVE
     int get_pool_channels (int instanceIndex, int layerIndex) {
         return Network::getInstance(instanceIndex)->layers[layerIndex]->channels;

@@ -16,6 +16,7 @@ Network::~Network () {
 int Network::newNetwork(void) {
     Network* net = new Network();
     net->iterations = 0;
+    net->rreluSlope = ((double) rand() / (RAND_MAX)) * 0.001;
     netInstances.push_back(net);
     net->instanceIndex = netInstances.size()-1;
     return net->instanceIndex;
@@ -37,7 +38,6 @@ Network* Network::getInstance(int i) {
 
 void Network::joinLayers(void) {
     for (int l=0; l<layers.size(); l++) {
-        layers[l]->activation = activation;
 
         layers[l]->fanIn = -1;
         layers[l]->fanOut = -1;
@@ -45,9 +45,15 @@ void Network::joinLayers(void) {
         // Join layer
         if (l>0) {
             layers[l-1]->assignNext(layers[l]);
-            layers[l-1]->fanOut = layers[l]->size;
+
+            if (l<layers.size()-1) {
+                layers[l]->fanOut = layers[l+1]->size;
+            }
+
             layers[l]->assignPrev(layers[l-1]);
             layers[l]->fanIn = layers[l-1]->size;
+        } else {
+            layers[0]->fanOut = layers[1]->size;
         }
 
         layers[l]->init(l);
@@ -67,15 +73,15 @@ std::vector<double> Network::forward (std::vector<double> input) {
     std::vector<double> output;
 
     for (int i=0; i<layers[layers.size()-1]->neurons.size(); i++) {
-        output.push_back(layers[layers.size()-1]->neurons[i]->activation);
+        output.push_back(layers[layers.size()-1]->neurons[i]->sum);
     }
 
-    return output;
+    return NetMath::softmax(output);
 }
 
-void Network::backward (std::vector<double> expected) {
+void Network::backward (std::vector<double> errors) {
 
-    layers[layers.size()-1]->backward(expected);
+    layers[layers.size()-1]->backward(errors);
 
     for (int l=layers.size()-2; l>0; l--) {
         std::vector<double> emptyVec;
@@ -98,7 +104,12 @@ void Network::train (int its, int startI) {
         iterationError = costFunction(std::get<1>(trainingData[i]), output);
         totalErrors += iterationError;
 
-        backward(std::get<1>(trainingData[i]));
+        std::vector<double> errors;
+        for (int n=0; n<output.size(); n++) {
+            errors.push_back((std::get<1>(trainingData[i])[n]==1 ? 1 : 0) - output[n]);
+        }
+
+        backward(errors);
 
         if ((i+1) % miniBatchSize == 0) {
             applyDeltaWeights();
@@ -106,7 +117,6 @@ void Network::train (int its, int startI) {
         } else if (i >= trainingData.size()) {
             applyDeltaWeights();
         }
-
     }
 
     isTraining = false;
@@ -135,10 +145,6 @@ void Network::applyDeltaWeights (void) {
     for (int l=1; l<layers.size(); l++) {
         layers[l]->applyDeltaWeights();
     }
-}
-
-Layer* Network::getLayer(int i) {
-    return layers[i];
 }
 
 std::vector<Network*> Network::netInstances = {};

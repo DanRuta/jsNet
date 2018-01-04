@@ -2,10 +2,20 @@
 
 class FCLayer {
 
-    constructor (size) {
+    constructor (size, {activation}={}) {
         this.size = size
         this.neurons = [...new Array(size)].map(n => new Neuron())
         this.layerIndex = 0
+
+        if (activation != undefined) {
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
+            }
+            if (typeof activation != "string") {
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
+            }
+            this.activationName = NetUtil.format(activation)
+        }
     }
 
     assignNext (layer) {
@@ -16,6 +26,14 @@ class FCLayer {
         this.netInstance = this.net.netInstance
         this.prevLayer = layer
         this.layerIndex = layerIndex
+
+        if (this.activationName || this.net.activationName) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "fc_",
+                getCallback: _ => `WASM ${this.activationName||this.net.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName||this.net.activationName]
+        }
     }
 
     init () {

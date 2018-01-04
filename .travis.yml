@@ -3,7 +3,7 @@ language:
   - cpp
 
 script:
-  - nvm install v9.2.0
+  - nvm install v8.7.0
   - npm install -g codecov
   - npm install -g istanbul
   - mkdir build

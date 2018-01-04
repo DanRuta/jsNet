@@ -1,6 +1,6 @@
 {
   "name": "jsnet",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "description": "Javascript based deep learning framework for basic and convolutional neural networks.",
   "scripts": {
     "test": "npm run js-tests && npm run wa-tests",
@@ -36,17 +36,14 @@
   },
   "homepage": "https://github.com/DanRuta/jsNet#readme",
   "devDependencies": {
-    "babel-preset-es2015": "^6.9.0",
-    "babel-preset-stage-3": "^6.5.0",
-    "babelify": "^7.3.0",
     "chai": "3.5.0",
     "chai-as-promised": "^6.0.0",
     "coveralls": "^2.13.1",
     "grunt": "^1.0.1",
-    "grunt-babel": "*",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-concat": "^1.0.1",
     "grunt-contrib-uglify": "git://github.com/gruntjs/grunt-contrib-uglify.git#harmony",
+    "grunt-contrib-uglify-es": "git://github.com/gruntjs/grunt-contrib-uglify.git#harmony",
     "grunt-contrib-watch": "^1.0.0",
     "grunt-exec": "^3.0.0",
     "grunt-text-replace": "^0.4.0",

@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("2.1.1")
+        expect(Network.version).to.equal("3.0.0")
     })
 })
 
@@ -352,9 +352,9 @@ describe("Network", () => {
                 expect(net.dropout).to.equal(0.6)
             })
 
-            it("Defaults l2 to 0.001", () => {
+            it("Doesn't set the l2 to anything if not defined", () => {
                 const net = new Network({Module: fakeModule})
-                expect(net.l2).to.equal(0.001)
+                expect(net.l2).to.be.undefined
             })
 
             it("Allows setting l2 to true, which sets it to 0.001", () => {
@@ -373,13 +373,13 @@ describe("Network", () => {
             })
 
             it("Defines the net l2Error", () => {
-                const net = new Network({Module: fakeModule})
+                const net = new Network({Module: fakeModule, l2: 0.001})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "l2Error")
             })
 
-            it("Defaults l1 to 0.005", () => {
+            it("Doesn't set the l1 to anything if not defined", () => {
                 const net = new Network({Module: fakeModule})
-                expect(net.l1).to.equal(0.005)
+                expect(net.l1).to.be.undefined
             })
 
             it("Allows setting l1 to true, which sets it to 0.005", () => {
@@ -398,7 +398,7 @@ describe("Network", () => {
             })
 
             it("Defines the net l1Error", () => {
-                const net = new Network({Module: fakeModule})
+                const net = new Network({Module: fakeModule, l1: 0.005})
                 expect(NetUtil.defineProperty).to.be.calledWith(net, "l1Error")
             })
 
@@ -437,34 +437,39 @@ describe("Network", () => {
                 expect(net.conv).to.deep.equal({})
             })
 
-            it("Defines the net.conv.filterSize when configured", () => {
-                const net = new Network({Module: fakeModule, conv: {filterSize: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "filterSize")
-            })
-
-            it("Sets the net channels to the given value", () => {
+            it("Sets the net conv filterSize to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {filterSize: 1357}})
                 expect(net.conv.filterSize).to.equal(1357)
             })
 
-            it("Defines the net.conv.zeroPadding when configured", () => {
-                const net = new Network({Module: fakeModule, conv: {zeroPadding: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "zeroPadding")
-            })
-
-            it("Sets the net channels to the given value", () => {
+            it("Sets the net conv zeroPadding to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {zeroPadding: 1357}})
                 expect(net.conv.zeroPadding).to.equal(1357)
             })
 
-            it("Defines the net.conv.stride when configured", () => {
+            it("Sets the net conv stride to the given value", () => {
                 const net = new Network({Module: fakeModule, conv: {stride: 1357}})
-                expect(NetUtil.defineProperty).to.be.calledWith(net.conv, "stride")
+                expect(net.conv.stride).to.equal(1357)
+            })
+
+            it("Creates a net.pool {} object if the pool parameter is given", () => {
+                const net = new Network({Module: fakeModule, pool: {}})
+                expect(net.pool).to.deep.equal({})
+            })
+
+            it("Sets the net pool size to the given value", () => {
+                const net = new Network({Module: fakeModule, pool: {size: 1357}})
+                expect(net.pool.size).to.equal(1357)
+            })
+
+            it("Sets the net pool stride to the given value", () => {
+                const net = new Network({Module: fakeModule, pool: {stride: 1357}})
+                expect(net.pool.stride).to.equal(1357)
             })
 
             it("Sets the net channels to the given value", () => {
-                const net = new Network({Module: fakeModule, conv: {stride: 1357}})
-                expect(net.conv.stride).to.equal(1357)
+                const net = new Network({Module: fakeModule, pool: {size: 1357}})
+                expect(net.pool.size).to.equal(1357)
             })
 
             it("Defines the net weightsConfig distribution", () => {
@@ -840,7 +845,7 @@ describe("Network", () => {
         let net
 
         beforeEach(() => {
-            net = new Network({Module: fakeModule, layers: [2,3,2]})
+            net = new Network({Module: fakeModule, layers: [2,3,2], l1: 0.005, l2: 0.001})
         })
 
         const testData = [
@@ -972,7 +977,7 @@ describe("Network", () => {
         })
 
         it("Sets the l2Error to 0 with each epoch", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l2: 0.01})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -990,7 +995,7 @@ describe("Network", () => {
         })
 
         it("Sets the l2Error to 0 with each epoch (with callbacks)", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l2: 0.01})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -1009,7 +1014,7 @@ describe("Network", () => {
 
 
         it("Sets the l1Error to 0 with each epoch", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l1: 0.005})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
@@ -1027,7 +1032,7 @@ describe("Network", () => {
         })
 
         it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
-            const network = new Network({Module: fakeModule})
+            const network = new Network({Module: fakeModule, l1: 0.005})
             sinon.stub(fakeModule, "ccall").callsFake(() => true)
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
@@ -1257,6 +1262,23 @@ describe("FCLayer", () => {
             expect(layer.neurons).to.not.be.undefined
             expect(layer.neurons.length).to.equal(10)
         })
+
+        it("Throws an error if setting activation to something other than a string", () => {
+            const wrapperFn = () => new FCLayer(1, {activation: x => x})
+            const wrapperFn2 = () => new FCLayer(1, {activation: 2})
+            expect(wrapperFn).to.throw("Custom activation functions are not available in the WebAssembly version")
+            expect(wrapperFn2).to.throw("Custom activation functions are not available in the WebAssembly version")
+        })
+
+        it("Otherwise sets the given activation string to the layer", () => {
+            const layer = new FCLayer(1, {activation: "test"})
+            expect(layer.activationName).to.equal("test")
+        })
+
+        it("Sets the activation function to noActivation when configuring it with false", () => {
+            const layer = new FCLayer(1, {activation: false})
+            expect(layer.activationName).to.equal("noactivation")
+        })
     })
 
     describe("assignNext", () => {
@@ -1271,28 +1293,64 @@ describe("FCLayer", () => {
 
     describe("assignPrev", () => {
 
+        let layer1
+        let layer2
+
+        beforeEach(() => {
+            layer1 = new FCLayer(10)
+            layer2 = new FCLayer(10)
+            layer1.net = {}
+            layer2.net = {netInstance: 132}
+            sinon.spy(NetUtil, "defineProperty")
+            sinon.stub(NetUtil.Module, "ccall")
+        })
+
+        afterEach(() => {
+            NetUtil.defineProperty.restore()
+            NetUtil.Module.ccall.restore()
+        })
+
         it("Sets the layer.netInstance to the network.netInstance", () => {
-            const layer = new FCLayer(10)
-            const layer2 = new FCLayer(10)
-            layer.net = {netInstance: 123}
-            layer.assignPrev(layer2, 14)
-            expect(layer.netInstance).to.equal(123)
+
+            layer1.net = {netInstance: 123}
+            layer1.assignPrev(layer2, 14)
+            expect(layer1.netInstance).to.equal(123)
         })
 
         it("Sets the layer.prevLayer to the given layer", () => {
-            const layer = new FCLayer(10)
-            const layer2 = new FCLayer(10)
-            layer.net = {}
-            layer.assignPrev(layer2, 14)
-            expect(layer.prevLayer).to.equal(layer2)
+            layer1.net = {}
+            layer1.assignPrev(layer2, 14)
+            expect(layer1.prevLayer).to.equal(layer2)
         })
 
         it("Assigns the layer.layerIndex to the value given", () => {
-            const layer = new FCLayer(10)
-            const layer2 = new FCLayer(10)
-            layer.net = {}
-            layer.assignPrev(layer2, 14)
-            expect(layer.layerIndex).to.equal(14)
+            layer1.net = {}
+            layer1.assignPrev(layer2, 14)
+            expect(layer1.layerIndex).to.equal(14)
+        })
+
+        it("Calls the net Module's ccall function with set_fc_activation with the layer.activationName, if given", () => {
+            layer2.activationName = "tanh"
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.equal("WASM tanh")
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_fc_activation", null, ["number", "number", "number"], [132, 14, 1])
+        })
+
+        it("Calls the net Module's ccall function with set_fc_activation with the net.activationName if given", () => {
+            layer2.activationName = undefined
+            layer2.net.activationName = "relu"
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.equal("WASM relu")
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_fc_activation", null, ["number", "number", "number"], [132, 14, 3])
+        })
+
+        it("Does not call the WASM setConvActivation function if the activation is set to false", () => {
+            layer2.activationName = false
+            layer2.net.activationName = undefined
+            layer2.assignPrev(layer1, 14)
+            expect(NetUtil.defineProperty).to.not.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer1.layerIndex])
         })
     })
 
@@ -1727,13 +1785,18 @@ describe("ConvLayer", () => {
         it("Throws an error if setting activation to something other than a string", () => {
             const wrapperFn = () => new ConvLayer(1, {activation: x => x})
             const wrapperFn2 = () => new ConvLayer(1, {activation: 2})
-            expect(wrapperFn).to.throw("Only string activation functions available in the WebAssembly version")
-            expect(wrapperFn2).to.throw("Only string activation functions available in the WebAssembly version")
+            expect(wrapperFn).to.throw("Custom activation functions are not available in the WebAssembly version")
+            expect(wrapperFn2).to.throw("Custom activation functions are not available in the WebAssembly version")
         })
 
         it("Otherwise sets the given activation string to the layer", () => {
             const layer = new ConvLayer(1, {activation: "test"})
-            expect(layer.activation).to.equal("test")
+            expect(layer.activationName).to.equal("test")
+        })
+
+        it("Sets the activation to false if nothing is provided", () => {
+            const layer = new ConvLayer()
+            expect(layer.activation).to.be.false
         })
 
         it("Sets the layer.layerIndex to 0", () => {
@@ -1747,6 +1810,11 @@ describe("ConvLayer", () => {
             expect(layer.filterSize).to.equal(3)
             expect(layer.stride).to.equal(2)
             expect(layer.zeroPadding).to.equal(5)
+        })
+
+        it("Sets the activation function to noActivation when configuring it with false", () => {
+            const layer = new ConvLayer(1, {activation: false, filterSize: 3, stride: 2, zeroPadding: 5})
+            expect(layer.activationName).to.equal("noactivation")
         })
     })
 
@@ -2006,8 +2074,6 @@ describe("ConvLayer", () => {
             expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_inMapValuesCount", null, ["number", "number", "number"], [132, 14, 10000])
         })
 
-
-
         it("Assigns to layer.inZPMapValuesCount the size of the zero padded input map (Example 1)", () => {
             const layer1 = new ConvLayer(4)
             const layer2 = new ConvLayer(3, {filterSize: 3, zeroPadding: 0})
@@ -2095,20 +2161,27 @@ describe("ConvLayer", () => {
             expect(layer.filters[2]).instanceof(Filter)
         })
 
-        it("Calls the net Module's ccall function with setConvActivation if the layer.activation was given", () => {
-            layer1.activation = "tanh"
-            sinon.stub(layer1.net.Module, "ccall")
-            layer1.assignPrev(layer1, 14)
-            expect(layer1.net.Module.ccall).to.be.calledWith("setConvActivation", null, ["number", "number", "number"], [132, 14, 1])
-            layer1.net.Module.ccall.restore()
+        it("Calls the net Module's ccall function with set_conv_activation with the layer.activationName, if given", () => {
+            layer2.activationName = "tanh"
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.equal("WASM tanh")
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_activation", null, ["number", "number", "number"], [132, 14, 1])
+        })
+
+        it("Calls the net Module's ccall function with set_conv_activation with the net.activationName if given", () => {
+            layer2.activationName = undefined
+            layer2.net.activationName = "relu"
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.equal("WASM relu")
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_conv_activation", null, ["number", "number", "number"], [132, 14, 3])
         })
 
         it("Does not call the WASM setConvActivation function if the activation is set to false", () => {
-            layer1.activation = false
-            sinon.stub(layer1.net.Module, "ccall")
-            layer1.assignPrev(layer1, 14)
-            expect(layer1.net.Module.ccall).to.not.be.called
-            layer1.net.Module.ccall.restore()
+            layer2.activationName = false
+            layer2.assignPrev(layer1, 14)
+            expect(NetUtil.defineProperty).to.not.be.calledWith(layer2, "activation", ["number", "number"], [layer2.netInstance, layer2.layerIndex])
         })
 
         it("Throws an error if the hyperparameters don't match the input map properly", () => {
@@ -2327,13 +2400,13 @@ describe("PoolLayer", () => {
         it("Throws an error if setting activation to something other than a string", () => {
             const wrapperFn = () => new PoolLayer(1, {activation: x => x})
             const wrapperFn2 = () => new PoolLayer(1, {activation: 2})
-            expect(wrapperFn).to.throw("Only string activation functions available in the WebAssembly version")
-            expect(wrapperFn2).to.throw("Only string activation functions available in the WebAssembly version")
+            expect(wrapperFn).to.throw("Custom activation functions are not available in the WebAssembly version")
+            expect(wrapperFn2).to.throw("Custom activation functions are not available in the WebAssembly version")
         })
 
         it("Otherwise sets the given activation string to the layer", () => {
             const layer = new PoolLayer(1, {activation: "test"})
-            expect(layer.activation).to.equal("test")
+            expect(layer.activationName).to.equal("test")
         })
 
         it("Sets the activation to false if nothing is provided", () => {
@@ -2341,11 +2414,10 @@ describe("PoolLayer", () => {
             expect(layer.activation).to.be.false
         })
 
-        it("Allows setting the activation function to false by setting it to false", () => {
+        it("Sets the activation function to noActivation when configuring it with false", () => {
             const layer = new PoolLayer(5, {activation: false})
-            expect(layer.activation).to.be.false
+            expect(layer.activationName).to.equal("noactivation")
         })
-
     })
 
     describe("assignNext", () => {
@@ -2561,9 +2633,26 @@ describe("PoolLayer", () => {
             layer2.indeces = [[[[1,1]]]]
             expect(NetUtil.ccallVolume).to.be.calledWith("set_pool_indeces", null, ["number", "number", "array"], [123, 14, [[[3]]]])
 
-
             NetUtil.ccallVolume.restore()
             sinon.stub(NetUtil, "defineVolumeProperty")
+        })
+
+        it("Calls the net Module's ccall function with set_pool_activation with the layer.activationName, if given", () => {
+            layer2.activationName = "tanh"
+            layer2.net = {netInstance: 123, pool: {}}
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.equal("WASM tanh")
+            expect(NetUtil.defineProperty).to.be.calledWith(layer2, "activation", ["number", "number"], [123, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.be.calledWith("set_pool_activation", null, ["number", "number", "number"], [123, 14, 1])
+        })
+
+        it("Doesn't call the net Module's ccall function with set_pool_activation, if the activation is not given", () => {
+            layer2.activationName = undefined
+            layer2.net = {netInstance: 123, pool: {}}
+            layer2.assignPrev(layer1, 14)
+            expect(layer2.activation).to.be.false
+            expect(NetUtil.defineProperty).to.not.be.calledWith(layer2, "activation", ["number", "number"], [123, layer2.layerIndex])
+            expect(NetUtil.Module.ccall).to.not.be.calledWith("set_pool_activation", null, ["number", "number", "number"], [123, 14, 1])
         })
 
     })

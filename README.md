@@ -1,22 +1,27 @@
 jsNet
 =
-[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++ [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
+[![Build Status](https://travis-ci.org/DanRuta/jsNet.svg?branch=master)](https://travis-ci.org/DanRuta/jsNet)&nbsp;&nbsp;&nbsp;&nbsp;JS: [![Coverage Status](https://coveralls.io/repos/github/DanRuta/jsNet/badge.svg?branch=master)](https://coveralls.io/github/DanRuta/jsNet?branch=master) C++: [![codecov](https://codecov.io/gh/DanRuta/jsNet/branch/master/graph/badge.svg)](https://codecov.io/gh/DanRuta/jsNet)
 ---
 
 [![NPM](https://nodei.co/npm/jsnet.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jsnet/)
 
 jsNet is a javascript based deep learning framework for basic and convolutional neural networks. It is functional in both nodejs and in the browser.
 
-## Current WebAssembly version: 2.0 beta.
-The current version has reached feature parity with the JavaScript only version 2.0. There are some known issues with convolutional layers, hence the beta tag. Once these get ironed out, general release 3.0 will be released.
+*Note: The npm package defaults to the JavaScript only version, for now.*
+
+## Current WebAssembly version: 3.0.
+The WebAssembly version is now finished, and fully matches the JavaScript feature set. This notice will be removed in general release 3.1.
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
-## Demo
-https://ai.danruta.co.uk - Interactive MNIST Digit classifier, using FCLayers only.
+## Demos
+https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLayers only.
+
+https://ai.danruta.co.uk/webassembly - Performance comparison between JS and WebAssembly (v2.0) versions.
 
 ##  Usage
-There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version. To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. To use WebAssembly, you must also include the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
+There are two different versions in the dist folder. The original ```jsNet.min.js``` is the JavaScript only version.
+To use the WebAssembly version, use the ```jsNetWebAssembly.min.js``` file. You will also need the ```NetWASM.js``` file. This is the 'glue' code created by emscripten, and it will be importing the ```NetWASM.wasm``` file, so you need to have that available, also.
 
 ### JavaScript
 When using in the browser, you just include the ```jsNet.min.js``` file. In nodejs, you just ```npm install jsnet``` and  require it like so:
@@ -27,6 +32,8 @@ const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, N
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
 
 ### WebAssembly
+
+For the WebAssembly version, you will need the ```jsNetWebAssembly.min.js```, ```NetWASM.js``` and ```NetWASM.wasm``` files, found in the dist folder.
 
 I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server.
 
@@ -41,8 +48,6 @@ Finally, you need to assign the module when creating the network, like so:
 const net = new Network({Module: Module})
 ```
 This makes it easier to use in nodejs.
-
-Otherwise, until version 3.0 is released, while the WebAssembly version gets fleshed out, there will be missing features. I will be following the same feature release order as version 1.0 -> 2.0.
 
 
 ### Constructing
@@ -89,6 +94,8 @@ The usual arrangement of layers would folow something like this:
 In words, an FCLayer, maybe followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
 The first FCLayer needs to have as many neurons in it as there are data points per iteration, and the last FCLayer needs to have as many neurons as there are classes for your data set.
 
+When building a convolutional network, make sure that the number of neurons in the FC layer following a Conv or Pool layer matches the number of outgoing activations in the layer preceding it. See below for a tip on easily calculating that number.
+
 ### Training
 ----
 
@@ -105,6 +112,9 @@ const net = new Network()
 net.train(training) // This on its own is enough
 .then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
+
+Until more options are implemented, softmax is used by default during training, on the last layer. As such, activation configurations are not used there.
+
 ##### Options
 ###### Epochs
 By default, this is ```1``` and represents how many times the data passed will be used.
@@ -181,15 +191,12 @@ Once the network has been trained, tested and imported into your page, you can u
 const userInput = [1,0,1,0,0.5] // Example input
 const netResult = net.forward(userInput)
 ```
-This will return an array of the activations in the output layer.
-You can run them through a softmax function by using NetMath.
-```javascript
-const normalizedResults = NetMath.softmax(netResult)
-```
+This will return an array of the **softmax** activations in the output layer.
+
 
 ## Configurations
 ---
-String configs are case/space/underscore insensitive.
+**String configs are case/space/underscore insensitive.**
 
 Without setting any configs, the default values are equivalent to the following configuration:
 ```javascript
@@ -200,8 +207,8 @@ const net = new Network({
     learningRate: 0.2,
     cost: "meansquarederror",
     dropout: 1,
-    l2: 0.001,
-    l1: 0.005,
+    l2: undefined,
+    l1: undefined,
     layers: [ /* 3 FCLayers */ ]
     updateFn: "vanillaupdatefn",
     weightsConfig: {
@@ -269,8 +276,8 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 ### Activation Function
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid\* |
-| lreluSlope | Slope for lrelu, when used | Any number | 0.99 |
+| activation | Activation function used by neurons | sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu | sigmoid |
+| lreluSlope | Slope for lrelu, when used | Any number | -0.0005 |
 | eluAlpha | Alpha value for elu, when used | Any number | 1 |
 
 \* When constructing convolutional networks, one of the rectified linear unit activation functions may be more suitable.
@@ -278,11 +285,11 @@ net = new Network({updateFn: "adadelta", rho: 0.95})
 ##### Examples
 ```javascript
 net = new Network({activation: "sigmoid"})
-net = new Network({activation: "lrelu", lreluSlope: 0.99})
+net = new Network({activation: "lrelu", lreluSlope: -0.0005})
 net = new Network({activation: "elu", eluAlpha: 1})
 net = new Network({activation: x => x})
 ```
-You can set your own activation functions. They are given as parameters:
+You can set your own activation functions in the JavaScript version (but not the WebAssebly version). The functions are given as parameters:
 - The sum of the previous layer's activations and the neuron's bias
 - If the function should calculate the prime (during backprop) - boolean
 - A reference to the neuron/filter being activated (in pool layers, the reference is to the net).
@@ -293,9 +300,9 @@ The function needs to return a single number.
 ### Regularization
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| dropout | Probability a neuron will **not** be dropped | Any number, or false to disable (equivalent to 1) | 1 |
-| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | 0.001 |
-| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | 0.005 |
+| dropout | Probability a neuron will **not** be dropped | Any number, or false to disable (equivalent to 1) | 1 (disabled) |
+| l2 | L2 regularization strength | any number, or true (which sets it to 0.001) | undefined |
+| l1 | L1 regularization strength | any number, or true (which sets it to 0.005) | undefined |
 | maxNorm | Max norm threshold | any number, or true (which sets it to 1000) | undefined |
 
 ##### Examples
@@ -350,18 +357,49 @@ net = new Network({weightsConfig: {distribution: "lecunUniform"}})
 net = new Network({weightsConfig: {distribution: n => [...new Array(n)]}})
 ```
 
+### FCLayer (Fully connected layer)
+```FCLayer(int num_neurons[, object configs])```
+
+The first parameter, an integer, is for how many neurons the layer will have. The second, is an object where the configurations below go.
+
+|  Attribute | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | The net's activation function |
+
+##### Examples
+```javascript
+// 20 neurons, sigmoid activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [..., new FCLayer(20), ...]
+})
+// 100 neurons, no activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [..., new FCLayer(20, {activation: false}), ...]
+})
+// 15 neurons, tanh activation function
+net = new Network({
+    activation: "sigmoid",
+    layers: [..., new FCLayer(20, {activation: "tanh"}), ...]
+})
+```
+
+Softmax is used by default on the last layer. Activation configurations are therefore not used there.
+
 ### ConvLayer (Convolutional layer)
+```ConvLayer(int num_filters[, object configs])```
 
 The first parameter, an integer, is for how many filters to use in the layer. The second, is an object where the configurations below go.
 
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
-| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2. |
+| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2, keeping dimensions the same (equivalent to 'SAME' in TensorFlow) |
 | stride | How many values to move between convolutions | Any number | 1 |
-| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | false |
 
-You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwisse decimal outgoing spacial dimensions.
+You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwise decimal outgoing spacial dimensions.
 
 ### Tip
 You can calculate the spacial dimensions of a convolution layer's outgoing activation volume with the following formula:
@@ -372,7 +410,7 @@ size out = (size in - filter size + 2 * zero padding) / stride + 1
 #### About the activation function
 Sometimes, you may read about ReLU layers being used, and such. However, it made much more sense in the implementation to just do the activation in the ConvLayer, as it would be more computationally efficient than using a dedicated layer. Therefore there are no such 'activation' layers, as you just specify the activation in the network configs.
 
-By default, the Conv layer will use the activation configured with the network. However, you can set it to ```false```  to disable activations on a particular Conv layer. You can also provide a custom function, or use the string name of an existing activation function, similar to configuring the network activation. (See above)
+By default, the Conv layer activation is turned off (similar to configuring with ```false```). However, you can configure it via the activation key. You can provide a custom function (in the JavaScript only version), or use the string name of an existing activation function, similar to configuring the network activation. (See above)
 
 ##### Examples
 ```javascript
@@ -391,6 +429,7 @@ net = new Network({
 ```
 
 ### PoolLayer
+```PoolLayer(int span[, object configs])```
 
 The first parameter, an integer, is for the size of area to pool across (Eg, 2, for a 2x2 area). The default value is 2.
 The second is an object where the configurations below go.
@@ -398,7 +437,7 @@ The second is an object where the configurations below go.
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | stride | How many values to move between pooling | Any number | layer.size |
-| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | undefined |
+| activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, function | false |
 
 The pooling operation used is max pool.
 
@@ -423,7 +462,7 @@ net = new Network({
 ### Tip
 When using Pool layers following a convolutional layer, it is more computationally efficient to perform the activation function in the pool layer instead of doing it in the conv layer. This is only true for increasing functions (the included activation functions are ok). The logic behind it is that max pooling will pick the highest value out of a set of values. It makes sense to only compute the activation of a single value instead of a group of them, as the pooling choice would not be affected by an increasing function.
 
-For example, using the following set-up compared to the one above, the training was about 18% (average of 4) faster (with nearly identical results). This optimisation may be even more dramatic for Pool layers with bigger sizes.
+For example, using the following set-up compared to the one above, the training was about 18% (average of 4) faster (with nearly identical results). This optimization may be even more dramatic for Pool layers with bigger sizes.
 ```javascript
 net = new Network({
     layers: [
@@ -442,19 +481,19 @@ net = new Network({
 
 ## Future plans
 ---
-More and more features will be added, as time goes by, and I learn more. General improvements and optimisations will be added throughout. Breaking changes will be documented.
-
-Check the changelog to see the history of added features.
+More and more features will be added, as time goes by, and I learn more. General improvements and optimizations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
 ##### Short term
-The next big feature will be WebAssembly support. This will arive in version 3.0, after some more testing is done on the existing beta version. You can keep track of progress on the dev branch.
+The WebAssembly version, a complete re-write, has just shipped in general release version 3.0. Next, in 3.1, I'll be going through a list of optimizations ideas I've racked up. You can keep track of progress on the dev branch.
 
 ##### Long term
-Once that is done, I will be experimenting with some further, equally effective optimizations.
+Once that is done, I will be experimenting with a WebGL version, using shaders to run computations on the GPU.
 
 ## Contributing
 ---
-Always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
+I am always looking for feedback, suggestions and ideas, especially if something's not right, or it can be improved/optimized.
 
 Pull requests are always welcome. Just make sure the tests all pass and coverage is at (or nearly) at 100%.
 To develop, first ```npm install``` the dev dependencies. You can then run ```grunt``` to listen for file changes and transpile, and you can run the mocha tests via ```npm test```, where you can also see the coverage.
+
+To build the WebAssembly version, you will need to be able to use emscripten to compile locally. Check out [this article](https://medium.com/statuscode/setting-up-the-ultimate-webassembly-c-workflow-6484efa3e162) I wrote if you need any help setting it up. Once set up, run ```npm run build``` to set up the environment. Grunt will do the compilation during development.

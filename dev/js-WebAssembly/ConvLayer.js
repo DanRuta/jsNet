@@ -10,11 +10,17 @@ class ConvLayer {
         this.layerIndex = 0
         this.zeroPadding = zeroPadding
 
+        this.activation = false
+        this.activationName = activation
+
         if (activation != undefined) {
-            if (typeof activation != "string") {
-                throw new Error("Only string activation functions available in the WebAssembly version")
+            if (typeof activation == "boolean" && !activation) {
+                activation = "noactivation"
             }
-            this.activation = NetUtil.format(activation)
+            if (typeof activation != "string") {
+                throw new Error("Custom activation functions are not available in the WebAssembly version")
+            }
+            this.activationName = NetUtil.format(activation)
         }
     }
 
@@ -80,9 +86,12 @@ class ConvLayer {
             throw new Error(`Misconfigured hyperparameters. Activation volume dimensions would be ${outSize} in conv layer at index ${layerIndex}`)
         }
 
-        if (this.activation != false) {
-            this.net.Module.ccall("setConvActivation", null, ["number", "number", "number"],
-                [this.netInstance, layerIndex, NetUtil.activationsIndeces[this.activation||this.net.activationName]])
+        if (this.activationName !== false && this.net.activationName !== false) {
+            NetUtil.defineProperty(this, "activation", ["number", "number"], [this.netInstance, layerIndex], {
+                pre: "conv_",
+                getCallback: _ => `WASM ${this.activationName||this.net.activationName}`
+            })
+            this.activation = NetUtil.activationsIndeces[this.activationName||this.net.activationName]
         }
 
         this.filters = [...new Array(this.size)].map(f => new Filter())

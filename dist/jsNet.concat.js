@@ -9,6 +9,7 @@ class ConvLayer {
         if (size)           this.size = size
 
         this.zeroPadding = zeroPadding
+        this.activationName = activation
 
         if (activation!=undefined) {
 
@@ -72,12 +73,12 @@ class ConvLayer {
         this.filters.forEach(filter => {
 
             filter.weights = [...new Array(this.channels)].map(channelWeights => {
-                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize * (this.prevLayer.channels||1), this.weightsConfig))
+                return [...new Array(this.filterSize)].map(weightsRow => this.net.weightsInitFn(this.filterSize, this.weightsConfig))
             })
 
             filter.activationMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
             filter.errorMap = [...new Array(this.outMapSize)].map(row => [...new Array(this.outMapSize)].map(v => 0))
-            filter.bias = Math.random()*0.2-0.1
+            filter.bias = 1
 
             if (this.net.dropout != 1) {
                 filter.dropoutMap = filter.activationMap.map(row => row.map(v => false))
@@ -85,7 +86,7 @@ class ConvLayer {
 
             filter.init({
                 updateFn: this.net.updateFn,
-                activation: this.net.activationConfig,
+                activation: this.activationName || this.net.activationConfig,
                 eluAlpha: this.net.eluAlpha
             })
         })
@@ -191,12 +192,19 @@ class ConvLayer {
         for (let filterI=0; filterI<this.filters.length; filterI++) {
 
             const filter = this.filters[filterI]
+            filter.deltaBias = 0
 
             for (let channel=0; channel<filter.deltaWeights.length; channel++) {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
                         filter.deltaWeights[channel][row][col] = 0
                     }
+                }
+            }
+
+            for (let row=0; row<filter.errorMap.length; row++) {
+                for (let col=0; col<filter.errorMap.length; col++) {
+                    filter.errorMap[row][col] = 0
                 }
             }
 
@@ -219,11 +227,15 @@ class ConvLayer {
                 for (let row=0; row<filter.deltaWeights[0].length; row++) {
                     for (let col=0; col<filter.deltaWeights[0][0].length; col++) {
 
-                        if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
-                        if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+                        if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * filter.weights[channel][row][col]**2
+                        if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(filter.weights[channel][row][col])
+
+                        const regularized = (filter.deltaWeights[channel][row][col]
+                            + this.net.l2 * filter.weights[channel][row][col]
+                            + this.net.l1 * (filter.weights[channel][row][col] > 0 ? 1 : -1)) / this.net.miniBatchSize
 
                         filter.weights[channel][row][col] = this.net.weightUpdateFn.bind(this.net, filter.weights[channel][row][col],
-                                                                filter.deltaWeights[channel][row][col], filter, [channel, row, col])()
+                                                                regularized, filter, [channel, row, col])()
 
                         if (this.net.maxNorm!=undefined) this.net.maxNormTotal += filter.weights[channel][row][col]**2
                     }
@@ -267,10 +279,18 @@ typeof window=="undefined" && (exports.ConvLayer = ConvLayer)
 
 class FCLayer {
 
-    constructor (size) {
+    constructor (size, {activation}={}) {
         this.size = size
         this.neurons = [...new Array(size)].map(n => new Neuron())
         this.state = "not-initialised"
+
+        if (activation!=undefined) {
+            if (typeof activation=="boolean" && !activation) {
+                this.activation = false
+            } else {
+                this.activation = typeof activation=="function" ? activation : NetMath[NetUtil.format(activation)].bind(this)
+            }
+        }
     }
 
     assignNext (layer) {
@@ -302,7 +322,7 @@ class FCLayer {
             }
 
             neuron.weights = this.net.weightsInitFn(weightsCount, this.weightsConfig)
-            neuron.bias = Math.random()*0.2-0.1
+            neuron.bias = 1
 
             neuron.init({
                 updateFn: this.net.updateFn,
@@ -325,22 +345,22 @@ class FCLayer {
                     neuron.sum += activations[ai] * neuron.weights[ai]
                 }
 
-                neuron.activation = this.activation(neuron.sum, false, neuron) / (this.net.dropout||1)
+                neuron.activation = (this.activation ? this.activation(neuron.sum, false, neuron) : neuron.sum) / (this.net.dropout||1)
             }
         })
     }
 
-    backward (expected) {
+    backward (errors) {
         this.neurons.forEach((neuron, ni) => {
 
             if (neuron.dropped) {
                 neuron.error = 0
-                neuron.deltaBias = 0
+                neuron.deltaBias += 0
             } else {
-                if (typeof expected !== "undefined") {
-                    neuron.error = expected[ni] - neuron.activation
+                if (typeof errors !== "undefined") {
+                    neuron.error = errors[ni]
                 } else {
-                    neuron.derivative = this.activation(neuron.sum, true, neuron)
+                    neuron.derivative = this.activation ? this.activation(neuron.sum, true, neuron) : 1
                     neuron.error = neuron.derivative * this.nextLayer.neurons.map(n => n.error * (n.weights[ni]||0))
                                                                              .reduce((p,c) => p+c, 0)
                 }
@@ -348,17 +368,19 @@ class FCLayer {
                 const activations = NetUtil.getActivations(this.prevLayer)
 
                 for (let wi=0; wi<neuron.weights.length; wi++) {
-                    neuron.deltaWeights[wi] += (neuron.error * activations[wi]) *
-                        (1 + (((this.net.l2||0)+(this.net.l1||0))/this.net.miniBatchSize) * neuron.deltaWeights[wi])
+                    neuron.deltaWeights[wi] += (neuron.error * activations[wi])
                 }
 
-                neuron.deltaBias = neuron.error
+                neuron.deltaBias += neuron.error
             }
         })
     }
 
     resetDeltaWeights () {
         for (let n=0; n<this.neurons.length; n++) {
+
+            this.neurons[n].deltaBias = 0
+
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
                 this.neurons[n].deltaWeights[dwi] = 0
             }
@@ -372,10 +394,14 @@ class FCLayer {
 
             for (let dwi=0; dwi<this.neurons[n].deltaWeights.length; dwi++) {
 
-                if (this.net.l2!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
-                if (this.net.l1!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
+                if (this.net.l2Error!=undefined) this.net.l2Error += 0.5 * this.net.l2 * neuron.weights[dwi]**2
+                if (this.net.l1Error!=undefined) this.net.l1Error += this.net.l1 * Math.abs(neuron.weights[dwi])
 
-                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], neuron.deltaWeights[dwi], neuron, dwi)()
+                const regularized = (neuron.deltaWeights[dwi]
+                    + this.net.l2 * neuron.weights[dwi]
+                    + this.net.l1 * (neuron.weights[dwi] > 0 ? 1 : -1)) / this.net.miniBatchSize
+
+                neuron.weights[dwi] = this.net.weightUpdateFn.bind(this.net, neuron.weights[dwi], regularized, neuron, dwi)()
 
                 if (this.net.maxNorm!=undefined) this.net.maxNormTotal += neuron.weights[dwi]**2
             }
@@ -692,17 +718,30 @@ class NetMath {
     }
 
     // Other
-    static softmax (values) {
-        let total = 0
+    static softmax (v) {
+
+        const values = v.slice(0)
+        let maxValue = values[0]
+
+        for (let i=1; i<values.length; i++) {
+            if (values[i] > maxValue) {
+                maxValue = values[i]
+            }
+        }
+
+        // Exponentials
+        const exponentials = new Array(values.length)
+        let exponentialsSum = 0.0
 
         for (let i=0; i<values.length; i++) {
-            total += values[i]
+            let e = Math.exp(values[i] - maxValue)
+            exponentialsSum += e
+            exponentials[i] = e
         }
 
         for (let i=0; i<values.length; i++) {
-            if (total) {
-                values[i] /= total
-            }
+            exponentials[i] /= exponentialsSum
+            values[i] = exponentials[i]
         }
 
         return values
@@ -798,7 +837,7 @@ class NetUtil {
         for (let col=0; col<data.length; col++) {
             for (let i=0; i<zP; i++) {
                 data[col].splice(0, 0, 0)
-                data[col].splice(data.length+1, data.length, 0)
+                data[col].splice(data[col].length+1, data[col].length, 0)
             }
         }
 
@@ -942,17 +981,6 @@ class NetUtil {
         const fSSpread = Math.floor(weightsCount / 2)
         const channelsCount = layer.filters[0].weights.length
 
-        // Adding an intermediary step to allow regularization to work
-        const deltaDeltaWeights = []
-
-        // Filling the deltaDeltaWeights with 0 values
-        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-            deltaDeltaWeights[weightsY] = []
-            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                deltaDeltaWeights[weightsY][weightsX] = 0
-            }
-        }
-
         // For each filter
         for (let filterI=0; filterI<layer.filters.length; filterI++) {
 
@@ -968,25 +996,13 @@ class NetUtil {
                 for (let inputY=fSSpread; inputY<inputMap.length-fSSpread; inputY+=layer.stride) {
                     for (let inputX=fSSpread; inputX<inputMap.length-fSSpread; inputX+=layer.stride) {
 
+                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
+
                         // ...and at each location...
                         for (let weightsY=0; weightsY<weightsCount; weightsY++) {
                             for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-
                                 const activation = inputMap[inputY-fSSpread+weightsY][inputX-fSSpread+weightsX]
-
-                                // Increment and regularize the delta delta weights by the input activation (later multiplied by the error)
-                                deltaDeltaWeights[weightsY][weightsX] += activation *
-                                     (1 + (((layer.net.l2||0)+(layer.net.l1||0))/layer.net.miniBatchSize) * filter.weights[channelI][weightsY][weightsX])
-                            }
-                        }
-
-                        const error = filter.errorMap[(inputY-fSSpread)/layer.stride][(inputX-fSSpread)/layer.stride]
-
-                        // Applying and resetting the deltaDeltaWeights
-                        for (let weightsY=0; weightsY<weightsCount; weightsY++) {
-                            for (let weightsX=0; weightsX<weightsCount; weightsX++) {
-                                filter.deltaWeights[channelI][weightsY][weightsX] += deltaDeltaWeights[weightsY][weightsX] * error
-                                deltaDeltaWeights[weightsY][weightsX] = 0
+                                filter.deltaWeights[channelI][weightsY][weightsX] += activation * error
                             }
                         }
                     }
@@ -1071,7 +1087,7 @@ typeof window=="undefined" && (exports.NetUtil = NetUtil)
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []
@@ -1084,15 +1100,17 @@ class Network {
         activation = NetUtil.format(activation)
         updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
-
-        if (l2) {
-            this.l2 = typeof l2=="boolean" ? 0.001 : l2
-            this.l2Error = 0
-        }
+        this.l1 = 0
+        this.l2 = 0
 
         if (l1) {
             this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
+        }
+
+        if (l2) {
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
+            this.l2Error = 0
         }
 
         if (maxNorm) {
@@ -1164,6 +1182,7 @@ class Network {
         }
 
         this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.rreluSlope = Math.random() * 0.001
         this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom
@@ -1241,11 +1260,18 @@ class Network {
             layer.assignPrev(this.layers[layerIndex-1], layerIndex)
 
             layer.weightsConfig.fanIn = layer.prevLayer.size
-            layer.prevLayer.weightsConfig.fanOut = layer.size
+
+            if (layerIndex<this.layers.length-1) {
+                layer.weightsConfig.fanOut = this.layers[layerIndex+1].size
+            }
 
             layer.init()
-            layer.state = "initialised"
+
+        } else if (this.layers.length > 1) {
+            layer.weightsConfig.fanOut = this.layers[1].size
         }
+
+        layer.state = "initialised"
     }
 
     forward (data) {
@@ -1263,21 +1289,21 @@ class Network {
         }
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
-        this.layers.forEach((layer, li) => li && layer.forward(data))
-        return this.layers[this.layers.length-1].neurons.map(n => n.activation)
+        this.layers.forEach((layer, li) => li && layer.forward())
+        return NetMath.softmax(this.layers[this.layers.length-1].neurons.map(n => n.sum))
     }
 
-    backward (expected) {
+    backward (errors) {
 
-        if (expected === undefined) {
+        if (errors === undefined) {
             throw new Error("No data passed to Network.backward()")
         }
 
-        if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.", expected)
+        if (errors.length != this.layers[this.layers.length-1].neurons.length) {
+            console.warn("Expected data length did not match output layer neurons count.", errors)
         }
 
-        this.layers[this.layers.length-1].backward(expected)
+        this.layers[this.layers.length-1].backward(errors)
 
         for (let layerIndex=this.layers.length-2; layerIndex>0; layerIndex--) {
             this.layers[layerIndex].backward()
@@ -1303,7 +1329,6 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                // this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
                 this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
@@ -1334,7 +1359,12 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
-                this.backward(target)
+                const errors = []
+                for (let n=0; n<output.length; n++) {
+                    errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                this.backward(errors)
 
                 if (++iterationIndex%this.miniBatchSize==0) {
                     this.applyDeltaWeights()
@@ -1363,8 +1393,8 @@ class Network {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {
@@ -1470,7 +1500,7 @@ class Network {
     }
 
     static get version () {
-        return "2.1.1"
+        return "3.0.0"
     }
 }
 

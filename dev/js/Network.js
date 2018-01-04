@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2=true, l1=true, maxNorm, weightsConfig, channels, conv, pool}={}) {
+        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
         this.layers = []
@@ -16,15 +16,17 @@ class Network {
         activation = NetUtil.format(activation)
         updateFn = NetUtil.format(updateFn)
         cost = NetUtil.format(cost)
-
-        if (l2) {
-            this.l2 = typeof l2=="boolean" ? 0.001 : l2
-            this.l2Error = 0
-        }
+        this.l1 = 0
+        this.l2 = 0
 
         if (l1) {
             this.l1 = typeof l1=="boolean" ? 0.005 : l1
             this.l1Error = 0
+        }
+
+        if (l2) {
+            this.l2 = typeof l2=="boolean" ? 0.001 : l2
+            this.l2Error = 0
         }
 
         if (maxNorm) {
@@ -96,6 +98,7 @@ class Network {
         }
 
         this.lreluSlope = lreluSlope==undefined ? -0.0005 : lreluSlope
+        this.rreluSlope = Math.random() * 0.001
         this.eluAlpha = eluAlpha==undefined ? 1 : eluAlpha
 
         // Weights distributiom
@@ -173,11 +176,18 @@ class Network {
             layer.assignPrev(this.layers[layerIndex-1], layerIndex)
 
             layer.weightsConfig.fanIn = layer.prevLayer.size
-            layer.prevLayer.weightsConfig.fanOut = layer.size
+
+            if (layerIndex<this.layers.length-1) {
+                layer.weightsConfig.fanOut = this.layers[layerIndex+1].size
+            }
 
             layer.init()
-            layer.state = "initialised"
+
+        } else if (this.layers.length > 1) {
+            layer.weightsConfig.fanOut = this.layers[1].size
         }
+
+        layer.state = "initialised"
     }
 
     forward (data) {
@@ -195,21 +205,21 @@ class Network {
         }
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
-        this.layers.forEach((layer, li) => li && layer.forward(data))
-        return this.layers[this.layers.length-1].neurons.map(n => n.activation)
+        this.layers.forEach((layer, li) => li && layer.forward())
+        return NetMath.softmax(this.layers[this.layers.length-1].neurons.map(n => n.sum))
     }
 
-    backward (expected) {
+    backward (errors) {
 
-        if (expected === undefined) {
+        if (errors === undefined) {
             throw new Error("No data passed to Network.backward()")
         }
 
-        if (expected.length != this.layers[this.layers.length-1].neurons.length) {
-            console.warn("Expected data length did not match output layer neurons count.", expected)
+        if (errors.length != this.layers[this.layers.length-1].neurons.length) {
+            console.warn("Expected data length did not match output layer neurons count.", errors)
         }
 
-        this.layers[this.layers.length-1].backward(expected)
+        this.layers[this.layers.length-1].backward(errors)
 
         for (let layerIndex=this.layers.length-2; layerIndex>0; layerIndex--) {
             this.layers[layerIndex].backward()
@@ -235,7 +245,6 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                // this.initLayers(dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)
                 this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
@@ -266,7 +275,12 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
-                this.backward(target)
+                const errors = []
+                for (let n=0; n<output.length; n++) {
+                    errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                this.backward(errors)
 
                 if (++iterationIndex%this.miniBatchSize==0) {
                     this.applyDeltaWeights()
@@ -295,8 +309,8 @@ class Network {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
+                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
                     }
 
                     if (epochsCounter < epochs) {
@@ -402,7 +416,7 @@ class Network {
     }
 
     static get version () {
-        return "2.1.1"
+        return "3.0.0"
     }
 }
 

@@ -924,6 +924,97 @@ namespace FCLayer_cpp {
         EXPECT_EQ( l2->neurons[2]->bias, 10.2 );
     }
 
+    // Increments the bias by the deltaBias following the adagrad function
+    TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_6) {
+
+        net->updateFnIndex = 2;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->bias = n;
+            l2->neurons[n]->deltaBias = n*2;
+            l2->neurons[n]->biasCache = 1;
+
+            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
+                l2->neurons[n]->weightsCache[i] = 0.5;
+            }
+        }
+
+        l2->applyDeltaWeights();
+
+        EXPECT_NEAR( (double)l2->neurons[0]->bias, (double)0, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[1]->bias, (double)1.89443, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[2]->bias, (double)2.97014, 1e-3 );
+    }
+
+    // Increments the bias by the deltaBias following the rmsprop function
+    TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_7) {
+
+        net->updateFnIndex = 3;
+        net->rmsDecay = 0.99;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->bias = n;
+            l2->neurons[n]->deltaBias = n*2;
+            l2->neurons[n]->biasCache = 1;
+
+            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
+                l2->neurons[n]->weightsCache[i] = 0.5;
+            }
+        }
+
+        l2->applyDeltaWeights();
+
+        EXPECT_NEAR( (double)l2->neurons[0]->bias, (double)0, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[1]->bias, (double)2.97065, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[2]->bias, (double)5.73006, 1e-3 );
+    }
+
+    // Increments the bias by the deltaBias following the adam function
+    TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_8) {
+
+        net->updateFnIndex = 4;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->bias = n;
+            l2->neurons[n]->deltaBias = n*2;
+            l2->neurons[n]->m = 0;
+            l2->neurons[n]->v = 0;
+        }
+
+        l2->applyDeltaWeights();
+        l2->applyDeltaWeights();
+
+        EXPECT_NEAR( (double)l2->neurons[0]->bias, (double)0, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[1]->bias, (double)3.34384, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[2]->bias, (double)4.34384, 1e-3 );
+    }
+
+    // Increments the bias by the deltaBias following the adadelta function
+    TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_9) {
+
+        net->updateFnIndex = 5;
+        net->rho = 0.95;
+
+        for (int n=0; n<3; n++) {
+            l2->neurons[n]->bias = n;
+            l2->neurons[n]->deltaBias = n*2;
+            l2->neurons[n]->biasCache = 1;
+            l2->neurons[n]->adadeltaBiasCache = 1;
+
+            for (int i=0; i<l2->neurons[n]->weights.size(); i++) {
+                l2->neurons[n]->weightsCache[i] = 0.5;
+                l2->neurons[n]->adadeltaCache[i] = 0.5;
+            }
+        }
+
+        l2->applyDeltaWeights();
+        l2->applyDeltaWeights();
+
+        EXPECT_NEAR( (double)l2->neurons[0]->bias, (double)0, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[1]->bias, (double)4.75154, 1e-3 );
+        EXPECT_NEAR( (double)l2->neurons[2]->bias, (double)8.39574, 1e-3 );
+    }
+
 
     // Clears the neurons' deltaBias
     TEST(FCLayer, resetDeltaWeights_1) {
@@ -1727,6 +1818,98 @@ namespace ConvLayer_cpp {
         net->maxNormTotal = 10;
         layer->applyDeltaWeights();
         EXPECT_EQ( net->maxNormTotal, 0 );
+    }
+
+    // Increments the bias of all filters with their deltaBias, following the gain function
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_6) {
+
+        net->updateFnIndex = 1;
+
+        for (int f=0; f<4; f++) {
+            layer->filters[f]->biasGain = 0.5;
+            layer->filters[f]->weightGain = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+        }
+
+        layer->applyDeltaWeights();
+        layer->applyDeltaWeights();
+
+        for (int f=0; f<4; f++) {
+            EXPECT_EQ( layer->filters[f]->bias, 1.55 );
+        }
+    }
+
+    // Increments the bias of all filters with their deltaBias, following the adagrad function
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_7) {
+
+        net->updateFnIndex = 2;
+
+        for (int f=0; f<4; f++) {
+            layer->filters[f]->biasCache = 0.5;
+            layer->filters[f]->weightsCache = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+        }
+
+        layer->applyDeltaWeights();
+
+        for (int f=0; f<4; f++) {
+            EXPECT_NEAR( layer->filters[f]->bias, 1.3165, 1e-3 );
+        }
+    }
+
+    // Increments the bias of all filters with their deltaBias, following the rmsprop function
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_8) {
+
+        net->updateFnIndex = 3;
+        net->rmsDecay = 0.99;
+
+        for (int f=0; f<4; f++) {
+            layer->filters[f]->biasCache = 0.5;
+            layer->filters[f]->weightsCache = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+        }
+
+        layer->applyDeltaWeights();
+
+        for (int f=0; f<4; f++) {
+            EXPECT_NEAR( layer->filters[f]->bias, 1.90719, 1e-3 );
+        }
+    }
+
+    // Increments the bias of all filters with their deltaBias, following the adam function
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_9) {
+
+        net->updateFnIndex = 4;
+
+        for (int f=0; f<4; f++) {
+            layer->filters[f]->biasCache = 0.5;
+            layer->filters[f]->m = 0;
+            layer->filters[f]->v = 0;
+        }
+
+        layer->applyDeltaWeights();
+
+        for (int f=0; f<4; f++) {
+            EXPECT_NEAR( layer->filters[f]->bias, 2.49319, 1e-3 );
+        }
+    }
+
+    // Increments the bias of all filters with their deltaBias, following the adadelta function
+    TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_10) {
+
+        net->updateFnIndex = 5;
+        net->rho = 0.95;
+
+        for (int f=0; f<4; f++) {
+            layer->filters[f]->biasCache = 0.5;
+            layer->filters[f]->adadeltaBiasCache = 0.25;
+
+            layer->filters[f]->weightsCache = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+            layer->filters[f]->adadeltaCache = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+        }
+
+        layer->applyDeltaWeights();
+
+        for (int f=0; f<4; f++) {
+            EXPECT_NEAR( layer->filters[f]->bias, 1.19007, 1e-3 );
+        }
     }
 }
 

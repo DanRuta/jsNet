@@ -184,7 +184,7 @@ void ConvLayer::applyDeltaWeights (void) {
 
     // Function pointers are far too slow, for this
     // Using code repetitive switch statements makes a substantial perf difference
-    // Doesn't mean I'm happy about it :(
+    // Doesn't mean I like it :(
     switch (net->updateFnIndex) {
         case 0: // vanilla
             for (int f=0; f<filters.size(); f++) {

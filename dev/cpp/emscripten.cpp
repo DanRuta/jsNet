@@ -779,19 +779,18 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int w=0; w<bufSize; w++) {
-            // net->layers[layerIndex]->neurons[neuronIndex]->weights[w] = buf[w];
             net->layers[layerIndex]->weights[neuronIndex][w] = buf[w];
         }
     }
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->biases[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->biases[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

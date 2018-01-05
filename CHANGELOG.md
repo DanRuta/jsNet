@@ -2,6 +2,7 @@
 ---
 #### FCLayers
 - Optimised weights structure
+- Optimised bias structure
 
 #### Global
 - Bug fixes

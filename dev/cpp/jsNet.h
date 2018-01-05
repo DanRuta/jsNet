@@ -93,6 +93,7 @@ public:
     std::vector<std::vector<std::vector<double> > > activations;
 
     std::vector<std::vector<double> > weights; // FC
+    std::vector<double> biases; // FC
 
     Layer* nextLayer;
     Layer* prevLayer;
@@ -204,7 +205,6 @@ class Neuron {
         std::vector<double> adadeltaCache;
         double lreluSlope;
         double rreluSlope;
-        double bias;
         double deltaBias;
         double derivative;
         double activation = 0;

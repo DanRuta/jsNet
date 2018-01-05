@@ -47,6 +47,7 @@ void FCLayer::init (int layerIndex) {
 
         sums.push_back(0);
         errs.push_back(0);
+        actvns.push_back(0);
     }
 }
 
@@ -59,14 +60,14 @@ void FCLayer::forward (void) {
         neurons[n]->dropped = (double) rand() / (RAND_MAX) > net->dropout;
 
         if (net->isTraining && neurons[n]->dropped) {
-            neurons[n]->activation = 0;
+            actvns[n] = 0;
 
         } else {
             sums[n] = biases[n];
 
             if (prevLayer->type == "FC") {
                 for (int pn=0; pn<prevLayer->neurons.size(); pn++) {
-                    sums[n] += prevLayer->neurons[pn]->activation * weights[n][pn];
+                    sums[n] += prevLayer->actvns[pn] * weights[n][pn];
                 }
             } else if (prevLayer->type == "Conv") {
 
@@ -86,9 +87,9 @@ void FCLayer::forward (void) {
             }
 
             if (hasActivation) {
-                neurons[n]->activation = activation(sums[n], false, neurons[n]) / net->dropout;
+                actvns[n] = activation(sums[n], false, neurons[n]) / net->dropout;
             } else {
-                neurons[n]->activation = sums[n] / net->dropout;
+                actvns[n] = sums[n] / net->dropout;
             }
         }
     }
@@ -124,7 +125,7 @@ void FCLayer::backward (bool lastLayer) {
 
             if (prevLayer->type == "FC") {
                 for (int wi=0; wi<weights[n].size(); wi++) {
-                    deltaWeights[n][wi] += errs[n] * prevLayer->neurons[wi]->activation;
+                    deltaWeights[n][wi] += errs[n] * prevLayer->actvns[wi];
                 }
 
             } else {

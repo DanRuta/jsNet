@@ -62,9 +62,7 @@ void Network::joinLayers(void) {
 
 std::vector<double> Network::forward (std::vector<double> input) {
 
-    for (int v=0; v<input.size(); v++) {
-        layers[0]->neurons[v]->activation = input[v];
-    }
+    layers[0]->actvns = input;
 
     for (int l=1; l<layers.size(); l++) {
         layers[l]->forward();

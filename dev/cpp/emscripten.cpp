@@ -971,12 +971,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->actvns[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->actvns[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

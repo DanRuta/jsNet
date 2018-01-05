@@ -265,9 +265,7 @@ std::vector<double> NetUtil::getActivations (Layer* layer) {
 
     if (layer->type == "FC") {
 
-        for (int n=0; n<layer->size; n++) {
-            activations.push_back(layer->neurons[n]->activation);
-        }
+        return layer->actvns;
 
     } else if (layer->type == "Conv") {
 
@@ -300,7 +298,7 @@ std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int ma
     if (layer->type == "FC") {
 
         for (int n=mapStartI*mapSize; n<(mapStartI+1)*mapSize; n++) {
-            activations.push_back(layer->neurons[n]->activation);
+            activations.push_back(layer->actvns[n]);
         }
 
     } else if (layer->type == "Conv") {

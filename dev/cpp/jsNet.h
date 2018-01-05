@@ -90,13 +90,14 @@ public:
     std::vector<Filter*> filters;
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
     std::vector<std::vector<std::vector<double> > > errors; // Conv
-    std::vector<std::vector<std::vector<double> > > activations;
+    std::vector<std::vector<std::vector<double> > > activations; // Conv
 
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<double> biases; // FC
     std::vector<double> sums; // FC
     std::vector<double> errs; // FC
+    std::vector<double> actvns; // FC
 
     Layer* nextLayer;
     Layer* prevLayer;
@@ -205,7 +206,6 @@ class Neuron {
         double rreluSlope;
         double deltaBias;
         double derivative;
-        double activation = 0;
         double eluAlpha;
         double biasGain;
         double adadeltaBiasCache;

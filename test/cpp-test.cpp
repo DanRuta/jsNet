@@ -174,9 +174,8 @@ namespace Network_cpp {
         net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
         net->forward(testInput);
 
-        EXPECT_EQ( l1->neurons[0]->activation, 1);
-        EXPECT_EQ( l1->neurons[1]->activation, 2);
-        EXPECT_EQ( l1->neurons[2]->activation, 3);
+        std::vector<double> expected = {1, 2, 3};
+        EXPECT_EQ( l1->actvns, expected );
     }
 
 
@@ -497,8 +496,7 @@ namespace FCLayer_cpp {
             l1->init(0);
             l2->init(1);
             l2->activation = &NetMath::sigmoid<Neuron>;
-            l1->neurons[0]->activation = 1;
-            l1->neurons[1]->activation = 2;
+            l1->actvns = {1,2};
         }
 
         virtual void TearDown() {
@@ -518,7 +516,7 @@ namespace FCLayer_cpp {
         for (int n=0; n<3; n++) {
             l2->weights[n] = {1,2};
         }
-        l2->biases = {0,1,2,};
+        l2->biases = {0,1,2,1,1};
 
         net->isTraining= false;
         net->dropout = 1;
@@ -549,9 +547,10 @@ namespace FCLayer_cpp {
         l2->forward();
 
         EXPECT_FALSE( net->isTraining );
-        EXPECT_DOUBLE_EQ( l2->neurons[0]->activation, 0.9933071490757153 );
-        EXPECT_DOUBLE_EQ( l2->neurons[1]->activation, 0.9975273768433653 );
-        EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 0.9990889488055994 );
+
+        EXPECT_DOUBLE_EQ( l2->actvns[0], 0.9933071490757153 );
+        EXPECT_DOUBLE_EQ( l2->actvns[1], 0.9975273768433653 );
+        EXPECT_DOUBLE_EQ( l2->actvns[2], 0.9990889488055994 );
     }
 
     // Sets the layer's neurons' activation to the sum when there is no activation function
@@ -569,9 +568,9 @@ namespace FCLayer_cpp {
         l2->forward();
 
         EXPECT_FALSE( net->isTraining );
-        EXPECT_DOUBLE_EQ( l2->neurons[0]->activation, 5 );
-        EXPECT_DOUBLE_EQ( l2->neurons[1]->activation, 6 );
-        EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 7 );
+        EXPECT_DOUBLE_EQ( l2->actvns[0], 5 );
+        EXPECT_DOUBLE_EQ( l2->actvns[1], 6 );
+        EXPECT_DOUBLE_EQ( l2->actvns[2], 7 );
     }
 
     // Sets the neurons' dropped value to true and activation to 0 if the net is training and dropout is set to 0
@@ -588,9 +587,9 @@ namespace FCLayer_cpp {
         EXPECT_TRUE( l2->neurons[1]->dropped );
         EXPECT_TRUE( l2->neurons[2]->dropped );
 
-        EXPECT_EQ( l2->neurons[0]->activation, 0 );
-        EXPECT_EQ( l2->neurons[1]->activation, 0 );
-        EXPECT_EQ( l2->neurons[2]->activation, 0 );
+        EXPECT_EQ( l2->actvns[0], 0 );
+        EXPECT_EQ( l2->actvns[1], 0 );
+        EXPECT_EQ( l2->actvns[2], 0 );
 
         std::vector<double> expected = {0,0,0};
 
@@ -601,8 +600,8 @@ namespace FCLayer_cpp {
     TEST_F(FCForwardFixture, forward_5) {
         for (int n=0; n<3; n++) {
             l2->weights[n] = {1,2};
-            l2->neurons[n]->activation = 0;
         }
+        l2->actvns = {0,0,0};
         l2->biases = {0,1,2};
 
         net->dropout = 1;
@@ -613,9 +612,9 @@ namespace FCLayer_cpp {
         EXPECT_FALSE( l2->neurons[1]->dropped );
         EXPECT_FALSE( l2->neurons[2]->dropped );
 
-        EXPECT_DOUBLE_EQ( l2->neurons[0]->activation, 0.9933071490757153 );
-        EXPECT_DOUBLE_EQ( l2->neurons[1]->activation, 0.9975273768433653 );
-        EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 0.9990889488055994 );
+        EXPECT_DOUBLE_EQ( l2->actvns[0], 0.9933071490757153 );
+        EXPECT_DOUBLE_EQ( l2->actvns[1], 0.9975273768433653 );
+        EXPECT_DOUBLE_EQ( l2->actvns[2], 0.9990889488055994 );
     }
 
     // Divides the activation values by the dropout
@@ -630,9 +629,9 @@ namespace FCLayer_cpp {
         l2->forward();
 
         EXPECT_FALSE( net->isTraining );
-        EXPECT_DOUBLE_EQ( l2->neurons[0]->activation, 0.9933071490757153 * 2 );
-        EXPECT_DOUBLE_EQ( l2->neurons[1]->activation, 0.9975273768433653 * 2 );
-        EXPECT_DOUBLE_EQ( l2->neurons[2]->activation, 0.9990889488055994 * 2 );
+        EXPECT_DOUBLE_EQ( l2->actvns[0], 0.9933071490757153 * 2 );
+        EXPECT_DOUBLE_EQ( l2->actvns[1], 0.9975273768433653 * 2 );
+        EXPECT_DOUBLE_EQ( l2->actvns[2], 0.9990889488055994 * 2 );
     }
 
     class FCBackwardFixture : public ::testing::Test {
@@ -725,9 +724,7 @@ namespace FCLayer_cpp {
 
         Network::getInstance(0)->l2 = 0;
 
-        l2->neurons[0]->activation = 0.5;
-        l2->neurons[1]->activation = 0.5;
-        l2->neurons[2]->activation = 0.5;
+        l2->actvns = {0.5, 0.5, 0.5};
         l3->neurons[0]->dropped = false;
         l3->neurons[1]->dropped = false;
         l3->neurons[2]->dropped = false;
@@ -769,9 +766,7 @@ namespace FCLayer_cpp {
     TEST_F(FCBackwardFixture, backward_7) {
         std::vector<double> expected = {1,2,3};
 
-        l2->neurons[0]->activation = 0;
-        l2->neurons[1]->activation = 1;
-        l2->neurons[2]->activation = 0;
+        l2->actvns = {0, 1, 0};
 
         l2->neurons[0]->dropped = true;
         l2->neurons[1]->dropped = true;
@@ -796,9 +791,7 @@ namespace FCLayer_cpp {
         std::vector<double> expected = {0.05, 0.05, 0.05, 0.05};
         net->l2 = 0.001;
 
-        l2->neurons[0]->activation = 0.5;
-        l2->neurons[1]->activation = 0.5;
-        l2->neurons[2]->activation = 0.5;
+        l2->actvns = {0.5, 0.5, 0.5};
         l3->neurons[0]->dropped = false;
         l3->neurons[1]->dropped = false;
         l3->neurons[2]->dropped = false;
@@ -827,9 +820,7 @@ namespace FCLayer_cpp {
         std::vector<double> expected = {0.05, 0.05, 0.05, 0.05};
         net->l1 = 0.005;
 
-        l2->neurons[0]->activation = 0.5;
-        l2->neurons[1]->activation = 0.5;
-        l2->neurons[2]->activation = 0.5;
+        l2->actvns = {0.5, 0.5, 0.5};
         l3->neurons[0]->dropped = false;
         l3->neurons[1]->dropped = false;
         l3->neurons[2]->dropped = false;
@@ -1449,8 +1440,9 @@ namespace ConvLayer_cpp {
                 nextLayerB->filters[f]->errorMap = {{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}};
             }
 
+            prevLayer->actvns = {};
             for (int n=0; n<prevLayer->neurons.size(); n++) {
-                prevLayer->neurons[n]->activation = 0.5;
+                prevLayer->actvns[n] = 0.5;
             }
 
             for (int f=0; f<layer->filters.size(); f++) {
@@ -1682,8 +1674,9 @@ namespace ConvLayer_cpp {
             {0,9,8,7,6}
         }};
 
+        prevLayer->actvns = {};
         for (int n=0; n<75; n++) {
-            prevLayer->neurons[n]->activation = 0.5;
+            prevLayer->actvns[n] = 0.5;
         }
 
         std::vector<std::vector<double> > expected1 = {{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5}};
@@ -2087,8 +2080,9 @@ namespace PoolLayer_cpp {
         prevLayer->biases = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
         layer->init(1);
 
+        prevLayer->actvns = {};
         for (int i=0; i<prevLayer->size; i++) {
-            prevLayer->neurons[i]->activation = i%9;
+            prevLayer->actvns[i] = i%9;
         }
 
         layer->forward();
@@ -2119,8 +2113,9 @@ namespace PoolLayer_cpp {
         prevLayer->init(0);
         layer->init(1);
 
+        prevLayer->actvns = {};
         for (int i=0; i<prevLayer->size; i++) {
-            prevLayer->neurons[i]->activation = i%9;
+            prevLayer->actvns[i] = i%9;
         }
 
         layer->forward();
@@ -3832,8 +3827,9 @@ namespace NetMath_cpp {
         prevLayer->init(0);
         layer->init(1);
 
+        prevLayer->actvns = {};
         for (int i=0; i<144; i++) {
-            prevLayer->neurons[i]->activation = testData[i];
+            prevLayer->actvns[i] = testData[i];
         }
 
         NetMath::maxPool(layer, 0);
@@ -4103,8 +4099,9 @@ namespace NetUtil_cpp {
             layer->assignPrev(prevLayer);
             layer->init(1);
 
+            prevLayer->actvns = {};
             for (int n=0; n<prevLayer->neurons.size(); n++) {
-                prevLayer->neurons[n]->activation = n+1;
+                prevLayer->actvns[n] = n+1;
             }
 
             layer->filters[0]->errorMap = {{0.1, 0.6, 0.2}, {0.7, 0.3, 0.8}, {0.4, 0.9, 0.5}};
@@ -4326,11 +4323,13 @@ namespace NetUtil_cpp {
             fcLayer1->init(0);
             fcLayer2->init(1);
 
-            for (int n=0; n<fcLayer1->neurons.size(); n++) {
-                fcLayer1->neurons[n]->activation = n+1;
+            fcLayer1->actvns = {};
+            for (int n=0; n<9; n++) {
+                fcLayer1->actvns.push_back(n+1);
             }
+            fcLayer2->actvns = {};
             for (int n=0; n<fcLayer2->neurons.size(); n++) {
-                fcLayer2->neurons[n]->activation = n+1;
+                fcLayer2->actvns.push_back(n+1);
             }
 
             convLayer->filters[0]->activationMap = {{1,2,3},{4,5,6},{7,8,9}};

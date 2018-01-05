@@ -1,10 +1,6 @@
 
 void Neuron::init (int netInstance, int weightsCount) {
 
-    for (int i=0; i<weightsCount; i++) {
-        deltaWeights.push_back(0);
-    }
-
     deltaBias = 0;
 
     Network* net = Network::getInstance(netInstance);

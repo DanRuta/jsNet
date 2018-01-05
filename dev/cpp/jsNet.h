@@ -93,6 +93,7 @@ public:
     std::vector<std::vector<std::vector<double> > > activations;
 
     std::vector<std::vector<double> > weights; // FC
+    std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<double> biases; // FC
 
     Layer* nextLayer;
@@ -199,7 +200,6 @@ public:
 
 class Neuron {
     public:
-        std::vector<double> deltaWeights;
         std::vector<double> weightGain;
         std::vector<double> weightsCache;
         std::vector<double> adadeltaCache;

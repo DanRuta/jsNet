@@ -797,11 +797,11 @@ extern "C" {
     double* get_neuron_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
-        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights.size();
+        int neuronSize = net->layers[layerIndex]->deltaWeights[neuronIndex].size();
         double deltaWeights[neuronSize];
 
         for (int i=0; i<neuronSize; i++) {
-            deltaWeights[i] = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights[i];
+            deltaWeights[i] = net->layers[layerIndex]->deltaWeights[neuronIndex][i];
         }
 
         auto ptr = &deltaWeights[0];
@@ -813,7 +813,7 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
-            net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights[dw] = buf[dw];
+            net->layers[layerIndex]->deltaWeights[neuronIndex][dw] = buf[dw];
         }
     }
 

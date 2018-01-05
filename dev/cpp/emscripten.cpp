@@ -951,12 +951,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->sums[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->sums[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

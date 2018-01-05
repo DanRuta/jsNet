@@ -183,8 +183,7 @@ namespace Network_cpp {
     // Returns a vector of softmax-ed sums in the last layer
     TEST_F(ForwardFixture, forward_3) {
 
-        l2->neurons[0]->sum = 1;
-        l2->neurons[1]->sum = 2;
+        l2->sums = {1,2};
 
         net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
         std::vector<double> returned = net->forward(testInput);
@@ -525,25 +524,22 @@ namespace FCLayer_cpp {
         for (int n=0; n<3; n++) {
             l2->weights[n] = {1,2};
         }
-        l2->biases = {0,1,2};
+        l2->biases = {0,1,2,};
 
         net->isTraining= false;
         net->dropout = 1;
 
         l2->forward();
 
-        EXPECT_EQ( l2->neurons[0]->sum, 5);
-        EXPECT_EQ( l2->neurons[1]->sum, 6);
-        EXPECT_EQ( l2->neurons[2]->sum, 7);
+        std::vector<double> expected = {5,6,7,1,1};
+
+        EXPECT_EQ( l2->sums, expected );
 
         // Check that it SETS it, and doesn't increment it
         l2->forward();
 
         EXPECT_FALSE( net->isTraining );
-        EXPECT_EQ( l2->neurons[0]->sum, 5);
-        EXPECT_EQ( l2->neurons[1]->sum, 6);
-        EXPECT_EQ( l2->neurons[2]->sum, 7);
-
+        EXPECT_EQ( l2->sums, expected );
     }
 
     // Sets the layer's neurons' activation to the result of the activation function
@@ -587,9 +583,7 @@ namespace FCLayer_cpp {
     // Sets the neurons' dropped value to true and activation to 0 if the net is training and dropout is set to 0
     TEST_F(FCForwardFixture, forward_4) {
 
-        for (int n=0; n<3; n++) {
-            l2->neurons[n]->sum = 0;
-        }
+        l2->sums = {0,0,0};
         l2->biases = {0,1,2};
 
         net->dropout = 0;
@@ -604,9 +598,9 @@ namespace FCLayer_cpp {
         EXPECT_EQ( l2->neurons[1]->activation, 0 );
         EXPECT_EQ( l2->neurons[2]->activation, 0 );
 
-        EXPECT_EQ( l2->neurons[0]->sum, 0 );
-        EXPECT_EQ( l2->neurons[1]->sum, 0 );
-        EXPECT_EQ( l2->neurons[2]->sum, 0 );
+        std::vector<double> expected = {0,0,0};
+
+        EXPECT_EQ( l2->sums, expected );
     }
 
     // Does not set neurons to dropped if the net is not training
@@ -703,9 +697,7 @@ namespace FCLayer_cpp {
     TEST_F(FCBackwardFixture, backward_2) {
         std::vector<double> emptyVec;
 
-        l2->neurons[0]->sum = 0;
-        l2->neurons[1]->sum = 1;
-        l2->neurons[2]->sum = 0;
+        l2->sums = {0,1,0};
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
@@ -722,9 +714,7 @@ namespace FCLayer_cpp {
         l2->hasActivation = false;
         std::vector<double> emptyVec;
 
-        l2->neurons[0]->sum = 0;
-        l2->neurons[1]->sum = 1;
-        l2->neurons[2]->sum = 0;
+        l2->sums = {0,0,0};
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
@@ -739,9 +729,7 @@ namespace FCLayer_cpp {
     TEST_F(FCBackwardFixture, backward_4) {
         std::vector<double> emptyVec;
 
-        l2->neurons[0]->sum = 0.5;
-        l2->neurons[1]->sum = 0.5;
-        l2->neurons[2]->sum = 0.5;
+        l2->sums = {0.5,0.5,0.5};
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
@@ -1688,6 +1676,8 @@ namespace ConvLayer_cpp {
 
         PoolLayer* poolLayer = new PoolLayer(0, 2);
         poolLayer->stride = 2;
+        poolLayer->outMapSize = 1;
+        poolLayer->inMapValuesCount = 8;
 
         prevLayer->assignNext(convLayer);
         convLayer->assignPrev(prevLayer);
@@ -1723,6 +1713,8 @@ namespace ConvLayer_cpp {
 
         std::vector<std::vector<double> > expected1 = {{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5},{5,4,3,2,1},{1,2,3,4,5}};
         std::vector<std::vector<double> > expected2 = {{6,7,8,8,9},{6,7,8,8,9},{0,9,8,7,6},{6,7,8,8,9},{0,9,8,7,6}};
+
+        EXPECT_EQ( prevLayer->sums.size(), 75 );
 
         convLayer->backward();
 

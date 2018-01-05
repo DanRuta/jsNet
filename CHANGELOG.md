@@ -4,6 +4,7 @@
 - Optimised weights structure
 - Optimised bias structure
 - Optimised deltaWeights structure
+- Optimised sums structure
 
 #### Global
 - Bug fixes

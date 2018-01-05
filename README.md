@@ -60,7 +60,7 @@ When everything is loaded, the only difference to the JavaScript version is that
 ```javascript
 const net = new Network({Module: Module})
 ```
-This makes it easier to use in nodejs. The API has been kept the same as the JavaScript only version.
+This makes it easier to use in nodejs. The API has been kept the same as the JavaScript only version. Every single value has get/set bindings to the WebAssembly variables, meaning that apart from not being able to freely browse the values in dev tools (need to call them, to see them), you should notice no difference between the two versions.
 
 
 ### Constructing

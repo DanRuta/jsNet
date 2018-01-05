@@ -44,6 +44,8 @@ void FCLayer::init (int layerIndex) {
 
         neuron->init(netInstance, weightsCount);
         neurons.push_back(neuron);
+
+        sums.push_back(0);
     }
 }
 
@@ -59,33 +61,33 @@ void FCLayer::forward (void) {
             neurons[n]->activation = 0;
 
         } else {
-            neurons[n]->sum = biases[n];
+            sums[n] = biases[n];
 
             if (prevLayer->type == "FC") {
                 for (int pn=0; pn<prevLayer->neurons.size(); pn++) {
-                    neurons[n]->sum += prevLayer->neurons[pn]->activation * weights[n][pn];
+                    sums[n] += prevLayer->neurons[pn]->activation * weights[n][pn];
                 }
             } else if (prevLayer->type == "Conv") {
 
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);
 
                 for (int ai=0; ai<activations.size(); ai++) {
-                    neurons[n]->sum += activations[ai] * weights[n][ai];
+                    sums[n] += activations[ai] * weights[n][ai];
                 }
             } else {
                 for (int c=0; c<prevLayer->channels; c++) {
                     for (int r=0; r<prevLayer->outMapSize; r++) {
                         for (int v=0; v<prevLayer->outMapSize; v++) {
-                            neurons[n]->sum += prevLayer->activations[c][r][v] * weights[n][c * prevLayer->outMapSize * prevLayer->outMapSize + r * prevLayer->outMapSize + v ];
+                            sums[n] += prevLayer->activations[c][r][v] * weights[n][c * prevLayer->outMapSize * prevLayer->outMapSize + r * prevLayer->outMapSize + v ];
                         }
                     }
                 }
             }
 
             if (hasActivation) {
-                neurons[n]->activation = activation(neurons[n]->sum, false, neurons[n]) / net->dropout;
+                neurons[n]->activation = activation(sums[n], false, neurons[n]) / net->dropout;
             } else {
-                neurons[n]->activation = neurons[n]->sum / net->dropout;
+                neurons[n]->activation = sums[n] / net->dropout;
             }
         }
     }
@@ -108,7 +110,7 @@ void FCLayer::backward (std::vector<double> errors) {
                 neurons[n]->error = errors[n];
             } else {
                 if (hasActivation) {
-                    neurons[n]->derivative = activation(neurons[n]->sum, true, neurons[n]);
+                    neurons[n]->derivative = activation(sums[n], true, neurons[n]);
                 } else {
                     neurons[n]->derivative = 1;
                 }

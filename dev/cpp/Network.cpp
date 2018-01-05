@@ -70,12 +70,7 @@ std::vector<double> Network::forward (std::vector<double> input) {
         layers[l]->forward();
     }
 
-    std::vector<double> output;
-
-    for (int i=0; i<layers[layers.size()-1]->neurons.size(); i++) {
-        output.push_back(layers[layers.size()-1]->neurons[i]->sum);
-    }
-
+    std::vector<double> output = layers[layers.size()-1]->sums;
     return output.size() > 1 ? NetMath::softmax(output) : output;
 }
 

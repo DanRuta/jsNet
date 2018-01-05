@@ -95,6 +95,7 @@ public:
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<double> biases; // FC
+    std::vector<double> sums; // FC
 
     Layer* nextLayer;
     Layer* prevLayer;
@@ -208,7 +209,6 @@ class Neuron {
         double deltaBias;
         double derivative;
         double activation = 0;
-        double sum;
         double error;
         double eluAlpha;
         double biasGain;

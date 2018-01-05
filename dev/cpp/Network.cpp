@@ -76,7 +76,7 @@ std::vector<double> Network::forward (std::vector<double> input) {
         output.push_back(layers[layers.size()-1]->neurons[i]->sum);
     }
 
-    return NetMath::softmax(output);
+    return output.size() > 1 ? NetMath::softmax(output) : output;
 }
 
 void Network::backward (std::vector<double> errors) {

@@ -749,6 +749,18 @@ describe("Network", () => {
 
             expect(result).to.deep.equal(NetMath.softmax(activations))
         })
+
+        it("Returns just the output without softmax if there is only one value in the output layer", () => {
+            const layer1 = new Layer(3)
+            const layer2 = new Layer(4)
+            const layer3 = new Layer(1)
+            const net = new Network({layers: [layer1, layer2, layer3]})
+
+            const result = net.forward([1,2,3])
+            const activations = net.layers[2].neurons.map(n => n.sum)
+
+            expect(result).to.deep.equal(activations)
+        })
     })
 
     describe("backward", () => {

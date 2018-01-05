@@ -113,7 +113,7 @@ net.train(training) // This on its own is enough
 .then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
 
-Until more options are implemented, softmax is used by default during training, on the last layer. As such, activation configurations are not used there.
+Until more options are implemented, softmax is used by default during training, on the last layer (unless there is only one value). As such, activation configurations are not used there.
 
 ##### Options
 ###### Epochs
@@ -191,7 +191,7 @@ Once the network has been trained, tested and imported into your page, you can u
 const userInput = [1,0,1,0,0.5] // Example input
 const netResult = net.forward(userInput)
 ```
-This will return an array of the **softmax** activations in the output layer.
+This will return an array of the **softmax** activations in the output layer, when there are multiple output values.
 
 
 ## Configurations

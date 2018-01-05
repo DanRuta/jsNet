@@ -205,14 +205,13 @@ namespace Network_cpp {
         Network::getInstance(0)->layers.push_back(l2);
         Network::getInstance(0)->layers.push_back(l3);
 
-        std::vector<double> emptyVec;
         std::vector<double> errors = {1,2,3};
 
-        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
-        EXPECT_CALL(*l2, backward(emptyVec)).Times(1);
-        EXPECT_CALL(*l3, backward(errors)).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(1);
+        EXPECT_CALL(*l3, backward(true)).Times(1);
 
-        Network::getInstance(0)->backward(errors);
+        Network::getInstance(0)->backward();
 
         delete l1;
         delete l2;
@@ -244,17 +243,15 @@ namespace Network_cpp {
         Network::getInstance(0)->layers.push_back(l2);
         Network::getInstance(0)->layers.push_back(l3);
 
-        std::vector<double> emptyVec;
-
         l1->neurons = {};
         l3->neurons = {};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
         EXPECT_CALL(*l3, forward()).Times(1);
-        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
-        EXPECT_CALL(*l2, backward(emptyVec)).Times(1);
-        EXPECT_CALL(*l3, backward(emptyVec)).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(1);
+        EXPECT_CALL(*l3, backward(true)).Times(1);
         EXPECT_CALL(*l1, resetDeltaWeights()).Times(0);
         EXPECT_CALL(*l2, resetDeltaWeights()).Times(1);
         EXPECT_CALL(*l3, resetDeltaWeights()).Times(1);
@@ -293,18 +290,15 @@ namespace Network_cpp {
         Network::getInstance(0)->layers.push_back(l2);
         Network::getInstance(0)->layers.push_back(l3);
 
-        std::vector<double> emptyVec;
-
         l1->neurons = {};
         l3->neurons = {};
-
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
         EXPECT_CALL(*l3, forward()).Times(1);
-        EXPECT_CALL(*l1, backward(emptyVec)).Times(0);
-        EXPECT_CALL(*l2, backward(emptyVec)).Times(0);
-        EXPECT_CALL(*l3, backward(emptyVec)).Times(0);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(0);
+        EXPECT_CALL(*l3, backward(false)).Times(0);
 
         Network::getInstance(0)->test(1, 0);
 
@@ -678,30 +672,14 @@ namespace FCLayer_cpp {
         FCLayer* l3;
     };
 
-    // Sets the neurons' errors to the given error values
-    TEST_F(FCBackwardFixture, backward_1) {
-        std::vector<double> errors = {1,2,3};
-
-        l2->neurons[0]->dropped = false;
-        l2->neurons[1]->dropped = false;
-        l2->neurons[2]->dropped = false;
-
-        l2->backward(errors);
-
-        EXPECT_EQ( l2->neurons[0]->error, 1 );
-        EXPECT_EQ( l2->neurons[1]->error, 2 );
-        EXPECT_EQ( l2->neurons[2]->error, 3 );
-    }
-
     // Sets the neurons' derivatives to the activation prime of their sum, when no expected data is passed
     TEST_F(FCBackwardFixture, backward_2) {
-        std::vector<double> emptyVec;
 
         l2->sums = {0,1,0};
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
-        l2->backward(emptyVec);
+        l2->backward(false);
 
         EXPECT_EQ( l2->neurons[0]->derivative, 0.25 );
         EXPECT_DOUBLE_EQ( l2->neurons[1]->derivative, 0.19661193324148185 );
@@ -712,13 +690,12 @@ namespace FCLayer_cpp {
     TEST_F(FCBackwardFixture, backward_3) {
 
         l2->hasActivation = false;
-        std::vector<double> emptyVec;
 
         l2->sums = {0,0,0};
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
-        l2->backward(emptyVec);
+        l2->backward(false);
 
         EXPECT_EQ( l2->neurons[0]->derivative, 1 );
         EXPECT_EQ( l2->neurons[1]->derivative, 1 );
@@ -727,7 +704,6 @@ namespace FCLayer_cpp {
 
     // Sets the neurons' errors to their derivative multiplied by weighted errors in next layer, when no expected data is passed
     TEST_F(FCBackwardFixture, backward_4) {
-        std::vector<double> emptyVec;
 
         l2->sums = {0.5,0.5,0.5};
         l2->neurons[0]->dropped = false;
@@ -735,20 +711,17 @@ namespace FCLayer_cpp {
         l2->neurons[2]->dropped = false;
 
         for (int i=0; i<4; i++) {
-            l3->neurons[i]->error = 0.5;
             l3->weights[i] = {1,1,1,1};
         }
+        l3->errs = {0.5, 0.5, 0.5, 0.5};
 
-        l2->backward(emptyVec);
-
-        EXPECT_DOUBLE_EQ( l2->neurons[0]->error, 0.470007424403189 );
-        EXPECT_DOUBLE_EQ( l2->neurons[1]->error, 0.470007424403189 );
-        EXPECT_DOUBLE_EQ( l2->neurons[2]->error, 0.470007424403189 );
+        l2->backward(false);
+        std::vector<double> expected = {0.470007424403189, 0.470007424403189, 0.470007424403189};
+        EXPECT_EQ( l2->errs, expected );
     }
 
     // Increments each of its delta weights by its error * the respective weight's neuron's activation
     TEST_F(FCBackwardFixture, backward_5) {
-        std::vector<double> errors = {0.5,1.5,2.5,3.5};
 
         Network::getInstance(0)->l2 = 0;
 
@@ -760,7 +733,8 @@ namespace FCLayer_cpp {
         l3->neurons[2]->dropped = false;
         l3->neurons[3]->dropped = false;
 
-        l3->backward(errors);
+        l3->errs = {0.5,1.5,2.5,3.5};
+        l3->backward(true);
 
         for (int n=0; n<4; n++) {
             EXPECT_EQ( l3->deltaWeights[n][0], 0.25 + n * 0.5 );
@@ -780,11 +754,12 @@ namespace FCLayer_cpp {
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
 
-        l2->backward(expected);
+        l2->errs = expected;
+        l2->backward(true);
 
-        EXPECT_EQ( l2->neurons[0]->error, 1 );
-        EXPECT_EQ( l2->neurons[1]->error, 1 );
-        EXPECT_EQ( l2->neurons[2]->error, 3 );
+        expected = {1,1,3};
+        EXPECT_EQ( l2->errs, expected );
+
         EXPECT_EQ( l2->neurons[0]->deltaBias, 2 );
         EXPECT_EQ( l2->neurons[1]->deltaBias, 2 );
         EXPECT_EQ( l2->neurons[2]->deltaBias, 4 );
@@ -801,18 +776,15 @@ namespace FCLayer_cpp {
         l2->neurons[0]->dropped = true;
         l2->neurons[1]->dropped = true;
         l2->neurons[2]->dropped = true;
-        l2->neurons[0]->error = 123;
-        l2->neurons[1]->error = 123;
-        l2->neurons[2]->error = 123;
         l2->neurons[0]->deltaBias = 456;
         l2->neurons[2]->deltaBias = 456;
         l2->neurons[1]->deltaBias = 456;
 
-        l2->backward(expected);
+        l2->errs = expected;
+        l2->backward(true);
 
-        EXPECT_EQ( l2->neurons[0]->error, 0 );
-        EXPECT_EQ( l2->neurons[1]->error, 0 );
-        EXPECT_EQ( l2->neurons[2]->error, 0 );
+        expected = {0,0,0};
+        EXPECT_EQ( l2->errs, expected );
 
         EXPECT_EQ( l2->neurons[0]->deltaBias, 0 );
         EXPECT_EQ( l2->neurons[1]->deltaBias, 0 );
@@ -838,7 +810,8 @@ namespace FCLayer_cpp {
             l3->deltaWeights[i][2] = 0.25;
         }
 
-        l3->backward(expected);
+        l3->errs = expected;
+        l3->backward(true);
 
         EXPECT_EQ( net->l2, 0.001 );
 
@@ -866,7 +839,8 @@ namespace FCLayer_cpp {
             l3->deltaWeights[i] = {0.25, 0.25, 0.25, 0.25};
         }
 
-        l3->backward(expected);
+        l3->errs = expected;
+        l3->backward(true);
 
         for (int n=0; n<4; n++) {
             EXPECT_NEAR( l3->deltaWeights[n][0], 0.275031, 1e-2 );
@@ -1527,8 +1501,9 @@ namespace ConvLayer_cpp {
         convLayer->init(1);
         fcLayer->init(2);
 
+        fcLayer->errs = {};
         for (int n=0; n<fcLayer->neurons.size(); n++) {
-            fcLayer->neurons[n]->error = ((double)n+1)/5;
+            fcLayer->errs.push_back(((double)n+1)/5);
             fcLayer->weights[n] = {0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2};
         }
 
@@ -2241,10 +2216,13 @@ namespace PoolLayer_cpp {
             {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1}}
         }};
 
+        fcLayer->errs = {};
+
         for (double n=0; n<fcLayer->size; n++) {
-            fcLayer->neurons[n]->error = n ? n / 100 : 0;
+            fcLayer->errs.push_back(n ? n / 100 : 0);
             fcLayer->weights[n] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
         }
+
 
         layer->backward();
 
@@ -2452,8 +2430,9 @@ namespace PoolLayer_cpp {
         layer->init(0);
         fcLayer->init(1);
 
+        fcLayer->errs = {};
         for (double n=0; n<fcLayer->size; n++) {
-            fcLayer->neurons[n]->error = n ? n / 100 : 0;
+            fcLayer->errs.push_back(n ? n / 100 : 0);
             fcLayer->weights[n] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
         }
 

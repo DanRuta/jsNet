@@ -57,7 +57,7 @@ public:
 
     std::vector<double> forward (std::vector<double> input);
 
-    void backward (std::vector<double> expected);
+    void backward ();
 
     void train (int iterations, int startIndex);
 
@@ -89,13 +89,14 @@ public:
     std::vector<Neuron*> neurons;
     std::vector<Filter*> filters;
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
-    std::vector<std::vector<std::vector<double> > > errors;
+    std::vector<std::vector<std::vector<double> > > errors; // Conv
     std::vector<std::vector<std::vector<double> > > activations;
 
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<double> biases; // FC
     std::vector<double> sums; // FC
+    std::vector<double> errs; // FC
 
     Layer* nextLayer;
     Layer* prevLayer;
@@ -115,7 +116,7 @@ public:
 
     virtual void forward (void) = 0;
 
-    virtual void backward (std::vector<double> expected) = 0;
+    virtual void backward (bool lastLayer) = 0;
 
     virtual void applyDeltaWeights (void) = 0;
 
@@ -138,7 +139,7 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> errors);
+    void backward (bool lastLayer);
 
     void applyDeltaWeights (void);
 
@@ -160,9 +161,7 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> expected) {
-        backward();
-    }
+    void backward (bool lastLayer) {};
 
     void backward (void);
 
@@ -187,9 +186,7 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> expected) {
-        backward();
-    }
+    void backward (bool lastLayer) {};
 
     void backward (void);
 
@@ -209,7 +206,6 @@ class Neuron {
         double deltaBias;
         double derivative;
         double activation = 0;
-        double error;
         double eluAlpha;
         double biasGain;
         double adadeltaBiasCache;

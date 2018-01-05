@@ -981,12 +981,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_error (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->errs[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_error (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->errs[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

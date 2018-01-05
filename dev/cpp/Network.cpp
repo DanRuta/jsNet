@@ -74,13 +74,12 @@ std::vector<double> Network::forward (std::vector<double> input) {
     return output.size() > 1 ? NetMath::softmax(output) : output;
 }
 
-void Network::backward (std::vector<double> errors) {
+void Network::backward () {
 
-    layers[layers.size()-1]->backward(errors);
+    layers[layers.size()-1]->backward(true);
 
     for (int l=layers.size()-2; l>0; l--) {
-        std::vector<double> emptyVec;
-        layers[l]->backward(emptyVec);
+        layers[l]->backward(false);
     }
 }
 
@@ -99,12 +98,11 @@ void Network::train (int its, int startI) {
         iterationError = costFunction(std::get<1>(trainingData[i]), output);
         totalErrors += iterationError;
 
-        std::vector<double> errors;
         for (int n=0; n<output.size(); n++) {
-            errors.push_back((std::get<1>(trainingData[i])[n]==1 ? 1 : 0) - output[n]);
+            layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[i])[n]==1 ? 1 : 0) - output[n];
         }
 
-        backward(errors);
+        backward();
 
         if ((i+1) % miniBatchSize == 0) {
             applyDeltaWeights();

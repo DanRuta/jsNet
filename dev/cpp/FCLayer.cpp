@@ -46,6 +46,7 @@ void FCLayer::init (int layerIndex) {
         neurons.push_back(neuron);
 
         sums.push_back(0);
+        errs.push_back(0);
     }
 }
 
@@ -93,22 +94,19 @@ void FCLayer::forward (void) {
     }
 }
 
-void FCLayer::backward (std::vector<double> errors) {
+void FCLayer::backward (bool lastLayer) {
 
     Network* net = Network::getInstance(netInstance);
 
     for (int n=0; n<neurons.size(); n++) {
 
         if (neurons[n]->dropped) {
-
-            neurons[n]->error = 0;
+            errs[n] = 0;
             neurons[n]->deltaBias = 0;
 
         } else {
 
-            if (errors.size()) {
-                neurons[n]->error = errors[n];
-            } else {
+            if (!lastLayer) {
                 if (hasActivation) {
                     neurons[n]->derivative = activation(sums[n], true, neurons[n]);
                 } else {
@@ -118,15 +116,15 @@ void FCLayer::backward (std::vector<double> errors) {
                 double weightedErrors = 0.0;
 
                 for (int nn=0; nn<nextLayer->neurons.size(); nn++) {
-                    weightedErrors += nextLayer->neurons[nn]->error * nextLayer->weights[nn][n];
+                    weightedErrors += nextLayer->errs[nn] * nextLayer->weights[nn][n];
                 }
 
-                neurons[n]->error = neurons[n]->derivative * weightedErrors;
+                errs[n] = neurons[n]->derivative * weightedErrors;
             }
 
             if (prevLayer->type == "FC") {
                 for (int wi=0; wi<weights[n].size(); wi++) {
-                    deltaWeights[n][wi] += neurons[n]->error * prevLayer->neurons[wi]->activation;
+                    deltaWeights[n][wi] += errs[n] * prevLayer->neurons[wi]->activation;
                 }
 
             } else {
@@ -134,11 +132,11 @@ void FCLayer::backward (std::vector<double> errors) {
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);
 
                 for (int wi=0; wi<weights[n].size(); wi++) {
-                    deltaWeights[n][wi] += neurons[n]->error * activations[wi];
+                    deltaWeights[n][wi] += errs[n] * activations[wi];
                 }
             }
 
-            neurons[n]->deltaBias += neurons[n]->error;
+            neurons[n]->deltaBias += errs[n];
         }
     }
 }

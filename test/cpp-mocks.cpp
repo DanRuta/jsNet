@@ -15,7 +15,7 @@ public:
 
     MOCK_METHOD0(forward, void(void));
 
-    MOCK_METHOD1(backward, void(std::vector<double> expected));
+    MOCK_METHOD1(backward, void(bool lastLayer));
 
     MOCK_METHOD0(applyDeltaWeights, void(void));
 

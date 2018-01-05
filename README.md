@@ -33,21 +33,34 @@ Layer is an alias for FCLayer, for people not using the library for convolutiona
 
 ### WebAssembly
 
-For the WebAssembly version, you will need the ```jsNetWebAssembly.min.js```, ```NetWASM.js``` and ```NetWASM.wasm``` files, found in the dist folder.
+The WebAssembly version is slightly more complex to load, depending on your project. Remember, also, that WebAssembly needs to be served via a server for web pages to work.
 
-I've kept the API almost identical to the JavaScript only version. The biggest difference is that with WebAssembly, currently, the file must be served by a server.
+You will need the ```jsNetWebAssembly.min.js```, ```NetWASM.js``` and ```NetWASM.wasm``` files, found in the dist folder. However, due to how WebAssembly is compiled together, the path for the .wasm file is hardcoded in the generated glue code, and can only be changed at compile time. As such, the request for that file is just ```./NetWASM.wasm```, so your server needs to be able to route the request to the file's location.
 
-The second difference is that the wasm gets lazy loaded, meaning you have to wait for it to be loaded before you can create the network. You can listen for the ```jsNetWASMLoaded``` event to know when it's ready, like so:
+ If using nodejs, the file needs to be moved to the same directory as the script. If using the npm package, the file can be found in ```node_modules/jsnet/dist/NetWASM.wasm ```. You can Ctrl+F "NetWASM.wasm" in "NetWASM.js" and change the path there, if this way better fits your project.
+
+Due to the fact that the wasm file gets lazy loaded, you also have to wait for it to be loaded before you can create the network. When using the browser, you can listen for the ```jsNetWASMLoaded``` event to know when it's ready, like so:
 
 ```javascript
 window.addEventListener("jsNetWASMLoaded", () => { /* ready */ })
 ```
 
-Finally, you need to assign the module when creating the network, like so:
+
+If using nodejs, it's similar, except you need to use the global.onWASMLoaded function, instead of the event listener.
+```javascript
+const {Network, FCLayer} = require("./node_modules/jsnet/dist/jsNetWebAssembly.min.js")
+const Module = require("./node_modules/jsnet/dist/NetWASM.js")
+
+global.onWASMLoaded = () => {
+    /* ready */
+}
+```
+
+When everything is loaded, the only difference to the JavaScript version is that you need to assign the module when creating the network, like so:
 ```javascript
 const net = new Network({Module: Module})
 ```
-This makes it easier to use in nodejs.
+This makes it easier to use in nodejs. The API has been kept the same as the JavaScript only version.
 
 
 ### Constructing

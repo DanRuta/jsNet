@@ -65,6 +65,6 @@ class Filter {
     }
 }
 
-typeof window=="undefined" && (exports.Filter = Filter)
-
-
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Filter = Filter)
+exports.Filter = Filter

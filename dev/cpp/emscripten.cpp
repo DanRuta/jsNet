@@ -3,7 +3,17 @@
 #include "Network.cpp"
 
 int main(int argc, char const *argv[]) {
-    emscripten_run_script("typeof window!='undefined' && window.dispatchEvent(new CustomEvent('jsNetWASMLoaded'))");
+
+    EM_ASM(
+        if (typeof window!='undefined') {
+            window.dispatchEvent(new CustomEvent('jsNetWASMLoaded'));
+            // https://github.com/DanRuta/jsNet/issues/33
+            window.global = window.global || {};
+        }
+
+        global.onWASMLoaded && global.onWASMLoaded();
+    );
+
     return 0;
 }
 
@@ -296,11 +306,10 @@ extern "C" {
         }
 
         std::vector<double> activations = net->forward(input);
-        std::vector<double> softmax = NetMath::softmax(activations);
 
-        double returnArr[softmax.size()];
+        double returnArr[activations.size()];
         for (int v=0; v<activations.size(); v++) {
-            returnArr[v] = softmax[v];
+            returnArr[v] = activations[v];
         }
 
         auto arrayPtr = &returnArr[0];

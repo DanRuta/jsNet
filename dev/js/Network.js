@@ -206,7 +206,8 @@ class Network {
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
         this.layers.forEach((layer, li) => li && layer.forward())
-        return NetMath.softmax(this.layers[this.layers.length-1].neurons.map(n => n.sum))
+        const output = this.layers[this.layers.length-1].neurons.map(n => n.sum)
+        return output.length > 1 ? NetMath.softmax(output) : output
     }
 
     backward (errors) {
@@ -420,4 +421,6 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (exports.Network = Network)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Network = Network)
+exports.Network = Network

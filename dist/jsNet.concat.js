@@ -274,7 +274,12 @@ class ConvLayer {
     }
 }
 
-typeof window=="undefined" && (exports.ConvLayer = ConvLayer)
+// https://github.com/DanRuta/jsNet/issues/33
+/* istanbul ignore next */
+typeof window!="undefined" && (window.exports = window.exports || {})
+/* istanbul ignore next */
+typeof window!="undefined" && (window.ConvLayer = ConvLayer)
+exports.ConvLayer = ConvLayer
 "use strict"
 
 class FCLayer {
@@ -436,7 +441,9 @@ class FCLayer {
 
 const Layer = FCLayer
 
-typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.FCLayer = window.Layer = FCLayer)
+exports.FCLayer = exports.Layer = FCLayer
 "use strict"
 
 class Filter {
@@ -504,10 +511,9 @@ class Filter {
     }
 }
 
-typeof window=="undefined" && (exports.Filter = Filter)
-
-
-
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Filter = Filter)
+exports.Filter = Filter
 "use strict"
 
 class NetMath {
@@ -774,7 +780,9 @@ class NetMath {
     }
 }
 
-typeof window=="undefined" && (exports.NetMath = NetMath)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.NetMath = NetMath)
+exports.NetMath = NetMath
 "use strict"
 
 class NetUtil {
@@ -1081,7 +1089,9 @@ class NetUtil {
     }
 }
 
-typeof window=="undefined" && (exports.NetUtil = NetUtil)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.NetUtil = NetUtil)
+exports.NetUtil = NetUtil
 "use strict"
 
 class Network {
@@ -1290,7 +1300,8 @@ class Network {
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
         this.layers.forEach((layer, li) => li && layer.forward())
-        return NetMath.softmax(this.layers[this.layers.length-1].neurons.map(n => n.sum))
+        const output = this.layers[this.layers.length-1].neurons.map(n => n.sum)
+        return output.length > 1 ? NetMath.softmax(output) : output
     }
 
     backward (errors) {
@@ -1504,7 +1515,9 @@ class Network {
     }
 }
 
-typeof window=="undefined" && (exports.Network = Network)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Network = Network)
+exports.Network = Network
 "use strict"
 
 class Neuron {
@@ -1572,7 +1585,9 @@ class Neuron {
     }
 }
 
-typeof window=="undefined" && (exports.Neuron = Neuron)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.Neuron = Neuron)
+exports.Neuron = Neuron
 "use strict"
 
 class PoolLayer {
@@ -1747,5 +1762,7 @@ class PoolLayer {
     fromJSON () {}
 }
 
-typeof window=="undefined" && (exports.PoolLayer = PoolLayer)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.PoolLayer = PoolLayer)
+exports.PoolLayer = PoolLayer
 //# sourceMappingURL=jsNet.concat.js.map

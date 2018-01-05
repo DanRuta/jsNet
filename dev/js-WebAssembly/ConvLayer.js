@@ -148,4 +148,9 @@ class ConvLayer {
 
 }
 
-typeof window=="undefined" && (exports.ConvLayer = ConvLayer)
+// https://github.com/DanRuta/jsNet/issues/33
+/* istanbul ignore next */
+typeof window!="undefined" && (window.exports = window.exports || {})
+/* istanbul ignore next */
+typeof window!="undefined" && (window.ConvLayer = ConvLayer)
+exports.ConvLayer = ConvLayer

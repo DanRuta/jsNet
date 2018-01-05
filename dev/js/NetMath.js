@@ -264,4 +264,6 @@ class NetMath {
     }
 }
 
-typeof window=="undefined" && (exports.NetMath = NetMath)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.NetMath = NetMath)
+exports.NetMath = NetMath

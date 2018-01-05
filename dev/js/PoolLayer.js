@@ -172,4 +172,6 @@ class PoolLayer {
     fromJSON () {}
 }
 
-typeof window=="undefined" && (exports.PoolLayer = PoolLayer)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.PoolLayer = PoolLayer)
+exports.PoolLayer = PoolLayer

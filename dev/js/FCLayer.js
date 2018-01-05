@@ -159,4 +159,6 @@ class FCLayer {
 
 const Layer = FCLayer
 
-typeof window=="undefined" && (exports.FCLayer = exports.Layer = FCLayer)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.FCLayer = window.Layer = FCLayer)
+exports.FCLayer = exports.Layer = FCLayer

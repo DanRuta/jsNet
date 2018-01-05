@@ -304,4 +304,6 @@ class NetUtil {
     }
 }
 
-typeof window=="undefined" && (exports.NetUtil = NetUtil)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.NetUtil = NetUtil)
+exports.NetUtil = NetUtil

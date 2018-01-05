@@ -214,6 +214,8 @@ NetUtil.activationsIndeces = {
     lrelu: 4,
     rrelu: 5,
     elu: 6
-}
+};
 
-typeof window=="undefined" && (exports.NetUtil = NetUtil)
+/* istanbul ignore next */
+typeof window!="undefined" && (window.NetUtil = NetUtil)
+exports.NetUtil = NetUtil

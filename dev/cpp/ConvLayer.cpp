@@ -96,7 +96,7 @@ void ConvLayer::backward () {
                     int weightI = f * outMapSize*outMapSize + emY * filters[f]->errorMap.size() + emX;
 
                     for (int n=0; n < nextLayer->neurons.size(); n++) {
-                        filters[f]->errorMap[emY][emX] += nextLayer->neurons[n]->error * nextLayer->neurons[n]->weights[weightI];
+                        filters[f]->errorMap[emY][emX] += nextLayer->neurons[n]->error * nextLayer->weights[n][weightI];
                     }
                 }
             }

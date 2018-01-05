@@ -1097,7 +1097,10 @@ class Neuron {
         NetUtil.defineProperty(this, "derivative", paramTypes, params, {pre: "neuron_"})
 
         NetUtil.defineProperty(this, "bias", paramTypes, params, {pre: "neuron_"})
-        NetUtil.defineArrayProperty(this, "weights", paramTypes, params, this.size, {pre: "neuron_"})
+
+        if (layerIndex) {
+            NetUtil.defineArrayProperty(this, "weights", paramTypes, params, this.size, {pre: "neuron_"})
+        }
 
         NetUtil.defineProperty(this, "deltaBias", paramTypes, params, {pre: "neuron_"})
         NetUtil.defineArrayProperty(this, "deltaWeights", paramTypes, params, this.size, {pre: "neuron_"})

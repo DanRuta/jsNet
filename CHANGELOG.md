@@ -1,3 +1,12 @@
+# Upcoming - 3.1.0 - Optimizations
+---
+#### FCLayers
+- Optimised weights structure
+
+#### Global
+- Bug fixes
+- Changed the way classes were bundled, to fix some bundler compatibility issues (see #33)
+
 # 3.0.0 - WebAssembly
 ---
 #### WebAssembly

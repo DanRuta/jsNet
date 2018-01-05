@@ -369,8 +369,8 @@ void NetMath::maxNorm(int netInstance) {
 
         for (int l=1; l<net->layers.size(); l++) {
             for (int n=0; n<net->layers[l]->neurons.size(); n++) {
-                for (int w=0; w<net->layers[l]->neurons[n]->weights.size(); w++) {
-                    net->layers[l]->neurons[n]->weights[w] *= multiplier;
+                for (int w=0; w<net->layers[l]->weights[n].size(); w++) {
+                    net->layers[l]->weights[n][w] *= multiplier;
                 }
             }
         }

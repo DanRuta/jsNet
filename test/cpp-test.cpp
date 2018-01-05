@@ -440,11 +440,10 @@ namespace FCLayer_cpp {
         l1->init(0);
         l2->init(1);
 
-        EXPECT_EQ( l1->neurons[0]->weights.size(), 0 );
-        EXPECT_EQ( l1->neurons[1]->weights.size(), 0 );
+        EXPECT_EQ( l1->weights.size(), 0 );
 
         for (int n=0; n<5; n++) {
-            EXPECT_EQ( l2->neurons[n]->weights.size(), 2 );
+            EXPECT_EQ( l2->weights[n].size(), 2 );
         }
     }
 
@@ -462,7 +461,7 @@ namespace FCLayer_cpp {
         l2->init(1);
 
         for (int n=0; n<5; n++) {
-            EXPECT_EQ( l2->neurons[n]->weights.size(), 18 );
+            EXPECT_EQ( l2->weights[n].size(), 18 );
         }
 
         delete c;
@@ -480,7 +479,7 @@ namespace FCLayer_cpp {
         l2->init(1);
 
         for (int n=0; n<5; n++) {
-            EXPECT_EQ( l2->neurons[n]->weights.size(), 45 );
+            EXPECT_EQ( l2->weights[n].size(), 45 );
         }
 
         delete p;
@@ -524,7 +523,7 @@ namespace FCLayer_cpp {
     TEST_F(FCForwardFixture, forward_1) {
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
+            l2->weights[n] = {1,2};
             l2->neurons[n]->bias = n;
         }
 
@@ -551,7 +550,7 @@ namespace FCLayer_cpp {
     TEST_F(FCForwardFixture, forward_2) {
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
+            l2->weights[n] = {1,2};
             l2->neurons[n]->bias = n;
         }
 
@@ -571,7 +570,7 @@ namespace FCLayer_cpp {
         l2->hasActivation = false;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
+            l2->weights[n] = {1,2};
             l2->neurons[n]->bias = n;
         }
 
@@ -589,7 +588,6 @@ namespace FCLayer_cpp {
     TEST_F(FCForwardFixture, forward_4) {
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
             l2->neurons[n]->bias = n;
             l2->neurons[n]->sum = 0;
         }
@@ -614,7 +612,7 @@ namespace FCLayer_cpp {
     // Does not set neurons to dropped if the net is not training
     TEST_F(FCForwardFixture, forward_5) {
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
+            l2->weights[n] = {1,2};
             l2->neurons[n]->bias = n;
             l2->neurons[n]->activation = 0;
         }
@@ -635,7 +633,7 @@ namespace FCLayer_cpp {
     // Divides the activation values by the dropout
     TEST_F(FCForwardFixture, forward_6) {
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->weights = {1,2};
+            l2->weights[n] = {1,2};
             l2->neurons[n]->bias = n;
         }
 
@@ -750,7 +748,7 @@ namespace FCLayer_cpp {
 
         for (int i=0; i<4; i++) {
             l3->neurons[i]->error = 0.5;
-            l3->neurons[i]->weights = {1,1,1,1};
+            l3->weights[i] = {1,1,1,1};
         }
 
         l2->backward(emptyVec);
@@ -956,6 +954,11 @@ namespace FCLayer_cpp {
 
             l3->neurons.push_back(new Neuron());
             l4->neurons.push_back(new Neuron());
+
+            l2->weights = {{0.25, 0.25}, {0.25, 0.25}, {0.25, 0.25}};
+            l3->weights = {{0.25, 0.25, 0.25}};
+            l4->weights = {{0.25, 0.25}};
+            l4->neurons[0]->deltaWeights = {0.5, 0.5};
         }
 
         virtual void TearDown() {
@@ -1006,22 +1009,14 @@ namespace FCLayer_cpp {
 
     // Increments the l2Error by the l2 formula applied to all weights
     TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_3) {
-        l4->neurons[0]->weights = {0.25, 0.25};
-        l4->neurons[0]->deltaWeights = {0.5, 0.5};
-
         l4->applyDeltaWeights();
-
         EXPECT_NEAR( Network::getInstance(l4->netInstance)->l2Error, 0.0000625 , 1e-6 );
     }
 
     // Increments the l1Error by the l1 formula applied to all weights
     TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_4) {
         Network::getInstance(l4->netInstance)->l1Error = 0;
-        l4->neurons[0]->weights = {0.25, 0.25};
-        l4->neurons[0]->deltaWeights = {0.5, 0.5};
-
         l4->applyDeltaWeights();
-
         EXPECT_NEAR( Network::getInstance(l4->netInstance)->l1Error, 0.0025 , 1e-6 );
     }
 
@@ -1555,7 +1550,7 @@ namespace ConvLayer_cpp {
 
         for (int n=0; n<fcLayer->neurons.size(); n++) {
             fcLayer->neurons[n]->error = ((double)n+1)/5;
-            fcLayer->neurons[n]->weights = {0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2};
+            fcLayer->weights[n] = {0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2};
         }
 
         convLayer->filters[0]->sumMap = {{0,0},{0,0}};
@@ -2262,7 +2257,7 @@ namespace PoolLayer_cpp {
 
         for (double n=0; n<fcLayer->size; n++) {
             fcLayer->neurons[n]->error = n ? n / 100 : 0;
-            fcLayer->neurons[n]->weights = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
+            fcLayer->weights[n] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
         }
 
         layer->backward();
@@ -2473,7 +2468,7 @@ namespace PoolLayer_cpp {
 
         for (double n=0; n<fcLayer->size; n++) {
             fcLayer->neurons[n]->error = n ? n / 100 : 0;
-            fcLayer->neurons[n]->weights = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
+            fcLayer->weights[n] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5};
         }
 
         layer->errors = {{
@@ -2515,7 +2510,7 @@ namespace PoolLayer_cpp {
             {0,0, 0,0.011526349447153203, 0,0.000042487105415310055, 0,1.1702970200399024e-7, 0,2.865355952475672e-10, 0,6.57474075183004e-13}
         }};
 
-        EXPECT_EQ( fcLayer->neurons[0]->weights.size(), 36 );
+        EXPECT_EQ( fcLayer->weights[0].size(), 36 );
 
         for (int i=0; i<12; i++) {
             EXPECT_EQ( layer->errors[0][i].size(), expected[0][i].size() );
@@ -2548,30 +2543,28 @@ namespace Neuron_cpp {
 
     // Fills the deltaWeights vector with 0 values, matching weights size
     TEST_F(NeuronInitFixture, init_1) {
-        testN->weights = {1,2,3,4,5};
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->deltaWeights.size(), 5 );
     }
 
     // Sets the neuron deltaBias to 0
     TEST_F(NeuronInitFixture, init_2) {
         testN->deltaBias = 999;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->deltaBias, 0 );
     }
 
     // Sets the neuron biasGain to 1 if the net's updateFn is gain
     TEST_F(NeuronInitFixture, init_3) {
         net->updateFnIndex = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasGain, 1 );
     }
 
     // Sets the neuron weightGain to a vector of 1s, with the same size as the weights vector when updateFn is gain
     TEST_F(NeuronInitFixture, init_4) {
-        testN->weights = {1,2,3,4,5};
         net->updateFnIndex = 1;
-        testN->init(0);
+        testN->init(0, 5);
         std::vector<double> expected = {1,1,1,1,1};
         EXPECT_EQ( testN->weightGain, expected );
     }
@@ -2579,7 +2572,7 @@ namespace Neuron_cpp {
     // Does not set the biasGain or weightGain to anything if updateFn is not gain
     TEST_F(NeuronInitFixture, init_5) {
         net->updateFnIndex = 2;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->weightGain.size(), 0 );
     }
 
@@ -2587,15 +2580,14 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_6) {
         net->updateFnIndex = 2;
         testN->biasCache = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasCache, 0 );
     }
 
     // Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is adagrad
     TEST_F(NeuronInitFixture, init_7) {
-        testN->weights = {1,2,3,4,5};
         net->updateFnIndex = 2;
-        testN->init(0);
+        testN->init(0, 5);
         std::vector<double> expected = {0,0,0,0,0};
         EXPECT_EQ( testN->weightsCache, expected );
     }
@@ -2604,7 +2596,7 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_8) {
         net->updateFnIndex = 1;
         testN->biasCache = 12234;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasCache, 12234 );
         EXPECT_EQ( testN->weightsCache.size(), 0 );
     }
@@ -2613,15 +2605,14 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_9) {
         net->updateFnIndex = 3;
         testN->biasCache = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasCache, 0 );
     }
 
     // Sets the neuron weightsCache to a vector of zeroes with the same size as the weights when updateFn is rmsprop
     TEST_F(NeuronInitFixture, init_10) {
-        testN->weights = {1,2,3,4,5};
         net->updateFnIndex = 3;
-        testN->init(0);
+        testN->init(0, 5);
         std::vector<double> expected = {0,0,0,0,0};
         EXPECT_EQ( testN->weightsCache, expected );
     }
@@ -2631,7 +2622,7 @@ namespace Neuron_cpp {
         net->updateFnIndex = 4;
         testN->m = 1;
         testN->v = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->m, 0 );
         EXPECT_EQ( testN->v, 0 );
     }
@@ -2641,7 +2632,7 @@ namespace Neuron_cpp {
         net->updateFnIndex = 3;
         testN->m = 1;
         testN->v = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->m, 1 );
         EXPECT_EQ( testN->v, 1 );
     }
@@ -2651,16 +2642,15 @@ namespace Neuron_cpp {
         net->updateFnIndex = 5;
         testN->biasCache = 1;
         testN->adadeltaBiasCache = 1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasCache, 0 );
         EXPECT_EQ( testN->adadeltaBiasCache, 0 );
     }
 
     // Sets the neuron weightsCache and adadeltaCache to a vector of zeroes with the same size as the weights when updateFn is adadelta
     TEST_F(NeuronInitFixture, init_14) {
-        testN->weights = {1,2,3,4,5};
         net->updateFnIndex = 5;
-        testN->init(0);
+        testN->init(0, 5);
         std::vector<double> expected = {0,0,0,0,0};
         EXPECT_EQ( testN->weightsCache, expected );
         EXPECT_EQ( testN->adadeltaCache, expected );
@@ -2671,7 +2661,7 @@ namespace Neuron_cpp {
         net->updateFnIndex = 1;
         testN->biasCache = 12234;
         testN->adadeltaBiasCache = 12234;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_EQ( testN->biasCache, 12234 );
         EXPECT_EQ( testN->adadeltaBiasCache, 12234 );
         EXPECT_EQ( testN->weightsCache.size(), 0 );
@@ -2682,7 +2672,7 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_16) {
         net->activation = &NetMath::lrelu;
         net->lreluSlope = 0.1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_NEAR(testN->lreluSlope, 0.1, 1e-6 );
     }
 
@@ -2690,7 +2680,7 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_17) {
         net->activation = &NetMath::rrelu;
         testN->rreluSlope = 0.1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_NE( testN->rreluSlope, 0 );
         EXPECT_NE( testN->rreluSlope, 0.1 );
         EXPECT_GE( testN->rreluSlope, -0.1);
@@ -2701,7 +2691,7 @@ namespace Neuron_cpp {
     TEST_F(NeuronInitFixture, init_18) {
         net->activation = &NetMath::elu;
         net->eluAlpha = 0.1;
-        testN->init(0);
+        testN->init(0, 5);
         EXPECT_NEAR(testN->eluAlpha, 0.1, 1e-6 );
     }
 }
@@ -3041,7 +3031,7 @@ namespace NetMath_cpp {
             net = Network::getInstance(0);
             net->learningRate = 1;
             testN = new Neuron();
-            testN->init(0);
+            testN->init(0, 5);
             testN->bias = 0.1;
 
             testF = new Filter();
@@ -3127,7 +3117,6 @@ namespace NetMath_cpp {
 
     // Increases weight gain the same way as the bias gain
     TEST_F(GainFixture, gain_7) {
-        testN->weights = {0.1, 0.1};
         testN->weightGain = {1, 4.99};
         NetMath::gain(0, (double)0.1, (double)1, testN, 0);
         NetMath::gain(0, (double)0.1, (double)1, testN, 1);
@@ -3145,7 +3134,6 @@ namespace NetMath_cpp {
     // Decreases weight gain the same way as the bias gain
     TEST_F(GainFixture, gain_8) {
         net->learningRate = -10;
-        testN->weights = {0.1, 0.1};
         testN->weightGain = {1, 0.51};
         NetMath::gain(0, (double)0.1, (double)1, testN, 0);
         NetMath::gain(0, (double)0.1, (double)1, testN, 1);
@@ -3168,7 +3156,7 @@ namespace NetMath_cpp {
             net = Network::getInstance(0);
             net->learningRate = 2;
             testN = new Neuron();
-            testN->init(0);
+            testN->init(0, 5);
             testN->biasCache = 0;
 
             testF = new Filter();
@@ -3237,7 +3225,7 @@ namespace NetMath_cpp {
             net->learningRate = 0.5;
             net->rmsDecay = 0.99;
             testN = new Neuron();
-            testN->init(0);
+            testN->init(0, 5);
             testN->biasCache = 10;
 
             testF = new Filter();
@@ -3306,7 +3294,7 @@ namespace NetMath_cpp {
             net = Network::getInstance(0);
             net->learningRate = 0.01;
             testN = new Neuron();
-            testN->init(0);
+            testN->init(0, 5);
 
             testF = new Filter();
             testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
@@ -3368,7 +3356,7 @@ namespace NetMath_cpp {
             net->weightInitFn = &NetMath::uniform;
             net->rho = 0.95;
             testN = new Neuron();
-            testN->init(0);
+            testN->init(0, 5);
             testN->biasCache = 0.5;
 
             testF = new Filter();
@@ -3486,7 +3474,7 @@ namespace NetMath_cpp {
             net->layers.push_back(l2);
 
             Neuron* n = new Neuron();
-            n->weights = {2, 2};
+            l2->weights = {{2}};
             l2->neurons.push_back(n);
         }
 
@@ -3510,16 +3498,14 @@ namespace NetMath_cpp {
     // Scales weights if their L2 exceeds the configured max norm threshold
     TEST_F(MaxNormFixture, maxNorm_2) {
         NetMath::maxNorm(0);
-        EXPECT_EQ( l2->neurons[0]->weights[0], 0.7071067811865475 );
-        EXPECT_EQ( l2->neurons[0]->weights[1], 0.7071067811865475 );
+        EXPECT_EQ( l2->weights[0][0], 0.7071067811865475 );
     }
 
     // Does not scale weights if their L2 doesn't exceed the configured max norm threshold
     TEST_F(MaxNormFixture, maxNorm_3) {
         net->maxNorm = 1000;
         NetMath::maxNorm(0);
-        EXPECT_EQ( l2->neurons[0]->weights[0], 2 );
-        EXPECT_EQ( l2->neurons[0]->weights[1], 2 );
+        EXPECT_EQ( l2->weights[0][0], 2 );
     }
 
     // Returns the same number of values as the size value given

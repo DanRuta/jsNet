@@ -25,9 +25,9 @@ void FCLayer::init (int layerIndex) {
 
         Neuron* neuron = new Neuron();
 
-        if (layerIndex) {
+        int weightsCount = 0;
 
-            int weightsCount = 0;
+        if (layerIndex) {
 
             if (prevLayer->type == "FC") {
                 weightsCount = prevLayer->size;
@@ -37,11 +37,11 @@ void FCLayer::init (int layerIndex) {
                 weightsCount = prevLayer->activations.size() * prevLayer->outMapSize * prevLayer->outMapSize;
             }
 
-            neuron->weights = Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, weightsCount);
+            weights.push_back(Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, weightsCount));
             neuron->bias = 1;
         }
 
-        neuron->init(netInstance);
+        neuron->init(netInstance, weightsCount);
         neurons.push_back(neuron);
     }
 }
@@ -62,20 +62,20 @@ void FCLayer::forward (void) {
 
             if (prevLayer->type == "FC") {
                 for (int pn=0; pn<prevLayer->neurons.size(); pn++) {
-                    neurons[n]->sum += prevLayer->neurons[pn]->activation * neurons[n]->weights[pn];
+                    neurons[n]->sum += prevLayer->neurons[pn]->activation * weights[n][pn];
                 }
             } else if (prevLayer->type == "Conv") {
 
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);
 
                 for (int ai=0; ai<activations.size(); ai++) {
-                    neurons[n]->sum += activations[ai] * neurons[n]->weights[ai];
+                    neurons[n]->sum += activations[ai] * weights[n][ai];
                 }
             } else {
                 for (int c=0; c<prevLayer->channels; c++) {
                     for (int r=0; r<prevLayer->outMapSize; r++) {
                         for (int v=0; v<prevLayer->outMapSize; v++) {
-                            neurons[n]->sum += prevLayer->activations[c][r][v] * neurons[n]->weights[c * prevLayer->outMapSize * prevLayer->outMapSize + r * prevLayer->outMapSize + v ];
+                            neurons[n]->sum += prevLayer->activations[c][r][v] * weights[n][c * prevLayer->outMapSize * prevLayer->outMapSize + r * prevLayer->outMapSize + v ];
                         }
                     }
                 }
@@ -115,14 +115,14 @@ void FCLayer::backward (std::vector<double> errors) {
                 double weightedErrors = 0.0;
 
                 for (int nn=0; nn<nextLayer->neurons.size(); nn++) {
-                    weightedErrors += nextLayer->neurons[nn]->error * nextLayer->neurons[nn]->weights[n];
+                    weightedErrors += nextLayer->neurons[nn]->error * nextLayer->weights[nn][n];
                 }
 
                 neurons[n]->error = neurons[n]->derivative * weightedErrors;
             }
 
             if (prevLayer->type == "FC") {
-                for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
+                for (int wi=0; wi<weights[n].size(); wi++) {
                     neurons[n]->deltaWeights[wi] += neurons[n]->error * prevLayer->neurons[wi]->activation;
                 }
 
@@ -130,7 +130,7 @@ void FCLayer::backward (std::vector<double> errors) {
 
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);
 
-                for (int wi=0; wi<neurons[n]->weights.size(); wi++) {
+                for (int wi=0; wi<weights[n].size(); wi++) {
                     neurons[n]->deltaWeights[wi] += neurons[n]->error * activations[wi] *
                         (1 + (net->l2 + net->l1)/(double)net->miniBatchSize * neurons[n]->deltaWeights[wi]);
                 }
@@ -157,10 +157,11 @@ void FCLayer::applyDeltaWeights (void) {
 
     Network* net = Network::getInstance(netInstance);
 
+
     for(int n=0; n<neurons.size(); n++) {
         for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
-            if (net->l2) net->l2Error += 0.5 * net->l2 * pow(neurons[n]->weights[dw], 2);
-            if (net->l1) net->l1Error += net->l1 * fabs(neurons[n]->weights[dw]);
+            if (net->l2) net->l2Error += 0.5 * net->l2 * pow(weights[n][dw], 2);
+            if (net->l1) net->l1Error += net->l1 * fabs(weights[n][dw]);
         }
     }
 
@@ -173,12 +174,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                        + net->l2 * neurons[n]->weights[dw]
-                        + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::vanillaupdatefn(netInstance, neurons[n]->weights[dw], regularized);
+                    weights[n][dw] = NetMath::vanillaupdatefn(netInstance, weights[n][dw], regularized);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::vanillaupdatefn(netInstance, neurons[n]->bias, neurons[n]->deltaBias);
             }
@@ -188,12 +189,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                        + net->l2 * neurons[n]->weights[dw]
-                        + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::gain(netInstance, neurons[n]->weights[dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
+                    weights[n][dw] = NetMath::gain(netInstance, weights[n][dw], neurons[n]->deltaWeights[dw], neurons[n], dw);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::gain(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }
@@ -203,12 +204,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                                            + net->l2 * neurons[n]->weights[dw]
-                                            + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::adagrad(netInstance, neurons[n]->weights[dw], regularized, neurons[n], dw);
+                    weights[n][dw] = NetMath::adagrad(netInstance, weights[n][dw], regularized, neurons[n], dw);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::adagrad(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }
@@ -218,12 +219,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                                            + net->l2 * neurons[n]->weights[dw]
-                                            + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::rmsprop(netInstance, neurons[n]->weights[dw], regularized, neurons[n], dw);
+                    weights[n][dw] = NetMath::rmsprop(netInstance, weights[n][dw], regularized, neurons[n], dw);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::rmsprop(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }
@@ -233,12 +234,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                                            + net->l2 * neurons[n]->weights[dw]
-                                            + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::adam(netInstance, neurons[n]->weights[dw], regularized, neurons[n], dw);
+                    weights[n][dw] = NetMath::adam(netInstance, weights[n][dw], regularized, neurons[n], dw);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::adam(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }
@@ -248,12 +249,12 @@ void FCLayer::applyDeltaWeights (void) {
                 for (int dw=0; dw<neurons[n]->deltaWeights.size(); dw++) {
 
                     double regularized = (neurons[n]->deltaWeights[dw]
-                                            + net->l2 * neurons[n]->weights[dw]
-                                            + net->l1 * (neurons[n]->weights[dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    neurons[n]->weights[dw] = NetMath::adadelta(netInstance, neurons[n]->weights[dw], regularized, neurons[n], dw);
+                    weights[n][dw] = NetMath::adadelta(netInstance, weights[n][dw], regularized, neurons[n], dw);
 
-                    if (net->maxNorm) net->maxNormTotal += neurons[n]->weights[dw] * neurons[n]->weights[dw];
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
                 neurons[n]->bias = NetMath::adadelta(netInstance, neurons[n]->bias, neurons[n]->deltaBias, neurons[n], -1);
             }

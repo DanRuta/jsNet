@@ -91,6 +91,9 @@ public:
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
     std::vector<std::vector<std::vector<double> > > errors;
     std::vector<std::vector<std::vector<double> > > activations;
+
+    std::vector<std::vector<double> > weights; // FC
+
     Layer* nextLayer;
     Layer* prevLayer;
     double (*activation)(double, bool, Neuron*);
@@ -195,7 +198,6 @@ public:
 
 class Neuron {
     public:
-        std::vector<double> weights;
         std::vector<double> deltaWeights;
         std::vector<double> weightGain;
         std::vector<double> weightsCache;
@@ -218,7 +220,7 @@ class Neuron {
 
         Neuron(void) {}
 
-        void init (int netInstance);
+        void init (int netInstance, int weightsCount);
 };
 
 class Filter {

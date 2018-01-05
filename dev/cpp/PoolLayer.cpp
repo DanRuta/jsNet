@@ -63,7 +63,7 @@ void PoolLayer::backward (void) {
                     int weightI = c * outMapSize*outMapSize + r * outMapSize + v;
 
                     for (int n=0; n<nextLayer->neurons.size(); n++) {
-                        errors[c][rowI][colI] += nextLayer->neurons[n]->error * nextLayer->neurons[n]->weights[weightI];
+                        errors[c][rowI][colI] += nextLayer->neurons[n]->error * nextLayer->weights[n][weightI];
                     }
                 }
             }

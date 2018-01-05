@@ -38,6 +38,10 @@ The WebAssembly version is slightly more complex to load, depending on your proj
 You will need the ```jsNetWebAssembly.min.js```, ```NetWASM.js``` and ```NetWASM.wasm``` files, found in the dist folder. However, due to how WebAssembly is compiled together, the path for the .wasm file is hardcoded in the generated glue code, and can only be changed at compile time. As such, the request for that file is just ```./NetWASM.wasm```, so your server needs to be able to route the request to the file's location.
 
  If using nodejs, the file needs to be moved to the same directory as the script. If using the npm package, the file can be found in ```node_modules/jsnet/dist/NetWASM.wasm ```. You can Ctrl+F "NetWASM.wasm" in "NetWASM.js" and change the path there, if this way better fits your project.
+ 
+ ``` 
+ cp node_modules/jsnet/dist/NetWASM.wasm .
+```
 
 Due to the fact that the wasm file gets lazy loaded, you also have to wait for it to be loaded before you can create the network. When using the browser, you can listen for the ```jsNetWASMLoaded``` event to know when it's ready, like so:
 

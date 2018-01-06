@@ -4,13 +4,17 @@ module.exports = function(grunt){
             options: {
                 sourceMap: true
             },
+            "jsNet": {
+                src: ["dev/jsNet.js"],
+                dest: "dist/jsNet.js"
+            },
             "js-WebAssembly": {
                 src: ["dev/js-WebAssembly/*.js"],
                 dest: "dist/jsNetWebAssembly.concat.js"
             },
             "js-noWebAssembly": {
                 src: ["dev/js/*.js", "!dev/js/NetAssembly.js"],
-                dest: "dist/jsNet.concat.js"
+                dest: "dist/jsNetJS.concat.js"
             }
         },
 
@@ -24,7 +28,7 @@ module.exports = function(grunt){
                 },
                 files: {
                     "dist/jsNetWebAssembly.min.js" : ["dist/jsNetWebAssembly.concat.js"],
-                    "dist/jsNet.min.js" : ["dist/jsNet.concat.js"]
+                    "dist/jsNetJS.min.js" : ["dist/jsNetJS.concat.js"]
                 }
             }
         },
@@ -35,21 +39,25 @@ module.exports = function(grunt){
         },
 
         watch: {
+            jsNet: {
+                files: ["dev/jsNet.js"],
+                tasks: ["concat:jsNet"]
+            },
             cpp: {
                 files: ["dev/cpp/*.cpp", "dev/cpp/*.h"],
-                tasks: ["exec:build"]
+                tasks: ["exec:build", "concat:js-WebAssembly", "uglify", "replace:emscriptenWASMPath"]
             },
             js: {
                 files: ["dev/js/*.js"],
-                tasks: ["concatNoWebAssembly", "uglify"]
+                tasks: ["concat:js-noWebAssembly", "uglify"]
             },
             wa: {
                 files: ["dev/js-WebAssembly/*.js"],
-                tasks: ["concatWebAssembly", "uglify"]
+                tasks: ["concat:js-WebAssembly", "uglify", "replace:emscriptenWASMPath"]
             },
             emscriptenTests: {
                 files: ["test/emscriptenTests.cpp"],
-                tasks: ["exec:emscriptenTests", "replace"]
+                tasks: ["exec:emscriptenTests", "replace:emscriptenTestsFilePath"]
             }
         },
 
@@ -60,6 +68,14 @@ module.exports = function(grunt){
                 replacements: [{
                     from: "emscriptenTests.wasm",
                     to: "test/emscriptenTests.wasm"
+                }]
+            },
+            emscriptenWASMPath: {
+                src: ["dist/NetWASM.js"],
+                dest: ["dist/NetWASM.js"],
+                replacements: [{
+                    from: `"NetWASM.wasm"`,
+                    to: "global.jsNetWASMPath"
                 }]
             }
         }
@@ -72,6 +88,4 @@ module.exports = function(grunt){
     grunt.loadNpmTasks("grunt-exec")
 
     grunt.registerTask("default", ["watch"])
-    grunt.registerTask("concatWebAssembly", ["concat:js-WebAssembly"])
-    grunt.registerTask("concatNoWebAssembly", ["concat:js-noWebAssembly"])
 }

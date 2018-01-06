@@ -9,6 +9,8 @@
 - Optimised activations structure
 
 #### Global
+- Changed framework loading to allow choosing between versions at runtime
+- Added basic server and browser + nodejs demos for how to load jsNet
 - Bug fixes
 - Changed the way classes were bundled, to fix some bundler compatibility issues (see #33)
 

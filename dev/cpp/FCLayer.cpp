@@ -128,6 +128,20 @@ void FCLayer::backward (bool lastLayer) {
                     deltaWeights[n][wi] += errs[n] * prevLayer->actvns[wi];
                 }
 
+            } else if (prevLayer->type == "Conv") {
+
+                for (int f=0; f<prevLayer->size; f++) {
+
+                    int size = prevLayer->filters[f]->activationMap.size();
+
+                    for (int ay=0; ay<size; ay++) {
+                        for (int ax=0; ax<size; ax++) {
+                            printf("n %d, ay %d, ax %d\n", n, ay, ax);
+                            deltaWeights[n][ay*size + ax] += errs[ay*size + ax] * prevLayer->filters[f]->activationMap[ay][ax];
+                        }
+                    }
+                }
+
             } else {
 
                 std::vector<double> activations = NetUtil::getActivations(prevLayer);

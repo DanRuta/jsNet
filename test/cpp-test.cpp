@@ -840,6 +840,32 @@ namespace FCLayer_cpp {
         }
     }
 
+    // Increments the weights accordingly when the next layer is a ConvLayer
+    TEST_F(FCBackwardFixture, backward_10) {
+        std::vector<double> expected = {0.05, 0.05, 0.05, 0.05};
+        net->l1 = 0.005;
+
+        ConvLayer* l4 = new ConvLayer(0, 1);
+        l4->filters = {new Filter()};
+        l4->filters[0]->activationMap = {{0.5, 0.5}, {0.5, 0.5}};
+        l4->size = 1;
+        l3->prevLayer = l4;
+
+        for (int i=0; i<4; i++) {
+            l3->deltaWeights[i] = {0.25, 0.25, 0.25, 0.25};
+        }
+
+        l3->errs = expected;
+        l3->backward(true);
+
+        for (int n=0; n<4; n++) {
+            EXPECT_NEAR( l3->deltaWeights[0][0], 0.275031, 1e-2 );
+            EXPECT_NEAR( l3->deltaWeights[0][1], 0.275031, 1e-2 );
+            EXPECT_NEAR( l3->deltaWeights[0][2], 0.275031, 1e-2 );
+            EXPECT_NEAR( l3->deltaWeights[0][3], 0.275031, 1e-2 );
+        }
+    }
+
     class FCApplyDeltaWeightsFixture : public ::testing::Test {
     public:
         virtual void SetUp() {

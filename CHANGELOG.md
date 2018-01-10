@@ -10,6 +10,7 @@
 - Optimized sums structure
 - Optimized errors structure and net errors propagation
 - Optimized activations structure
+- Optimized backward()
 
 #### Global
 - Changed framework loading to allow choosing between versions at runtime

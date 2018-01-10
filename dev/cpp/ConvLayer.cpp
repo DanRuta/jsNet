@@ -55,7 +55,16 @@ void ConvLayer::init (int layerIndex) {
 void ConvLayer::forward (void) {
 
     Network* net = Network::getInstance(netInstance);
-    std::vector<std::vector<std::vector<double> > > activations = NetUtil::arrayToVolume(NetUtil::getActivations(prevLayer), channels);
+
+    std::vector<std::vector<std::vector<double> > > activations;
+
+    if (prevLayer->type=="FC") {
+        activations = NetUtil::arrayToVolume(prevLayer->actvns, channels);
+    } else {
+        for (int i=0; i<channels; i++) {
+            activations.push_back(prevLayer->filters[i]->activationMap);
+        }
+    }
 
     for (int f=0; f<filters.size(); f++) {
 
@@ -83,7 +92,7 @@ void ConvLayer::forward (void) {
     }
 }
 
-void ConvLayer::backward (void) {
+void ConvLayer::backward (bool lastLayer) {
 
     if (nextLayer->type == "FC") {
 

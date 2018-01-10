@@ -162,9 +162,11 @@ public:
 
     void forward (void);
 
-    void backward (bool lastLayer) {};
+    void backward (bool lastLayer);
 
-    void backward (void);
+    void backward (void) {
+        backward(false);
+    };
 
     void applyDeltaWeights (void);
 
@@ -187,9 +189,11 @@ public:
 
     void forward (void);
 
-    void backward (bool lastLayer) {};
+    void backward (bool lastLayer);
 
-    void backward (void);
+    void backward (void) {
+        backward(false);
+    };
 
     void applyDeltaWeights (void) {};
 

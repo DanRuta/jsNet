@@ -41,7 +41,7 @@ void PoolLayer::forward (void) {
     }
 }
 
-void PoolLayer::backward (void) {
+void PoolLayer::backward (bool lastLayer) {
 
     // Clear the existing error values, first
     for (int c=0; c<channels; c++) {

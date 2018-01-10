@@ -1508,7 +1508,7 @@ namespace ConvLayer_cpp {
 
         std::vector<std::vector<std::vector<double> > > expected = { {{1.8, 1.6}, {1.4, 1.2}}, {{1, 0.8}, {0.6, 0.4}} };
 
-        convLayer->backward();
+        convLayer->backward(false);
 
         for (int f=0; f<convLayer->filters.size(); f++) {
             for (int r=0; r<convLayer->filters[f]->errorMap.size(); r++) {
@@ -1523,7 +1523,7 @@ namespace ConvLayer_cpp {
     TEST_F(ConvBackwardFixture, backward_2) {
 
         layer->outMapSize = 5;
-        layer->backward();
+        layer->backward(false);
 
         std::vector<std::vector<double> > expected = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
 

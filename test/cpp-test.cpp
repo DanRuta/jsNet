@@ -4027,7 +4027,7 @@ namespace NetUtil_cpp {
         std::vector<double> testInputa = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1};
         std::vector<std::vector<std::vector<double> > > testWeightsa = {{{-1,0,-1},{1,0,1},{1,-1,0}}};
         std::vector<std::vector<double> > expecteda = {{0,4,5}, {2,0,1}, {2,0,-1}};
-        std::vector<std::vector<double> > res = NetUtil::convolve(testInputa, 1, testWeightsa, 1, 2, 1);
+        std::vector<std::vector<double> > res = NetUtil::convolve(NetUtil::arrayToVolume(testInputa, 1), 1, testWeightsa, 1, 2, 1);
         EXPECT_EQ( res, expecteda );
     }
 
@@ -4036,7 +4036,7 @@ namespace NetUtil_cpp {
         std::vector<double> testInputb = {2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1};
         std::vector<std::vector<std::vector<double> > > testWeightsb = {{{0,1,1},{1,-1,-1},{-1,1,0}}};
         std::vector<std::vector<double> > expectedb = {{-2,2,0},{2,1,1},{2,3,1}};
-        std::vector<std::vector<double> > res = NetUtil::convolve(testInputb, 1, testWeightsb, 1, 2, 1);
+        std::vector<std::vector<double> > res = NetUtil::convolve(NetUtil::arrayToVolume(testInputb, 1), 1, testWeightsb, 1, 2, 1);
         EXPECT_EQ( res, expectedb );
     }
 
@@ -4045,7 +4045,7 @@ namespace NetUtil_cpp {
         std::vector<double> testInputc = {0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeightsc = {{{-1,0,-1},{1,0,0},{1,0,0}}};
         std::vector<std::vector<double> > expectedc = {{1,4,3},{-1,-3,1},{1,2,3}};
-        std::vector<std::vector<double> > res = NetUtil::convolve(testInputc, 1, testWeightsc, 1, 2, 1);
+        std::vector<std::vector<double> > res = NetUtil::convolve(NetUtil::arrayToVolume(testInputc, 1), 1, testWeightsc, 1, 2, 1);
         EXPECT_EQ( res, expectedc );
     }
 
@@ -4054,7 +4054,7 @@ namespace NetUtil_cpp {
         std::vector<double> testInput = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1, 2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1, 0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeights1 = {{{-1,0,-1},{1,0,1},{1,-1,0}},   {{0,1,1},{1,-1,-1},{-1,1,0}},  {{-1,0,-1},{1,0,0},{1,0,0}}};
         std::vector<std::vector<double> > expected1 = {{-3,8,6},{1,-4,1},{3,3,1}};
-        std::vector<std::vector<double> > res = NetUtil::convolve(testInput, 1, testWeights1, 3, 2, 1);
+        std::vector<std::vector<double> > res = NetUtil::convolve(NetUtil::arrayToVolume(testInput, 3), 1, testWeights1, 3, 2, 1);
         EXPECT_EQ( res, expected1 );
     }
 
@@ -4063,7 +4063,7 @@ namespace NetUtil_cpp {
         std::vector<double> testInput = {0,0,2,2,2, 1,1,0,2,0, 1,2,1,1,2, 0,1,2,2,1, 1,2,0,0,1, 2,2,1,1,2, 1,1,2,0,0, 2,0,0,2,2, 1,2,2,1,1, 1,1,2,0,1, 0,1,1,0,0, 1,2,0,2,0, 2,0,1,2,0, 2,0,1,0,1, 0,1,2,2,1};
         std::vector<std::vector<std::vector<double> > > testWeights2 = {{{-1,0,1},{-1,1,1},{1,0,0}},   {{0,-1,1},{1,-1,1},{-1,1,-1}},  {{0,0,0},{0,-1,-1},{0,0,1}}};
         std::vector<std::vector<double> > expected2 = {{1,9,1},{-1,-2,1},{4,-7,-4}};
-        std::vector<std::vector<double> > res = NetUtil::convolve(testInput, 1, testWeights2, 3, 2, 0);
+        std::vector<std::vector<double> > res = NetUtil::convolve(NetUtil::arrayToVolume(testInput, 3), 1, testWeights2, 3, 2, 0);
         EXPECT_EQ( res, expected2 );
     }
 

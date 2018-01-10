@@ -84,15 +84,12 @@ std::vector<std::vector<std::vector<double> > > NetUtil::arrayToVolume (std::vec
     return vol;
 }
 
-std::vector<std::vector<double> > NetUtil::convolve(std::vector<double> input, int zP,
+std::vector<std::vector<double> > NetUtil::convolve(std::vector<std::vector<std::vector<double> > > input, int zP,
     std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias) {
 
-    std::vector<std::vector<std::vector<double> > > inputVol = NetUtil::arrayToVolume(input, channels);
     std::vector<std::vector<double> > output;
 
-    int paddedLength = inputVol[0].size() + zP * 2;
-    int fsSpread = floor(weights[0].size() / 2);
-    int outSize = (inputVol[0].size() - weights[0].size() + 2*zP) / stride + 1;
+    int outSize = (input[0].size() - weights[0].size() + 2*zP) / stride + 1;
 
     // Fill with 0 values
     for (int r=0; r<outSize; r++) {
@@ -103,38 +100,36 @@ std::vector<std::vector<double> > NetUtil::convolve(std::vector<double> input, i
         output.push_back(row);
     }
 
-    // For each input channel
-    for (int ci=0; ci<channels; ci++) {
+    int x = -zP;
+    int y = -zP;
 
-        inputVol[ci] = addZeroPadding(inputVol[ci], zP);
+    for (int outY=0; outY<outSize; y+=stride, outY++) {
 
-        // For each inputY without zP
-        for (int inputY=fsSpread; inputY<paddedLength-fsSpread; inputY+=stride) {
+        x = -zP;
 
-            int vi = (inputY-fsSpread)/stride;
+        for (int outX=0; outX<outSize; x+=stride, outX++) {
 
-            // For each inputX without zP
-            for (int inputX=fsSpread; inputX<paddedLength-fsSpread; inputX+=stride) {
+            double sum = 0;
 
-                double sum = 0;
+            for (int weightsY=0; weightsY<weights[0].size(); weightsY++) {
 
-                // For each weightsY on input
-                for (int weightsY=0; weightsY<weights[0].size(); weightsY++) {
-                    // For each weightsX on input
-                    for (int weightsX=0; weightsX<weights[0].size(); weightsX++) {
-                        sum += inputVol[ci][inputY+(weightsY-fsSpread)][inputX+(weightsX-fsSpread)] * weights[ci][weightsY][weightsX];
+                int inputY = y+weightsY;
+
+                for (int weightsX=0; weightsX<weights[0].size(); weightsX++) {
+
+                    int inputX = x+weightsX;
+
+                    if (inputY>=0 && inputY<input[0].size() && inputX>=0 && inputX<input[0].size()) {
+                        for (int di=0; di<channels; di++) {
+                            sum += input[di][inputY][inputX] * weights[di][weightsY][weightsX];
+                        }
                     }
                 }
-
-                output[vi][(inputX-fsSpread)/stride] += sum;
             }
-        }
-    }
 
-    // Then add bias
-    for (int outY=0; outY<output.size(); outY++) {
-        for (int outX=0; outX<output.size(); outX++) {
-            output[outY][outX] += bias;
+            sum += bias;
+
+            output[outY][outX] = sum;
         }
     }
 

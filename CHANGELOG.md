@@ -1,12 +1,15 @@
 # Upcoming - 3.1.0 - Optimizations
 ---
+#### NetUtil
+- Optimized convolve
+
 #### FCLayers
-- Optimised weights structure
-- Optimised bias structure
-- Optimised deltaWeights structure
-- Optimised sums structure
-- Optimised errors structure and net errors propagation
-- Optimised activations structure
+- Optimized weights structure
+- Optimized bias structure
+- Optimized deltaWeights structure
+- Optimized sums structure
+- Optimized errors structure and net errors propagation
+- Optimized activations structure
 
 #### Global
 - Changed framework loading to allow choosing between versions at runtime
@@ -34,15 +37,15 @@
 # 2.1.0 - Optimizations
 ---
 #### NetUtil
-- Optimised addZeroPadding() - ~68% faster
-- Optimised uniform() - ~588% faster
-- Optimised gaussian() - ~450% faster
+- Optimized addZeroPadding() - ~68% faster
+- Optimized uniform() - ~588% faster
+- Optimized gaussian() - ~450% faster
 
 #### FCLayer
-- Optimised resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
+- Optimized resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
 
 #### NetMath
-- Optimised softmax() - ~924% faster
+- Optimized softmax() - ~924% faster
 
 #### ConvLayer
 - Restricted filters' dropout maps only to when dropout is configured - less memory usage

@@ -55,7 +55,7 @@ void ConvLayer::init (int layerIndex) {
 void ConvLayer::forward (void) {
 
     Network* net = Network::getInstance(netInstance);
-    std::vector<double> activations = NetUtil::getActivations(prevLayer);
+    std::vector<std::vector<std::vector<double> > > activations = NetUtil::arrayToVolume(NetUtil::getActivations(prevLayer), channels);
 
     for (int f=0; f<filters.size(); f++) {
 

@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.0.0")
+        expect(Network.version).to.equal("3.1.0")
     })
 })
 

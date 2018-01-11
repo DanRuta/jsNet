@@ -10,6 +10,7 @@
 - Optimized sums structure
 - Optimized errors structure and net errors propagation
 - Optimized activations structure
+- Optimized forward()
 - Optimized backward()
 
 #### Global

@@ -71,11 +71,15 @@ void FCLayer::forward (void) {
                 }
             } else if (prevLayer->type == "Conv") {
 
-                std::vector<double> activations = NetUtil::getActivations(prevLayer);
-
-                for (int ai=0; ai<activations.size(); ai++) {
-                    sums[n] += activations[ai] * weights[n][ai];
+                for (int f=0; f<prevLayer->size; f++) {
+                    for (int y=0; y<prevLayer->outMapSize; y++) {
+                        for (int x=0; x<prevLayer->outMapSize; x++) {
+                            sums[n] += prevLayer->filters[f]->activationMap[y][x]
+                                * weights[n][f*prevLayer->outMapSize*prevLayer->outMapSize + y*prevLayer->outMapSize + x];
+                        }
+                    }
                 }
+
             } else {
                 for (int c=0; c<prevLayer->channels; c++) {
                     for (int r=0; r<prevLayer->outMapSize; r++) {
@@ -136,7 +140,6 @@ void FCLayer::backward (bool lastLayer) {
 
                     for (int ay=0; ay<size; ay++) {
                         for (int ax=0; ax<size; ax++) {
-                            printf("n %d, ay %d, ax %d\n", n, ay, ax);
                             deltaWeights[n][ay*size + ax] += errs[ay*size + ax] * prevLayer->filters[f]->activationMap[ay][ax];
                         }
                     }

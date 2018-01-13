@@ -1060,16 +1060,16 @@ extern "C" {
     double* get_filter_deltaWeights (int instanceIndex, int layerIndex, int filterIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
-        Filter* filter = net->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = net->layers[layerIndex];;
 
-        int weightsDepth = filter->deltaWeights.size();
-        int weightsSpan = filter->deltaWeights[0].size();
+        int weightsDepth = layer->filterDeltaWeights[filterIndex].size();
+        int weightsSpan = layer->filterDeltaWeights[filterIndex][0].size();
         double deltaWeights[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    deltaWeights[d*weightsSpan + r*weightsSpan + c] = filter->deltaWeights[d][r][c];
+                    deltaWeights[d*weightsSpan + r*weightsSpan + c] = layer->filterDeltaWeights[filterIndex][d][r][c];
                 }
             }
         }
@@ -1081,12 +1081,12 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_deltaWeights (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int d=0; d<depth; d++) {
             for (int r=0; r<rows; r++) {
                 for (int c=0; c<cols; c++) {
-                    filter->deltaWeights[d][r][c] = buf[d*rows*cols + r*cols + c];
+                    layer->filterDeltaWeights[filterIndex][d][r][c] = buf[d*rows*cols + r*cols + c];
                 }
             }
         }

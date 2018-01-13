@@ -2,8 +2,6 @@
 void Filter::init (int netInstance, int channels, int filterSize) {
 
     deltaBias = 0;
-    deltaWeights = NetUtil::createVolume<double>(channels, filterSize, filterSize, 0);
-
     Network* net = Network::getInstance(netInstance);
 
     switch (net->updateFnIndex) {

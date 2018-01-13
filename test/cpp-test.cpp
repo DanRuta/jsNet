@@ -1600,8 +1600,10 @@ namespace ConvLayer_cpp {
 
         std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
 
+        layer->filterDeltaWeights = {};
+
         for (int f=0; f<layer->filters.size(); f++) {
-            layer->filters[f]->deltaWeights = expected;
+            layer->filterDeltaWeights.push_back({{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}});
         }
 
         EXPECT_EQ( layer->stride, 1 );
@@ -1610,7 +1612,7 @@ namespace ConvLayer_cpp {
         EXPECT_EQ( prevLayer->neurons.size(), 75 );
 
         for (int f=0; f<layer->filters.size(); f++) {
-            EXPECT_EQ( layer->filters[f]->deltaWeights, expected );
+            EXPECT_EQ( layer->filterDeltaWeights[f], expected );
         }
     }
 
@@ -1622,7 +1624,7 @@ namespace ConvLayer_cpp {
         for (int f=0; f<layer->filters.size(); f++) {
             layer->filters[f]->dropoutMap = {{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false}};
             layer->filters[f]->deltaBias = f;
-            layer->filters[f]->deltaWeights = expected;
+            layer->filterDeltaWeights.push_back(expected);
         }
 
         layer->outMapSize = 5;
@@ -1645,7 +1647,7 @@ namespace ConvLayer_cpp {
 
         for (int f=0; f<layer->filters.size(); f++) {
             EXPECT_NE( layer->filters[f]->deltaBias, f );
-            EXPECT_NE( layer->filters[f]->deltaWeights, expected );
+            EXPECT_NE( layer->filterDeltaWeights[f], expected );
         }
     }
 
@@ -1661,10 +1663,16 @@ namespace ConvLayer_cpp {
 
         nextLayerB->filters = {filter};
         nextLayerB->filterWeights = {{ {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}, {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}} }};
+        nextLayerB->filterDeltaWeights = {{ {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}, {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}} }};
+
         layer->filters = {new Filter(), new Filter()};
+
         layer->filterWeights[0] = { {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}} };
+        layer->filterDeltaWeights[0] = { {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}} };
         layer->filters[0]->init(0, 1, 5);
+
         layer->filterWeights[1] = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
+        layer->filterDeltaWeights[1] = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
         layer->filters[1]->init(0, 1, 5);
 
         layer->errors = { {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}, {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}} };
@@ -1767,19 +1775,21 @@ namespace ConvLayer_cpp {
             net = Network::getInstance(0);
 
             layer = new ConvLayer(0, 3);
+            layer->filterDeltaWeights = {};
 
             for (int f=0; f<3; f++) {
                 layer->filters.push_back(new Filter());
-                layer->filters[f]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
+                layer->filterDeltaWeights.push_back({{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}});
                 layer->filters[f]->dropoutMap = {{true,true,true},{true,true,true},{true,true,true}};
                 layer->errors.push_back({{1,1,1},{1,1,1},{1,1,1}});
             }
 
             layer2 = new ConvLayer(0, 5);
+            layer2->filterDeltaWeights = {};
 
             for (int f=0; f<5; f++) {
                 layer2->filters.push_back(new Filter());
-                layer2->filters[f]->deltaWeights = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
+                layer2->filterDeltaWeights.push_back({{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}});
                 layer2->filters[f]->dropoutMap = {{true,true,true,true,true},{true,true,true,true,true},
                     {true,true,true,true,true},{true,true,true,true,true},{true,true,true,true,true}};
                 layer2->errors.push_back({{1,1,1},{1,1,1},{1,1,1}});
@@ -1807,11 +1817,11 @@ namespace ConvLayer_cpp {
 
 
         for (int f=0; f<3; f++) {
-            EXPECT_EQ( layer->filters[f]->deltaWeights, expectedA );
+            EXPECT_EQ( layer->filterDeltaWeights[f], expectedA );
         }
 
         for (int f=0; f<5; f++) {
-            EXPECT_EQ( layer2->filters[f]->deltaWeights, expectedB );
+            EXPECT_EQ( layer2->filterDeltaWeights[f], expectedB );
         }
     }
 
@@ -1877,13 +1887,14 @@ namespace ConvLayer_cpp {
             net->l2 = 0;
 
             layer = new ConvLayer(0, 5);
+            layer->filterDeltaWeights = {};
 
             for (int i=0; i<4; i++) {
                 layer->filters.push_back(new Filter());
                 layer->filterWeights.push_back({{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}});
                 layer->biases.push_back(0.5);
                 layer->filters[i]->deltaBias = 1;
-                layer->filters[i]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
+                layer->filterDeltaWeights.push_back({{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}});
             }
         }
 
@@ -2732,13 +2743,6 @@ namespace Filter_cpp {
         Network* net;
         Filter* testFilter;
     };
-
-    // Creates a volume of delta weights with depth==channels and the same spacial dimensions as the weights map, with 0 values
-    TEST_F(FilterInitFixture, init_1) {
-        testFilter->init(0, 2, 3);
-        std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
-        EXPECT_EQ( testFilter->deltaWeights,  expected);
-    }
 
     // Sets the filter.deltaBias value to 0
     TEST_F(FilterInitFixture, init_2) {
@@ -4159,11 +4163,11 @@ namespace NetUtil_cpp {
 
             layer->errors = { {{0.1, 0.6, 0.2}, {0.7, 0.3, 0.8}, {0.4, 0.9, 0.5}}, {{-0.5, 0, -0.4}, {0.1, -0.3, 0.2}, {-0.2, 0.3, -0.1}} };
 
-            for (int c=0; c<layer->filters[0]->deltaWeights.size(); c++) {
-                for (int r=0; r<layer->filters[0]->deltaWeights[0].size(); r++) {
-                    for (int v=0; v<layer->filters[0]->deltaWeights[0].size(); v++) {
-                        layer->filters[0]->deltaWeights[c][r][v] = 0;
-                        layer->filters[1]->deltaWeights[c][r][v] = 0;
+            for (int c=0; c<layer->filterDeltaWeights[0].size(); c++) {
+                for (int r=0; r<layer->filterDeltaWeights[0][0].size(); r++) {
+                    for (int v=0; v<layer->filterDeltaWeights[0][0].size(); v++) {
+                        layer->filterDeltaWeights[0][c][r][v] = 0;
+                        layer->filterDeltaWeights[1][c][r][v] = 0;
                     }
                 }
             }
@@ -4194,10 +4198,10 @@ namespace NetUtil_cpp {
         };
         NetUtil::buildConvDWeights(layer);
 
-        for (int c=0; c<layer->filters[0]->deltaWeights.size(); c++) {
-            for (int r=0; r<layer->filters[0]->deltaWeights[0].size(); r++) {
-                for (int v=0; v<layer->filters[0]->deltaWeights[0].size(); v++) {
-                    EXPECT_NEAR( layer->filters[0]->deltaWeights[c][r][v], expected[c][r][v], 1e-8 );
+        for (int c=0; c<layer->filterDeltaWeights[0].size(); c++) {
+            for (int r=0; r<layer->filterDeltaWeights[0][0].size(); r++) {
+                for (int v=0; v<layer->filterDeltaWeights[0][0].size(); v++) {
+                    EXPECT_NEAR( layer->filterDeltaWeights[0][c][r][v], expected[c][r][v], 1e-8 );
                 }
             }
         }
@@ -4212,10 +4216,10 @@ namespace NetUtil_cpp {
         };
         NetUtil::buildConvDWeights(layer);
 
-        for (int c=0; c<layer->filters[1]->deltaWeights.size(); c++) {
-            for (int r=0; r<layer->filters[1]->deltaWeights[0].size(); r++) {
-                for (int v=0; v<layer->filters[1]->deltaWeights[0].size(); v++) {
-                    EXPECT_NEAR( layer->filters[1]->deltaWeights[c][r][v], expected[c][r][v], 1e-8 );
+        for (int c=0; c<layer->filterDeltaWeights[1].size(); c++) {
+            for (int r=0; r<layer->filterDeltaWeights[1][0].size(); r++) {
+                for (int v=0; v<layer->filterDeltaWeights[1][0].size(); v++) {
+                    EXPECT_NEAR( layer->filterDeltaWeights[1][c][r][v], expected[c][r][v], 1e-8 );
                 }
             }
         }

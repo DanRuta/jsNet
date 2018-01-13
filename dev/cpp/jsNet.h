@@ -96,6 +96,8 @@ public:
     std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
 
     std::vector<std::vector<double> > deltaWeights; // FC
+    std::vector<std::vector<std::vector<std::vector<double> > > > filterDeltaWeights;
+
     std::vector<double> biases; // FC
     std::vector<double> sums; // FC
     std::vector<double> errs; // FC
@@ -227,7 +229,6 @@ class Neuron {
 
 class Filter {
 public:
-    std::vector<std::vector<std::vector<double> > > deltaWeights;
     std::vector<std::vector<std::vector<double> > > weightGain;
     std::vector<std::vector<std::vector<double> > > weightsCache;
     std::vector<std::vector<std::vector<double> > > adadeltaCache;

@@ -237,7 +237,7 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
                     for (int wY=0; wY<weightsCount; wY++) {
                         for (int wX=0; wX<weightsCount; wX++) {
                             // activation * error
-                            layer->filters[f]->deltaWeights[c][wY][wX] += inputMap[inY-fsSpread+wY][inX-fsSpread+wX] * error;
+                            layer->filterDeltaWeights[f][c][wY][wX] += inputMap[inY-fsSpread+wY][inX-fsSpread+wX] * error;
                         }
                     }
                 }

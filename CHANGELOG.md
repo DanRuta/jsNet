@@ -5,6 +5,7 @@
 - Optimized bias structure
 - Optimized activations structure
 - Optimized weights structure
+- Optimized deltaWeights structure
 
 #### NetUtil
 - Optimized convolve

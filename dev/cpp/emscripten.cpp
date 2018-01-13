@@ -41,6 +41,16 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    float get_iterations (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->iterations;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_iterations (int instanceIndex, float it) {
+        Network::getInstance(instanceIndex)->iterations = it;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 

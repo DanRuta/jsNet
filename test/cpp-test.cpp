@@ -845,21 +845,28 @@ namespace FCLayer_cpp {
         l4->filters = {new Filter()};
         l4->activations = { {{0.5, 0.5}, {0.5, 0.5}} };
         l4->size = 1;
+        l3->sums = {};
+        l3->errs = {};
+        l3->actvns = {};
+        l3->weights = {};
+        l3->deltaWeights = {};
         l3->prevLayer = l4;
 
-        for (int i=0; i<4; i++) {
-            l3->deltaWeights[i] = {0.25, 0.25, 0.25, 0.25};
-        }
+        l3->neurons = {};
+        l3->init(1);
+        l3->neurons[0]->dropped = false;
+        l3->neurons[1]->dropped = false;
+        l3->neurons[2]->dropped = false;
+        l3->neurons[3]->dropped = false;
+
+        l3->deltaWeights = { {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25} };
+        std::vector<std::vector<double> > expected = { {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275} };
 
         l3->errs = {0.05, 0.05, 0.05, 0.05};
         l3->backward(true);
 
-        for (int n=0; n<4; n++) {
-            EXPECT_NEAR( l3->deltaWeights[0][0], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][1], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][2], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][3], 0.275031, 1e-2 );
-        }
+        EXPECT_EQ( l3->deltaWeights, expected );
+        delete l4;
     }
 
     // Increments the weights accordingly when the next layer is a PoolLayer
@@ -870,21 +877,28 @@ namespace FCLayer_cpp {
         l4->filters = {new Filter()};
         l4->activations = { {{0.5, 0.5}, {0.5, 0.5}} };
         l4->size = 1;
+        l3->sums = {};
+        l3->errs = {};
+        l3->actvns = {};
+        l3->weights = {};
+        l3->deltaWeights = {};
         l3->prevLayer = l4;
 
-        for (int i=0; i<4; i++) {
-            l3->deltaWeights[i] = {0.25, 0.25, 0.25, 0.25};
-        }
+        l3->neurons = {};
+        l3->init(1);
+        l3->neurons[0]->dropped = false;
+        l3->neurons[1]->dropped = false;
+        l3->neurons[2]->dropped = false;
+        l3->neurons[3]->dropped = false;
+
+        l3->deltaWeights = { {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25}, {0.25, 0.25, 0.25, 0.25} };
+        std::vector<std::vector<double> > expected = { {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275}, {0.275, 0.275, 0.275, 0.275} };
 
         l3->errs = {0.05, 0.05, 0.05, 0.05};
         l3->backward(true);
 
-        for (int n=0; n<4; n++) {
-            EXPECT_NEAR( l3->deltaWeights[0][0], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][1], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][2], 0.275031, 1e-2 );
-            EXPECT_NEAR( l3->deltaWeights[0][3], 0.275031, 1e-2 );
-        }
+        EXPECT_EQ( l3->deltaWeights, expected );
+        delete l4;
     }
 
     class FCApplyDeltaWeightsFixture : public ::testing::Test {

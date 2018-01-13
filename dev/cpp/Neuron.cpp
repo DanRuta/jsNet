@@ -3,6 +3,8 @@ void Neuron::init (int netInstance, int weightsCount) {
 
     Network* net = Network::getInstance(netInstance);
 
+    dropped = false;
+
     switch (net->updateFnIndex) {
         case 1: // gain
             biasGain = 1;

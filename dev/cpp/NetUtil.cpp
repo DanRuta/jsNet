@@ -247,7 +247,7 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
         // Increment the deltaBias by the sum of all errors in the filter
         for (int eY=0; eY<layer->errors[f].size(); eY++) {
             for (int eX=0; eX<layer->errors[f].size(); eX++) {
-                layer->filters[f]->deltaBias += layer->errors[f][eY][eX];
+                layer->deltaBiases[f] += layer->errors[f][eY][eX];
             }
         }
     }

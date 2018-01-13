@@ -1048,12 +1048,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_filter_deltaBias (int instanceIndex, int layerIndex, int filterIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->deltaBias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[filterIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_filter_deltaBias (int instanceIndex, int layerIndex, int filterIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->deltaBias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[filterIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

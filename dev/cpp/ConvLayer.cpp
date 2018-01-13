@@ -27,6 +27,10 @@ void ConvLayer::assignPrev (Layer* l) {
 void ConvLayer::init (int layerIndex) {
 
     Network* net = Network::getInstance(netInstance);
+
+    biases = std::vector<double>(filters.size(), 1);
+    deltaBiases = std::vector<double>(filters.size(), 0);
+
     for (int f=0; f<filters.size(); f++) {
 
         filterWeights.push_back({});
@@ -40,8 +44,6 @@ void ConvLayer::init (int layerIndex) {
                 filterWeights[f][c].push_back(net->weightInitFn(netInstance, layerIndex, filterSize));
             }
         }
-
-        biases.push_back(1);
 
         if (net->dropout != 1) {
             filters[f]->dropoutMap = NetUtil::createVolume<bool>(1, outMapSize, outMapSize, 0)[0];
@@ -149,9 +151,9 @@ void ConvLayer::backward (bool lastLayer) {
 
 void ConvLayer::resetDeltaWeights (void) {
 
-    for (int f=0; f<filters.size(); f++) {
+    deltaBiases = std::vector<double>(size, 0);
 
-        filters[f]->deltaBias = 0;
+    for (int f=0; f<filters.size(); f++) {
 
         for (int c=0; c<filterDeltaWeights[f].size(); c++) {
             for (int r=0; r<filterDeltaWeights[f][0].size(); r++) {
@@ -212,7 +214,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::vanillaupdatefn(netInstance, biases[f], filters[f]->deltaBias);
+                biases[f] = NetMath::vanillaupdatefn(netInstance, biases[f], deltaBiases[f]);
             }
             break;
         case 1: // gain
@@ -231,7 +233,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::gain(netInstance, biases[f], filters[f]->deltaBias, filters[f], -1, -1, -1);
+                biases[f] = NetMath::gain(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
         case 2: // adagrad
@@ -250,7 +252,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::adagrad(netInstance, biases[f], filters[f]->deltaBias, filters[f], -1, -1, -1);
+                biases[f] = NetMath::adagrad(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
         case 3: // rmsprop
@@ -269,7 +271,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::rmsprop(netInstance, biases[f], filters[f]->deltaBias, filters[f], -1, -1, -1);
+                biases[f] = NetMath::rmsprop(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
         case 4: // adam
@@ -288,7 +290,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::adam(netInstance, biases[f], filters[f]->deltaBias, filters[f], -1, -1, -1);
+                biases[f] = NetMath::adam(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
         case 5: // adadelta
@@ -307,7 +309,7 @@ void ConvLayer::applyDeltaWeights (void) {
                         }
                     }
                 }
-                biases[f] = NetMath::adadelta(netInstance, biases[f], filters[f]->deltaBias, filters[f], -1, -1, -1);
+                biases[f] = NetMath::adadelta(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
     }

@@ -1,7 +1,6 @@
 
 void Filter::init (int netInstance, int channels, int filterSize) {
 
-    deltaBias = 0;
     Network* net = Network::getInstance(netInstance);
 
     switch (net->updateFnIndex) {

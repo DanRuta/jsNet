@@ -1464,6 +1464,7 @@ namespace ConvLayer_cpp {
             layer->stride = 1;
             layer->outMapSize = 5;
             layer->inMapValuesCount = 25;
+            layer->deltaBiases = {};
 
             layer->assignPrev(prevLayer);
             layer->assignNext(nextLayerB);
@@ -1581,15 +1582,17 @@ namespace ConvLayer_cpp {
     // Does not increment the deltaBias when all values are dropped out
     TEST_F(ConvBackwardFixture, backward_3) {
 
+        layer->deltaBiases = {};
+
         for (int f=0; f<layer->filters.size(); f++) {
-            layer->filters[f]->deltaBias = f;
+            layer->deltaBiases.push_back(f);
         }
 
         layer->outMapSize = 5;
         layer->backward();
 
         for (int f=0; f<layer->filters.size(); f++) {
-            EXPECT_EQ( layer->filters[f]->deltaBias, f );
+            EXPECT_EQ( layer->deltaBiases[f], f );
         }
     }
 
@@ -1621,7 +1624,7 @@ namespace ConvLayer_cpp {
 
         for (int f=0; f<layer->filters.size(); f++) {
             layer->filters[f]->dropoutMap = {{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false},{false,false,false,false,false}};
-            layer->filters[f]->deltaBias = f;
+            layer->deltaBiases.push_back(f);
             layer->filterDeltaWeights.push_back(expected);
         }
 
@@ -1644,7 +1647,7 @@ namespace ConvLayer_cpp {
         layer->backward();
 
         for (int f=0; f<layer->filters.size(); f++) {
-            EXPECT_NE( layer->filters[f]->deltaBias, f );
+            EXPECT_NE( layer->deltaBiases[f], f );
             EXPECT_NE( layer->filterDeltaWeights[f], expected );
         }
     }
@@ -1774,6 +1777,7 @@ namespace ConvLayer_cpp {
 
             layer = new ConvLayer(0, 3);
             layer->filterDeltaWeights = {};
+            layer->deltaBiases = {};
 
             for (int f=0; f<3; f++) {
                 layer->filters.push_back(new Filter());
@@ -1784,6 +1788,7 @@ namespace ConvLayer_cpp {
 
             layer2 = new ConvLayer(0, 5);
             layer2->filterDeltaWeights = {};
+            layer2->deltaBiases = {};
 
             for (int f=0; f<5; f++) {
                 layer2->filters.push_back(new Filter());
@@ -1848,11 +1853,11 @@ namespace ConvLayer_cpp {
         layer2->resetDeltaWeights();
 
         for (int f=0; f<3; f++) {
-            EXPECT_EQ( layer->filters[f]->deltaBias, 0 );
+            EXPECT_EQ( layer->deltaBiases[f], 0 );
         }
 
         for (int f=0; f<5; f++) {
-            EXPECT_EQ( layer2->filters[f]->deltaBias, 0 );
+            EXPECT_EQ( layer2->deltaBiases[f], 0 );
         }
     }
 
@@ -1886,12 +1891,13 @@ namespace ConvLayer_cpp {
 
             layer = new ConvLayer(0, 5);
             layer->filterDeltaWeights = {};
+            layer->deltaBiases = {};
 
             for (int i=0; i<4; i++) {
                 layer->filters.push_back(new Filter());
                 layer->filterWeights.push_back({{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}});
                 layer->biases.push_back(0.5);
-                layer->filters[i]->deltaBias = 1;
+                layer->deltaBiases.push_back(1);
                 layer->filterDeltaWeights.push_back({{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}});
             }
         }
@@ -2734,13 +2740,6 @@ namespace Filter_cpp {
         Network* net;
         Filter* testFilter;
     };
-
-    // Sets the filter.deltaBias value to 0
-    TEST_F(FilterInitFixture, init_2) {
-        testFilter->deltaBias = 99;
-        testFilter->init(0, 2, 3);
-        EXPECT_EQ( testFilter->deltaBias, 0 );
-    }
 
     // Creates a weightGain map if the updateFn parameter is gain, with the same dimensions as weights, with 1 values
     TEST_F(FilterInitFixture, init_3) {
@@ -4141,6 +4140,7 @@ namespace NetUtil_cpp {
             layer->stride = 2;
             layer->inMapValuesCount = 25;
             layer->outMapSize = 14;
+            layer->deltaBiases = {};
             prevLayer = new FCLayer(0, 75);
 
             prevLayer->init(0);
@@ -4176,8 +4176,8 @@ namespace NetUtil_cpp {
     // Sets the filter 1 deltaBias to 4.5 and filter 2 deltaBias to -0.9
     TEST_F(BuildConvDWeightsFixture, buildConvDWeights_1) {
         NetUtil::buildConvDWeights(layer);
-        EXPECT_EQ( layer->filters[0]->deltaBias, 4.5 );
-        EXPECT_EQ( layer->filters[1]->deltaBias, -0.9 );
+        EXPECT_EQ( layer->deltaBiases[0], 4.5 );
+        EXPECT_EQ( layer->deltaBiases[1], -0.9 );
     }
 
     // Sets the filter 1 deltaWeights to hand worked out values

@@ -236,11 +236,8 @@ public:
     std::vector<std::vector<bool> > dropoutMap;
     double lreluSlope;
     double rreluSlope;
-    double deltaBias;
     double derivative;
     double activation;
-    double sum;
-    double error;
     double eluAlpha;
     double biasGain;
     double adadeltaBiasCache;

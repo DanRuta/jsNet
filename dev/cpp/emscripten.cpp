@@ -1002,12 +1002,12 @@ extern "C" {
     /* Filter */
     EMSCRIPTEN_KEEPALIVE
     double get_filter_bias (int instanceIndex, int layerIndex, int filterIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->bias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->biases[filterIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_filter_bias (int instanceIndex, int layerIndex, int filterIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->bias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->biases[filterIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

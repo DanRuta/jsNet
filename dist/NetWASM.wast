@@ -13908,8 +13908,11 @@
   (local $28 i32)
   (local $29 i32)
   (local $30 i32)
-  (local $31 f32)
-  (set_local $12
+  (local $31 i32)
+  (local $32 i32)
+  (local $33 i32)
+  (local $34 f32)
+  (set_local $11
    (get_global $STACKTOP)
   )
   (set_global $STACKTOP
@@ -13919,25 +13922,25 @@
    )
   )
   (set_local $7
-   (i32.add
-    (get_local $12)
-    (i32.const 36)
-   )
+   (get_local $11)
   )
   (set_local $10
    (i32.add
-    (get_local $12)
-    (i32.const 24)
+    (get_local $11)
+    (i32.const 36)
    )
   )
   (set_local $14
    (i32.add
-    (get_local $12)
-    (i32.const 12)
+    (get_local $11)
+    (i32.const 24)
    )
   )
   (set_local $15
-   (get_local $12)
+   (i32.add
+    (get_local $11)
+    (i32.const 12)
+   )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:29:0
   (set_local $17
@@ -13973,7 +13976,7 @@
    )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:30:0
-  (set_local $11
+  (set_local $12
    (i32.add
     (get_local $0)
     (i32.const 80)
@@ -13993,7 +13996,7 @@
   )
   (set_local $8
    (i32.load
-    (get_local $11)
+    (get_local $12)
    )
   )
   (if
@@ -14107,7 +14110,7 @@
      (get_local $1)
     )
     (set_global $STACKTOP
-     (get_local $12)
+     (get_local $11)
     )
     ;;@ ./dev/cpp/ConvLayer.cpp:54:0
     (return)
@@ -14125,7 +14128,19 @@
     (i32.const 56)
    )
   )
-  (set_local $26
+  (set_local $24
+   (i32.add
+    (get_local $0)
+    (i32.const 168)
+   )
+  )
+  (set_local $27
+   (i32.add
+    (get_local $0)
+    (i32.const 172)
+   )
+  )
+  (set_local $28
    (i32.add
     (get_local $3)
     (i32.const 44)
@@ -14135,6 +14150,12 @@
    (i32.add
     (get_local $15)
     (i32.const 4)
+   )
+  )
+  (set_local $29
+   (i32.add
+    (get_local $0)
+    (i32.const 164)
    )
   )
   (set_local $20
@@ -14149,25 +14170,25 @@
     (i32.const 4)
    )
   )
-  (set_local $27
+  (set_local $30
    (i32.add
     (get_local $7)
     (i32.const 8)
    )
   )
-  (set_local $24
+  (set_local $25
    (i32.add
     (get_local $0)
     (i32.const 36)
    )
   )
-  (set_local $28
+  (set_local $31
    (i32.add
     (get_local $3)
     (i32.const 160)
    )
   )
-  (set_local $29
+  (set_local $32
    (i32.add
     (get_local $7)
     (i32.const 8)
@@ -14179,7 +14200,7 @@
     (i32.const 4)
    )
   )
-  (set_local $25
+  (set_local $26
    (i32.add
     (get_local $10)
     (i32.const 8)
@@ -14217,13 +14238,13 @@
       )
       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\memory:2210:0
       (i32.store
-       (get_local $27)
+       (get_local $30)
        (i32.const 0)
       )
       ;;@ ./dev/cpp/ConvLayer.cpp:36:0
       (set_local $2
        (i32.load
-        (get_local $24)
+        (get_local $25)
        )
       )
       (if
@@ -14239,7 +14260,7 @@
          ;;@ ./dev/cpp/ConvLayer.cpp:37:0
          (set_local $4
           (i32.load
-           (get_local $28)
+           (get_local $31)
           )
          )
          (set_local $5
@@ -14268,7 +14289,7 @@
          )
          (set_local $4
           (i32.load
-           (get_local $29)
+           (get_local $32)
           )
          )
          (if
@@ -14328,7 +14349,7 @@
            ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1238:0
            (set_local $4
             (i32.load
-             (get_local $25)
+             (get_local $26)
             )
            )
            ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\memory:2234:0
@@ -14345,7 +14366,7 @@
            )
            ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1239:0
            (i32.store
-            (get_local $25)
+            (get_local $26)
             (i32.const 0)
            )
            (i32.store
@@ -14444,7 +14465,7 @@
          )
          (set_local $2
           (i32.load
-           (get_local $24)
+           (get_local $25)
           )
          )
          (br_if $while-in3
@@ -14459,7 +14480,7 @@
       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
       (set_local $2
        (i32.load
-        (get_local $11)
+        (get_local $12)
        )
       )
       (set_local $2
@@ -14703,7 +14724,7 @@
    )
    (set_local $2
     (i32.load
-     (get_local $11)
+     (get_local $12)
     )
    )
    (set_local $2
@@ -14859,7 +14880,7 @@
                    (get_local $9)
                   )
                   (block
-                   (set_local $30
+                   (set_local $33
                     (i32.add
                      (get_local $2)
                      (i32.const -8)
@@ -14873,7 +14894,7 @@
                       (i32.xor
                        (i32.shr_u
                         (i32.sub
-                         (get_local $30)
+                         (get_local $33)
                          (get_local $9)
                         )
                         (i32.const 3)
@@ -14949,46 +14970,60 @@
      )
     )
    )
-   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-   (set_local $2
-    (i32.load
-     (get_local $11)
-    )
-   )
-   (set_local $2
-    (i32.add
-     (get_local $2)
-     (i32.shl
-      (get_local $8)
-      (i32.const 2)
-     )
-    )
-   )
    ;;@ ./dev/cpp/ConvLayer.cpp:44:0
-   (set_local $2
-    (i32.load
-     (get_local $2)
-    )
-   )
-   (set_local $2
-    (i32.add
-     (get_local $2)
-     (i32.const 112)
-    )
-   )
    (f64.store
-    (get_local $2)
+    (get_local $7)
     (f64.const 1)
    )
+   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1601:0
+   (set_local $2
+    (i32.load
+     (get_local $24)
+    )
+   )
+   (set_local $3
+    (i32.load
+     (get_local $27)
+    )
+   )
+   (if
+    (i32.lt_u
+     (get_local $2)
+     (get_local $3)
+    )
+    (block
+     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\memory:1783:0
+     (f64.store
+      (get_local $2)
+      (f64.const 1)
+     )
+     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1608:0
+     (set_local $2
+      (i32.add
+       (get_local $2)
+       (i32.const 8)
+      )
+     )
+     (i32.store
+      (get_local $24)
+      (get_local $2)
+     )
+    )
+    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1611:0
+    (call $__ZNSt3__26vectorIdNS_9allocatorIdEEE21__push_back_slow_pathIdEEvOT_
+     (get_local $29)
+     (get_local $7)
+    )
+   )
    ;;@ ./dev/cpp/ConvLayer.cpp:46:0
-   (set_local $31
+   (set_local $34
     (f32.load
-     (get_local $26)
+     (get_local $28)
     )
    )
    (if
     (f32.ne
-     (get_local $31)
+     (get_local $34)
      (f32.const 1)
     )
     (block
@@ -15013,7 +15048,7 @@
      )
      (set_local $2
       (i32.load
-       (get_local $11)
+       (get_local $12)
       )
      )
      (set_local $2
@@ -15213,7 +15248,7 @@
    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
    (set_local $2
     (i32.load
-     (get_local $11)
+     (get_local $12)
     )
    )
    (set_local $2
@@ -15255,7 +15290,7 @@
    )
    (set_local $6
     (i32.load
-     (get_local $11)
+     (get_local $12)
     )
    )
    (set_local $3
@@ -15378,7 +15413,7 @@
    (get_local $1)
   )
   (set_global $STACKTOP
-   (get_local $12)
+   (get_local $11)
   )
  )
  (func $__ZN7NetUtil12createVolumeIdEENSt3__26vectorINS2_INS2_IT_NS1_9allocatorIS3_EEEENS4_IS6_EEEENS4_IS8_EEEEiiiS3_ (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (param $4 f64)
@@ -18302,7 +18337,8 @@
   (local $28 i32)
   (local $29 i32)
   (local $30 i32)
-  (local $31 i64)
+  (local $31 i32)
+  (local $32 i64)
   (set_local $14
    (get_global $STACKTOP)
   )
@@ -18318,7 +18354,7 @@
     (i32.const 48)
    )
   )
-  (set_local $12
+  (set_local $11
    (i32.add
     (get_local $14)
     (i32.const 36)
@@ -18514,7 +18550,7 @@
      )
     )
     (call $__ZN7NetUtil13arrayToVolumeENSt3__26vectorIdNS0_9allocatorIdEEEEi
-     (get_local $12)
+     (get_local $11)
      (get_local $7)
      (get_local $1)
     )
@@ -18562,7 +18598,7 @@
            (get_local $2)
            (block (result i32)
             ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:416:0
-            (set_local $11
+            (set_local $12
              (i32.add
               (get_local $1)
               (i32.const -8)
@@ -18570,7 +18606,7 @@
             )
             (set_local $1
              (i32.load
-              (get_local $11)
+              (get_local $12)
              )
             )
             (if
@@ -18588,7 +18624,7 @@
                 )
                )
                (i32.store
-                (get_local $11)
+                (get_local $12)
                 (get_local $5)
                )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:442:0
@@ -18656,7 +18692,7 @@
                    (get_local $6)
                   )
                   (i32.load
-                   (get_local $11)
+                   (get_local $12)
                   )
                  )
                  (get_local $5)
@@ -18739,7 +18775,7 @@
     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1332:0
     (set_local $3
      (i32.load
-      (get_local $12)
+      (get_local $11)
      )
     )
     (i32.store
@@ -18749,7 +18785,7 @@
     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1333:0
     (set_local $3
      (i32.add
-      (get_local $12)
+      (get_local $11)
       (i32.const 4)
      )
     )
@@ -18765,7 +18801,7 @@
     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\memory:2234:0
     (set_local $4
      (i32.add
-      (get_local $12)
+      (get_local $11)
       (i32.const 8)
      )
     )
@@ -18789,7 +18825,7 @@
      (i32.const 0)
     )
     (i32.store
-     (get_local $12)
+     (get_local $11)
      (i32.const 0)
     )
     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:442:0
@@ -18994,7 +19030,7 @@
    )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:70:0
-  (set_local $11
+  (set_local $12
    (i32.add
     (get_local $0)
     (i32.const 80)
@@ -19014,7 +19050,7 @@
   )
   (set_local $3
    (i32.load
-    (get_local $11)
+    (get_local $12)
    )
   )
   (if
@@ -19042,15 +19078,21 @@
       (i32.const 40)
      )
     )
+    (set_local $28
+     (i32.add
+      (get_local $0)
+      (i32.const 164)
+     )
+    )
     (set_local $23
      (i32.add
-      (get_local $12)
+      (get_local $11)
       (i32.const 4)
      )
     )
     (set_local $24
      (i32.add
-      (get_local $12)
+      (get_local $11)
       (i32.const 8)
      )
     )
@@ -19060,19 +19102,19 @@
       (i32.const 44)
      )
     )
-    (set_local $28
+    (set_local $29
      (i32.add
       (get_local $16)
       (i32.const 40)
      )
     )
-    (set_local $29
+    (set_local $30
      (i32.add
       (get_local $0)
       (i32.const 64)
      )
     )
-    (set_local $30
+    (set_local $31
      (i32.add
       (get_local $0)
       (i32.const 224)
@@ -19107,7 +19149,7 @@
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
      (set_local $1
       (i32.load
-       (get_local $11)
+       (get_local $12)
       )
      )
      (set_local $1
@@ -19142,7 +19184,7 @@
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
      (set_local $4
       (i32.load
-       (get_local $11)
+       (get_local $28)
       )
      )
      (set_local $4
@@ -19150,29 +19192,18 @@
        (get_local $4)
        (i32.shl
         (get_local $7)
-        (i32.const 2)
+        (i32.const 3)
        )
       )
      )
      ;;@ ./dev/cpp/ConvLayer.cpp:72:0
-     (set_local $4
-      (i32.load
-       (get_local $4)
-      )
-     )
-     (set_local $4
-      (i32.add
-       (get_local $4)
-       (i32.const 112)
-      )
-     )
      (set_local $9
       (f64.load
        (get_local $4)
       )
      )
      (call $__ZN7NetUtil8convolveENSt3__26vectorINS1_INS1_IdNS0_9allocatorIdEEEENS2_IS4_EEEENS2_IS6_EEEEiS8_iid
-      (get_local $12)
+      (get_local $11)
       (get_local $17)
       (get_local $0)
       (get_local $18)
@@ -19183,7 +19214,7 @@
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
      (set_local $0
       (i32.load
-       (get_local $11)
+       (get_local $12)
       )
      )
      (set_local $0
@@ -19381,7 +19412,7 @@
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1332:0
      (set_local $3
       (i32.load
-       (get_local $12)
+       (get_local $11)
       )
      )
      (i32.store
@@ -19418,7 +19449,7 @@
       (i32.const 0)
      )
      (i32.store
-      (get_local $12)
+      (get_local $11)
       (i32.const 0)
      )
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:442:0
@@ -19806,7 +19837,7 @@
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
      (set_local $3
       (i32.load
-       (get_local $11)
+       (get_local $12)
       )
      )
      (set_local $0
@@ -19911,7 +19942,7 @@
                ;;@ ./dev/cpp/ConvLayer.cpp:78:0
                (i64.store
                 (i32.const 5224)
-                (tee_local $31
+                (tee_local $32
                  (i64.add
                   (i64.mul
                    (i64.load
@@ -19926,7 +19957,7 @@
                (set_local $0
                 (i32.wrap/i64
                  (i64.shr_u
-                  (get_local $31)
+                  (get_local $32)
                   (i64.const 33)
                  )
                 )
@@ -19961,7 +19992,7 @@
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
                (set_local $1
                 (i32.load
-                 (get_local $11)
+                 (get_local $12)
                 )
                )
                (set_local $0
@@ -20086,7 +20117,7 @@
                )
                (set_local $3
                 (i32.load8_s
-                 (get_local $28)
+                 (get_local $29)
                 )
                )
                (br_if $__rjti$0
@@ -20197,7 +20228,7 @@
             ;;@ ./dev/cpp/ConvLayer.cpp:84:0
             (set_local $3
              (i32.load8_s
-              (get_local $29)
+              (get_local $30)
              )
             )
             (if
@@ -20206,7 +20237,7 @@
               ;;@ ./dev/cpp/ConvLayer.cpp:86:0
               (set_local $3
                (i32.load
-                (get_local $30)
+                (get_local $31)
                )
               )
               ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
@@ -20301,7 +20332,7 @@
                 (i32.add
                  (tee_local $1
                   (i32.load
-                   (get_local $11)
+                   (get_local $12)
                   )
                  )
                  (i32.shl
@@ -28574,24 +28605,24 @@
   (local $3 i32)
   (local $4 f64)
   (local $5 f64)
-  (local $6 f64)
+  (local $6 i32)
   (local $7 f64)
   (local $8 i32)
-  (local $9 f64)
+  (local $9 i32)
   (local $10 f64)
   (local $11 i32)
-  (local $12 i32)
+  (local $12 f64)
   (local $13 i32)
   (local $14 f64)
   (local $15 i32)
   (local $16 i32)
   (local $17 i32)
-  (local $18 i32)
+  (local $18 f64)
   (local $19 i32)
-  (local $20 f64)
-  (local $21 i32)
+  (local $20 i32)
+  (local $21 f32)
   (local $22 i32)
-  (local $23 i32)
+  (local $23 f64)
   (local $24 i32)
   (local $25 i32)
   (local $26 i32)
@@ -28607,173 +28638,174 @@
   (local $36 i32)
   (local $37 i32)
   (local $38 i32)
-  (local $39 f32)
+  (local $39 i32)
   (local $40 i32)
+  (local $41 i32)
   ;;@ ./dev/cpp/ConvLayer.cpp:181:0
-  (set_local $1
+  (set_local $3
    (i32.add
     (get_local $0)
     (i32.const 4)
    )
   )
-  (set_local $40
+  (set_local $26
    (i32.load
-    (get_local $1)
+    (get_local $3)
    )
   )
   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-  (set_local $1
+  (set_local $3
    (i32.load
     (i32.const 5232)
    )
   )
-  (set_local $1
+  (set_local $3
    (i32.add
-    (get_local $1)
+    (get_local $3)
     (i32.shl
-     (get_local $40)
+     (get_local $26)
      (i32.const 2)
     )
    )
   )
   ;;@ ./dev/cpp/Network.cpp:36:0
-  (set_local $12
+  (set_local $15
    (i32.load
-    (get_local $1)
+    (get_local $3)
    )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:183:0
-  (set_local $1
+  (set_local $3
    (i32.add
     (get_local $0)
     (i32.const 80)
    )
   )
   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-  (set_local $0
+  (set_local $2
    (i32.add
     (get_local $0)
     (i32.const 84)
    )
   )
-  (set_local $17
-   (i32.load
-    (get_local $0)
-   )
-  )
   (set_local $13
    (i32.load
-    (get_local $1)
+    (get_local $2)
+   )
+  )
+  (set_local $2
+   (i32.load
+    (get_local $3)
    )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:183:0
-  (set_local $15
+  (set_local $17
    (i32.eq
-    (get_local $17)
     (get_local $13)
+    (get_local $2)
    )
   )
-  (set_local $8
-   (get_local $13)
+  (set_local $3
+   (get_local $2)
   )
   (if
    (i32.eqz
-    (get_local $15)
+    (get_local $17)
    )
    (block
-    (set_local $22
+    (set_local $24
      (i32.shr_s
       (i32.sub
-       (get_local $17)
        (get_local $13)
+       (get_local $2)
       )
       (i32.const 2)
      )
     )
-    (set_local $24
+    (set_local $27
      (i32.add
-      (get_local $12)
+      (get_local $15)
       (i32.const 48)
-     )
-    )
-    (set_local $21
-     (i32.add
-      (get_local $12)
-      (i32.const 56)
      )
     )
     (set_local $25
      (i32.add
-      (get_local $12)
+      (get_local $15)
+      (i32.const 56)
+     )
+    )
+    (set_local $28
+     (i32.add
+      (get_local $15)
       (i32.const 64)
      )
     )
-    (set_local $23
+    (set_local $19
      (i32.add
-      (get_local $12)
+      (get_local $15)
       (i32.const 72)
      )
     )
-    (set_local $1
+    (set_local $6
      (i32.const 0)
     )
     (loop $while-in
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-     (set_local $0
+     (set_local $1
       (i32.add
-       (get_local $8)
+       (get_local $3)
        (i32.shl
-        (get_local $1)
+        (get_local $6)
         (i32.const 2)
        )
       )
      )
      ;;@ ./dev/cpp/ConvLayer.cpp:184:0
-     (set_local $19
+     (set_local $22
       (i32.load
-       (get_local $0)
+       (get_local $1)
       )
      )
-     (set_local $0
+     (set_local $1
       (i32.add
-       (get_local $19)
+       (get_local $22)
        (i32.const 12)
       )
      )
      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-     (set_local $2
+     (set_local $9
       (i32.add
-       (get_local $19)
+       (get_local $22)
        (i32.const 16)
       )
      )
-     (set_local $2
+     (set_local $9
       (i32.load
-       (get_local $2)
+       (get_local $9)
       )
      )
-     (set_local $0
+     (set_local $1
       (i32.load
-       (get_local $0)
+       (get_local $1)
       )
      )
      (if
       ;;@ ./dev/cpp/ConvLayer.cpp:184:0
       (i32.ne
-       (get_local $2)
-       (get_local $0)
+       (get_local $9)
+       (get_local $1)
       )
       (block
-       (set_local $26
+       (set_local $29
         (i32.eq
          (i32.load offset=4
-          (tee_local $0
+          (tee_local $1
            (i32.load offset=12
             (i32.load
              (i32.add
-              (get_local $8)
+              (get_local $3)
               (i32.shl
-               (get_local $1)
+               (get_local $6)
                (i32.const 2)
               )
              )
@@ -28782,20 +28814,20 @@
           )
          )
          (i32.load
-          (get_local $0)
+          (get_local $1)
          )
         )
        )
-       (set_local $27
+       (set_local $30
         (i32.div_s
          (i32.sub
           (i32.load offset=16
-           (tee_local $0
+           (tee_local $1
             (i32.load
              (i32.add
-              (get_local $8)
+              (get_local $3)
               (i32.shl
-               (get_local $1)
+               (get_local $6)
                (i32.const 2)
               )
              )
@@ -28803,62 +28835,62 @@
            )
           )
           (i32.load offset=12
-           (get_local $0)
+           (get_local $1)
           )
          )
          (i32.const 12)
         )
        )
-       (set_local $28
+       (set_local $31
         (i32.add
-         (get_local $8)
+         (get_local $3)
          (i32.shl
-          (get_local $1)
+          (get_local $6)
           (i32.const 2)
          )
         )
        )
-       (set_local $29
+       (set_local $32
         (i32.add
-         (get_local $8)
+         (get_local $3)
          (i32.shl
-          (get_local $1)
+          (get_local $6)
           (i32.const 2)
          )
         )
        )
-       (set_local $30
+       (set_local $33
         (i32.add
-         (get_local $8)
+         (get_local $3)
          (i32.shl
-          (get_local $1)
+          (get_local $6)
           (i32.const 2)
          )
         )
        )
-       (set_local $2
+       (set_local $9
         (i32.const 0)
        )
        (loop $while-in1
         (if
          (i32.eqz
-          (get_local $26)
+          (get_local $29)
          )
          (block
-          (set_local $31
+          (set_local $34
            (i32.div_s
             (i32.sub
              (i32.load offset=4
-              (tee_local $0
+              (tee_local $1
                (i32.load offset=12
                 (i32.load
-                 (get_local $29)
+                 (get_local $32)
                 )
                )
               )
              )
              (i32.load
-              (get_local $0)
+              (get_local $1)
              )
             )
             (i32.const 12)
@@ -28867,12 +28899,12 @@
           (if
            (i32.ne
             (i32.load offset=4
-             (tee_local $0
+             (tee_local $1
               (i32.load
                (i32.load offset=12
-                (tee_local $18
+                (tee_local $16
                  (i32.load
-                  (get_local $28)
+                  (get_local $31)
                  )
                 )
                )
@@ -28880,20 +28912,20 @@
              )
             )
             (i32.load
-             (get_local $0)
+             (get_local $1)
             )
            )
            (block
-            (set_local $32
+            (set_local $35
              (i32.shr_s
               (i32.sub
                (i32.load offset=4
-                (tee_local $0
+                (tee_local $1
                  (i32.load
                   (i32.load offset=12
-                   (tee_local $16
+                   (tee_local $11
                     (i32.load
-                     (get_local $30)
+                     (get_local $33)
                     )
                    )
                   )
@@ -28901,242 +28933,242 @@
                 )
                )
                (i32.load
-                (get_local $0)
+                (get_local $1)
                )
               )
               (i32.const 3)
              )
             )
-            (set_local $33
+            (set_local $36
              (f64.ne
-              (tee_local $5
+              (tee_local $4
                (f64.load
-                (get_local $24)
+                (get_local $27)
                )
               )
               (f64.const 0)
              )
             )
-            (set_local $4
+            (set_local $5
              (f64.mul
-              (get_local $5)
+              (get_local $4)
               (f64.const 0.5)
              )
             )
-            (set_local $3
+            (set_local $20
              (i32.const 0)
             )
             (loop $while-in3
-             (set_local $11
+             (set_local $8
               (i32.const 0)
              )
-             (set_local $0
-              (get_local $18)
+             (set_local $1
+              (get_local $16)
              )
              (loop $while-in5
               (if
-               (get_local $33)
+               (get_local $36)
                (block
                 ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.mul
-                   (get_local $2)
+                   (get_local $9)
                    (i32.const 12)
                   )
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.mul
-                   (get_local $3)
+                   (get_local $20)
                    (i32.const 12)
                   )
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.shl
-                   (get_local $11)
+                   (get_local $8)
                    (i32.const 3)
                   )
                  )
                 )
                 ;;@ ./dev/cpp/ConvLayer.cpp:187:0
-                (set_local $5
+                (set_local $4
                  (f64.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
                 ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-                (set_local $5
+                (set_local $4
                  (f64.mul
-                  (get_local $5)
-                  (get_local $5)
+                  (get_local $4)
+                  (get_local $4)
                  )
                 )
                 ;;@ ./dev/cpp/ConvLayer.cpp:187:0
-                (set_local $5
+                (set_local $4
                  (f64.mul
+                  (get_local $5)
                   (get_local $4)
-                  (get_local $5)
                  )
                 )
-                (set_local $9
+                (set_local $7
                  (f64.load
-                  (get_local $21)
+                  (get_local $25)
                  )
                 )
-                (set_local $5
+                (set_local $4
                  (f64.add
-                  (get_local $9)
-                  (get_local $5)
+                  (get_local $7)
+                  (get_local $4)
                  )
                 )
                 (f64.store
-                 (get_local $21)
-                 (get_local $5)
+                 (get_local $25)
+                 (get_local $4)
                 )
                )
               )
               ;;@ ./dev/cpp/ConvLayer.cpp:188:0
-              (set_local $5
+              (set_local $4
                (f64.load
-                (get_local $25)
+                (get_local $28)
                )
               )
               (if
                (f64.ne
-                (get_local $5)
+                (get_local $4)
                 (f64.const 0)
                )
                (block
                 ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $19)
+                  (get_local $22)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.mul
-                   (get_local $2)
+                   (get_local $9)
                    (i32.const 12)
                   )
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.mul
-                   (get_local $3)
+                   (get_local $20)
                    (i32.const 12)
                   )
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $0
+                (set_local $1
                  (i32.add
-                  (get_local $0)
+                  (get_local $1)
                   (i32.shl
-                   (get_local $11)
+                   (get_local $8)
                    (i32.const 3)
                   )
                  )
                 )
                 ;;@ ./dev/cpp/ConvLayer.cpp:188:0
-                (set_local $9
+                (set_local $7
                  (f64.load
-                  (get_local $0)
+                  (get_local $1)
                  )
                 )
-                (set_local $9
+                (set_local $7
                  (f64.abs
-                  (get_local $9)
+                  (get_local $7)
                  )
                 )
-                (set_local $5
+                (set_local $4
                  (f64.mul
-                  (get_local $5)
-                  (get_local $9)
+                  (get_local $4)
+                  (get_local $7)
                  )
                 )
-                (set_local $9
+                (set_local $7
                  (f64.load
-                  (get_local $23)
+                  (get_local $19)
                  )
                 )
-                (set_local $5
+                (set_local $4
                  (f64.add
-                  (get_local $9)
-                  (get_local $5)
+                  (get_local $7)
+                  (get_local $4)
                  )
                 )
                 (f64.store
-                 (get_local $23)
-                 (get_local $5)
+                 (get_local $19)
+                 (get_local $4)
                 )
                )
               )
               ;;@ ./dev/cpp/ConvLayer.cpp:186:0
-              (set_local $11
+              (set_local $8
                (i32.add
-                (get_local $11)
+                (get_local $8)
                 (i32.const 1)
                )
               )
               (if
                (i32.lt_u
-                (get_local $11)
-                (get_local $32)
+                (get_local $8)
+                (get_local $35)
                )
                (block
-                (set_local $0
-                 (get_local $16)
+                (set_local $1
+                 (get_local $11)
                 )
                 (br $while-in5)
                )
               )
              )
              ;;@ ./dev/cpp/ConvLayer.cpp:185:0
-             (set_local $3
+             (set_local $20
               (i32.add
-               (get_local $3)
+               (get_local $20)
                (i32.const 1)
               )
              )
              (br_if $while-in3
               (i32.lt_u
-               (get_local $3)
-               (get_local $31)
+               (get_local $20)
+               (get_local $34)
               )
              )
             )
@@ -29145,41 +29177,41 @@
          )
         )
         ;;@ ./dev/cpp/ConvLayer.cpp:184:0
-        (set_local $2
+        (set_local $9
          (i32.add
-          (get_local $2)
+          (get_local $9)
           (i32.const 1)
          )
         )
         (br_if $while-in1
          (i32.lt_u
-          (get_local $2)
-          (get_local $27)
+          (get_local $9)
+          (get_local $30)
          )
         )
        )
       )
      )
      ;;@ ./dev/cpp/ConvLayer.cpp:183:0
-     (set_local $1
+     (set_local $6
       (i32.add
-       (get_local $1)
+       (get_local $6)
        (i32.const 1)
       )
      )
      (br_if $while-in
       (i32.lt_u
-       (get_local $1)
-       (get_local $22)
+       (get_local $6)
+       (get_local $24)
       )
      )
     )
    )
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:197:0
-  (set_local $0
+  (set_local $1
    (i32.add
-    (get_local $12)
+    (get_local $15)
     (i32.const 164)
    )
   )
@@ -29192,97 +29224,96 @@
         (block $switch-case
          (br_table $switch-case $switch-case24 $switch-case33 $switch-case42 $switch-case54 $switch-case63 $switch-default
           (i32.load
-           (get_local $0)
+           (get_local $1)
           )
          )
         )
         (if
          (i32.eqz
-          (get_local $15)
+          (get_local $17)
          )
          (block
-          (set_local $5
-           (f64.promote/f32
-            (f32.load offset=16
-             (get_local $12)
-            )
-           )
-          )
-          (set_local $26
-           (i32.shr_s
-            (i32.sub
-             (get_local $17)
-             (get_local $13)
-            )
-            (i32.const 2)
-           )
-          )
-          (set_local $23
+          (set_local $27
            (i32.add
-            (get_local $12)
-            (i32.const 48)
+            (get_local $0)
+            (i32.const 164)
            )
           )
           (set_local $22
            (i32.add
-            (get_local $12)
-            (i32.const 64)
+            (get_local $15)
+            (i32.const 48)
            )
           )
-          (set_local $27
+          (set_local $25
            (i32.add
-            (get_local $12)
-            (i32.const 8)
+            (get_local $15)
+            (i32.const 64)
            )
           )
           (set_local $28
            (i32.add
-            (get_local $12)
+            (get_local $15)
+            (i32.const 8)
+           )
+          )
+          (set_local $29
+           (i32.add
+            (get_local $15)
             (i32.const 80)
            )
           )
-          (set_local $24
+          (set_local $19
            (i32.add
-            (get_local $12)
+            (get_local $15)
             (i32.const 88)
            )
           )
-          (set_local $16
+          (set_local $30
+           (i32.shr_s
+            (i32.sub
+             (get_local $13)
+             (get_local $2)
+            )
+            (i32.const 2)
+           )
+          )
+          (set_local $8
            (i32.const 0)
           )
           (loop $while-in7
            ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
            (set_local $0
             (i32.add
-             (get_local $8)
+             (get_local $3)
              (i32.shl
-              (get_local $16)
+              (get_local $8)
               (i32.const 2)
              )
             )
            )
            ;;@ ./dev/cpp/ConvLayer.cpp:200:0
-           (set_local $19
+           (set_local $17
             (i32.load
              (get_local $0)
             )
            )
            (set_local $0
             (i32.add
-             (get_local $19)
+             (get_local $17)
              (i32.const 12)
             )
            )
            ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-           (set_local $1
+           (set_local $2
             (i32.add
-             (get_local $19)
+             (get_local $17)
              (i32.const 16)
             )
            )
-           (set_local $1
+           (set_local $2
             (i32.load
-             (get_local $1)
+             (get_local $2)
             )
            )
            (set_local $0
@@ -29292,105 +29323,87 @@
            )
            (if
             ;;@ ./dev/cpp/ConvLayer.cpp:200:0
-            (i32.eq
-             (get_local $1)
+            (i32.ne
+             (get_local $2)
              (get_local $0)
             )
-            (set_local $0
-             (get_local $19)
-            )
             (block
-             (set_local $29
+             (set_local $31
               (i32.eq
                (i32.load offset=4
-                (tee_local $0
-                 (i32.load offset=12
-                  (i32.load
-                   (i32.add
-                    (get_local $8)
-                    (i32.shl
-                     (get_local $16)
-                     (i32.const 2)
-                    )
-                   )
-                  )
-                 )
-                )
+                (get_local $0)
                )
                (i32.load
                 (get_local $0)
                )
               )
              )
-             (set_local $30
+             (set_local $32
               (i32.div_s
                (i32.sub
-                (i32.load offset=16
-                 (tee_local $21
-                  (i32.load
-                   (i32.add
-                    (get_local $8)
-                    (i32.shl
-                     (get_local $16)
-                     (i32.const 2)
-                    )
-                   )
-                  )
-                 )
-                )
-                (i32.load offset=12
-                 (get_local $21)
-                )
+                (get_local $2)
+                (get_local $0)
                )
                (i32.const 12)
               )
              )
-             (set_local $31
-              (i32.add
-               (get_local $8)
-               (i32.shl
-                (get_local $16)
-                (i32.const 2)
-               )
-              )
-             )
-             (set_local $32
-              (i32.add
-               (get_local $8)
-               (i32.shl
-                (get_local $16)
-                (i32.const 2)
-               )
-              )
-             )
              (set_local $33
               (i32.add
-               (get_local $8)
+               (get_local $3)
                (i32.shl
-                (get_local $16)
+                (get_local $8)
                 (i32.const 2)
                )
               )
              )
-             (set_local $18
+             (set_local $34
+              (i32.add
+               (get_local $3)
+               (i32.shl
+                (get_local $8)
+                (i32.const 2)
+               )
+              )
+             )
+             (set_local $35
+              (i32.add
+               (i32.load
+                (i32.const 5232)
+               )
+               (i32.shl
+                (get_local $26)
+                (i32.const 2)
+               )
+              )
+             )
+             (set_local $36
+              (i32.add
+               (get_local $3)
+               (i32.shl
+                (get_local $8)
+                (i32.const 2)
+               )
+              )
+             )
+             (set_local $11
               (i32.const 0)
              )
              (loop $while-in9
               (if
                (i32.eqz
-                (get_local $29)
+                (get_local $31)
                )
                (block
-                (set_local $34
+                (set_local $37
                  (i32.eq
                   (i32.load offset=4
                    (tee_local $0
                     (i32.load
-                     (tee_local $13
+                     (tee_local $20
                       (i32.load offset=12
-                       (tee_local $11
+                       (tee_local $9
                         (i32.load
-                         (get_local $31)
+                         (get_local $33)
                         )
                        )
                       )
@@ -29403,14 +29416,14 @@
                   )
                  )
                 )
-                (set_local $35
+                (set_local $38
                  (i32.div_s
                   (i32.sub
                    (i32.load offset=4
                     (tee_local $0
                      (i32.load offset=12
                       (i32.load
-                       (get_local $32)
+                       (get_local $34)
                       )
                      )
                     )
@@ -29422,34 +29435,43 @@
                   (i32.const 12)
                  )
                 )
-                (set_local $17
+                (set_local $16
                  (i32.const 0)
                 )
                 (loop $while-in11
                  (block $label$break$L39
                   (if
                    (i32.eqz
-                    (get_local $34)
+                    (get_local $37)
                    )
                    (block
-                    (set_local $9
+                    (set_local $5
                      (f64.convert_s/i32
                       (i32.load
-                       (get_local $27)
+                       (get_local $28)
                       )
                      )
                     )
-                    (set_local $25
+                    (set_local $7
+                     (f64.promote/f32
+                      (f32.load offset=16
+                       (i32.load
+                        (get_local $35)
+                       )
+                      )
+                     )
+                    )
+                    (set_local $24
                      (i32.shr_s
                       (i32.sub
                        (i32.load offset=4
-                        (tee_local $2
+                        (tee_local $1
                          (i32.load
-                          (tee_local $1
+                          (tee_local $2
                            (i32.load offset=12
                             (tee_local $0
                              (i32.load
-                              (get_local $33)
+                              (get_local $36)
                              )
                             )
                            )
@@ -29458,7 +29480,7 @@
                         )
                        )
                        (i32.load
-                        (get_local $2)
+                        (get_local $1)
                        )
                       )
                       (i32.const 3)
@@ -29467,110 +29489,110 @@
                     (if
                      (f32.eq
                       (f32.load
-                       (get_local $28)
+                       (get_local $29)
                       )
                       (f32.const 0)
                      )
                      (block
-                      (set_local $15
+                      (set_local $13
                        (i32.const 0)
                       )
-                      (set_local $2
-                       (get_local $13)
+                      (set_local $1
+                       (get_local $20)
                       )
-                      (set_local $3
-                       (get_local $11)
+                      (set_local $6
+                       (get_local $9)
                       )
                       (loop $while-in13
                        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.mul
-                          (get_local $18)
+                          (get_local $11)
                           (i32.const 12)
                          )
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.mul
-                          (get_local $17)
+                          (get_local $16)
                           (i32.const 12)
                          )
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.shl
-                          (get_local $15)
+                          (get_local $13)
                           (i32.const 3)
                          )
                         )
                        )
                        ;;@ ./dev/cpp/ConvLayer.cpp:204:0
-                       (set_local $7
+                       (set_local $10
                         (f64.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
                        ;;@ ./dev/cpp/ConvLayer.cpp:205:0
-                       (set_local $6
+                       (set_local $12
                         (f64.load
-                         (get_local $23)
+                         (get_local $22)
                         )
                        )
                        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                       (set_local $2
+                       (set_local $1
                         (i32.load
-                         (get_local $3)
+                         (get_local $6)
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.mul
-                          (get_local $18)
+                          (get_local $11)
                           (i32.const 12)
                          )
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.mul
-                          (get_local $17)
+                          (get_local $16)
                           (i32.const 12)
                          )
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
-                       (set_local $2
+                       (set_local $1
                         (i32.add
-                         (get_local $2)
+                         (get_local $1)
                          (i32.shl
-                          (get_local $15)
+                          (get_local $13)
                           (i32.const 3)
                          )
                         )
@@ -29578,1130 +29600,184 @@
                        ;;@ ./dev/cpp/ConvLayer.cpp:205:0
                        (set_local $4
                         (f64.load
-                         (get_local $2)
+                         (get_local $1)
                         )
                        )
-                       (set_local $6
+                       (set_local $12
                         (f64.mul
-                         (get_local $6)
+                         (get_local $12)
                          (get_local $4)
                         )
                        )
-                       (set_local $7
+                       (set_local $10
                         (f64.add
-                         (get_local $7)
-                         (get_local $6)
+                         (get_local $10)
+                         (get_local $12)
                         )
                        )
                        ;;@ ./dev/cpp/ConvLayer.cpp:206:0
-                       (set_local $6
+                       (set_local $12
                         (f64.load
-                         (get_local $22)
+                         (get_local $25)
                         )
                        )
-                       (set_local $3
+                       (set_local $6
                         (f64.gt
                          (get_local $4)
                          (f64.const 0)
                         )
                        )
-                       (set_local $14
+                       (set_local $23
                         (if (result f64)
-                         (get_local $3)
+                         (get_local $6)
                          (f64.const 1)
                          (f64.const -1)
                         )
                        )
-                       (set_local $6
+                       (set_local $12
                         (f64.mul
-                         (get_local $6)
-                         (get_local $14)
+                         (get_local $12)
+                         (get_local $23)
                         )
                        )
-                       (set_local $7
+                       (set_local $10
                         (f64.add
-                         (get_local $7)
-                         (get_local $6)
+                         (get_local $10)
+                         (get_local $12)
                         )
                        )
-                       (set_local $7
+                       (set_local $10
                         (f64.div
-                         (get_local $7)
-                         (get_local $9)
+                         (get_local $10)
+                         (get_local $5)
                         )
                        )
                        ;;@ ./dev/cpp/NetMath.cpp:69:0
-                       (set_local $7
+                       (set_local $10
                         (f64.mul
+                         (get_local $10)
                          (get_local $7)
-                         (get_local $5)
                         )
                        )
                        (set_local $4
                         (f64.add
                          (get_local $4)
-                         (get_local $7)
+                         (get_local $10)
                         )
                        )
                        ;;@ ./dev/cpp/ConvLayer.cpp:208:0
                        (f64.store
-                        (get_local $2)
+                        (get_local $1)
                         (get_local $4)
                        )
                        ;;@ ./dev/cpp/ConvLayer.cpp:202:0
-                       (set_local $15
+                       (set_local $13
                         (i32.add
-                         (get_local $15)
+                         (get_local $13)
                          (i32.const 1)
                         )
                        )
                        (br_if $label$break$L39
                         (i32.ge_u
-                         (get_local $15)
-                         (get_local $25)
+                         (get_local $13)
+                         (get_local $24)
                         )
                        )
-                       (set_local $2
-                        (get_local $1)
+                       (set_local $1
+                        (get_local $2)
                        )
-                       (set_local $3
+                       (set_local $6
                         (get_local $0)
                        )
                        (br $while-in13)
                       )
                      )
                     )
-                    (set_local $36
+                    (set_local $39
                      (i32.load
                       (i32.add
                        (i32.load
                         (i32.add
                          (i32.load
-                          (get_local $19)
+                          (get_local $17)
                          )
                          (i32.mul
-                          (get_local $18)
+                          (get_local $11)
                           (i32.const 12)
                          )
                         )
                        )
                        (i32.mul
-                        (get_local $17)
+                        (get_local $16)
                         (i32.const 12)
                        )
                       )
                      )
                     )
-                    (set_local $15
+                    (set_local $13
                      (i32.const 0)
                     )
-                    (set_local $2
-                     (get_local $13)
+                    (set_local $1
+                     (get_local $20)
                     )
-                    (set_local $3
-                     (get_local $11)
+                    (set_local $6
+                     (get_local $9)
                     )
                     (loop $while-in15
                      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                     (set_local $2
+                     (set_local $1
                       (i32.add
-                       (get_local $2)
+                       (get_local $1)
                        (i32.mul
-                        (get_local $18)
+                        (get_local $11)
                         (i32.const 12)
                        )
                       )
                      )
-                     (set_local $2
+                     (set_local $1
                       (i32.load
-                       (get_local $2)
+                       (get_local $1)
                       )
                      )
-                     (set_local $2
+                     (set_local $1
                       (i32.add
-                       (get_local $2)
+                       (get_local $1)
                        (i32.mul
-                        (get_local $17)
+                        (get_local $16)
                         (i32.const 12)
                        )
                       )
                      )
-                     (set_local $2
+                     (set_local $1
                       (i32.load
-                       (get_local $2)
+                       (get_local $1)
                       )
                      )
-                     (set_local $2
+                     (set_local $1
                       (i32.add
-                       (get_local $2)
+                       (get_local $1)
                        (i32.shl
-                        (get_local $15)
+                        (get_local $13)
                         (i32.const 3)
                        )
                       )
                      )
                      ;;@ ./dev/cpp/ConvLayer.cpp:204:0
-                     (set_local $7
+                     (set_local $10
                       (f64.load
-                       (get_local $2)
+                       (get_local $1)
                       )
                      )
                      ;;@ ./dev/cpp/ConvLayer.cpp:205:0
-                     (set_local $6
-                      (f64.load
-                       (get_local $23)
-                      )
-                     )
-                     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                     (set_local $2
-                      (i32.load
-                       (get_local $3)
-                      )
-                     )
-                     (set_local $2
-                      (i32.add
-                       (get_local $2)
-                       (i32.mul
-                        (get_local $18)
-                        (i32.const 12)
-                       )
-                      )
-                     )
-                     (set_local $2
-                      (i32.load
-                       (get_local $2)
-                      )
-                     )
-                     (set_local $2
-                      (i32.add
-                       (get_local $2)
-                       (i32.mul
-                        (get_local $17)
-                        (i32.const 12)
-                       )
-                      )
-                     )
-                     (set_local $2
-                      (i32.load
-                       (get_local $2)
-                      )
-                     )
-                     (set_local $2
-                      (i32.add
-                       (get_local $2)
-                       (i32.shl
-                        (get_local $15)
-                        (i32.const 3)
-                       )
-                      )
-                     )
-                     ;;@ ./dev/cpp/ConvLayer.cpp:205:0
-                     (set_local $4
-                      (f64.load
-                       (get_local $2)
-                      )
-                     )
-                     (set_local $6
-                      (f64.mul
-                       (get_local $6)
-                       (get_local $4)
-                      )
-                     )
-                     (set_local $7
-                      (f64.add
-                       (get_local $7)
-                       (get_local $6)
-                      )
-                     )
-                     ;;@ ./dev/cpp/ConvLayer.cpp:206:0
-                     (set_local $6
+                     (set_local $12
                       (f64.load
                        (get_local $22)
                       )
                      )
-                     (set_local $3
-                      (f64.gt
-                       (get_local $4)
-                       (f64.const 0)
-                      )
-                     )
-                     (set_local $14
-                      (if (result f64)
-                       (get_local $3)
-                       (f64.const 1)
-                       (f64.const -1)
-                      )
-                     )
-                     (set_local $6
-                      (f64.mul
-                       (get_local $6)
-                       (get_local $14)
-                      )
-                     )
-                     (set_local $7
-                      (f64.add
-                       (get_local $7)
-                       (get_local $6)
-                      )
-                     )
-                     (set_local $7
-                      (f64.div
-                       (get_local $7)
-                       (get_local $9)
-                      )
-                     )
-                     ;;@ ./dev/cpp/NetMath.cpp:69:0
-                     (set_local $7
-                      (f64.mul
-                       (get_local $7)
-                       (get_local $5)
-                      )
-                     )
-                     (set_local $4
-                      (f64.add
-                       (get_local $4)
-                       (get_local $7)
-                      )
-                     )
-                     ;;@ ./dev/cpp/ConvLayer.cpp:208:0
-                     (f64.store
-                      (get_local $2)
-                      (get_local $4)
-                     )
-                     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                     (set_local $2
-                      (i32.add
-                       (get_local $36)
-                       (i32.shl
-                        (get_local $15)
-                        (i32.const 3)
-                       )
-                      )
-                     )
-                     ;;@ ./dev/cpp/ConvLayer.cpp:210:0
-                     (set_local $4
-                      (f64.load
-                       (get_local $2)
-                      )
-                     )
-                     (set_local $4
-                      (f64.mul
-                       (get_local $4)
-                       (get_local $4)
-                      )
-                     )
-                     (set_local $7
-                      (f64.load
-                       (get_local $24)
-                      )
-                     )
-                     (set_local $4
-                      (f64.add
-                       (get_local $7)
-                       (get_local $4)
-                      )
-                     )
-                     (f64.store
-                      (get_local $24)
-                      (get_local $4)
-                     )
-                     ;;@ ./dev/cpp/ConvLayer.cpp:202:0
-                     (set_local $15
-                      (i32.add
-                       (get_local $15)
-                       (i32.const 1)
-                      )
-                     )
-                     (if
-                      (i32.lt_u
-                       (get_local $15)
-                       (get_local $25)
-                      )
-                      (block
-                       (set_local $2
-                        (get_local $1)
-                       )
-                       (set_local $3
-                        (get_local $0)
-                       )
-                       (br $while-in15)
-                      )
-                     )
-                    )
-                   )
-                  )
-                 )
-                 ;;@ ./dev/cpp/ConvLayer.cpp:201:0
-                 (set_local $17
-                  (i32.add
-                   (get_local $17)
-                   (i32.const 1)
-                  )
-                 )
-                 (br_if $while-in11
-                  (i32.lt_u
-                   (get_local $17)
-                   (get_local $35)
-                  )
-                 )
-                )
-               )
-              )
-              ;;@ ./dev/cpp/ConvLayer.cpp:200:0
-              (set_local $18
-               (i32.add
-                (get_local $18)
-                (i32.const 1)
-               )
-              )
-              (br_if $while-in9
-               (i32.lt_u
-                (get_local $18)
-                (get_local $30)
-               )
-              )
-              (set_local $0
-               (get_local $21)
-              )
-             )
-            )
-           )
-           ;;@ ./dev/cpp/ConvLayer.cpp:214:0
-           (set_local $1
-            (i32.add
-             (get_local $0)
-             (i32.const 112)
-            )
-           )
-           (set_local $4
-            (f64.load
-             (get_local $1)
-            )
-           )
-           (set_local $0
-            (i32.add
-             (get_local $0)
-             (i32.const 120)
-            )
-           )
-           (set_local $9
-            (f64.load
-             (get_local $0)
-            )
-           )
-           ;;@ ./dev/cpp/NetMath.cpp:69:0
-           (set_local $9
-            (f64.mul
-             (get_local $9)
-             (get_local $5)
-            )
-           )
-           (set_local $4
-            (f64.add
-             (get_local $4)
-             (get_local $9)
-            )
-           )
-           ;;@ ./dev/cpp/ConvLayer.cpp:214:0
-           (f64.store
-            (get_local $1)
-            (get_local $4)
-           )
-           ;;@ ./dev/cpp/ConvLayer.cpp:199:0
-           (set_local $16
-            (i32.add
-             (get_local $16)
-             (i32.const 1)
-            )
-           )
-           (br_if $while-in7
-            (i32.lt_u
-             (get_local $16)
-             (get_local $26)
-            )
-           )
-          )
-         )
-        )
-        (br $switch-default)
-       )
-       (if
-        (i32.eqz
-         (get_local $15)
-        )
-        (block
-         (set_local $24
-          (i32.add
-           (get_local $12)
-           (i32.const 48)
-          )
-         )
-         (set_local $25
-          (i32.add
-           (get_local $12)
-           (i32.const 64)
-          )
-         )
-         (set_local $26
-          (i32.add
-           (get_local $12)
-           (i32.const 8)
-          )
-         )
-         (set_local $27
-          (i32.add
-           (get_local $12)
-           (i32.const 80)
-          )
-         )
-         (set_local $22
-          (i32.add
-           (get_local $12)
-           (i32.const 88)
-          )
-         )
-         (set_local $28
-          (i32.shr_s
-           (i32.sub
-            (get_local $17)
-            (get_local $13)
-           )
-           (i32.const 2)
-          )
-         )
-         (set_local $16
-          (i32.const 0)
-         )
-         (set_local $0
-          (get_local $8)
-         )
-         (set_local $1
-          (get_local $12)
-         )
-         (loop $while-in17
-          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-          (set_local $2
-           (i32.add
-            (get_local $0)
-            (i32.shl
-             (get_local $16)
-             (i32.const 2)
-            )
-           )
-          )
-          ;;@ ./dev/cpp/ConvLayer.cpp:219:0
-          (set_local $2
-           (i32.load
-            (get_local $2)
-           )
-          )
-          (set_local $3
-           (i32.add
-            (get_local $2)
-            (i32.const 12)
-           )
-          )
-          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-          (set_local $8
-           (i32.add
-            (get_local $2)
-            (i32.const 16)
-           )
-          )
-          (set_local $8
-           (i32.load
-            (get_local $8)
-           )
-          )
-          (set_local $3
-           (i32.load
-            (get_local $3)
-           )
-          )
-          (if
-           ;;@ ./dev/cpp/ConvLayer.cpp:219:0
-           (i32.ne
-            (get_local $8)
-            (get_local $3)
-           )
-           (block
-            (set_local $29
-             (i32.eq
-              (i32.load offset=4
-               (tee_local $2
-                (i32.load offset=12
-                 (i32.load
-                  (i32.add
-                   (get_local $0)
-                   (i32.shl
-                    (get_local $16)
-                    (i32.const 2)
-                   )
-                  )
-                 )
-                )
-               )
-              )
-              (i32.load
-               (get_local $2)
-              )
-             )
-            )
-            (set_local $30
-             (i32.div_s
-              (i32.sub
-               (i32.load offset=16
-                (tee_local $19
-                 (i32.load
-                  (i32.add
-                   (get_local $0)
-                   (i32.shl
-                    (get_local $16)
-                    (i32.const 2)
-                   )
-                  )
-                 )
-                )
-               )
-               (i32.load offset=12
-                (get_local $19)
-               )
-              )
-              (i32.const 12)
-             )
-            )
-            (set_local $31
-             (i32.add
-              (get_local $1)
-              (i32.const 16)
-             )
-            )
-            (set_local $32
-             (i32.add
-              (get_local $0)
-              (i32.shl
-               (get_local $16)
-               (i32.const 2)
-              )
-             )
-            )
-            (set_local $18
-             (i32.const 0)
-            )
-            (set_local $2
-             (get_local $0)
-            )
-            (set_local $3
-             (get_local $0)
-            )
-            (set_local $8
-             (get_local $0)
-            )
-            (set_local $1
-             (get_local $0)
-            )
-            (loop $while-in19
-             (if
-              (get_local $29)
-              (set_local $11
-               (get_local $1)
-              )
-              (block
-               (set_local $33
-                (i32.eq
-                 (i32.load offset=4
-                  (tee_local $8
-                   (i32.load
-                    (tee_local $23
-                     (i32.load offset=12
-                      (tee_local $21
-                       (i32.load
-                        (i32.add
-                         (get_local $8)
-                         (i32.shl
-                          (get_local $16)
-                          (i32.const 2)
-                         )
-                        )
-                       )
-                      )
-                     )
-                    )
-                   )
-                  )
-                 )
-                 (i32.load
-                  (get_local $8)
-                 )
-                )
-               )
-               (set_local $34
-                (i32.div_s
-                 (i32.sub
-                  (i32.load offset=4
-                   (tee_local $8
-                    (i32.load offset=12
-                     (i32.load
-                      (i32.add
-                       (get_local $1)
-                       (i32.shl
-                        (get_local $16)
-                        (i32.const 2)
-                       )
-                      )
-                     )
-                    )
-                   )
-                  )
-                  (i32.load
-                   (get_local $8)
-                  )
-                 )
-                 (i32.const 12)
-                )
-               )
-               (set_local $11
-                (i32.const 0)
-               )
-               (set_local $8
-                (get_local $1)
-               )
-               (set_local $1
-                (get_local $2)
-               )
-               (loop $while-in21
-                (if
-                 (get_local $33)
-                 (block
-                  (set_local $2
-                   (get_local $1)
-                  )
-                  (set_local $1
-                   (get_local $8)
-                  )
-                 )
-                 (block
-                  (set_local $7
-                   (f64.convert_s/i32
-                    (i32.load
-                     (get_local $26)
-                    )
-                   )
-                  )
-                  (set_local $6
-                   (f64.promote/f32
-                    (f32.load
-                     (get_local $31)
-                    )
-                   )
-                  )
-                  (set_local $35
-                   (i32.load
-                    (i32.add
-                     (i32.load
-                      (i32.add
-                       (i32.load
-                        (i32.load
-                         (i32.add
-                          (get_local $3)
-                          (i32.shl
-                           (get_local $16)
-                           (i32.const 2)
-                          )
-                         )
-                        )
-                       )
-                       (i32.mul
-                        (get_local $18)
-                        (i32.const 12)
-                       )
-                      )
-                     )
-                     (i32.mul
-                      (get_local $11)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                  )
-                  (set_local $36
-                   (f32.ne
-                    (f32.load
-                     (get_local $27)
-                    )
-                    (f32.const 0)
-                   )
-                  )
-                  (set_local $37
-                   (i32.shr_s
-                    (i32.sub
-                     (i32.load offset=4
-                      (tee_local $2
-                       (i32.load
-                        (tee_local $15
-                         (i32.load offset=12
-                          (tee_local $17
-                           (i32.load
-                            (i32.add
-                             (get_local $1)
-                             (i32.shl
-                              (get_local $16)
-                              (i32.const 2)
-                             )
-                            )
-                           )
-                          )
-                         )
-                        )
-                       )
-                      )
-                     )
-                     (i32.load
-                      (get_local $2)
-                     )
-                    )
-                    (i32.const 3)
-                   )
-                  )
-                  (set_local $8
-                   (i32.const 0)
-                  )
-                  (set_local $3
-                   (get_local $23)
-                  )
-                  (set_local $2
-                   (get_local $21)
-                  )
-                  (loop $while-in23
-                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $18)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $11)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.shl
-                      (get_local $8)
-                      (i32.const 3)
-                     )
-                    )
-                   )
-                   ;;@ ./dev/cpp/ConvLayer.cpp:223:0
-                   (set_local $4
-                    (f64.load
-                     (get_local $3)
-                    )
-                   )
-                   ;;@ ./dev/cpp/ConvLayer.cpp:224:0
-                   (set_local $9
-                    (f64.load
-                     (get_local $24)
-                    )
-                   )
-                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $3
-                    (i32.load
-                     (get_local $2)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $18)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $11)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
-                     (i32.shl
-                      (get_local $8)
-                      (i32.const 3)
-                     )
-                    )
-                   )
-                   ;;@ ./dev/cpp/ConvLayer.cpp:224:0
-                   (set_local $5
-                    (f64.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $9
-                    (f64.mul
-                     (get_local $9)
-                     (get_local $5)
-                    )
-                   )
-                   (set_local $4
-                    (f64.add
-                     (get_local $4)
-                     (get_local $9)
-                    )
-                   )
-                   ;;@ ./dev/cpp/ConvLayer.cpp:225:0
-                   (set_local $9
-                    (f64.load
-                     (get_local $25)
-                    )
-                   )
-                   (set_local $3
-                    (f64.gt
-                     (get_local $5)
-                     (f64.const 0)
-                    )
-                   )
-                   (set_local $14
-                    (if (result f64)
-                     (get_local $3)
-                     (f64.const 1)
-                     (f64.const -1)
-                    )
-                   )
-                   (set_local $9
-                    (f64.mul
-                     (get_local $9)
-                     (get_local $14)
-                    )
-                   )
-                   (set_local $4
-                    (f64.add
-                     (get_local $4)
-                     (get_local $9)
-                    )
-                   )
-                   (set_local $4
-                    (f64.div
-                     (get_local $4)
-                     (get_local $7)
-                    )
-                   )
-                   ;;@ ./dev/cpp/NetMath.cpp:97:0
-                   (set_local $9
-                    (f64.mul
-                     (get_local $4)
-                     (get_local $6)
-                    )
-                   )
-                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $2
-                    (i32.add
-                     (get_local $2)
-                     (i32.const 24)
-                    )
-                   )
-                   (set_local $2
-                    (i32.load
-                     (get_local $2)
-                    )
-                   )
-                   (set_local $2
-                    (i32.add
-                     (get_local $2)
-                     (i32.mul
-                      (get_local $18)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $2
-                    (i32.load
-                     (get_local $2)
-                    )
-                   )
-                   (set_local $2
-                    (i32.add
-                     (get_local $2)
-                     (i32.mul
-                      (get_local $11)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $2
-                    (i32.load
-                     (get_local $2)
-                    )
-                   )
-                   (set_local $4
-                    (f64.load
-                     (tee_local $2
-                      (i32.add
-                       (get_local $2)
-                       (i32.shl
-                        (get_local $8)
-                        (i32.const 3)
-                       )
-                      )
-                     )
-                    )
-                   )
-                   ;;@ ./dev/cpp/NetMath.cpp:97:0
-                   (set_local $9
-                    (f64.mul
-                     (get_local $9)
-                     (get_local $4)
-                    )
-                   )
-                   (set_local $9
-                    (f64.add
-                     (get_local $5)
-                     (get_local $9)
-                    )
-                   )
-                   ;;@ ./dev/cpp/NetMath.cpp:99:0
-                   (set_local $38
-                    (f64.le
-                     (get_local $9)
-                     (f64.const 0)
-                    )
-                   )
-                   (set_local $5
-                    (block $__rjto$0 (result f64)
-                     (block $__rjti$0
-                      (br_if $__rjti$0
-                       (i32.and
-                        (get_local $3)
-                        (get_local $38)
-                       )
-                      )
-                      (set_local $3
-                       (f64.ge
-                        (get_local $9)
-                        (f64.const 0)
-                       )
-                      )
-                      (set_local $38
-                       (f64.lt
-                        (get_local $5)
-                        (f64.const 0)
-                       )
-                      )
-                      (br_if $__rjti$0
-                       (i32.and
-                        (get_local $38)
-                        (get_local $3)
-                       )
-                      )
-                      ;;@ ./dev/cpp/NetMath.cpp:107:0
-                      (set_local $5
-                       (f64.add
-                        (get_local $4)
-                        (f64.const 0.05)
-                       )
-                      )
-                      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:1145:0
-                      (br $__rjto$0
-                       (call $_fmin
-                        (get_local $5)
-                        (f64.const 5)
-                       )
-                      )
-                     )
-                     ;;@ ./dev/cpp/NetMath.cpp:101:0
-                     (set_local $5
-                      (f64.mul
-                       (get_local $4)
-                       (f64.const 0.95)
-                      )
-                     )
-                     (call $_fmax
-                      (get_local $5)
-                      (f64.const 0.5)
-                     )
-                    )
-                   )
-                   (f64.store
-                    (get_local $2)
-                    (get_local $5)
-                   )
-                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $2
-                    (i32.add
-                     (get_local $35)
-                     (i32.shl
-                      (get_local $8)
-                      (i32.const 3)
-                     )
-                    )
-                   )
-                   ;;@ ./dev/cpp/ConvLayer.cpp:227:0
-                   (f64.store
-                    (get_local $2)
-                    (get_local $9)
-                   )
-                   (if
-                    (get_local $36)
-                    (block
-                     ;;@ ./dev/cpp/ConvLayer.cpp:229:0
-                     (set_local $1
-                      (i32.load
-                       (get_local $32)
-                      )
-                     )
                      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
                      (set_local $1
                       (i32.load
-                       (get_local $1)
-                      )
-                     )
-                     (set_local $1
-                      (i32.add
-                       (get_local $1)
-                       (i32.mul
-                        (get_local $18)
-                        (i32.const 12)
-                       )
-                      )
-                     )
-                     (set_local $1
-                      (i32.load
-                       (get_local $1)
+                       (get_local $6)
                       )
                      )
                      (set_local $1
@@ -30721,71 +29797,1076 @@
                      (set_local $1
                       (i32.add
                        (get_local $1)
+                       (i32.mul
+                        (get_local $16)
+                        (i32.const 12)
+                       )
+                      )
+                     )
+                     (set_local $1
+                      (i32.load
+                       (get_local $1)
+                      )
+                     )
+                     (set_local $1
+                      (i32.add
+                       (get_local $1)
+                       (i32.shl
+                        (get_local $13)
+                        (i32.const 3)
+                       )
+                      )
+                     )
+                     ;;@ ./dev/cpp/ConvLayer.cpp:205:0
+                     (set_local $4
+                      (f64.load
+                       (get_local $1)
+                      )
+                     )
+                     (set_local $12
+                      (f64.mul
+                       (get_local $12)
+                       (get_local $4)
+                      )
+                     )
+                     (set_local $10
+                      (f64.add
+                       (get_local $10)
+                       (get_local $12)
+                      )
+                     )
+                     ;;@ ./dev/cpp/ConvLayer.cpp:206:0
+                     (set_local $12
+                      (f64.load
+                       (get_local $25)
+                      )
+                     )
+                     (set_local $6
+                      (f64.gt
+                       (get_local $4)
+                       (f64.const 0)
+                      )
+                     )
+                     (set_local $23
+                      (if (result f64)
+                       (get_local $6)
+                       (f64.const 1)
+                       (f64.const -1)
+                      )
+                     )
+                     (set_local $12
+                      (f64.mul
+                       (get_local $12)
+                       (get_local $23)
+                      )
+                     )
+                     (set_local $10
+                      (f64.add
+                       (get_local $10)
+                       (get_local $12)
+                      )
+                     )
+                     (set_local $10
+                      (f64.div
+                       (get_local $10)
+                       (get_local $5)
+                      )
+                     )
+                     ;;@ ./dev/cpp/NetMath.cpp:69:0
+                     (set_local $10
+                      (f64.mul
+                       (get_local $10)
+                       (get_local $7)
+                      )
+                     )
+                     (set_local $4
+                      (f64.add
+                       (get_local $4)
+                       (get_local $10)
+                      )
+                     )
+                     ;;@ ./dev/cpp/ConvLayer.cpp:208:0
+                     (f64.store
+                      (get_local $1)
+                      (get_local $4)
+                     )
+                     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                     (set_local $1
+                      (i32.add
+                       (get_local $39)
+                       (i32.shl
+                        (get_local $13)
+                        (i32.const 3)
+                       )
+                      )
+                     )
+                     ;;@ ./dev/cpp/ConvLayer.cpp:210:0
+                     (set_local $4
+                      (f64.load
+                       (get_local $1)
+                      )
+                     )
+                     (set_local $4
+                      (f64.mul
+                       (get_local $4)
+                       (get_local $4)
+                      )
+                     )
+                     (set_local $10
+                      (f64.load
+                       (get_local $19)
+                      )
+                     )
+                     (set_local $4
+                      (f64.add
+                       (get_local $10)
+                       (get_local $4)
+                      )
+                     )
+                     (f64.store
+                      (get_local $19)
+                      (get_local $4)
+                     )
+                     ;;@ ./dev/cpp/ConvLayer.cpp:202:0
+                     (set_local $13
+                      (i32.add
+                       (get_local $13)
+                       (i32.const 1)
+                      )
+                     )
+                     (if
+                      (i32.lt_u
+                       (get_local $13)
+                       (get_local $24)
+                      )
+                      (block
+                       (set_local $1
+                        (get_local $2)
+                       )
+                       (set_local $6
+                        (get_local $0)
+                       )
+                       (br $while-in15)
+                      )
+                     )
+                    )
+                   )
+                  )
+                 )
+                 ;;@ ./dev/cpp/ConvLayer.cpp:201:0
+                 (set_local $16
+                  (i32.add
+                   (get_local $16)
+                   (i32.const 1)
+                  )
+                 )
+                 (br_if $while-in11
+                  (i32.lt_u
+                   (get_local $16)
+                   (get_local $38)
+                  )
+                 )
+                )
+               )
+              )
+              ;;@ ./dev/cpp/ConvLayer.cpp:200:0
+              (set_local $11
+               (i32.add
+                (get_local $11)
+                (i32.const 1)
+               )
+              )
+              (br_if $while-in9
+               (i32.lt_u
+                (get_local $11)
+                (get_local $32)
+               )
+              )
+             )
+            )
+           )
+           ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+           (set_local $0
+            (i32.load
+             (get_local $27)
+            )
+           )
+           (set_local $0
+            (i32.add
+             (get_local $0)
+             (i32.shl
+              (get_local $8)
+              (i32.const 3)
+             )
+            )
+           )
+           ;;@ ./dev/cpp/ConvLayer.cpp:214:0
+           (set_local $4
+            (f64.load
+             (get_local $0)
+            )
+           )
+           (set_local $2
+            (i32.add
+             (get_local $17)
+             (i32.const 120)
+            )
+           )
+           (set_local $5
+            (f64.load
+             (get_local $2)
+            )
+           )
+           ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+           (set_local $2
+            (i32.load
+             (i32.const 5232)
+            )
+           )
+           (set_local $2
+            (i32.add
+             (get_local $2)
+             (i32.shl
+              (get_local $26)
+              (i32.const 2)
+             )
+            )
+           )
+           ;;@ ./dev/cpp/Network.cpp:36:0
+           (set_local $2
+            (i32.load
+             (get_local $2)
+            )
+           )
+           ;;@ ./dev/cpp/NetMath.cpp:69:0
+           (set_local $2
+            (i32.add
+             (get_local $2)
+             (i32.const 16)
+            )
+           )
+           (set_local $21
+            (f32.load
+             (get_local $2)
+            )
+           )
+           (set_local $7
+            (f64.promote/f32
+             (get_local $21)
+            )
+           )
+           (set_local $5
+            (f64.mul
+             (get_local $5)
+             (get_local $7)
+            )
+           )
+           (set_local $4
+            (f64.add
+             (get_local $4)
+             (get_local $5)
+            )
+           )
+           ;;@ ./dev/cpp/ConvLayer.cpp:214:0
+           (f64.store
+            (get_local $0)
+            (get_local $4)
+           )
+           ;;@ ./dev/cpp/ConvLayer.cpp:199:0
+           (set_local $8
+            (i32.add
+             (get_local $8)
+             (i32.const 1)
+            )
+           )
+           (br_if $while-in7
+            (i32.lt_u
+             (get_local $8)
+             (get_local $30)
+            )
+           )
+          )
+         )
+        )
+        (br $switch-default)
+       )
+       (if
+        (i32.eqz
+         (get_local $17)
+        )
+        (block
+         (set_local $24
+          (i32.add
+           (get_local $0)
+           (i32.const 164)
+          )
+         )
+         (set_local $27
+          (i32.add
+           (get_local $15)
+           (i32.const 48)
+          )
+         )
+         (set_local $28
+          (i32.add
+           (get_local $15)
+           (i32.const 64)
+          )
+         )
+         (set_local $29
+          (i32.add
+           (get_local $15)
+           (i32.const 8)
+          )
+         )
+         (set_local $30
+          (i32.add
+           (get_local $15)
+           (i32.const 80)
+          )
+         )
+         (set_local $19
+          (i32.add
+           (get_local $15)
+           (i32.const 88)
+          )
+         )
+         (set_local $31
+          (i32.shr_s
+           (i32.sub
+            (get_local $13)
+            (get_local $2)
+           )
+           (i32.const 2)
+          )
+         )
+         (set_local $20
+          (get_local $2)
+         )
+         (set_local $8
+          (i32.const 0)
+         )
+         (set_local $0
+          (get_local $3)
+         )
+         (loop $while-in17
+          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+          (set_local $3
+           (i32.add
+            (get_local $0)
+            (i32.shl
+             (get_local $8)
+             (i32.const 2)
+            )
+           )
+          )
+          ;;@ ./dev/cpp/ConvLayer.cpp:219:0
+          (set_local $3
+           (i32.load
+            (get_local $3)
+           )
+          )
+          (set_local $2
+           (i32.add
+            (get_local $3)
+            (i32.const 12)
+           )
+          )
+          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
+          (set_local $1
+           (i32.add
+            (get_local $3)
+            (i32.const 16)
+           )
+          )
+          (set_local $1
+           (i32.load
+            (get_local $1)
+           )
+          )
+          (set_local $2
+           (i32.load
+            (get_local $2)
+           )
+          )
+          (if
+           ;;@ ./dev/cpp/ConvLayer.cpp:219:0
+           (i32.eq
+            (get_local $1)
+            (get_local $2)
+           )
+           (set_local $0
+            (get_local $3)
+           )
+           (block
+            (set_local $32
+             (i32.eq
+              (i32.load offset=4
+               (tee_local $3
+                (i32.load offset=12
+                 (i32.load
+                  (i32.add
+                   (get_local $0)
+                   (i32.shl
+                    (get_local $8)
+                    (i32.const 2)
+                   )
+                  )
+                 )
+                )
+               )
+              )
+              (i32.load
+               (get_local $3)
+              )
+             )
+            )
+            (set_local $33
+             (i32.div_s
+              (i32.sub
+               (i32.load offset=16
+                (tee_local $17
+                 (i32.load
+                  (i32.add
+                   (get_local $0)
+                   (i32.shl
+                    (get_local $8)
+                    (i32.const 2)
+                   )
+                  )
+                 )
+                )
+               )
+               (i32.load offset=12
+                (get_local $17)
+               )
+              )
+              (i32.const 12)
+             )
+            )
+            (set_local $34
+             (i32.add
+              (i32.load
+               (i32.const 5232)
+              )
+              (i32.shl
+               (get_local $26)
+               (i32.const 2)
+              )
+             )
+            )
+            (set_local $35
+             (i32.add
+              (get_local $0)
+              (i32.shl
+               (get_local $8)
+               (i32.const 2)
+              )
+             )
+            )
+            (set_local $11
+             (i32.const 0)
+            )
+            (set_local $2
+             (get_local $0)
+            )
+            (set_local $1
+             (get_local $0)
+            )
+            (set_local $6
+             (get_local $0)
+            )
+            (set_local $3
+             (get_local $0)
+            )
+            (loop $while-in19
+             (if
+              (get_local $32)
+              (set_local $9
+               (get_local $3)
+              )
+              (block
+               (set_local $36
+                (i32.eq
+                 (i32.load offset=4
+                  (tee_local $6
+                   (i32.load
+                    (tee_local $25
+                     (i32.load offset=12
+                      (tee_local $22
+                       (i32.load
+                        (i32.add
+                         (get_local $6)
+                         (i32.shl
+                          (get_local $8)
+                          (i32.const 2)
+                         )
+                        )
+                       )
+                      )
+                     )
+                    )
+                   )
+                  )
+                 )
+                 (i32.load
+                  (get_local $6)
+                 )
+                )
+               )
+               (set_local $37
+                (i32.div_s
+                 (i32.sub
+                  (i32.load offset=4
+                   (tee_local $6
+                    (i32.load offset=12
+                     (i32.load
+                      (i32.add
+                       (get_local $3)
                        (i32.shl
                         (get_local $8)
+                        (i32.const 2)
+                       )
+                      )
+                     )
+                    )
+                   )
+                  )
+                  (i32.load
+                   (get_local $6)
+                  )
+                 )
+                 (i32.const 12)
+                )
+               )
+               (set_local $9
+                (i32.const 0)
+               )
+               (set_local $6
+                (get_local $3)
+               )
+               (set_local $3
+                (get_local $2)
+               )
+               (loop $while-in21
+                (if
+                 (get_local $36)
+                 (block
+                  (set_local $2
+                   (get_local $3)
+                  )
+                  (set_local $3
+                   (get_local $6)
+                  )
+                 )
+                 (block
+                  (set_local $10
+                   (f64.convert_s/i32
+                    (i32.load
+                     (get_local $29)
+                    )
+                   )
+                  )
+                  (set_local $12
+                   (f64.promote/f32
+                    (f32.load offset=16
+                     (i32.load
+                      (get_local $34)
+                     )
+                    )
+                   )
+                  )
+                  (set_local $38
+                   (i32.load
+                    (i32.add
+                     (i32.load
+                      (i32.add
+                       (i32.load
+                        (i32.load
+                         (i32.add
+                          (get_local $1)
+                          (i32.shl
+                           (get_local $8)
+                           (i32.const 2)
+                          )
+                         )
+                        )
+                       )
+                       (i32.mul
+                        (get_local $11)
+                        (i32.const 12)
+                       )
+                      )
+                     )
+                     (i32.mul
+                      (get_local $9)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                  )
+                  (set_local $39
+                   (f32.ne
+                    (f32.load
+                     (get_local $30)
+                    )
+                    (f32.const 0)
+                   )
+                  )
+                  (set_local $40
+                   (i32.shr_s
+                    (i32.sub
+                     (i32.load offset=4
+                      (tee_local $2
+                       (i32.load
+                        (tee_local $13
+                         (i32.load offset=12
+                          (tee_local $16
+                           (i32.load
+                            (i32.add
+                             (get_local $3)
+                             (i32.shl
+                              (get_local $8)
+                              (i32.const 2)
+                             )
+                            )
+                           )
+                          )
+                         )
+                        )
+                       )
+                      )
+                     )
+                     (i32.load
+                      (get_local $2)
+                     )
+                    )
+                    (i32.const 3)
+                   )
+                  )
+                  (set_local $6
+                   (i32.const 0)
+                  )
+                  (set_local $1
+                   (get_local $25)
+                  )
+                  (set_local $2
+                   (get_local $22)
+                  )
+                  (loop $while-in23
+                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.mul
+                      (get_local $11)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $1
+                    (i32.load
+                     (get_local $1)
+                    )
+                   )
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.mul
+                      (get_local $9)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $1
+                    (i32.load
+                     (get_local $1)
+                    )
+                   )
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.shl
+                      (get_local $6)
+                      (i32.const 3)
+                     )
+                    )
+                   )
+                   ;;@ ./dev/cpp/ConvLayer.cpp:223:0
+                   (set_local $5
+                    (f64.load
+                     (get_local $1)
+                    )
+                   )
+                   ;;@ ./dev/cpp/ConvLayer.cpp:224:0
+                   (set_local $7
+                    (f64.load
+                     (get_local $27)
+                    )
+                   )
+                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                   (set_local $1
+                    (i32.load
+                     (get_local $2)
+                    )
+                   )
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.mul
+                      (get_local $11)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $1
+                    (i32.load
+                     (get_local $1)
+                    )
+                   )
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.mul
+                      (get_local $9)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $1
+                    (i32.load
+                     (get_local $1)
+                    )
+                   )
+                   (set_local $1
+                    (i32.add
+                     (get_local $1)
+                     (i32.shl
+                      (get_local $6)
+                      (i32.const 3)
+                     )
+                    )
+                   )
+                   ;;@ ./dev/cpp/ConvLayer.cpp:224:0
+                   (set_local $4
+                    (f64.load
+                     (get_local $1)
+                    )
+                   )
+                   (set_local $7
+                    (f64.mul
+                     (get_local $7)
+                     (get_local $4)
+                    )
+                   )
+                   (set_local $5
+                    (f64.add
+                     (get_local $5)
+                     (get_local $7)
+                    )
+                   )
+                   ;;@ ./dev/cpp/ConvLayer.cpp:225:0
+                   (set_local $7
+                    (f64.load
+                     (get_local $28)
+                    )
+                   )
+                   (set_local $1
+                    (f64.gt
+                     (get_local $4)
+                     (f64.const 0)
+                    )
+                   )
+                   (set_local $23
+                    (if (result f64)
+                     (get_local $1)
+                     (f64.const 1)
+                     (f64.const -1)
+                    )
+                   )
+                   (set_local $7
+                    (f64.mul
+                     (get_local $7)
+                     (get_local $23)
+                    )
+                   )
+                   (set_local $5
+                    (f64.add
+                     (get_local $5)
+                     (get_local $7)
+                    )
+                   )
+                   (set_local $5
+                    (f64.div
+                     (get_local $5)
+                     (get_local $10)
+                    )
+                   )
+                   ;;@ ./dev/cpp/NetMath.cpp:97:0
+                   (set_local $7
+                    (f64.mul
+                     (get_local $5)
+                     (get_local $12)
+                    )
+                   )
+                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                   (set_local $2
+                    (i32.add
+                     (get_local $2)
+                     (i32.const 24)
+                    )
+                   )
+                   (set_local $2
+                    (i32.load
+                     (get_local $2)
+                    )
+                   )
+                   (set_local $2
+                    (i32.add
+                     (get_local $2)
+                     (i32.mul
+                      (get_local $11)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $2
+                    (i32.load
+                     (get_local $2)
+                    )
+                   )
+                   (set_local $2
+                    (i32.add
+                     (get_local $2)
+                     (i32.mul
+                      (get_local $9)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $2
+                    (i32.load
+                     (get_local $2)
+                    )
+                   )
+                   (set_local $5
+                    (f64.load
+                     (tee_local $2
+                      (i32.add
+                       (get_local $2)
+                       (i32.shl
+                        (get_local $6)
+                        (i32.const 3)
+                       )
+                      )
+                     )
+                    )
+                   )
+                   ;;@ ./dev/cpp/NetMath.cpp:97:0
+                   (set_local $7
+                    (f64.mul
+                     (get_local $7)
+                     (get_local $5)
+                    )
+                   )
+                   (set_local $7
+                    (f64.add
+                     (get_local $4)
+                     (get_local $7)
+                    )
+                   )
+                   ;;@ ./dev/cpp/NetMath.cpp:99:0
+                   (set_local $41
+                    (f64.le
+                     (get_local $7)
+                     (f64.const 0)
+                    )
+                   )
+                   (set_local $4
+                    (block $__rjto$0 (result f64)
+                     (block $__rjti$0
+                      (br_if $__rjti$0
+                       (i32.and
+                        (get_local $1)
+                        (get_local $41)
+                       )
+                      )
+                      (set_local $1
+                       (f64.ge
+                        (get_local $7)
+                        (f64.const 0)
+                       )
+                      )
+                      (set_local $41
+                       (f64.lt
+                        (get_local $4)
+                        (f64.const 0)
+                       )
+                      )
+                      (br_if $__rjti$0
+                       (i32.and
+                        (get_local $41)
+                        (get_local $1)
+                       )
+                      )
+                      ;;@ ./dev/cpp/NetMath.cpp:107:0
+                      (set_local $4
+                       (f64.add
+                        (get_local $5)
+                        (f64.const 0.05)
+                       )
+                      )
+                      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:1145:0
+                      (br $__rjto$0
+                       (call $_fmin
+                        (get_local $4)
+                        (f64.const 5)
+                       )
+                      )
+                     )
+                     ;;@ ./dev/cpp/NetMath.cpp:101:0
+                     (set_local $4
+                      (f64.mul
+                       (get_local $5)
+                       (f64.const 0.95)
+                      )
+                     )
+                     (call $_fmax
+                      (get_local $4)
+                      (f64.const 0.5)
+                     )
+                    )
+                   )
+                   (f64.store
+                    (get_local $2)
+                    (get_local $4)
+                   )
+                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                   (set_local $2
+                    (i32.add
+                     (get_local $38)
+                     (i32.shl
+                      (get_local $6)
+                      (i32.const 3)
+                     )
+                    )
+                   )
+                   ;;@ ./dev/cpp/ConvLayer.cpp:227:0
+                   (f64.store
+                    (get_local $2)
+                    (get_local $7)
+                   )
+                   (if
+                    (get_local $39)
+                    (block
+                     ;;@ ./dev/cpp/ConvLayer.cpp:229:0
+                     (set_local $3
+                      (i32.load
+                       (get_local $35)
+                      )
+                     )
+                     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+                     (set_local $3
+                      (i32.load
+                       (get_local $3)
+                      )
+                     )
+                     (set_local $3
+                      (i32.add
+                       (get_local $3)
+                       (i32.mul
+                        (get_local $11)
+                        (i32.const 12)
+                       )
+                      )
+                     )
+                     (set_local $3
+                      (i32.load
+                       (get_local $3)
+                      )
+                     )
+                     (set_local $3
+                      (i32.add
+                       (get_local $3)
+                       (i32.mul
+                        (get_local $9)
+                        (i32.const 12)
+                       )
+                      )
+                     )
+                     (set_local $3
+                      (i32.load
+                       (get_local $3)
+                      )
+                     )
+                     (set_local $3
+                      (i32.add
+                       (get_local $3)
+                       (i32.shl
+                        (get_local $6)
                         (i32.const 3)
                        )
                       )
                      )
                      ;;@ ./dev/cpp/ConvLayer.cpp:229:0
-                     (set_local $5
+                     (set_local $4
                       (f64.load
-                       (get_local $1)
-                      )
-                     )
-                     (set_local $5
-                      (f64.mul
-                       (get_local $5)
-                       (get_local $5)
+                       (get_local $3)
                       )
                      )
                      (set_local $4
-                      (f64.load
-                       (get_local $22)
+                      (f64.mul
+                       (get_local $4)
+                       (get_local $4)
                       )
                      )
                      (set_local $5
+                      (f64.load
+                       (get_local $19)
+                      )
+                     )
+                     (set_local $4
                       (f64.add
-                       (get_local $4)
                        (get_local $5)
+                       (get_local $4)
                       )
                      )
                      (f64.store
-                      (get_local $22)
-                      (get_local $5)
+                      (get_local $19)
+                      (get_local $4)
                      )
-                     (set_local $1
+                     (set_local $3
                       (get_local $0)
                      )
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:221:0
-                   (set_local $8
+                   (set_local $6
                     (i32.add
-                     (get_local $8)
+                     (get_local $6)
                      (i32.const 1)
                     )
                    )
                    (if
                     (i32.lt_u
-                     (get_local $8)
-                     (get_local $37)
+                     (get_local $6)
+                     (get_local $40)
                     )
                     (block
-                     (set_local $3
-                      (get_local $15)
+                     (set_local $1
+                      (get_local $13)
                      )
                      (set_local $2
-                      (get_local $17)
+                      (get_local $16)
                      )
                      (br $while-in23)
                     )
                     (block
                      (set_local $2
-                      (get_local $1)
+                      (get_local $3)
                      )
-                     (set_local $3
-                      (get_local $1)
+                     (set_local $1
+                      (get_local $3)
                      )
                     )
                    )
@@ -30793,32 +30874,32 @@
                  )
                 )
                 ;;@ ./dev/cpp/ConvLayer.cpp:220:0
-                (set_local $11
+                (set_local $9
                  (i32.add
-                  (get_local $11)
+                  (get_local $9)
                   (i32.const 1)
                  )
                 )
                 (if
                  (i32.lt_u
-                  (get_local $11)
-                  (get_local $34)
+                  (get_local $9)
+                  (get_local $37)
                  )
                  (block
-                  (set_local $8
-                   (get_local $1)
+                  (set_local $6
+                   (get_local $3)
                   )
-                  (set_local $1
+                  (set_local $3
                    (get_local $2)
                   )
                   (br $while-in21)
                  )
                  (block
-                  (set_local $11
-                   (get_local $1)
+                  (set_local $9
+                   (get_local $3)
                   )
-                  (set_local $8
-                   (get_local $1)
+                  (set_local $6
+                   (get_local $3)
                   )
                  )
                 )
@@ -30826,224 +30907,220 @@
               )
              )
              ;;@ ./dev/cpp/ConvLayer.cpp:219:0
-             (set_local $18
+             (set_local $11
               (i32.add
-               (get_local $18)
+               (get_local $11)
                (i32.const 1)
               )
              )
              (if
               (i32.lt_u
-               (get_local $18)
-               (get_local $30)
+               (get_local $11)
+               (get_local $33)
               )
               (block
-               (set_local $1
-                (get_local $11)
+               (set_local $3
+                (get_local $9)
                )
                (br $while-in19)
               )
-             )
-            )
-            (set_local $2
-             (get_local $19)
-            )
-            (set_local $1
-             (i32.load
-              (i32.add
-               (i32.load
-                (i32.const 5232)
-               )
-               (i32.shl
-                (get_local $40)
-                (i32.const 2)
-               )
+              (set_local $0
+               (get_local $17)
               )
              )
+            )
+           )
+          )
+          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+          (set_local $3
+           (i32.load
+            (get_local $24)
+           )
+          )
+          (set_local $3
+           (i32.add
+            (get_local $3)
+            (i32.shl
+             (get_local $8)
+             (i32.const 3)
             )
            )
           )
           ;;@ ./dev/cpp/ConvLayer.cpp:233:0
-          (set_local $3
+          (set_local $4
+           (f64.load
+            (get_local $3)
+           )
+          )
+          (set_local $2
            (i32.add
-            (get_local $2)
-            (i32.const 112)
+            (get_local $0)
+            (i32.const 120)
            )
           )
           (set_local $5
            (f64.load
-            (get_local $3)
+            (get_local $2)
            )
           )
-          (set_local $3
+          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+          (set_local $2
+           (i32.load
+            (i32.const 5232)
+           )
+          )
+          (set_local $2
            (i32.add
             (get_local $2)
-            (i32.const 120)
+            (i32.shl
+             (get_local $26)
+             (i32.const 2)
+            )
            )
           )
-          (set_local $4
-           (f64.load
-            (get_local $3)
+          ;;@ ./dev/cpp/Network.cpp:36:0
+          (set_local $2
+           (i32.load
+            (get_local $2)
            )
           )
           ;;@ ./dev/cpp/NetMath.cpp:97:0
-          (set_local $3
+          (set_local $2
            (i32.add
-            (get_local $1)
+            (get_local $2)
             (i32.const 16)
            )
           )
-          (set_local $39
+          (set_local $21
            (f32.load
-            (get_local $3)
+            (get_local $2)
            )
           )
-          (set_local $9
+          (set_local $7
            (f64.promote/f32
-            (get_local $39)
+            (get_local $21)
            )
           )
-          (set_local $9
+          (set_local $7
            (f64.mul
-            (get_local $4)
-            (get_local $9)
+            (get_local $5)
+            (get_local $7)
            )
           )
-          (set_local $4
+          (set_local $5
            (f64.load
-            (tee_local $2
+            (tee_local $0
              (i32.add
-              (get_local $2)
+              (get_local $0)
               (i32.const 168)
              )
             )
            )
           )
-          (set_local $9
+          (set_local $7
            (f64.mul
-            (get_local $4)
-            (get_local $9)
+            (get_local $5)
+            (get_local $7)
            )
           )
-          (set_local $9
+          (set_local $7
            (f64.add
-            (get_local $5)
-            (get_local $9)
+            (get_local $4)
+            (get_local $7)
            )
           )
           ;;@ ./dev/cpp/NetMath.cpp:99:0
-          (set_local $3
+          (set_local $2
            (f64.le
-            (get_local $9)
+            (get_local $7)
             (f64.const 0)
            )
           )
-          (set_local $8
+          (set_local $1
            (f64.gt
-            (get_local $5)
+            (get_local $4)
             (f64.const 0)
            )
           )
-          (set_local $5
+          (set_local $4
            (block $__rjto$1 (result f64)
             (block $__rjti$1
              (br_if $__rjti$1
               (i32.and
-               (get_local $8)
-               (get_local $3)
+               (get_local $1)
+               (get_local $2)
               )
              )
-             (set_local $3
+             (set_local $2
               (f64.ge
-               (get_local $9)
+               (get_local $7)
                (f64.const 0)
               )
              )
-             (set_local $8
+             (set_local $1
               (f64.lt
-               (get_local $5)
+               (get_local $4)
                (f64.const 0)
               )
              )
              (br_if $__rjti$1
               (i32.and
-               (get_local $8)
-               (get_local $3)
+               (get_local $1)
+               (get_local $2)
               )
              )
              ;;@ ./dev/cpp/NetMath.cpp:109:0
-             (set_local $5
+             (set_local $4
               (f64.add
-               (get_local $4)
+               (get_local $5)
                (f64.const 0.05)
               )
              )
              ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:1145:0
              (br $__rjto$1
               (call $_fmin
-               (get_local $5)
+               (get_local $4)
                (f64.const 5)
               )
              )
             )
             ;;@ ./dev/cpp/NetMath.cpp:103:0
-            (set_local $5
+            (set_local $4
              (f64.mul
-              (get_local $4)
+              (get_local $5)
               (f64.const 0.95)
              )
             )
             (call $_fmax
-             (get_local $5)
+             (get_local $4)
              (f64.const 0.5)
             )
            )
           )
           (f64.store
-           (get_local $2)
-           (get_local $5)
-          )
-          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-          (set_local $0
-           (i32.add
-            (get_local $0)
-            (i32.shl
-             (get_local $16)
-             (i32.const 2)
-            )
-           )
+           (get_local $0)
+           (get_local $4)
           )
           ;;@ ./dev/cpp/ConvLayer.cpp:233:0
-          (set_local $0
-           (i32.load
-            (get_local $0)
-           )
-          )
-          (set_local $0
-           (i32.add
-            (get_local $0)
-            (i32.const 112)
-           )
-          )
           (f64.store
-           (get_local $0)
-           (get_local $9)
+           (get_local $3)
+           (get_local $7)
           )
           ;;@ ./dev/cpp/ConvLayer.cpp:218:0
-          (set_local $16
+          (set_local $8
            (i32.add
-            (get_local $16)
+            (get_local $8)
             (i32.const 1)
            )
           )
           (if
            (i32.lt_u
-            (get_local $16)
-            (get_local $28)
+            (get_local $8)
+            (get_local $31)
            )
            (block
             (set_local $0
-             (get_local $13)
+             (get_local $20)
             )
             (br $while-in17)
            )
@@ -31055,91 +31132,91 @@
       )
       (if
        (i32.eqz
-        (get_local $15)
+        (get_local $17)
        )
        (block
-        (set_local $9
-         (f64.promote/f32
-          (f32.load offset=16
-           (get_local $12)
-          )
+        (set_local $24
+         (i32.add
+          (get_local $0)
+          (i32.const 164)
          )
         )
-        (set_local $23
+        (set_local $27
+         (i32.add
+          (get_local $15)
+          (i32.const 48)
+         )
+        )
+        (set_local $28
+         (i32.add
+          (get_local $15)
+          (i32.const 64)
+         )
+        )
+        (set_local $29
+         (i32.add
+          (get_local $15)
+          (i32.const 8)
+         )
+        )
+        (set_local $30
+         (i32.add
+          (get_local $15)
+          (i32.const 80)
+         )
+        )
+        (set_local $19
+         (i32.add
+          (get_local $15)
+          (i32.const 88)
+         )
+        )
+        (set_local $31
          (i32.shr_s
           (i32.sub
-           (get_local $17)
            (get_local $13)
+           (get_local $2)
           )
           (i32.const 2)
          )
         )
-        (set_local $22
-         (i32.add
-          (get_local $12)
-          (i32.const 48)
-         )
+        (set_local $20
+         (get_local $2)
         )
-        (set_local $24
-         (i32.add
-          (get_local $12)
-          (i32.const 64)
-         )
-        )
-        (set_local $25
-         (i32.add
-          (get_local $12)
-          (i32.const 8)
-         )
-        )
-        (set_local $26
-         (i32.add
-          (get_local $12)
-          (i32.const 80)
-         )
-        )
-        (set_local $21
-         (i32.add
-          (get_local $12)
-          (i32.const 88)
-         )
-        )
-        (set_local $2
+        (set_local $8
          (i32.const 0)
+        )
+        (set_local $0
+         (get_local $3)
         )
         (loop $while-in26
          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-         (set_local $0
+         (set_local $3
           (i32.add
-           (get_local $8)
+           (get_local $0)
            (i32.shl
-            (get_local $2)
+            (get_local $8)
             (i32.const 2)
            )
           )
          )
          ;;@ ./dev/cpp/ConvLayer.cpp:238:0
-         (set_local $0
+         (set_local $3
           (i32.load
-           (get_local $0)
+           (get_local $3)
           )
          )
-         (set_local $1
+         (set_local $2
           (i32.add
-           (get_local $0)
+           (get_local $3)
            (i32.const 12)
           )
          )
          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-         (set_local $3
+         (set_local $1
           (i32.add
-           (get_local $0)
-           (i32.const 16)
-          )
-         )
-         (set_local $3
-          (i32.load
            (get_local $3)
+           (i32.const 16)
           )
          )
          (set_local $1
@@ -31147,23 +31224,31 @@
            (get_local $1)
           )
          )
+         (set_local $2
+          (i32.load
+           (get_local $2)
+          )
+         )
          (if
           ;;@ ./dev/cpp/ConvLayer.cpp:238:0
-          (i32.ne
-           (get_local $3)
+          (i32.eq
            (get_local $1)
+           (get_local $2)
+          )
+          (set_local $0
+           (get_local $3)
           )
           (block
-           (set_local $27
+           (set_local $32
             (i32.eq
              (i32.load offset=4
-              (tee_local $0
+              (tee_local $3
                (i32.load offset=12
                 (i32.load
                  (i32.add
-                  (get_local $8)
+                  (get_local $0)
                   (i32.shl
-                   (get_local $2)
+                   (get_local $8)
                    (i32.const 2)
                   )
                  )
@@ -31172,20 +31257,20 @@
               )
              )
              (i32.load
-              (get_local $0)
+              (get_local $3)
              )
             )
            )
-           (set_local $28
+           (set_local $33
             (i32.div_s
              (i32.sub
               (i32.load offset=16
                (tee_local $17
                 (i32.load
                  (i32.add
-                  (get_local $8)
+                  (get_local $0)
                   (i32.shl
-                   (get_local $2)
+                   (get_local $8)
                    (i32.const 2)
                   )
                  )
@@ -31199,70 +31284,64 @@
              (i32.const 12)
             )
            )
-           (set_local $29
+           (set_local $34
             (i32.add
-             (get_local $8)
+             (i32.load
+              (i32.const 5232)
+             )
              (i32.shl
-              (get_local $2)
+              (get_local $26)
               (i32.const 2)
              )
             )
            )
-           (set_local $30
+           (set_local $35
             (i32.add
-             (get_local $8)
+             (get_local $0)
              (i32.shl
-              (get_local $2)
+              (get_local $8)
               (i32.const 2)
              )
             )
            )
-           (set_local $31
-            (i32.add
-             (get_local $8)
-             (i32.shl
-              (get_local $2)
-              (i32.const 2)
-             )
-            )
+           (set_local $11
+            (i32.const 0)
            )
-           (set_local $32
-            (i32.add
-             (get_local $8)
-             (i32.shl
-              (get_local $2)
-              (i32.const 2)
-             )
-            )
+           (set_local $2
+            (get_local $0)
            )
-           (set_local $33
-            (i32.add
-             (get_local $8)
-             (i32.shl
-              (get_local $2)
-              (i32.const 2)
-             )
-            )
+           (set_local $1
+            (get_local $0)
+           )
+           (set_local $6
+            (get_local $0)
            )
            (set_local $3
-            (i32.const 0)
+            (get_local $0)
            )
            (loop $while-in28
             (if
-             (i32.eqz
-              (get_local $27)
+             (get_local $32)
+             (set_local $9
+              (get_local $3)
              )
              (block
-              (set_local $34
+              (set_local $36
                (i32.eq
                 (i32.load offset=4
-                 (tee_local $0
+                 (tee_local $6
                   (i32.load
-                   (tee_local $19
+                   (tee_local $25
                     (i32.load offset=12
-                     (tee_local $15
+                     (tee_local $22
                       (i32.load
-                       (get_local $30)
+                       (i32.add
+                        (get_local $6)
+                        (i32.shl
+                         (get_local $8)
+                         (i32.const 2)
+                        )
+                       )
                       )
                      )
                     )
@@ -31271,87 +31350,126 @@
                  )
                 )
                 (i32.load
-                 (get_local $0)
+                 (get_local $6)
                 )
                )
               )
-              (set_local $35
+              (set_local $37
                (i32.div_s
                 (i32.sub
                  (i32.load offset=4
-                  (tee_local $0
+                  (tee_local $6
                    (i32.load offset=12
                     (i32.load
-                     (get_local $31)
+                     (i32.add
+                      (get_local $3)
+                      (i32.shl
+                       (get_local $8)
+                       (i32.const 2)
+                      )
+                     )
                     )
                    )
                   )
                  )
                  (i32.load
-                  (get_local $0)
+                  (get_local $6)
                  )
                 )
                 (i32.const 12)
                )
               )
-              (set_local $11
+              (set_local $9
                (i32.const 0)
+              )
+              (set_local $6
+               (get_local $3)
+              )
+              (set_local $3
+               (get_local $2)
               )
               (loop $while-in30
                (if
-                (i32.eqz
-                 (get_local $34)
+                (get_local $36)
+                (block
+                 (set_local $2
+                  (get_local $3)
+                 )
+                 (set_local $3
+                  (get_local $6)
+                 )
                 )
                 (block
-                 (set_local $6
+                 (set_local $10
                   (f64.convert_s/i32
                    (i32.load
-                    (get_local $25)
+                    (get_local $29)
                    )
                   )
                  )
-                 (set_local $36
+                 (set_local $12
+                  (f64.promote/f32
+                   (f32.load offset=16
+                    (i32.load
+                     (get_local $34)
+                    )
+                   )
+                  )
+                 )
+                 (set_local $38
                   (i32.load
                    (i32.add
                     (i32.load
                      (i32.add
                       (i32.load
                        (i32.load
-                        (get_local $32)
+                        (i32.add
+                         (get_local $1)
+                         (i32.shl
+                          (get_local $8)
+                          (i32.const 2)
+                         )
+                        )
                        )
                       )
                       (i32.mul
-                       (get_local $3)
+                       (get_local $11)
                        (i32.const 12)
                       )
                      )
                     )
                     (i32.mul
-                     (get_local $11)
+                     (get_local $9)
                      (i32.const 12)
                     )
                    )
                   )
                  )
-                 (set_local $37
+                 (set_local $39
                   (f32.ne
                    (f32.load
-                    (get_local $26)
+                    (get_local $30)
                    )
                    (f32.const 0)
                   )
                  )
-                 (set_local $38
+                 (set_local $40
                   (i32.shr_s
                    (i32.sub
                     (i32.load offset=4
-                     (tee_local $0
+                     (tee_local $2
                       (i32.load
-                       (tee_local $18
+                       (tee_local $13
                         (i32.load offset=12
                          (tee_local $16
                           (i32.load
-                           (get_local $33)
+                           (i32.add
+                            (get_local $3)
+                            (i32.shl
+                             (get_local $8)
+                             (i32.const 2)
+                            )
+                           )
                           )
                          )
                         )
@@ -31360,20 +31478,20 @@
                      )
                     )
                     (i32.load
-                     (get_local $0)
+                     (get_local $2)
                     )
                    )
                    (i32.const 3)
                   )
                  )
-                 (set_local $13
+                 (set_local $6
                   (i32.const 0)
                  )
                  (set_local $1
-                  (get_local $19)
+                  (get_local $25)
                  )
-                 (set_local $0
-                  (get_local $15)
+                 (set_local $2
+                  (get_local $22)
                  )
                  (loop $while-in32
                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
@@ -31381,20 +31499,6 @@
                    (i32.add
                     (get_local $1)
                     (i32.mul
-                     (get_local $3)
-                     (i32.const 12)
-                    )
-                   )
-                  )
-                  (set_local $1
-                   (i32.load
-                    (get_local $1)
-                   )
-                  )
-                  (set_local $1
-                   (i32.add
-                    (get_local $1)
-                    (i32.mul
                      (get_local $11)
                      (i32.const 12)
                     )
@@ -31408,14 +31512,28 @@
                   (set_local $1
                    (i32.add
                     (get_local $1)
+                    (i32.mul
+                     (get_local $9)
+                     (i32.const 12)
+                    )
+                   )
+                  )
+                  (set_local $1
+                   (i32.load
+                    (get_local $1)
+                   )
+                  )
+                  (set_local $1
+                   (i32.add
+                    (get_local $1)
                     (i32.shl
-                     (get_local $13)
+                     (get_local $6)
                      (i32.const 3)
                     )
                    )
                   )
                   ;;@ ./dev/cpp/ConvLayer.cpp:242:0
-                  (set_local $4
+                  (set_local $5
                    (f64.load
                     (get_local $1)
                    )
@@ -31423,27 +31541,13 @@
                   ;;@ ./dev/cpp/ConvLayer.cpp:243:0
                   (set_local $7
                    (f64.load
-                    (get_local $22)
+                    (get_local $27)
                    )
                   )
                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
                   (set_local $1
                    (i32.load
-                    (get_local $0)
-                   )
-                  )
-                  (set_local $1
-                   (i32.add
-                    (get_local $1)
-                    (i32.mul
-                     (get_local $3)
-                     (i32.const 12)
-                    )
-                   )
-                  )
-                  (set_local $1
-                   (i32.load
-                    (get_local $1)
+                    (get_local $2)
                    )
                   )
                   (set_local $1
@@ -31463,14 +31567,28 @@
                   (set_local $1
                    (i32.add
                     (get_local $1)
+                    (i32.mul
+                     (get_local $9)
+                     (i32.const 12)
+                    )
+                   )
+                  )
+                  (set_local $1
+                   (i32.load
+                    (get_local $1)
+                   )
+                  )
+                  (set_local $1
+                   (i32.add
+                    (get_local $1)
                     (i32.shl
-                     (get_local $13)
+                     (get_local $6)
                      (i32.const 3)
                     )
                    )
                   )
                   ;;@ ./dev/cpp/ConvLayer.cpp:243:0
-                  (set_local $5
+                  (set_local $4
                    (f64.load
                     (get_local $1)
                    )
@@ -31478,28 +31596,28 @@
                   (set_local $7
                    (f64.mul
                     (get_local $7)
-                    (get_local $5)
+                    (get_local $4)
                    )
                   )
-                  (set_local $4
+                  (set_local $5
                    (f64.add
-                    (get_local $4)
+                    (get_local $5)
                     (get_local $7)
                    )
                   )
                   ;;@ ./dev/cpp/ConvLayer.cpp:244:0
                   (set_local $7
                    (f64.load
-                    (get_local $24)
+                    (get_local $28)
                    )
                   )
                   (set_local $1
                    (f64.gt
-                    (get_local $5)
+                    (get_local $4)
                     (f64.const 0)
                    )
                   )
-                  (set_local $14
+                  (set_local $23
                    (if (result f64)
                     (get_local $1)
                     (f64.const 1)
@@ -31509,77 +31627,77 @@
                   (set_local $7
                    (f64.mul
                     (get_local $7)
-                    (get_local $14)
+                    (get_local $23)
                    )
                   )
-                  (set_local $4
+                  (set_local $5
                    (f64.add
-                    (get_local $4)
+                    (get_local $5)
                     (get_local $7)
                    )
                   )
-                  (set_local $4
+                  (set_local $5
                    (f64.div
-                    (get_local $4)
-                    (get_local $6)
+                    (get_local $5)
+                    (get_local $10)
                    )
                   )
                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
                   (set_local $7
                    (f64.mul
-                    (get_local $4)
-                    (get_local $4)
+                    (get_local $5)
+                    (get_local $5)
                    )
                   )
                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                  (set_local $0
+                  (set_local $2
                    (i32.add
-                    (get_local $0)
+                    (get_local $2)
                     (i32.const 36)
                    )
                   )
-                  (set_local $0
+                  (set_local $2
                    (i32.load
-                    (get_local $0)
+                    (get_local $2)
                    )
                   )
-                  (set_local $0
+                  (set_local $2
                    (i32.add
-                    (get_local $0)
-                    (i32.mul
-                     (get_local $3)
-                     (i32.const 12)
-                    )
-                   )
-                  )
-                  (set_local $0
-                   (i32.load
-                    (get_local $0)
-                   )
-                  )
-                  (set_local $0
-                   (i32.add
-                    (get_local $0)
+                    (get_local $2)
                     (i32.mul
                      (get_local $11)
                      (i32.const 12)
                     )
                    )
                   )
-                  (set_local $0
+                  (set_local $2
                    (i32.load
-                    (get_local $0)
+                    (get_local $2)
+                   )
+                  )
+                  (set_local $2
+                   (i32.add
+                    (get_local $2)
+                    (i32.mul
+                     (get_local $9)
+                     (i32.const 12)
+                    )
+                   )
+                  )
+                  (set_local $2
+                   (i32.load
+                    (get_local $2)
                    )
                   )
                   (set_local $7
                    (f64.add
                     (get_local $7)
                     (f64.load
-                     (tee_local $0
+                     (tee_local $2
                       (i32.add
-                       (get_local $0)
+                       (get_local $2)
                        (i32.shl
-                        (get_local $13)
+                        (get_local $6)
                         (i32.const 3)
                        )
                       )
@@ -31588,14 +31706,14 @@
                    )
                   )
                   (f64.store
-                   (get_local $0)
+                   (get_local $2)
                    (get_local $7)
                   )
                   ;;@ ./dev/cpp/NetMath.cpp:139:0
-                  (set_local $4
+                  (set_local $5
                    (f64.mul
-                    (get_local $4)
-                    (get_local $9)
+                    (get_local $5)
+                    (get_local $12)
                    )
                   )
                   (set_local $7
@@ -31609,208 +31727,272 @@
                     (f64.const 1e-06)
                    )
                   )
-                  (set_local $4
+                  (set_local $5
                    (f64.div
-                    (get_local $4)
+                    (get_local $5)
                     (get_local $7)
                    )
                   )
-                  (set_local $5
+                  (set_local $4
                    (f64.add
-                    (get_local $5)
                     (get_local $4)
+                    (get_local $5)
                    )
                   )
                   ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                  (set_local $0
+                  (set_local $2
                    (i32.add
-                    (get_local $36)
+                    (get_local $38)
                     (i32.shl
-                     (get_local $13)
+                     (get_local $6)
                      (i32.const 3)
                     )
                    )
                   )
                   ;;@ ./dev/cpp/ConvLayer.cpp:246:0
                   (f64.store
-                   (get_local $0)
-                   (get_local $5)
+                   (get_local $2)
+                   (get_local $4)
                   )
                   (if
-                   (get_local $37)
+                   (get_local $39)
                    (block
                     ;;@ ./dev/cpp/ConvLayer.cpp:248:0
-                    (set_local $0
+                    (set_local $3
                      (i32.load
-                      (get_local $29)
+                      (get_local $35)
                      )
                     )
                     ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                    (set_local $0
+                    (set_local $3
                      (i32.load
-                      (get_local $0)
+                      (get_local $3)
                      )
                     )
-                    (set_local $0
+                    (set_local $3
                      (i32.add
-                      (get_local $0)
-                      (i32.mul
-                       (get_local $3)
-                       (i32.const 12)
-                      )
-                     )
-                    )
-                    (set_local $0
-                     (i32.load
-                      (get_local $0)
-                     )
-                    )
-                    (set_local $0
-                     (i32.add
-                      (get_local $0)
+                      (get_local $3)
                       (i32.mul
                        (get_local $11)
                        (i32.const 12)
                       )
                      )
                     )
-                    (set_local $0
+                    (set_local $3
                      (i32.load
-                      (get_local $0)
+                      (get_local $3)
                      )
                     )
-                    (set_local $0
+                    (set_local $3
                      (i32.add
-                      (get_local $0)
+                      (get_local $3)
+                      (i32.mul
+                       (get_local $9)
+                       (i32.const 12)
+                      )
+                     )
+                    )
+                    (set_local $3
+                     (i32.load
+                      (get_local $3)
+                     )
+                    )
+                    (set_local $3
+                     (i32.add
+                      (get_local $3)
                       (i32.shl
-                       (get_local $13)
+                       (get_local $6)
                        (i32.const 3)
                       )
                      )
                     )
                     ;;@ ./dev/cpp/ConvLayer.cpp:248:0
-                    (set_local $5
+                    (set_local $4
                      (f64.load
-                      (get_local $0)
-                     )
-                    )
-                    (set_local $5
-                     (f64.mul
-                      (get_local $5)
-                      (get_local $5)
+                      (get_local $3)
                      )
                     )
                     (set_local $4
-                     (f64.load
-                      (get_local $21)
+                     (f64.mul
+                      (get_local $4)
+                      (get_local $4)
                      )
                     )
                     (set_local $5
+                     (f64.load
+                      (get_local $19)
+                     )
+                    )
+                    (set_local $4
                      (f64.add
-                      (get_local $4)
                       (get_local $5)
+                      (get_local $4)
                      )
                     )
                     (f64.store
-                     (get_local $21)
-                     (get_local $5)
+                     (get_local $19)
+                     (get_local $4)
+                    )
+                    (set_local $3
+                     (get_local $0)
                     )
                    )
                   )
                   ;;@ ./dev/cpp/ConvLayer.cpp:240:0
-                  (set_local $13
+                  (set_local $6
                    (i32.add
-                    (get_local $13)
+                    (get_local $6)
                     (i32.const 1)
                    )
                   )
                   (if
                    (i32.lt_u
-                    (get_local $13)
-                    (get_local $38)
+                    (get_local $6)
+                    (get_local $40)
                    )
                    (block
                     (set_local $1
-                     (get_local $18)
+                     (get_local $13)
                     )
-                    (set_local $0
+                    (set_local $2
                      (get_local $16)
                     )
                     (br $while-in32)
+                   )
+                   (block
+                    (set_local $2
+                     (get_local $3)
+                    )
+                    (set_local $1
+                     (get_local $3)
+                    )
                    )
                   )
                  )
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:239:0
-               (set_local $11
+               (set_local $9
                 (i32.add
-                 (get_local $11)
+                 (get_local $9)
                  (i32.const 1)
                 )
                )
-               (br_if $while-in30
+               (if
                 (i32.lt_u
-                 (get_local $11)
-                 (get_local $35)
+                 (get_local $9)
+                 (get_local $37)
+                )
+                (block
+                 (set_local $6
+                  (get_local $3)
+                 )
+                 (set_local $3
+                  (get_local $2)
+                 )
+                 (br $while-in30)
+                )
+                (block
+                 (set_local $9
+                  (get_local $3)
+                 )
+                 (set_local $6
+                  (get_local $3)
+                 )
                 )
                )
               )
              )
             )
             ;;@ ./dev/cpp/ConvLayer.cpp:238:0
-            (set_local $3
+            (set_local $11
              (i32.add
-              (get_local $3)
+              (get_local $11)
               (i32.const 1)
              )
             )
-            (br_if $while-in28
+            (if
              (i32.lt_u
-              (get_local $3)
-              (get_local $28)
+              (get_local $11)
+              (get_local $33)
              )
-            )
-            (set_local $0
-             (get_local $17)
+             (block
+              (set_local $3
+               (get_local $9)
+              )
+              (br $while-in28)
+             )
+             (set_local $0
+              (get_local $17)
+             )
             )
            )
           )
          )
-         ;;@ ./dev/cpp/ConvLayer.cpp:252:0
-         (set_local $1
-          (i32.add
-           (get_local $0)
-           (i32.const 112)
+         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+         (set_local $3
+          (i32.load
+           (get_local $24)
           )
          )
+         (set_local $3
+          (i32.add
+           (get_local $3)
+           (i32.shl
+            (get_local $8)
+            (i32.const 3)
+           )
+          )
+         )
+         ;;@ ./dev/cpp/ConvLayer.cpp:252:0
          (set_local $7
           (f64.load
-           (get_local $1)
+           (get_local $3)
           )
          )
-         (set_local $1
+         (set_local $2
           (i32.add
            (get_local $0)
            (i32.const 120)
           )
          )
-         (set_local $5
+         (set_local $4
           (f64.load
-           (get_local $1)
+           (get_local $2)
+          )
+         )
+         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+         (set_local $2
+          (i32.load
+           (i32.const 5232)
+          )
+         )
+         (set_local $2
+          (i32.add
+           (get_local $2)
+           (i32.shl
+            (get_local $26)
+            (i32.const 2)
+           )
+          )
+         )
+         ;;@ ./dev/cpp/Network.cpp:36:0
+         (set_local $2
+          (i32.load
+           (get_local $2)
           )
          )
          ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-         (set_local $4
+         (set_local $5
           (f64.mul
-           (get_local $5)
-           (get_local $5)
+           (get_local $4)
+           (get_local $4)
           )
          )
          ;;@ ./dev/cpp/NetMath.cpp:136:0
-         (set_local $4
+         (set_local $5
           (f64.add
-           (get_local $4)
+           (get_local $5)
            (f64.load
             (tee_local $0
              (i32.add
@@ -31823,75 +32005,76 @@
          )
          (f64.store
           (get_local $0)
-          (get_local $4)
+          (get_local $5)
          )
          ;;@ ./dev/cpp/NetMath.cpp:139:0
-         (set_local $5
+         (set_local $0
+          (i32.add
+           (get_local $2)
+           (i32.const 16)
+          )
+         )
+         (set_local $21
+          (f32.load
+           (get_local $0)
+          )
+         )
+         (set_local $10
+          (f64.promote/f32
+           (get_local $21)
+          )
+         )
+         (set_local $4
           (f64.mul
-           (get_local $5)
-           (get_local $9)
+           (get_local $4)
+           (get_local $10)
           )
          )
-         (set_local $4
+         (set_local $5
           (f64.sqrt
-           (get_local $4)
+           (get_local $5)
           )
          )
-         (set_local $4
+         (set_local $5
           (f64.add
-           (get_local $4)
+           (get_local $5)
            (f64.const 1e-06)
           )
          )
-         (set_local $5
+         (set_local $4
           (f64.div
+           (get_local $4)
            (get_local $5)
+          )
+         )
+         (set_local $4
+          (f64.add
+           (get_local $7)
            (get_local $4)
           )
          )
-         (set_local $5
-          (f64.add
-           (get_local $7)
-           (get_local $5)
-          )
-         )
-         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-         (set_local $0
-          (i32.add
-           (get_local $8)
-           (i32.shl
-            (get_local $2)
-            (i32.const 2)
-           )
-          )
-         )
          ;;@ ./dev/cpp/ConvLayer.cpp:252:0
-         (set_local $0
-          (i32.load
-           (get_local $0)
-          )
-         )
-         (set_local $0
-          (i32.add
-           (get_local $0)
-           (i32.const 112)
-          )
-         )
          (f64.store
-          (get_local $0)
-          (get_local $5)
+          (get_local $3)
+          (get_local $4)
          )
          ;;@ ./dev/cpp/ConvLayer.cpp:237:0
-         (set_local $2
+         (set_local $8
           (i32.add
-           (get_local $2)
+           (get_local $8)
            (i32.const 1)
           )
          )
-         (br_if $while-in26
+         (if
           (i32.lt_u
-           (get_local $2)
-           (get_local $23)
+           (get_local $8)
+           (get_local $31)
+          )
+          (block
+           (set_local $0
+            (get_local $20)
+           )
+           (br $while-in26)
           )
          )
         )
@@ -31901,108 +32084,91 @@
      )
      (if
       (i32.eqz
-       (get_local $15)
+       (get_local $17)
       )
       (block
-       (set_local $9
-        (f64.promote/f32
-         (tee_local $39
-          (f32.load offset=20
-           (get_local $12)
-          )
-         )
+       (set_local $24
+        (i32.add
+         (get_local $0)
+         (i32.const 164)
         )
        )
-       (set_local $7
-        (f64.promote/f32
-         (f32.sub
-          (f32.const 1)
-          (get_local $39)
-         )
+       (set_local $27
+        (i32.add
+         (get_local $15)
+         (i32.const 48)
         )
        )
-       (set_local $6
-        (f64.promote/f32
-         (f32.load offset=16
-          (get_local $12)
-         )
+       (set_local $28
+        (i32.add
+         (get_local $15)
+         (i32.const 64)
         )
        )
-       (set_local $23
+       (set_local $29
+        (i32.add
+         (get_local $15)
+         (i32.const 8)
+        )
+       )
+       (set_local $30
+        (i32.add
+         (get_local $15)
+         (i32.const 80)
+        )
+       )
+       (set_local $19
+        (i32.add
+         (get_local $15)
+         (i32.const 88)
+        )
+       )
+       (set_local $31
         (i32.shr_s
          (i32.sub
-          (get_local $17)
           (get_local $13)
+          (get_local $2)
          )
          (i32.const 2)
         )
        )
-       (set_local $22
-        (i32.add
-         (get_local $12)
-         (i32.const 48)
-        )
+       (set_local $20
+        (get_local $2)
        )
-       (set_local $24
-        (i32.add
-         (get_local $12)
-         (i32.const 64)
-        )
-       )
-       (set_local $25
-        (i32.add
-         (get_local $12)
-         (i32.const 8)
-        )
-       )
-       (set_local $26
-        (i32.add
-         (get_local $12)
-         (i32.const 80)
-        )
-       )
-       (set_local $21
-        (i32.add
-         (get_local $12)
-         (i32.const 88)
-        )
-       )
-       (set_local $2
+       (set_local $8
         (i32.const 0)
+       )
+       (set_local $0
+        (get_local $3)
        )
        (loop $while-in35
         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-        (set_local $0
+        (set_local $3
          (i32.add
-          (get_local $8)
+          (get_local $0)
           (i32.shl
-           (get_local $2)
+           (get_local $8)
            (i32.const 2)
           )
          )
         )
         ;;@ ./dev/cpp/ConvLayer.cpp:257:0
-        (set_local $0
+        (set_local $3
          (i32.load
-          (get_local $0)
+          (get_local $3)
          )
         )
-        (set_local $1
+        (set_local $2
          (i32.add
-          (get_local $0)
+          (get_local $3)
           (i32.const 12)
          )
         )
         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-        (set_local $3
+        (set_local $1
          (i32.add
-          (get_local $0)
-          (i32.const 16)
-         )
-        )
-        (set_local $3
-         (i32.load
           (get_local $3)
+          (i32.const 16)
          )
         )
         (set_local $1
@@ -32010,23 +32176,31 @@
           (get_local $1)
          )
         )
+        (set_local $2
+         (i32.load
+          (get_local $2)
+         )
+        )
         (if
          ;;@ ./dev/cpp/ConvLayer.cpp:257:0
-         (i32.ne
-          (get_local $3)
+         (i32.eq
           (get_local $1)
+          (get_local $2)
+         )
+         (set_local $0
+          (get_local $3)
          )
          (block
-          (set_local $27
+          (set_local $32
            (i32.eq
             (i32.load offset=4
-             (tee_local $0
+             (tee_local $3
               (i32.load offset=12
                (i32.load
                 (i32.add
-                 (get_local $8)
+                 (get_local $0)
                  (i32.shl
-                  (get_local $2)
+                  (get_local $8)
                   (i32.const 2)
                  )
                 )
@@ -32035,20 +32209,20 @@
              )
             )
             (i32.load
-             (get_local $0)
+             (get_local $3)
             )
            )
           )
-          (set_local $28
+          (set_local $33
            (i32.div_s
             (i32.sub
              (i32.load offset=16
               (tee_local $17
                (i32.load
                 (i32.add
-                 (get_local $8)
+                 (get_local $0)
                  (i32.shl
-                  (get_local $2)
+                  (get_local $8)
                   (i32.const 2)
                  )
                 )
@@ -32062,70 +32236,64 @@
             (i32.const 12)
            )
           )
-          (set_local $29
+          (set_local $34
            (i32.add
-            (get_local $8)
+            (i32.load
+             (i32.const 5232)
+            )
             (i32.shl
-             (get_local $2)
+             (get_local $26)
              (i32.const 2)
             )
            )
           )
-          (set_local $30
+          (set_local $35
            (i32.add
-            (get_local $8)
+            (get_local $0)
             (i32.shl
-             (get_local $2)
+             (get_local $8)
              (i32.const 2)
             )
            )
           )
-          (set_local $31
-           (i32.add
-            (get_local $8)
-            (i32.shl
-             (get_local $2)
-             (i32.const 2)
-            )
-           )
+          (set_local $11
+           (i32.const 0)
           )
-          (set_local $32
-           (i32.add
-            (get_local $8)
-            (i32.shl
-             (get_local $2)
-             (i32.const 2)
-            )
-           )
+          (set_local $2
+           (get_local $0)
           )
-          (set_local $33
-           (i32.add
-            (get_local $8)
-            (i32.shl
-             (get_local $2)
-             (i32.const 2)
-            )
-           )
+          (set_local $1
+           (get_local $0)
+          )
+          (set_local $6
+           (get_local $0)
           )
           (set_local $3
-           (i32.const 0)
+           (get_local $0)
           )
           (loop $while-in37
            (if
-            (i32.eqz
-             (get_local $27)
+            (get_local $32)
+            (set_local $9
+             (get_local $3)
             )
             (block
-             (set_local $34
+             (set_local $36
               (i32.eq
                (i32.load offset=4
-                (tee_local $0
+                (tee_local $6
                  (i32.load
-                  (tee_local $19
+                  (tee_local $25
                    (i32.load offset=12
-                    (tee_local $15
+                    (tee_local $22
                      (i32.load
-                      (get_local $30)
+                      (i32.add
+                       (get_local $6)
+                       (i32.shl
+                        (get_local $8)
+                        (i32.const 2)
+                       )
+                      )
                      )
                     )
                    )
@@ -32134,87 +32302,145 @@
                 )
                )
                (i32.load
-                (get_local $0)
+                (get_local $6)
                )
               )
              )
-             (set_local $35
+             (set_local $37
               (i32.div_s
                (i32.sub
                 (i32.load offset=4
-                 (tee_local $0
+                 (tee_local $6
                   (i32.load offset=12
                    (i32.load
-                    (get_local $31)
+                    (i32.add
+                     (get_local $3)
+                     (i32.shl
+                      (get_local $8)
+                      (i32.const 2)
+                     )
+                    )
                    )
                   )
                  )
                 )
                 (i32.load
-                 (get_local $0)
+                 (get_local $6)
                 )
                )
                (i32.const 12)
               )
              )
-             (set_local $11
+             (set_local $9
               (i32.const 0)
+             )
+             (set_local $6
+              (get_local $3)
+             )
+             (set_local $3
+              (get_local $2)
              )
              (loop $while-in39
               (if
-               (i32.eqz
-                (get_local $34)
+               (get_local $36)
+               (block
+                (set_local $2
+                 (get_local $3)
+                )
+                (set_local $3
+                 (get_local $6)
+                )
                )
                (block
                 (set_local $10
                  (f64.convert_s/i32
                   (i32.load
-                   (get_local $25)
+                   (get_local $29)
                   )
                  )
                 )
-                (set_local $36
+                (set_local $12
+                 (f64.promote/f32
+                  (tee_local $21
+                   (f32.load offset=20
+                    (tee_local $2
+                     (i32.load
+                      (get_local $34)
+                     )
+                    )
+                   )
+                  )
+                 )
+                )
+                (set_local $23
+                 (f64.promote/f32
+                  (f32.sub
+                   (f32.const 1)
+                   (get_local $21)
+                  )
+                 )
+                )
+                (set_local $14
+                 (f64.promote/f32
+                  (f32.load offset=16
+                   (get_local $2)
+                  )
+                 )
+                )
+                (set_local $38
                  (i32.load
                   (i32.add
                    (i32.load
                     (i32.add
                      (i32.load
                       (i32.load
-                       (get_local $32)
+                       (i32.add
+                        (get_local $1)
+                        (i32.shl
+                         (get_local $8)
+                         (i32.const 2)
+                        )
+                       )
                       )
                      )
                      (i32.mul
-                      (get_local $3)
+                      (get_local $11)
                       (i32.const 12)
                      )
                     )
                    )
                    (i32.mul
-                    (get_local $11)
+                    (get_local $9)
                     (i32.const 12)
                    )
                   )
                  )
                 )
-                (set_local $37
+                (set_local $39
                  (f32.ne
                   (f32.load
-                   (get_local $26)
+                   (get_local $30)
                   )
                   (f32.const 0)
                  )
                 )
-                (set_local $38
+                (set_local $40
                  (i32.shr_s
                   (i32.sub
                    (i32.load offset=4
-                    (tee_local $0
+                    (tee_local $2
                      (i32.load
-                      (tee_local $18
+                      (tee_local $13
                        (i32.load offset=12
                         (tee_local $16
                          (i32.load
-                          (get_local $33)
+                          (i32.add
+                           (get_local $3)
+                           (i32.shl
+                            (get_local $8)
+                            (i32.const 2)
+                           )
+                          )
                          )
                         )
                        )
@@ -32223,20 +32449,20 @@
                     )
                    )
                    (i32.load
-                    (get_local $0)
+                    (get_local $2)
                    )
                   )
                   (i32.const 3)
                  )
                 )
-                (set_local $13
+                (set_local $6
                  (i32.const 0)
                 )
                 (set_local $1
-                 (get_local $19)
+                 (get_local $25)
                 )
-                (set_local $0
-                 (get_local $15)
+                (set_local $2
+                 (get_local $22)
                 )
                 (loop $while-in41
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
@@ -32244,20 +32470,6 @@
                   (i32.add
                    (get_local $1)
                    (i32.mul
-                    (get_local $3)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $1
-                  (i32.load
-                   (get_local $1)
-                  )
-                 )
-                 (set_local $1
-                  (i32.add
-                   (get_local $1)
-                   (i32.mul
                     (get_local $11)
                     (i32.const 12)
                    )
@@ -32271,42 +32483,42 @@
                  (set_local $1
                   (i32.add
                    (get_local $1)
+                   (i32.mul
+                    (get_local $9)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $1
+                  (i32.load
+                   (get_local $1)
+                  )
+                 )
+                 (set_local $1
+                  (i32.add
+                   (get_local $1)
                    (i32.shl
-                    (get_local $13)
+                    (get_local $6)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:261:0
-                 (set_local $4
+                 (set_local $5
                   (f64.load
                    (get_local $1)
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:262:0
-                 (set_local $14
+                 (set_local $7
                   (f64.load
-                   (get_local $22)
+                   (get_local $27)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
                  (set_local $1
                   (i32.load
-                   (get_local $0)
-                  )
-                 )
-                 (set_local $1
-                  (i32.add
-                   (get_local $1)
-                   (i32.mul
-                    (get_local $3)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $1
-                  (i32.load
-                   (get_local $1)
+                   (get_local $2)
                   )
                  )
                  (set_local $1
@@ -32326,359 +32538,445 @@
                  (set_local $1
                   (i32.add
                    (get_local $1)
+                   (i32.mul
+                    (get_local $9)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $1
+                  (i32.load
+                   (get_local $1)
+                  )
+                 )
+                 (set_local $1
+                  (i32.add
+                   (get_local $1)
                    (i32.shl
-                    (get_local $13)
+                    (get_local $6)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:262:0
-                 (set_local $5
+                 (set_local $4
                   (f64.load
                    (get_local $1)
                   )
                  )
-                 (set_local $14
+                 (set_local $7
                   (f64.mul
-                   (get_local $14)
-                   (get_local $5)
+                   (get_local $7)
+                   (get_local $4)
                   )
                  )
-                 (set_local $4
+                 (set_local $5
                   (f64.add
-                   (get_local $4)
-                   (get_local $14)
+                   (get_local $5)
+                   (get_local $7)
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:263:0
-                 (set_local $14
+                 (set_local $7
                   (f64.load
-                   (get_local $24)
+                   (get_local $28)
                   )
                  )
                  (set_local $1
                   (f64.gt
-                   (get_local $5)
+                   (get_local $4)
                    (f64.const 0)
                   )
                  )
-                 (set_local $20
+                 (set_local $18
                   (if (result f64)
                    (get_local $1)
                    (f64.const 1)
                    (f64.const -1)
                   )
                  )
-                 (set_local $14
+                 (set_local $7
                   (f64.mul
-                   (get_local $14)
-                   (get_local $20)
+                   (get_local $7)
+                   (get_local $18)
                   )
                  )
-                 (set_local $4
+                 (set_local $5
                   (f64.add
-                   (get_local $4)
-                   (get_local $14)
+                   (get_local $5)
+                   (get_local $7)
                   )
                  )
-                 (set_local $4
+                 (set_local $5
                   (f64.div
-                   (get_local $4)
+                   (get_local $5)
                    (get_local $10)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $0
+                 (set_local $2
                   (i32.add
-                   (get_local $0)
+                   (get_local $2)
                    (i32.const 36)
                   )
                  )
-                 (set_local $0
+                 (set_local $2
                   (i32.load
-                   (get_local $0)
+                   (get_local $2)
                   )
                  )
-                 (set_local $0
+                 (set_local $2
                   (i32.add
-                   (get_local $0)
-                   (i32.mul
-                    (get_local $3)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $0
-                  (i32.load
-                   (get_local $0)
-                  )
-                 )
-                 (set_local $0
-                  (i32.add
-                   (get_local $0)
+                   (get_local $2)
                    (i32.mul
                     (get_local $11)
                     (i32.const 12)
                    )
                   )
                  )
-                 (set_local $0
+                 (set_local $2
                   (i32.load
-                   (get_local $0)
+                   (get_local $2)
                   )
                  )
-                 (set_local $0
+                 (set_local $2
                   (i32.add
-                   (get_local $0)
+                   (get_local $2)
+                   (i32.mul
+                    (get_local $9)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $2
+                  (i32.load
+                   (get_local $2)
+                  )
+                 )
+                 (set_local $2
+                  (i32.add
+                   (get_local $2)
                    (i32.shl
-                    (get_local $13)
+                    (get_local $6)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:162:0
-                 (set_local $14
+                 (set_local $7
                   (f64.load
-                   (get_local $0)
+                   (get_local $2)
                   )
                  )
-                 (set_local $14
+                 (set_local $7
                   (f64.mul
-                   (get_local $9)
-                   (get_local $14)
-                  )
-                 )
-                 ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-                 (set_local $20
-                  (f64.mul
-                   (get_local $4)
-                   (get_local $4)
-                  )
-                 )
-                 ;;@ ./dev/cpp/NetMath.cpp:162:0
-                 (set_local $20
-                  (f64.mul
-                   (get_local $20)
+                   (get_local $12)
                    (get_local $7)
                   )
                  )
-                 (set_local $14
+                 ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
+                 (set_local $18
+                  (f64.mul
+                   (get_local $5)
+                   (get_local $5)
+                  )
+                 )
+                 ;;@ ./dev/cpp/NetMath.cpp:162:0
+                 (set_local $18
+                  (f64.mul
+                   (get_local $18)
+                   (get_local $23)
+                  )
+                 )
+                 (set_local $7
                   (f64.add
-                   (get_local $20)
-                   (get_local $14)
+                   (get_local $18)
+                   (get_local $7)
                   )
                  )
                  (f64.store
-                  (get_local $0)
-                  (get_local $14)
+                  (get_local $2)
+                  (get_local $7)
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:167:0
-                 (set_local $4
+                 (set_local $5
                   (f64.mul
-                   (get_local $4)
-                   (get_local $6)
+                   (get_local $5)
+                   (get_local $14)
                   )
                  )
-                 (set_local $14
+                 (set_local $7
                   (f64.sqrt
-                   (get_local $14)
+                   (get_local $7)
                   )
                  )
-                 (set_local $14
+                 (set_local $7
                   (f64.add
-                   (get_local $14)
+                   (get_local $7)
                    (f64.const 1e-06)
                   )
                  )
-                 (set_local $4
+                 (set_local $5
                   (f64.div
-                   (get_local $4)
-                   (get_local $14)
+                   (get_local $5)
+                   (get_local $7)
                   )
                  )
-                 (set_local $5
+                 (set_local $4
                   (f64.add
-                   (get_local $5)
                    (get_local $4)
+                   (get_local $5)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $0
+                 (set_local $2
                   (i32.add
-                   (get_local $36)
+                   (get_local $38)
                    (i32.shl
-                    (get_local $13)
+                    (get_local $6)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:265:0
                  (f64.store
-                  (get_local $0)
-                  (get_local $5)
+                  (get_local $2)
+                  (get_local $4)
                  )
                  (if
-                  (get_local $37)
+                  (get_local $39)
                   (block
                    ;;@ ./dev/cpp/ConvLayer.cpp:267:0
-                   (set_local $0
+                   (set_local $3
                     (i32.load
-                     (get_local $29)
+                     (get_local $35)
                     )
                    )
                    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $0
+                   (set_local $3
                     (i32.load
-                     (get_local $0)
+                     (get_local $3)
                     )
                    )
-                   (set_local $0
+                   (set_local $3
                     (i32.add
-                     (get_local $0)
-                     (i32.mul
-                      (get_local $3)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $0
-                    (i32.load
-                     (get_local $0)
-                    )
-                   )
-                   (set_local $0
-                    (i32.add
-                     (get_local $0)
+                     (get_local $3)
                      (i32.mul
                       (get_local $11)
                       (i32.const 12)
                      )
                     )
                    )
-                   (set_local $0
+                   (set_local $3
                     (i32.load
-                     (get_local $0)
+                     (get_local $3)
                     )
                    )
-                   (set_local $0
+                   (set_local $3
                     (i32.add
-                     (get_local $0)
+                     (get_local $3)
+                     (i32.mul
+                      (get_local $9)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $3
+                    (i32.load
+                     (get_local $3)
+                    )
+                   )
+                   (set_local $3
+                    (i32.add
+                     (get_local $3)
                      (i32.shl
-                      (get_local $13)
+                      (get_local $6)
                       (i32.const 3)
                      )
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:267:0
-                   (set_local $5
+                   (set_local $4
                     (f64.load
-                     (get_local $0)
-                    )
-                   )
-                   (set_local $5
-                    (f64.mul
-                     (get_local $5)
-                     (get_local $5)
+                     (get_local $3)
                     )
                    )
                    (set_local $4
-                    (f64.load
-                     (get_local $21)
+                    (f64.mul
+                     (get_local $4)
+                     (get_local $4)
                     )
                    )
                    (set_local $5
+                    (f64.load
+                     (get_local $19)
+                    )
+                   )
+                   (set_local $4
                     (f64.add
-                     (get_local $4)
                      (get_local $5)
+                     (get_local $4)
                     )
                    )
                    (f64.store
-                    (get_local $21)
-                    (get_local $5)
+                    (get_local $19)
+                    (get_local $4)
+                   )
+                   (set_local $3
+                    (get_local $0)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:259:0
-                 (set_local $13
+                 (set_local $6
                   (i32.add
-                   (get_local $13)
+                   (get_local $6)
                    (i32.const 1)
                   )
                  )
                  (if
                   (i32.lt_u
-                   (get_local $13)
-                   (get_local $38)
+                   (get_local $6)
+                   (get_local $40)
                   )
                   (block
                    (set_local $1
-                    (get_local $18)
+                    (get_local $13)
                    )
-                   (set_local $0
+                   (set_local $2
                     (get_local $16)
                    )
                    (br $while-in41)
+                  )
+                  (block
+                   (set_local $2
+                    (get_local $3)
+                   )
+                   (set_local $1
+                    (get_local $3)
+                   )
                   )
                  )
                 )
                )
               )
               ;;@ ./dev/cpp/ConvLayer.cpp:258:0
-              (set_local $11
+              (set_local $9
                (i32.add
-                (get_local $11)
+                (get_local $9)
                 (i32.const 1)
                )
               )
-              (br_if $while-in39
+              (if
                (i32.lt_u
-                (get_local $11)
-                (get_local $35)
+                (get_local $9)
+                (get_local $37)
+               )
+               (block
+                (set_local $6
+                 (get_local $3)
+                )
+                (set_local $3
+                 (get_local $2)
+                )
+                (br $while-in39)
+               )
+               (block
+                (set_local $9
+                 (get_local $3)
+                )
+                (set_local $6
+                 (get_local $3)
+                )
                )
               )
              )
             )
            )
            ;;@ ./dev/cpp/ConvLayer.cpp:257:0
-           (set_local $3
+           (set_local $11
             (i32.add
-             (get_local $3)
+             (get_local $11)
              (i32.const 1)
             )
            )
-           (br_if $while-in37
+           (if
             (i32.lt_u
-             (get_local $3)
-             (get_local $28)
+             (get_local $11)
+             (get_local $33)
             )
-           )
-           (set_local $0
-            (get_local $17)
+            (block
+             (set_local $3
+              (get_local $9)
+             )
+             (br $while-in37)
+            )
+            (set_local $0
+             (get_local $17)
+            )
            )
           )
          )
         )
-        ;;@ ./dev/cpp/ConvLayer.cpp:271:0
-        (set_local $1
+        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+        (set_local $3
+         (i32.load
+          (get_local $24)
+         )
+        )
+        (set_local $3
          (i32.add
-          (get_local $0)
-          (i32.const 112)
+          (get_local $3)
+          (i32.shl
+           (get_local $8)
+           (i32.const 3)
+          )
          )
         )
-        (set_local $14
+        ;;@ ./dev/cpp/ConvLayer.cpp:271:0
+        (set_local $7
          (f64.load
-          (get_local $1)
+          (get_local $3)
          )
         )
-        (set_local $1
+        (set_local $2
          (i32.add
           (get_local $0)
           (i32.const 120)
          )
         )
-        (set_local $5
+        (set_local $4
          (f64.load
-          (get_local $1)
+          (get_local $2)
+         )
+        )
+        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+        (set_local $2
+         (i32.load
+          (i32.const 5232)
+         )
+        )
+        (set_local $2
+         (i32.add
+          (get_local $2)
+          (i32.shl
+           (get_local $26)
+           (i32.const 2)
+          )
+         )
+        )
+        ;;@ ./dev/cpp/Network.cpp:36:0
+        (set_local $5
+         (f64.promote/f32
+          (tee_local $21
+           (f32.load offset=20
+            (tee_local $2
+             (i32.load
+              (get_local $2)
+             )
+            )
+           )
+          )
          )
         )
         ;;@ ./dev/cpp/NetMath.cpp:164:0
@@ -32688,108 +32986,120 @@
           (i32.const 184)
          )
         )
-        (set_local $4
+        (set_local $10
          (f64.load
           (get_local $0)
          )
         )
-        (set_local $4
+        (set_local $5
          (f64.mul
-          (get_local $9)
-          (get_local $4)
+          (get_local $5)
+          (get_local $10)
+         )
+        )
+        (set_local $21
+         (f32.sub
+          (f32.const 1)
+          (get_local $21)
+         )
+        )
+        (set_local $10
+         (f64.promote/f32
+          (get_local $21)
          )
         )
         ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-        (set_local $10
+        (set_local $12
          (f64.mul
-          (get_local $5)
-          (get_local $5)
+          (get_local $4)
+          (get_local $4)
          )
         )
         ;;@ ./dev/cpp/NetMath.cpp:164:0
         (set_local $10
          (f64.mul
-          (get_local $10)
-          (get_local $7)
-         )
-        )
-        (set_local $4
-         (f64.add
-          (get_local $4)
+          (get_local $12)
           (get_local $10)
          )
         )
-        (f64.store
-         (get_local $0)
-         (get_local $4)
-        )
-        ;;@ ./dev/cpp/NetMath.cpp:167:0
-        (set_local $5
-         (f64.mul
-          (get_local $5)
-          (get_local $6)
-         )
-        )
-        (set_local $4
-         (f64.sqrt
-          (get_local $4)
-         )
-        )
-        (set_local $4
-         (f64.add
-          (get_local $4)
-          (f64.const 1e-06)
-         )
-        )
-        (set_local $5
-         (f64.div
-          (get_local $5)
-          (get_local $4)
-         )
-        )
         (set_local $5
          (f64.add
-          (get_local $14)
           (get_local $5)
-         )
-        )
-        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-        (set_local $0
-         (i32.add
-          (get_local $8)
-          (i32.shl
-           (get_local $2)
-           (i32.const 2)
-          )
-         )
-        )
-        ;;@ ./dev/cpp/ConvLayer.cpp:271:0
-        (set_local $0
-         (i32.load
-          (get_local $0)
-         )
-        )
-        (set_local $0
-         (i32.add
-          (get_local $0)
-          (i32.const 112)
+          (get_local $10)
          )
         )
         (f64.store
          (get_local $0)
          (get_local $5)
         )
-        ;;@ ./dev/cpp/ConvLayer.cpp:256:0
-        (set_local $2
+        ;;@ ./dev/cpp/NetMath.cpp:167:0
+        (set_local $0
          (i32.add
           (get_local $2)
+          (i32.const 16)
+         )
+        )
+        (set_local $21
+         (f32.load
+          (get_local $0)
+         )
+        )
+        (set_local $10
+         (f64.promote/f32
+          (get_local $21)
+         )
+        )
+        (set_local $4
+         (f64.mul
+          (get_local $4)
+          (get_local $10)
+         )
+        )
+        (set_local $5
+         (f64.sqrt
+          (get_local $5)
+         )
+        )
+        (set_local $5
+         (f64.add
+          (get_local $5)
+          (f64.const 1e-06)
+         )
+        )
+        (set_local $4
+         (f64.div
+          (get_local $4)
+          (get_local $5)
+         )
+        )
+        (set_local $4
+         (f64.add
+          (get_local $7)
+          (get_local $4)
+         )
+        )
+        ;;@ ./dev/cpp/ConvLayer.cpp:271:0
+        (f64.store
+         (get_local $3)
+         (get_local $4)
+        )
+        ;;@ ./dev/cpp/ConvLayer.cpp:256:0
+        (set_local $8
+         (i32.add
+          (get_local $8)
           (i32.const 1)
          )
         )
-        (br_if $while-in35
+        (if
          (i32.lt_u
-          (get_local $2)
-          (get_local $23)
+          (get_local $8)
+          (get_local $31)
+         )
+         (block
+          (set_local $0
+           (get_local $20)
+          )
+          (br $while-in35)
          )
         )
        )
@@ -32799,120 +33109,90 @@
     )
     (if
      (i32.eqz
-      (get_local $15)
+      (get_local $17)
      )
      (block
-      (set_local $4
-       (f64.convert_s/i32
-        (i32.add
-         (i32.load offset=4
-          (get_local $12)
-         )
-         (i32.const 1)
-        )
-       )
-      )
-      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-      (set_local $5
-       (f64.sub
-        (f64.const 1)
-        (call $Math_pow
-         (f64.const 0.9)
-         (get_local $4)
-        )
-       )
-      )
-      (set_local $4
-       (f64.sub
-        (f64.const 1)
-        (call $Math_pow
-         (f64.const 0.999)
-         (get_local $4)
-        )
-       )
-      )
-      (set_local $9
-       (f64.promote/f32
-        (f32.load offset=16
-         (get_local $12)
-        )
-       )
-      )
-      (set_local $26
-       (i32.shr_s
-        (i32.sub
-         (get_local $17)
-         (get_local $13)
-        )
-        (i32.const 2)
-       )
-      )
-      (set_local $21
-       (i32.add
-        (get_local $12)
-        (i32.const 48)
-       )
-      )
-      (set_local $23
-       (i32.add
-        (get_local $12)
-        (i32.const 64)
-       )
-      )
-      (set_local $27
-       (i32.add
-        (get_local $12)
-        (i32.const 8)
-       )
-      )
       (set_local $28
        (i32.add
-        (get_local $12)
-        (i32.const 80)
+        (get_local $0)
+        (i32.const 164)
        )
       )
       (set_local $22
        (i32.add
-        (get_local $12)
+        (get_local $15)
+        (i32.const 48)
+       )
+      )
+      (set_local $25
+       (i32.add
+        (get_local $15)
+        (i32.const 64)
+       )
+      )
+      (set_local $29
+       (i32.add
+        (get_local $15)
+        (i32.const 8)
+       )
+      )
+      (set_local $30
+       (i32.add
+        (get_local $15)
+        (i32.const 80)
+       )
+      )
+      (set_local $19
+       (i32.add
+        (get_local $15)
         (i32.const 88)
        )
       )
-      (set_local $17
+      (set_local $31
+       (i32.shr_s
+        (i32.sub
+         (get_local $13)
+         (get_local $2)
+        )
+        (i32.const 2)
+       )
+      )
+      (set_local $8
        (i32.const 0)
       )
       (loop $while-in44
        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
        (set_local $0
         (i32.add
-         (get_local $8)
+         (get_local $3)
          (i32.shl
-          (get_local $17)
+          (get_local $8)
           (i32.const 2)
          )
         )
        )
        ;;@ ./dev/cpp/ConvLayer.cpp:276:0
-       (set_local $19
+       (set_local $17
         (i32.load
          (get_local $0)
         )
        )
        (set_local $0
         (i32.add
-         (get_local $19)
+         (get_local $17)
          (i32.const 12)
         )
        )
        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-       (set_local $1
+       (set_local $2
         (i32.add
-         (get_local $19)
+         (get_local $17)
          (i32.const 16)
         )
        )
-       (set_local $1
+       (set_local $2
         (i32.load
-         (get_local $1)
+         (get_local $2)
         )
        )
        (set_local $0
@@ -32923,11 +33203,11 @@
        (if
         ;;@ ./dev/cpp/ConvLayer.cpp:276:0
         (i32.ne
-         (get_local $1)
+         (get_local $2)
          (get_local $0)
         )
         (block
-         (set_local $29
+         (set_local $32
           (i32.eq
            (i32.load offset=4
             (get_local $0)
@@ -32937,70 +33217,81 @@
            )
           )
          )
-         (set_local $30
+         (set_local $33
           (i32.div_s
            (i32.sub
-            (get_local $1)
+            (get_local $2)
             (get_local $0)
            )
            (i32.const 12)
           )
          )
-         (set_local $31
-          (i32.add
-           (get_local $8)
-           (i32.shl
-            (get_local $17)
-            (i32.const 2)
-           )
-          )
-         )
-         (set_local $32
-          (i32.add
-           (get_local $8)
-           (i32.shl
-            (get_local $17)
-            (i32.const 2)
-           )
-          )
-         )
-         (set_local $33
-          (i32.add
-           (get_local $8)
-           (i32.shl
-            (get_local $17)
-            (i32.const 2)
-           )
-          )
-         )
          (set_local $34
           (i32.add
-           (get_local $8)
+           (get_local $3)
            (i32.shl
-            (get_local $17)
+            (get_local $8)
             (i32.const 2)
            )
           )
          )
-         (set_local $16
+         (set_local $35
+          (i32.add
+           (get_local $3)
+           (i32.shl
+            (get_local $8)
+            (i32.const 2)
+           )
+          )
+         )
+         (set_local $36
+          (i32.add
+           (i32.load
+            (i32.const 5232)
+           )
+           (i32.shl
+            (get_local $26)
+            (i32.const 2)
+           )
+          )
+         )
+         (set_local $37
+          (i32.add
+           (get_local $3)
+           (i32.shl
+            (get_local $8)
+            (i32.const 2)
+           )
+          )
+         )
+         (set_local $38
+          (i32.add
+           (get_local $3)
+           (i32.shl
+            (get_local $8)
+            (i32.const 2)
+           )
+          )
+         )
+         (set_local $11
           (i32.const 0)
          )
          (loop $while-in46
           (if
            (i32.eqz
-            (get_local $29)
+            (get_local $32)
            )
            (block
-            (set_local $35
+            (set_local $39
              (i32.eq
               (i32.load offset=4
                (tee_local $0
                 (i32.load
-                 (tee_local $13
+                 (tee_local $20
                   (i32.load offset=12
-                   (tee_local $11
+                   (tee_local $9
                     (i32.load
-                     (get_local $31)
+                     (get_local $34)
                     )
                    )
                   )
@@ -33013,14 +33304,14 @@
               )
              )
             )
-            (set_local $36
+            (set_local $40
              (i32.div_s
               (i32.sub
                (i32.load offset=4
                 (tee_local $0
                  (i32.load offset=12
                   (i32.load
-                   (get_local $32)
+                   (get_local $35)
                   )
                  )
                 )
@@ -33032,20 +33323,60 @@
               (i32.const 12)
              )
             )
-            (set_local $18
+            (set_local $16
              (i32.const 0)
             )
             (loop $while-in48
-             (block $label$break$L141
+             (block $label$break$L140
               (if
                (i32.eqz
-                (get_local $35)
+                (get_local $39)
                )
                (block
-                (set_local $14
+                (set_local $7
                  (f64.convert_s/i32
                   (i32.load
-                   (get_local $27)
+                   (get_local $29)
+                  )
+                 )
+                )
+                (set_local $4
+                 (f64.convert_s/i32
+                  (i32.add
+                   (i32.load offset=4
+                    (tee_local $0
+                     (i32.load
+                      (get_local $36)
+                     )
+                    )
+                   )
+                   (i32.const 1)
+                  )
+                 )
+                )
+                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
+                (set_local $10
+                 (f64.sub
+                  (f64.const 1)
+                  (call $Math_pow
+                   (f64.const 0.9)
+                   (get_local $4)
+                  )
+                 )
+                )
+                (set_local $12
+                 (f64.sub
+                  (f64.const 1)
+                  (call $Math_pow
+                   (f64.const 0.999)
+                   (get_local $4)
+                  )
+                 )
+                )
+                (set_local $23
+                 (f64.promote/f32
+                  (f32.load offset=16
+                   (get_local $0)
                   )
                  )
                 )
@@ -33056,33 +33387,33 @@
                     (i32.add
                      (i32.load
                       (i32.load
-                       (get_local $33)
+                       (get_local $37)
                       )
                      )
                      (i32.mul
-                      (get_local $16)
+                      (get_local $11)
                       (i32.const 12)
                      )
                     )
                    )
                    (i32.mul
-                    (get_local $18)
+                    (get_local $16)
                     (i32.const 12)
                    )
                   )
                  )
                 )
-                (set_local $25
+                (set_local $27
                  (i32.shr_s
                   (i32.sub
                    (i32.load offset=4
-                    (tee_local $2
+                    (tee_local $1
                      (i32.load
-                      (tee_local $1
+                      (tee_local $2
                        (i32.load offset=12
                         (tee_local $0
                          (i32.load
-                          (get_local $34)
+                          (get_local $38)
                          )
                         )
                        )
@@ -33091,7 +33422,7 @@
                     )
                    )
                    (i32.load
-                    (get_local $2)
+                    (get_local $1)
                    )
                   )
                   (i32.const 3)
@@ -33100,695 +33431,695 @@
                 (if
                  (f32.eq
                   (f32.load
-                   (get_local $28)
+                   (get_local $30)
                   )
                   (f32.const 0)
                  )
                  (block
-                  (set_local $15
+                  (set_local $13
                    (i32.const 0)
                   )
-                  (set_local $3
-                   (get_local $13)
+                  (set_local $6
+                   (get_local $20)
                   )
-                  (set_local $2
-                   (get_local $11)
+                  (set_local $1
+                   (get_local $9)
                   )
                   (loop $while-in51
                    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $3
+                   (set_local $6
                     (i32.add
-                     (get_local $3)
+                     (get_local $6)
+                     (i32.mul
+                      (get_local $11)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $6
+                    (i32.load
+                     (get_local $6)
+                    )
+                   )
+                   (set_local $6
+                    (i32.add
+                     (get_local $6)
                      (i32.mul
                       (get_local $16)
                       (i32.const 12)
                      )
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (i32.load
-                     (get_local $3)
+                     (get_local $6)
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $18)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
+                     (get_local $6)
                      (i32.shl
-                      (get_local $15)
+                      (get_local $13)
                       (i32.const 3)
                      )
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:280:0
-                   (set_local $6
+                   (set_local $5
                     (f64.load
-                     (get_local $3)
+                     (get_local $6)
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:281:0
-                   (set_local $10
+                   (set_local $14
                     (f64.load
-                     (get_local $21)
+                     (get_local $22)
                     )
                    )
                    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $3
+                   (set_local $6
                     (i32.load
-                     (get_local $2)
+                     (get_local $1)
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (i32.add
-                     (get_local $3)
+                     (get_local $6)
+                     (i32.mul
+                      (get_local $11)
+                      (i32.const 12)
+                     )
+                    )
+                   )
+                   (set_local $6
+                    (i32.load
+                     (get_local $6)
+                    )
+                   )
+                   (set_local $6
+                    (i32.add
+                     (get_local $6)
                      (i32.mul
                       (get_local $16)
                       (i32.const 12)
                      )
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (i32.load
-                     (get_local $3)
+                     (get_local $6)
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (i32.add
-                     (get_local $3)
-                     (i32.mul
-                      (get_local $18)
-                      (i32.const 12)
-                     )
-                    )
-                   )
-                   (set_local $3
-                    (i32.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $3
-                    (i32.add
-                     (get_local $3)
+                     (get_local $6)
                      (i32.shl
-                      (get_local $15)
+                      (get_local $13)
                       (i32.const 3)
                      )
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:281:0
-                   (set_local $7
+                   (set_local $4
                     (f64.load
-                     (get_local $3)
-                    )
-                   )
-                   (set_local $10
-                    (f64.mul
-                     (get_local $10)
-                     (get_local $7)
-                    )
-                   )
-                   (set_local $6
-                    (f64.add
                      (get_local $6)
-                     (get_local $10)
+                    )
+                   )
+                   (set_local $14
+                    (f64.mul
+                     (get_local $14)
+                     (get_local $4)
+                    )
+                   )
+                   (set_local $5
+                    (f64.add
+                     (get_local $5)
+                     (get_local $14)
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:282:0
-                   (set_local $10
+                   (set_local $14
                     (f64.load
-                     (get_local $23)
+                     (get_local $25)
                     )
                    )
-                   (set_local $3
+                   (set_local $6
                     (f64.gt
-                     (get_local $7)
+                     (get_local $4)
                      (f64.const 0)
                     )
                    )
-                   (set_local $20
+                   (set_local $18
                     (if (result f64)
-                     (get_local $3)
+                     (get_local $6)
                      (f64.const 1)
                      (f64.const -1)
                     )
                    )
-                   (set_local $10
+                   (set_local $14
                     (f64.mul
-                     (get_local $10)
-                     (get_local $20)
+                     (get_local $14)
+                     (get_local $18)
                     )
                    )
-                   (set_local $6
+                   (set_local $5
                     (f64.add
-                     (get_local $6)
-                     (get_local $10)
-                    )
-                   )
-                   (set_local $6
-                    (f64.div
-                     (get_local $6)
+                     (get_local $5)
                      (get_local $14)
                     )
                    )
+                   (set_local $5
+                    (f64.div
+                     (get_local $5)
+                     (get_local $7)
+                    )
+                   )
                    ;;@ ./dev/cpp/NetMath.cpp:188:0
-                   (set_local $3
+                   (set_local $6
                     (i32.add
-                     (get_local $2)
+                     (get_local $1)
                      (i32.const 192)
                     )
                    )
-                   (set_local $10
+                   (set_local $14
                     (f64.load
-                     (get_local $3)
+                     (get_local $6)
                     )
                    )
-                   (set_local $10
+                   (set_local $14
                     (f64.mul
-                     (get_local $10)
+                     (get_local $14)
                      (f64.const 0.9)
                     )
                    )
-                   (set_local $20
+                   (set_local $18
                     (f64.mul
-                     (get_local $6)
+                     (get_local $5)
                      (f64.const 0.09999999999999998)
                     )
                    )
-                   (set_local $10
+                   (set_local $14
                     (f64.add
-                     (get_local $20)
-                     (get_local $10)
+                     (get_local $18)
+                     (get_local $14)
                     )
                    )
                    (f64.store
-                    (get_local $3)
-                    (get_local $10)
+                    (get_local $6)
+                    (get_local $14)
                    )
                    ;;@ ./dev/cpp/NetMath.cpp:189:0
-                   (set_local $10
+                   (set_local $14
                     (f64.div
+                     (get_local $14)
                      (get_local $10)
-                     (get_local $5)
                     )
                    )
                    ;;@ ./dev/cpp/NetMath.cpp:191:0
-                   (set_local $2
+                   (set_local $1
                     (i32.add
-                     (get_local $2)
+                     (get_local $1)
                      (i32.const 200)
                     )
                    )
-                   (set_local $20
+                   (set_local $18
                     (f64.load
-                     (get_local $2)
+                     (get_local $1)
                     )
                    )
-                   (set_local $20
+                   (set_local $18
                     (f64.mul
-                     (get_local $20)
+                     (get_local $18)
                      (f64.const 0.999)
                     )
                    )
                    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-                   (set_local $6
+                   (set_local $5
                     (f64.mul
-                     (get_local $6)
-                     (get_local $6)
+                     (get_local $5)
+                     (get_local $5)
                     )
                    )
                    ;;@ ./dev/cpp/NetMath.cpp:191:0
-                   (set_local $6
+                   (set_local $5
                     (f64.mul
-                     (get_local $6)
+                     (get_local $5)
                      (f64.const 1.0000000000000009e-03)
                     )
                    )
-                   (set_local $6
+                   (set_local $5
                     (f64.add
-                     (get_local $6)
-                     (get_local $20)
+                     (get_local $5)
+                     (get_local $18)
                     )
                    )
                    (f64.store
-                    (get_local $2)
-                    (get_local $6)
+                    (get_local $1)
+                    (get_local $5)
                    )
                    ;;@ ./dev/cpp/NetMath.cpp:192:0
-                   (set_local $6
+                   (set_local $5
                     (f64.div
-                     (get_local $6)
-                     (get_local $4)
+                     (get_local $5)
+                     (get_local $12)
                     )
                    )
                    ;;@ ./dev/cpp/NetMath.cpp:194:0
-                   (set_local $10
+                   (set_local $14
                     (f64.mul
-                     (get_local $10)
-                     (get_local $9)
+                     (get_local $14)
+                     (get_local $23)
                     )
                    )
-                   (set_local $6
+                   (set_local $5
                     (f64.sqrt
-                     (get_local $6)
+                     (get_local $5)
                     )
                    )
-                   (set_local $6
+                   (set_local $5
                     (f64.add
-                     (get_local $6)
+                     (get_local $5)
                      (f64.const 1e-06)
                     )
                    )
-                   (set_local $6
+                   (set_local $5
                     (f64.div
-                     (get_local $10)
-                     (get_local $6)
+                     (get_local $14)
+                     (get_local $5)
                     )
                    )
-                   (set_local $7
+                   (set_local $4
                     (f64.add
-                     (get_local $7)
-                     (get_local $6)
+                     (get_local $4)
+                     (get_local $5)
                     )
                    )
                    ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                   (set_local $2
+                   (set_local $1
                     (i32.add
                      (get_local $24)
                      (i32.shl
-                      (get_local $15)
+                      (get_local $13)
                       (i32.const 3)
                      )
                     )
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:284:0
                    (f64.store
-                    (get_local $2)
-                    (get_local $7)
+                    (get_local $1)
+                    (get_local $4)
                    )
                    ;;@ ./dev/cpp/ConvLayer.cpp:278:0
-                   (set_local $15
+                   (set_local $13
                     (i32.add
-                     (get_local $15)
+                     (get_local $13)
                      (i32.const 1)
                     )
                    )
-                   (br_if $label$break$L141
+                   (br_if $label$break$L140
                     (i32.ge_u
-                     (get_local $15)
-                     (get_local $25)
+                     (get_local $13)
+                     (get_local $27)
                     )
                    )
-                   (set_local $3
-                    (get_local $1)
+                   (set_local $6
+                    (get_local $2)
                    )
-                   (set_local $2
+                   (set_local $1
                     (get_local $0)
                    )
                    (br $while-in51)
                   )
                  )
                 )
-                (set_local $37
+                (set_local $41
                  (i32.load
                   (i32.add
                    (i32.load
                     (i32.add
                      (i32.load
-                      (get_local $19)
+                      (get_local $17)
                      )
                      (i32.mul
-                      (get_local $16)
+                      (get_local $11)
                       (i32.const 12)
                      )
                     )
                    )
                    (i32.mul
-                    (get_local $18)
+                    (get_local $16)
                     (i32.const 12)
                    )
                   )
                  )
                 )
-                (set_local $15
+                (set_local $13
                  (i32.const 0)
                 )
-                (set_local $3
-                 (get_local $13)
+                (set_local $6
+                 (get_local $20)
                 )
-                (set_local $2
-                 (get_local $11)
+                (set_local $1
+                 (get_local $9)
                 )
                 (loop $while-in53
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $3
+                 (set_local $6
                   (i32.add
-                   (get_local $3)
+                   (get_local $6)
+                   (i32.mul
+                    (get_local $11)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $6
+                  (i32.load
+                   (get_local $6)
+                  )
+                 )
+                 (set_local $6
+                  (i32.add
+                   (get_local $6)
                    (i32.mul
                     (get_local $16)
                     (i32.const 12)
                    )
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (i32.load
-                   (get_local $3)
+                   (get_local $6)
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (i32.add
-                   (get_local $3)
-                   (i32.mul
-                    (get_local $18)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $3
-                  (i32.load
-                   (get_local $3)
-                  )
-                 )
-                 (set_local $3
-                  (i32.add
-                   (get_local $3)
+                   (get_local $6)
                    (i32.shl
-                    (get_local $15)
+                    (get_local $13)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:280:0
-                 (set_local $6
+                 (set_local $5
                   (f64.load
-                   (get_local $3)
+                   (get_local $6)
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:281:0
-                 (set_local $10
+                 (set_local $14
                   (f64.load
-                   (get_local $21)
+                   (get_local $22)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $3
+                 (set_local $6
                   (i32.load
-                   (get_local $2)
+                   (get_local $1)
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (i32.add
-                   (get_local $3)
+                   (get_local $6)
+                   (i32.mul
+                    (get_local $11)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $6
+                  (i32.load
+                   (get_local $6)
+                  )
+                 )
+                 (set_local $6
+                  (i32.add
+                   (get_local $6)
                    (i32.mul
                     (get_local $16)
                     (i32.const 12)
                    )
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (i32.load
-                   (get_local $3)
+                   (get_local $6)
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (i32.add
-                   (get_local $3)
-                   (i32.mul
-                    (get_local $18)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $3
-                  (i32.load
-                   (get_local $3)
-                  )
-                 )
-                 (set_local $3
-                  (i32.add
-                   (get_local $3)
+                   (get_local $6)
                    (i32.shl
-                    (get_local $15)
+                    (get_local $13)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:281:0
-                 (set_local $7
+                 (set_local $4
                   (f64.load
-                   (get_local $3)
-                  )
-                 )
-                 (set_local $10
-                  (f64.mul
-                   (get_local $10)
-                   (get_local $7)
-                  )
-                 )
-                 (set_local $6
-                  (f64.add
                    (get_local $6)
-                   (get_local $10)
+                  )
+                 )
+                 (set_local $14
+                  (f64.mul
+                   (get_local $14)
+                   (get_local $4)
+                  )
+                 )
+                 (set_local $5
+                  (f64.add
+                   (get_local $5)
+                   (get_local $14)
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:282:0
-                 (set_local $10
+                 (set_local $14
                   (f64.load
-                   (get_local $23)
+                   (get_local $25)
                   )
                  )
-                 (set_local $3
+                 (set_local $6
                   (f64.gt
-                   (get_local $7)
+                   (get_local $4)
                    (f64.const 0)
                   )
                  )
-                 (set_local $20
+                 (set_local $18
                   (if (result f64)
-                   (get_local $3)
+                   (get_local $6)
                    (f64.const 1)
                    (f64.const -1)
                   )
                  )
-                 (set_local $10
+                 (set_local $14
                   (f64.mul
-                   (get_local $10)
-                   (get_local $20)
+                   (get_local $14)
+                   (get_local $18)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.add
-                   (get_local $6)
-                   (get_local $10)
-                  )
-                 )
-                 (set_local $6
-                  (f64.div
-                   (get_local $6)
+                   (get_local $5)
                    (get_local $14)
                   )
                  )
+                 (set_local $5
+                  (f64.div
+                   (get_local $5)
+                   (get_local $7)
+                  )
+                 )
                  ;;@ ./dev/cpp/NetMath.cpp:188:0
-                 (set_local $3
+                 (set_local $6
                   (i32.add
-                   (get_local $2)
+                   (get_local $1)
                    (i32.const 192)
                   )
                  )
-                 (set_local $10
+                 (set_local $14
                   (f64.load
-                   (get_local $3)
+                   (get_local $6)
                   )
                  )
-                 (set_local $10
+                 (set_local $14
                   (f64.mul
-                   (get_local $10)
+                   (get_local $14)
                    (f64.const 0.9)
                   )
                  )
-                 (set_local $20
+                 (set_local $18
                   (f64.mul
-                   (get_local $6)
+                   (get_local $5)
                    (f64.const 0.09999999999999998)
                   )
                  )
-                 (set_local $10
+                 (set_local $14
                   (f64.add
-                   (get_local $20)
-                   (get_local $10)
+                   (get_local $18)
+                   (get_local $14)
                   )
                  )
                  (f64.store
-                  (get_local $3)
-                  (get_local $10)
+                  (get_local $6)
+                  (get_local $14)
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:189:0
-                 (set_local $10
+                 (set_local $14
                   (f64.div
+                   (get_local $14)
                    (get_local $10)
-                   (get_local $5)
                   )
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:191:0
-                 (set_local $2
+                 (set_local $1
                   (i32.add
-                   (get_local $2)
+                   (get_local $1)
                    (i32.const 200)
                   )
                  )
-                 (set_local $20
+                 (set_local $18
                   (f64.load
-                   (get_local $2)
+                   (get_local $1)
                   )
                  )
-                 (set_local $20
+                 (set_local $18
                   (f64.mul
-                   (get_local $20)
+                   (get_local $18)
                    (f64.const 0.999)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-                 (set_local $6
+                 (set_local $5
                   (f64.mul
-                   (get_local $6)
-                   (get_local $6)
+                   (get_local $5)
+                   (get_local $5)
                   )
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:191:0
-                 (set_local $6
+                 (set_local $5
                   (f64.mul
-                   (get_local $6)
+                   (get_local $5)
                    (f64.const 1.0000000000000009e-03)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.add
-                   (get_local $6)
-                   (get_local $20)
+                   (get_local $5)
+                   (get_local $18)
                   )
                  )
                  (f64.store
-                  (get_local $2)
-                  (get_local $6)
+                  (get_local $1)
+                  (get_local $5)
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:192:0
-                 (set_local $6
+                 (set_local $5
                   (f64.div
-                   (get_local $6)
-                   (get_local $4)
+                   (get_local $5)
+                   (get_local $12)
                   )
                  )
                  ;;@ ./dev/cpp/NetMath.cpp:194:0
-                 (set_local $10
+                 (set_local $14
                   (f64.mul
-                   (get_local $10)
-                   (get_local $9)
+                   (get_local $14)
+                   (get_local $23)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.sqrt
-                   (get_local $6)
+                   (get_local $5)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.add
-                   (get_local $6)
+                   (get_local $5)
                    (f64.const 1e-06)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.div
-                   (get_local $10)
-                   (get_local $6)
+                   (get_local $14)
+                   (get_local $5)
                   )
                  )
-                 (set_local $7
+                 (set_local $4
                   (f64.add
-                   (get_local $7)
-                   (get_local $6)
+                   (get_local $4)
+                   (get_local $5)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $2
+                 (set_local $1
                   (i32.add
                    (get_local $24)
                    (i32.shl
-                    (get_local $15)
+                    (get_local $13)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:284:0
                  (f64.store
-                  (get_local $2)
-                  (get_local $7)
+                  (get_local $1)
+                  (get_local $4)
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $2
+                 (set_local $1
                   (i32.add
-                   (get_local $37)
+                   (get_local $41)
                    (i32.shl
-                    (get_local $15)
+                    (get_local $13)
                     (i32.const 3)
                    )
                   )
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:286:0
-                 (set_local $7
+                 (set_local $4
                   (f64.load
-                   (get_local $2)
+                   (get_local $1)
                   )
                  )
-                 (set_local $7
+                 (set_local $4
                   (f64.mul
-                   (get_local $7)
-                   (get_local $7)
+                   (get_local $4)
+                   (get_local $4)
                   )
                  )
-                 (set_local $6
+                 (set_local $5
                   (f64.load
-                   (get_local $22)
+                   (get_local $19)
                   )
                  )
-                 (set_local $7
+                 (set_local $4
                   (f64.add
-                   (get_local $6)
-                   (get_local $7)
+                   (get_local $5)
+                   (get_local $4)
                   )
                  )
                  (f64.store
-                  (get_local $22)
-                  (get_local $7)
+                  (get_local $19)
+                  (get_local $4)
                  )
                  ;;@ ./dev/cpp/ConvLayer.cpp:278:0
-                 (set_local $15
+                 (set_local $13
                   (i32.add
-                   (get_local $15)
+                   (get_local $13)
                    (i32.const 1)
                   )
                  )
                  (if
                   (i32.lt_u
-                   (get_local $15)
-                   (get_local $25)
+                   (get_local $13)
+                   (get_local $27)
                   )
                   (block
-                   (set_local $3
-                    (get_local $1)
+                   (set_local $6
+                    (get_local $2)
                    )
-                   (set_local $2
+                   (set_local $1
                     (get_local $0)
                    )
                    (br $while-in53)
@@ -33799,196 +34130,291 @@
               )
              )
              ;;@ ./dev/cpp/ConvLayer.cpp:277:0
-             (set_local $18
+             (set_local $16
               (i32.add
-               (get_local $18)
+               (get_local $16)
                (i32.const 1)
               )
              )
              (br_if $while-in48
               (i32.lt_u
-               (get_local $18)
-               (get_local $36)
+               (get_local $16)
+               (get_local $40)
               )
              )
             )
            )
           )
           ;;@ ./dev/cpp/ConvLayer.cpp:276:0
-          (set_local $16
+          (set_local $11
            (i32.add
-            (get_local $16)
+            (get_local $11)
             (i32.const 1)
            )
           )
           (br_if $while-in46
            (i32.lt_u
-            (get_local $16)
-            (get_local $30)
+            (get_local $11)
+            (get_local $33)
            )
           )
          )
         )
        )
-       ;;@ ./dev/cpp/ConvLayer.cpp:290:0
+       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
        (set_local $0
-        (i32.add
-         (get_local $19)
-         (i32.const 112)
+        (i32.load
+         (get_local $28)
         )
        )
-       (set_local $14
+       (set_local $0
+        (i32.add
+         (get_local $0)
+         (i32.shl
+          (get_local $8)
+          (i32.const 3)
+         )
+        )
+       )
+       ;;@ ./dev/cpp/ConvLayer.cpp:290:0
+       (set_local $10
         (f64.load
          (get_local $0)
         )
        )
-       (set_local $1
+       (set_local $2
         (i32.add
-         (get_local $19)
+         (get_local $17)
          (i32.const 120)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.load
-         (get_local $1)
+         (get_local $2)
+        )
+       )
+       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+       (set_local $2
+        (i32.load
+         (i32.const 5232)
+        )
+       )
+       (set_local $2
+        (i32.add
+         (get_local $2)
+         (i32.shl
+          (get_local $26)
+          (i32.const 2)
+         )
+        )
+       )
+       ;;@ ./dev/cpp/Network.cpp:36:0
+       (set_local $2
+        (i32.load
+         (get_local $2)
         )
        )
        ;;@ ./dev/cpp/NetMath.cpp:188:0
        (set_local $1
         (i32.add
-         (get_local $19)
+         (get_local $17)
          (i32.const 192)
         )
        )
-       (set_local $6
+       (set_local $5
         (f64.load
          (get_local $1)
         )
        )
-       (set_local $6
+       (set_local $5
         (f64.mul
-         (get_local $6)
+         (get_local $5)
          (f64.const 0.9)
         )
        )
-       (set_local $10
+       (set_local $7
         (f64.mul
-         (get_local $7)
+         (get_local $4)
          (f64.const 0.09999999999999998)
         )
        )
-       (set_local $6
+       (set_local $5
         (f64.add
-         (get_local $10)
-         (get_local $6)
+         (get_local $7)
+         (get_local $5)
         )
        )
        (f64.store
         (get_local $1)
-        (get_local $6)
+        (get_local $5)
        )
        ;;@ ./dev/cpp/NetMath.cpp:189:0
-       (set_local $6
+       (set_local $1
+        (i32.add
+         (get_local $2)
+         (i32.const 4)
+        )
+       )
+       (set_local $1
+        (i32.load
+         (get_local $1)
+        )
+       )
+       (set_local $1
+        (i32.add
+         (get_local $1)
+         (i32.const 1)
+        )
+       )
+       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
+       (set_local $7
+        (f64.convert_s/i32
+         (get_local $1)
+        )
+       )
+       (set_local $12
+        (call $Math_pow
+         (f64.const 0.9)
+         (get_local $7)
+        )
+       )
+       ;;@ ./dev/cpp/NetMath.cpp:189:0
+       (set_local $12
+        (f64.sub
+         (f64.const 1)
+         (get_local $12)
+        )
+       )
+       (set_local $5
         (f64.div
-         (get_local $6)
          (get_local $5)
+         (get_local $12)
         )
        )
        ;;@ ./dev/cpp/NetMath.cpp:191:0
        (set_local $1
         (i32.add
-         (get_local $19)
+         (get_local $17)
          (i32.const 200)
         )
        )
-       (set_local $10
+       (set_local $12
         (f64.load
          (get_local $1)
         )
        )
-       (set_local $10
+       (set_local $12
         (f64.mul
-         (get_local $10)
+         (get_local $12)
          (f64.const 0.999)
         )
        )
        ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-       (set_local $7
+       (set_local $4
         (f64.mul
-         (get_local $7)
-         (get_local $7)
+         (get_local $4)
+         (get_local $4)
         )
        )
        ;;@ ./dev/cpp/NetMath.cpp:191:0
-       (set_local $7
+       (set_local $4
         (f64.mul
-         (get_local $7)
+         (get_local $4)
          (f64.const 1.0000000000000009e-03)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.add
-         (get_local $7)
-         (get_local $10)
+         (get_local $4)
+         (get_local $12)
         )
        )
        (f64.store
         (get_local $1)
-        (get_local $7)
+        (get_local $4)
+       )
+       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
+       (set_local $7
+        (call $Math_pow
+         (f64.const 0.999)
+         (get_local $7)
+        )
        )
        ;;@ ./dev/cpp/NetMath.cpp:192:0
        (set_local $7
-        (f64.div
+        (f64.sub
+         (f64.const 1)
          (get_local $7)
+        )
+       )
+       (set_local $4
+        (f64.div
          (get_local $4)
+         (get_local $7)
         )
        )
        ;;@ ./dev/cpp/NetMath.cpp:194:0
-       (set_local $6
+       (set_local $2
+        (i32.add
+         (get_local $2)
+         (i32.const 16)
+        )
+       )
+       (set_local $21
+        (f32.load
+         (get_local $2)
+        )
+       )
+       (set_local $7
+        (f64.promote/f32
+         (get_local $21)
+        )
+       )
+       (set_local $5
         (f64.mul
-         (get_local $6)
-         (get_local $9)
+         (get_local $5)
+         (get_local $7)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.sqrt
-         (get_local $7)
+         (get_local $4)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.add
-         (get_local $7)
+         (get_local $4)
          (f64.const 1e-06)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.div
-         (get_local $6)
-         (get_local $7)
+         (get_local $5)
+         (get_local $4)
         )
        )
-       (set_local $7
+       (set_local $4
         (f64.add
-         (get_local $14)
-         (get_local $7)
+         (get_local $10)
+         (get_local $4)
         )
        )
        ;;@ ./dev/cpp/ConvLayer.cpp:290:0
        (f64.store
         (get_local $0)
-        (get_local $7)
+        (get_local $4)
        )
        ;;@ ./dev/cpp/ConvLayer.cpp:275:0
-       (set_local $17
+       (set_local $8
         (i32.add
-         (get_local $17)
+         (get_local $8)
          (i32.const 1)
         )
        )
        (br_if $while-in44
         (i32.lt_u
-         (get_local $17)
-         (get_local $26)
+         (get_local $8)
+         (get_local $31)
         )
        )
       )
@@ -33998,96 +34424,91 @@
    )
    (if
     (i32.eqz
-     (get_local $15)
+     (get_local $17)
     )
     (block
-     (set_local $7
-      (f64.sub
-       (f64.const 1)
-       (tee_local $5
-        (f64.promote/f32
-         (f32.load offset=24
-          (get_local $12)
-         )
-        )
-       )
-      )
-     )
-     (set_local $23
-      (i32.shr_s
-       (i32.sub
-        (get_local $17)
-        (get_local $13)
-       )
-       (i32.const 2)
-      )
-     )
-     (set_local $22
+     (set_local $27
       (i32.add
-       (get_local $12)
+       (get_local $0)
+       (i32.const 164)
+      )
+     )
+     (set_local $28
+      (i32.add
+       (get_local $15)
        (i32.const 48)
+      )
+     )
+     (set_local $29
+      (i32.add
+       (get_local $15)
+       (i32.const 64)
+      )
+     )
+     (set_local $30
+      (i32.add
+       (get_local $15)
+       (i32.const 8)
+      )
+     )
+     (set_local $31
+      (i32.add
+       (get_local $15)
+       (i32.const 80)
       )
      )
      (set_local $24
       (i32.add
-       (get_local $12)
-       (i32.const 64)
-      )
-     )
-     (set_local $25
-      (i32.add
-       (get_local $12)
-       (i32.const 8)
-      )
-     )
-     (set_local $26
-      (i32.add
-       (get_local $12)
-       (i32.const 80)
-      )
-     )
-     (set_local $21
-      (i32.add
-       (get_local $12)
+       (get_local $15)
        (i32.const 88)
       )
      )
-     (set_local $2
+     (set_local $32
+      (i32.shr_s
+       (i32.sub
+        (get_local $13)
+        (get_local $2)
+       )
+       (i32.const 2)
+      )
+     )
+     (set_local $20
+      (get_local $2)
+     )
+     (set_local $8
       (i32.const 0)
+     )
+     (set_local $0
+      (get_local $3)
      )
      (loop $while-in56
       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-      (set_local $0
+      (set_local $3
        (i32.add
-        (get_local $8)
+        (get_local $0)
         (i32.shl
-         (get_local $2)
+         (get_local $8)
          (i32.const 2)
         )
        )
       )
       ;;@ ./dev/cpp/ConvLayer.cpp:295:0
-      (set_local $0
+      (set_local $3
        (i32.load
-        (get_local $0)
+        (get_local $3)
        )
       )
-      (set_local $1
+      (set_local $2
        (i32.add
-        (get_local $0)
+        (get_local $3)
         (i32.const 12)
        )
       )
       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:632:0
-      (set_local $3
+      (set_local $1
        (i32.add
-        (get_local $0)
-        (i32.const 16)
-       )
-      )
-      (set_local $3
-       (i32.load
         (get_local $3)
+        (i32.const 16)
        )
       )
       (set_local $1
@@ -34095,23 +34516,31 @@
         (get_local $1)
        )
       )
+      (set_local $2
+       (i32.load
+        (get_local $2)
+       )
+      )
       (if
        ;;@ ./dev/cpp/ConvLayer.cpp:295:0
-       (i32.ne
-        (get_local $3)
+       (i32.eq
         (get_local $1)
+        (get_local $2)
+       )
+       (set_local $0
+        (get_local $3)
        )
        (block
-        (set_local $27
+        (set_local $33
          (i32.eq
           (i32.load offset=4
-           (tee_local $0
+           (tee_local $3
             (i32.load offset=12
              (i32.load
               (i32.add
-               (get_local $8)
+               (get_local $0)
                (i32.shl
-                (get_local $2)
+                (get_local $8)
                 (i32.const 2)
                )
               )
@@ -34120,20 +34549,20 @@
            )
           )
           (i32.load
-           (get_local $0)
+           (get_local $3)
           )
          )
         )
-        (set_local $28
+        (set_local $34
          (i32.div_s
           (i32.sub
            (i32.load offset=16
-            (tee_local $17
+            (tee_local $22
              (i32.load
               (i32.add
-               (get_local $8)
+               (get_local $0)
                (i32.shl
-                (get_local $2)
+                (get_local $8)
                 (i32.const 2)
                )
               )
@@ -34141,76 +34570,70 @@
             )
            )
            (i32.load offset=12
-            (get_local $17)
+            (get_local $22)
            )
           )
           (i32.const 12)
          )
         )
-        (set_local $29
+        (set_local $35
          (i32.add
-          (get_local $8)
+          (i32.load
+           (i32.const 5232)
+          )
           (i32.shl
-           (get_local $2)
+           (get_local $26)
            (i32.const 2)
           )
          )
         )
-        (set_local $30
+        (set_local $36
          (i32.add
-          (get_local $8)
+          (get_local $0)
           (i32.shl
-           (get_local $2)
+           (get_local $8)
            (i32.const 2)
           )
          )
         )
-        (set_local $31
-         (i32.add
-          (get_local $8)
-          (i32.shl
-           (get_local $2)
-           (i32.const 2)
-          )
-         )
-        )
-        (set_local $32
-         (i32.add
-          (get_local $8)
-          (i32.shl
-           (get_local $2)
-           (i32.const 2)
-          )
-         )
-        )
-        (set_local $33
-         (i32.add
-          (get_local $8)
-          (i32.shl
-           (get_local $2)
-           (i32.const 2)
-          )
-         )
+        (set_local $11
+         (i32.const 0)
         )
         (set_local $3
-         (i32.const 0)
+         (get_local $0)
+        )
+        (set_local $2
+         (get_local $0)
+        )
+        (set_local $1
+         (get_local $0)
+        )
+        (set_local $6
+         (get_local $0)
         )
         (loop $while-in58
          (if
-          (i32.eqz
-           (get_local $27)
+          (get_local $33)
+          (set_local $9
+           (get_local $3)
           )
           (block
-           (set_local $34
+           (set_local $37
             (i32.eq
              (i32.load offset=4
-              (tee_local $0
+              (tee_local $6
                (i32.load
                 (tee_local $19
                  (i32.load offset=12
-                  (tee_local $15
+                  (tee_local $25
                    (i32.load
-                    (get_local $30)
+                    (i32.add
+                     (get_local $6)
+                     (i32.shl
+                      (get_local $8)
+                      (i32.const 2)
+                     )
+                    )
                    )
                   )
                  )
@@ -34219,87 +34642,119 @@
               )
              )
              (i32.load
-              (get_local $0)
+              (get_local $6)
              )
             )
            )
-           (set_local $35
+           (set_local $38
             (i32.div_s
              (i32.sub
               (i32.load offset=4
-               (tee_local $0
+               (tee_local $6
                 (i32.load offset=12
                  (i32.load
-                  (get_local $31)
+                  (i32.add
+                   (get_local $3)
+                   (i32.shl
+                    (get_local $8)
+                    (i32.const 2)
+                   )
+                  )
                  )
                 )
                )
               )
               (i32.load
-               (get_local $0)
+               (get_local $6)
               )
              )
              (i32.const 12)
             )
            )
-           (set_local $11
+           (set_local $9
             (i32.const 0)
            )
            (loop $while-in60
             (if
              (i32.eqz
-              (get_local $34)
+              (get_local $37)
              )
              (block
-              (set_local $10
+              (set_local $23
                (f64.convert_s/i32
                 (i32.load
-                 (get_local $25)
+                 (get_local $30)
                 )
                )
               )
-              (set_local $36
+              (set_local $14
+               (f64.sub
+                (f64.const 1)
+                (tee_local $7
+                 (f64.promote/f32
+                  (f32.load offset=24
+                   (i32.load
+                    (get_local $35)
+                   )
+                  )
+                 )
+                )
+               )
+              )
+              (set_local $39
                (i32.load
                 (i32.add
                  (i32.load
                   (i32.add
                    (i32.load
                     (i32.load
-                     (get_local $32)
+                     (i32.add
+                      (get_local $1)
+                      (i32.shl
+                       (get_local $8)
+                       (i32.const 2)
+                      )
+                     )
                     )
                    )
                    (i32.mul
-                    (get_local $3)
+                    (get_local $11)
                     (i32.const 12)
                    )
                   )
                  )
                  (i32.mul
-                  (get_local $11)
+                  (get_local $9)
                   (i32.const 12)
                  )
                 )
                )
               )
-              (set_local $37
+              (set_local $40
                (f32.ne
                 (f32.load
-                 (get_local $26)
+                 (get_local $31)
                 )
                 (f32.const 0)
                )
               )
-              (set_local $38
+              (set_local $41
                (i32.shr_s
                 (i32.sub
                  (i32.load offset=4
-                  (tee_local $0
+                  (tee_local $3
                    (i32.load
-                    (tee_local $18
+                    (tee_local $17
                      (i32.load offset=12
-                      (tee_local $16
+                      (tee_local $13
                        (i32.load
-                        (get_local $33)
+                        (i32.add
+                         (get_local $2)
+                         (i32.shl
+                          (get_local $8)
+                          (i32.const 2)
+                         )
+                        )
                        )
                       )
                      )
@@ -34308,111 +34763,114 @@
                   )
                  )
                  (i32.load
-                  (get_local $0)
+                  (get_local $3)
                  )
                 )
                 (i32.const 3)
                )
               )
-              (set_local $13
+              (set_local $16
                (i32.const 0)
               )
-              (set_local $0
-               (get_local $15)
+              (set_local $6
+               (get_local $19)
               )
               (set_local $1
-               (get_local $19)
+               (get_local $25)
+              )
+              (set_local $3
+               (get_local $2)
               )
               (loop $while-in62
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
-                 (i32.mul
-                  (get_local $3)
-                  (i32.const 12)
-                 )
-                )
-               )
-               (set_local $1
-                (i32.load
-                 (get_local $1)
-                )
-               )
-               (set_local $1
-                (i32.add
-                 (get_local $1)
+                 (get_local $6)
                  (i32.mul
                   (get_local $11)
                   (i32.const 12)
                  )
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
+                 (get_local $2)
+                 (i32.mul
+                  (get_local $9)
+                  (i32.const 12)
+                 )
+                )
+               )
+               (set_local $2
+                (i32.load
+                 (get_local $2)
+                )
+               )
+               (set_local $2
+                (i32.add
+                 (get_local $2)
                  (i32.shl
-                  (get_local $13)
+                  (get_local $16)
                   (i32.const 3)
                  )
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:299:0
-               (set_local $9
+               (set_local $5
                 (f64.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:300:0
-               (set_local $6
+               (set_local $10
                 (f64.load
-                 (get_local $22)
+                 (get_local $28)
                 )
                )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-               (set_local $1
-                (i32.load
-                 (get_local $0)
-                )
-               )
-               (set_local $1
-                (i32.add
-                 (get_local $1)
-                 (i32.mul
-                  (get_local $3)
-                  (i32.const 12)
-                 )
-                )
-               )
-               (set_local $1
+               (set_local $2
                 (i32.load
                  (get_local $1)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
+                 (get_local $2)
                  (i32.mul
                   (get_local $11)
                   (i32.const 12)
                  )
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
+                 (get_local $2)
+                 (i32.mul
+                  (get_local $9)
+                  (i32.const 12)
+                 )
+                )
+               )
+               (set_local $2
+                (i32.load
+                 (get_local $2)
+                )
+               )
+               (set_local $2
+                (i32.add
+                 (get_local $2)
                  (i32.shl
-                  (get_local $13)
+                  (get_local $16)
                   (i32.const 3)
                  )
                 )
@@ -34420,193 +34878,193 @@
                ;;@ ./dev/cpp/ConvLayer.cpp:300:0
                (set_local $4
                 (f64.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $6
+               (set_local $10
                 (f64.mul
-                 (get_local $6)
+                 (get_local $10)
                  (get_local $4)
                 )
                )
-               (set_local $9
+               (set_local $5
                 (f64.add
-                 (get_local $9)
-                 (get_local $6)
+                 (get_local $5)
+                 (get_local $10)
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:301:0
-               (set_local $6
+               (set_local $10
                 (f64.load
-                 (get_local $24)
+                 (get_local $29)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (f64.gt
                  (get_local $4)
                  (f64.const 0)
                 )
                )
-               (set_local $14
+               (set_local $12
                 (if (result f64)
-                 (get_local $1)
+                 (get_local $2)
                  (f64.const 1)
                  (f64.const -1)
                 )
                )
-               (set_local $6
+               (set_local $10
                 (f64.mul
-                 (get_local $6)
-                 (get_local $14)
+                 (get_local $10)
+                 (get_local $12)
                 )
                )
-               (set_local $9
+               (set_local $5
                 (f64.add
-                 (get_local $9)
-                 (get_local $6)
-                )
-               )
-               (set_local $9
-                (f64.div
-                 (get_local $9)
+                 (get_local $5)
                  (get_local $10)
                 )
                )
+               (set_local $5
+                (f64.div
+                 (get_local $5)
+                 (get_local $23)
+                )
+               )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $0)
+                 (get_local $1)
                  (i32.const 36)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
-                 (i32.mul
-                  (get_local $3)
-                  (i32.const 12)
-                 )
-                )
-               )
-               (set_local $1
-                (i32.load
-                 (get_local $1)
-                )
-               )
-               (set_local $1
-                (i32.add
-                 (get_local $1)
+                 (get_local $2)
                  (i32.mul
                   (get_local $11)
                   (i32.const 12)
                  )
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $1
+               (set_local $2
                 (i32.add
-                 (get_local $1)
+                 (get_local $2)
+                 (i32.mul
+                  (get_local $9)
+                  (i32.const 12)
+                 )
+                )
+               )
+               (set_local $2
+                (i32.load
+                 (get_local $2)
+                )
+               )
+               (set_local $2
+                (i32.add
+                 (get_local $2)
                  (i32.shl
-                  (get_local $13)
+                  (get_local $16)
                   (i32.const 3)
                  )
                 )
                )
                ;;@ ./dev/cpp/NetMath.cpp:219:0
-               (set_local $6
+               (set_local $10
                 (f64.load
-                 (get_local $1)
+                 (get_local $2)
                 )
                )
-               (set_local $14
+               (set_local $12
                 (f64.mul
-                 (get_local $5)
-                 (get_local $6)
+                 (get_local $7)
+                 (get_local $10)
                 )
                )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-               (set_local $6
+               (set_local $10
                 (f64.mul
-                 (get_local $9)
-                 (get_local $9)
+                 (get_local $5)
+                 (get_local $5)
                 )
                )
                ;;@ ./dev/cpp/NetMath.cpp:219:0
-               (set_local $6
+               (set_local $10
                 (f64.mul
-                 (get_local $6)
-                 (get_local $7)
-                )
-               )
-               (set_local $14
-                (f64.add
-                 (get_local $6)
+                 (get_local $10)
                  (get_local $14)
                 )
                )
+               (set_local $12
+                (f64.add
+                 (get_local $10)
+                 (get_local $12)
+                )
+               )
                (f64.store
-                (get_local $1)
-                (get_local $14)
+                (get_local $2)
+                (get_local $12)
                )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-               (set_local $0
+               (set_local $2
                 (i32.add
-                 (get_local $0)
+                 (get_local $1)
                  (i32.const 48)
                 )
                )
-               (set_local $0
+               (set_local $2
                 (i32.load
-                 (get_local $0)
+                 (get_local $2)
                 )
                )
-               (set_local $0
+               (set_local $2
                 (i32.add
-                 (get_local $0)
-                 (i32.mul
-                  (get_local $3)
-                  (i32.const 12)
-                 )
-                )
-               )
-               (set_local $0
-                (i32.load
-                 (get_local $0)
-                )
-               )
-               (set_local $0
-                (i32.add
-                 (get_local $0)
+                 (get_local $2)
                  (i32.mul
                   (get_local $11)
                   (i32.const 12)
                  )
                 )
                )
-               (set_local $0
+               (set_local $2
                 (i32.load
-                 (get_local $0)
+                 (get_local $2)
                 )
                )
-               (set_local $14
+               (set_local $2
+                (i32.add
+                 (get_local $2)
+                 (i32.mul
+                  (get_local $9)
+                  (i32.const 12)
+                 )
+                )
+               )
+               (set_local $2
+                (i32.load
+                 (get_local $2)
+                )
+               )
+               (set_local $12
                 (f64.div
                  (f64.add
-                  (tee_local $20
+                  (tee_local $18
                    (f64.load
-                    (tee_local $0
+                    (tee_local $2
                      (i32.add
-                      (get_local $0)
+                      (get_local $2)
                       (i32.shl
-                       (get_local $13)
+                       (get_local $16)
                        (i32.const 3)
                       )
                      )
@@ -34616,19 +35074,19 @@
                   (f64.const 1e-06)
                  )
                  (f64.add
-                  (get_local $14)
+                  (get_local $12)
                   (f64.const 1e-06)
                  )
                 )
                )
                ;;@ ./dev/cpp/NetMath.cpp:225:0
                (f64.store
-                (get_local $0)
+                (get_local $2)
                 (f64.add
-                 (get_local $6)
+                 (get_local $10)
                  (f64.mul
-                  (get_local $5)
-                  (get_local $20)
+                  (get_local $7)
+                  (get_local $18)
                  )
                 )
                )
@@ -34636,76 +35094,76 @@
                 (f64.add
                  (get_local $4)
                  (f64.mul
-                  (get_local $9)
+                  (get_local $5)
                   (f64.sqrt
-                   (get_local $14)
+                   (get_local $12)
                   )
                  )
                 )
                )
                ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-               (set_local $0
+               (set_local $2
                 (i32.add
-                 (get_local $36)
+                 (get_local $39)
                  (i32.shl
-                  (get_local $13)
+                  (get_local $16)
                   (i32.const 3)
                  )
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:303:0
                (f64.store
-                (get_local $0)
+                (get_local $2)
                 (get_local $4)
                )
                (if
-                (get_local $37)
+                (get_local $40)
                 (block
                  ;;@ ./dev/cpp/ConvLayer.cpp:305:0
-                 (set_local $0
+                 (set_local $3
                   (i32.load
-                   (get_local $29)
+                   (get_local $36)
                   )
                  )
                  ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-                 (set_local $0
+                 (set_local $3
                   (i32.load
-                   (get_local $0)
+                   (get_local $3)
                   )
                  )
-                 (set_local $0
+                 (set_local $3
                   (i32.add
-                   (get_local $0)
-                   (i32.mul
-                    (get_local $3)
-                    (i32.const 12)
-                   )
-                  )
-                 )
-                 (set_local $0
-                  (i32.load
-                   (get_local $0)
-                  )
-                 )
-                 (set_local $0
-                  (i32.add
-                   (get_local $0)
+                   (get_local $3)
                    (i32.mul
                     (get_local $11)
                     (i32.const 12)
                    )
                   )
                  )
-                 (set_local $0
+                 (set_local $3
                   (i32.load
-                   (get_local $0)
+                   (get_local $3)
                   )
                  )
-                 (set_local $0
+                 (set_local $3
                   (i32.add
-                   (get_local $0)
+                   (get_local $3)
+                   (i32.mul
+                    (get_local $9)
+                    (i32.const 12)
+                   )
+                  )
+                 )
+                 (set_local $3
+                  (i32.load
+                   (get_local $3)
+                  )
+                 )
+                 (set_local $3
+                  (i32.add
+                   (get_local $3)
                    (i32.shl
-                    (get_local $13)
+                    (get_local $16)
                     (i32.const 3)
                    )
                   )
@@ -34713,7 +35171,7 @@
                  ;;@ ./dev/cpp/ConvLayer.cpp:305:0
                  (set_local $4
                   (f64.load
-                   (get_local $0)
+                   (get_local $3)
                   )
                  )
                  (set_local $4
@@ -34722,96 +35180,128 @@
                    (get_local $4)
                   )
                  )
-                 (set_local $9
+                 (set_local $5
                   (f64.load
-                   (get_local $21)
+                   (get_local $24)
                   )
                  )
                  (set_local $4
                   (f64.add
-                   (get_local $9)
+                   (get_local $5)
                    (get_local $4)
                   )
                  )
                  (f64.store
-                  (get_local $21)
+                  (get_local $24)
                   (get_local $4)
+                 )
+                 (set_local $3
+                  (get_local $0)
                  )
                 )
                )
                ;;@ ./dev/cpp/ConvLayer.cpp:297:0
-               (set_local $13
+               (set_local $16
                 (i32.add
-                 (get_local $13)
+                 (get_local $16)
                  (i32.const 1)
                 )
                )
                (if
                 (i32.lt_u
-                 (get_local $13)
-                 (get_local $38)
+                 (get_local $16)
+                 (get_local $41)
                 )
                 (block
-                 (set_local $0
-                  (get_local $16)
+                 (set_local $6
+                  (get_local $17)
                  )
                  (set_local $1
-                  (get_local $18)
+                  (get_local $13)
                  )
                  (br $while-in62)
+                )
+                (block
+                 (set_local $2
+                  (get_local $3)
+                 )
+                 (set_local $1
+                  (get_local $3)
+                 )
                 )
                )
               )
              )
             )
             ;;@ ./dev/cpp/ConvLayer.cpp:296:0
-            (set_local $11
+            (set_local $9
              (i32.add
-              (get_local $11)
+              (get_local $9)
               (i32.const 1)
              )
             )
             (br_if $while-in60
              (i32.lt_u
-              (get_local $11)
-              (get_local $35)
+              (get_local $9)
+              (get_local $38)
              )
+            )
+            (set_local $9
+             (get_local $3)
+            )
+            (set_local $6
+             (get_local $3)
             )
            )
           )
          )
          ;;@ ./dev/cpp/ConvLayer.cpp:295:0
-         (set_local $3
+         (set_local $11
           (i32.add
-           (get_local $3)
+           (get_local $11)
            (i32.const 1)
           )
          )
-         (br_if $while-in58
+         (if
           (i32.lt_u
-           (get_local $3)
-           (get_local $28)
+           (get_local $11)
+           (get_local $34)
           )
-         )
-         (set_local $0
-          (get_local $17)
+          (block
+           (set_local $3
+            (get_local $9)
+           )
+           (br $while-in58)
+          )
+          (set_local $0
+           (get_local $22)
+          )
          )
         )
        )
       )
-      ;;@ ./dev/cpp/ConvLayer.cpp:309:0
-      (set_local $1
+      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+      (set_local $3
+       (i32.load
+        (get_local $27)
+       )
+      )
+      (set_local $3
        (i32.add
-        (get_local $0)
-        (i32.const 112)
+        (get_local $3)
+        (i32.shl
+         (get_local $8)
+         (i32.const 3)
+        )
        )
       )
-      (set_local $14
+      ;;@ ./dev/cpp/ConvLayer.cpp:309:0
+      (set_local $12
        (f64.load
-        (get_local $1)
+        (get_local $3)
        )
       )
-      (set_local $1
+      (set_local $2
        (i32.add
         (get_local $0)
         (i32.const 120)
@@ -34819,56 +35309,100 @@
       )
       (set_local $4
        (f64.load
-        (get_local $1)
+        (get_local $2)
+       )
+      )
+      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
+      (set_local $2
+       (i32.load
+        (i32.const 5232)
+       )
+      )
+      (set_local $2
+       (i32.add
+        (get_local $2)
+        (i32.shl
+         (get_local $26)
+         (i32.const 2)
+        )
+       )
+      )
+      ;;@ ./dev/cpp/Network.cpp:36:0
+      (set_local $2
+       (i32.load
+        (get_local $2)
+       )
+      )
+      ;;@ ./dev/cpp/NetMath.cpp:216:0
+      (set_local $2
+       (i32.add
+        (get_local $2)
+        (i32.const 24)
+       )
+      )
+      (set_local $21
+       (f32.load
+        (get_local $2)
+       )
+      )
+      (set_local $5
+       (f64.promote/f32
+        (get_local $21)
        )
       )
       ;;@ ./dev/cpp/NetMath.cpp:224:0
-      (set_local $1
+      (set_local $2
        (i32.add
         (get_local $0)
         (i32.const 184)
        )
       )
-      (set_local $9
+      (set_local $7
        (f64.load
-        (get_local $1)
+        (get_local $2)
        )
       )
-      (set_local $6
+      (set_local $10
        (f64.mul
         (get_local $5)
-        (get_local $9)
+        (get_local $7)
+       )
+      )
+      (set_local $7
+       (f64.sub
+        (f64.const 1)
+        (get_local $5)
        )
       )
       ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\math.h:880:0
-      (set_local $9
+      (set_local $23
        (f64.mul
         (get_local $4)
         (get_local $4)
        )
       )
       ;;@ ./dev/cpp/NetMath.cpp:224:0
-      (set_local $9
+      (set_local $7
        (f64.mul
-        (get_local $9)
+        (get_local $23)
         (get_local $7)
        )
       )
-      (set_local $6
+      (set_local $10
        (f64.add
-        (get_local $6)
-        (get_local $9)
+        (get_local $10)
+        (get_local $7)
        )
       )
       (f64.store
-       (get_local $1)
-       (get_local $6)
+       (get_local $2)
+       (get_local $10)
       )
       ;;@ ./dev/cpp/NetMath.cpp:225:0
-      (set_local $6
+      (set_local $10
        (f64.div
         (f64.add
-         (tee_local $10
+         (tee_local $23
           (f64.load
            (tee_local $0
             (i32.add
@@ -34881,7 +35415,7 @@
          (f64.const 1e-06)
         )
         (f64.add
-         (get_local $6)
+         (get_local $10)
          (f64.const 1e-06)
         )
        )
@@ -34889,61 +35423,46 @@
       (f64.store
        (get_local $0)
        (f64.add
-        (get_local $9)
+        (get_local $7)
         (f64.mul
          (get_local $5)
-         (get_local $10)
+         (get_local $23)
         )
        )
       )
       (set_local $4
        (f64.add
-        (get_local $14)
+        (get_local $12)
         (f64.mul
          (get_local $4)
          (f64.sqrt
-          (get_local $6)
+          (get_local $10)
          )
         )
        )
       )
-      ;;@ C:\emsdk\emscripten\1.37.21\system\include\libcxx\vector:1496:0
-      (set_local $0
-       (i32.add
-        (get_local $8)
-        (i32.shl
-         (get_local $2)
-         (i32.const 2)
-        )
-       )
-      )
       ;;@ ./dev/cpp/ConvLayer.cpp:309:0
-      (set_local $0
-       (i32.load
-        (get_local $0)
-       )
-      )
-      (set_local $0
-       (i32.add
-        (get_local $0)
-        (i32.const 112)
-       )
-      )
       (f64.store
-       (get_local $0)
+       (get_local $3)
        (get_local $4)
       )
       ;;@ ./dev/cpp/ConvLayer.cpp:294:0
-      (set_local $2
+      (set_local $8
        (i32.add
-        (get_local $2)
+        (get_local $8)
         (i32.const 1)
        )
       )
-      (br_if $while-in56
+      (if
        (i32.lt_u
-        (get_local $2)
-        (get_local $23)
+        (get_local $8)
+        (get_local $32)
+       )
+       (block
+        (set_local $0
+         (get_local $20)
+        )
+        (br $while-in56)
        )
       )
      )
@@ -34953,18 +35472,18 @@
   ;;@ ./dev/cpp/ConvLayer.cpp:314:0
   (set_local $0
    (i32.add
-    (get_local $12)
+    (get_local $15)
     (i32.const 80)
    )
   )
-  (set_local $39
+  (set_local $21
    (f32.load
     (get_local $0)
    )
   )
   (if
    (f32.eq
-    (get_local $39)
+    (get_local $21)
     (f32.const 0)
    )
    ;;@ ./dev/cpp/ConvLayer.cpp:318:0
@@ -34973,27 +35492,27 @@
   ;;@ ./dev/cpp/ConvLayer.cpp:315:0
   (set_local $0
    (i32.add
-    (get_local $12)
+    (get_local $15)
     (i32.const 88)
    )
   )
-  (set_local $5
+  (set_local $4
    (f64.load
     (get_local $0)
    )
   )
-  (set_local $5
+  (set_local $4
    (f64.sqrt
-    (get_local $5)
+    (get_local $4)
    )
   )
   (f64.store
    (get_local $0)
-   (get_local $5)
+   (get_local $4)
   )
   ;;@ ./dev/cpp/ConvLayer.cpp:316:0
   (call $__ZN7NetMath7maxNormEi
-   (get_local $40)
+   (get_local $26)
   )
  )
  (func $__ZN9PoolLayerD2Ev (param $0 i32)

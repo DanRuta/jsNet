@@ -1260,7 +1260,7 @@ namespace ConvLayer_cpp {
         layer->init(1);
 
         for (int f=0; f<4; f++) {
-            EXPECT_EQ( layer->filters[f]->bias, 1 );
+            EXPECT_EQ( layer->biases[f], 1 );
         }
     }
 
@@ -1382,7 +1382,7 @@ namespace ConvLayer_cpp {
         std::vector<std::vector<double> > expected = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
 
         for (int f=0; f<layer->filters.size(); f++) {
-            layer->filters[f]->bias = 1;
+            layer->biases.push_back(1);
         }
 
         net->isTraining = false;
@@ -1402,7 +1402,7 @@ namespace ConvLayer_cpp {
         std::vector<std::vector<double> > expected = {{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049},{0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049,0.7310585786300049}};
 
         for (int f=0; f<layer->filters.size(); f++) {
-            layer->filters[f]->bias = 1;
+            layer->biases.push_back(1);
         }
 
         net->isTraining = false;
@@ -1857,7 +1857,7 @@ namespace ConvLayer_cpp {
             for (int i=0; i<4; i++) {
                 layer->filters.push_back(new Filter());
                 layer->filters[i]->weights = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
-                layer->filters[i]->bias = 0.5;
+                layer->biases.push_back(0.5);
                 layer->filters[i]->deltaBias = 1;
                 layer->filters[i]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
             }
@@ -1886,7 +1886,7 @@ namespace ConvLayer_cpp {
     // Increments the bias of all filters with their deltaBias
     TEST_F(ConvApplyDeltaWFixture, applyDeltaWeights_2) {
         layer->applyDeltaWeights();
-        EXPECT_EQ( layer->filters[0]->bias, 1.5 );
+        EXPECT_EQ( layer->biases[0], 1.5 );
     }
 
     // Increments the net.l2Error by each weight, applied to the L2 formula
@@ -1927,7 +1927,7 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         for (int f=0; f<4; f++) {
-            EXPECT_EQ( layer->filters[f]->bias, 1.55 );
+            EXPECT_EQ( layer->biases[f], 1.55 );
         }
     }
 
@@ -1944,7 +1944,7 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         for (int f=0; f<4; f++) {
-            EXPECT_NEAR( layer->filters[f]->bias, 1.3165, 1e-3 );
+            EXPECT_NEAR( layer->biases[f], 1.3165, 1e-3 );
         }
     }
 
@@ -1962,7 +1962,7 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         for (int f=0; f<4; f++) {
-            EXPECT_NEAR( layer->filters[f]->bias, 1.90719, 1e-3 );
+            EXPECT_NEAR( layer->biases[f], 1.90719, 1e-3 );
         }
     }
 
@@ -1980,7 +1980,7 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         for (int f=0; f<4; f++) {
-            EXPECT_NEAR( layer->filters[f]->bias, 2.49319, 1e-3 );
+            EXPECT_NEAR( layer->biases[f], 2.49319, 1e-3 );
         }
     }
 
@@ -2001,7 +2001,7 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         for (int f=0; f<4; f++) {
-            EXPECT_NEAR( layer->filters[f]->bias, 1.19007, 1e-3 );
+            EXPECT_NEAR( layer->biases[f], 1.19007, 1e-3 );
         }
     }
 }
@@ -3029,7 +3029,6 @@ namespace NetMath_cpp {
             testF = new Filter();
             testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
             testF->init(0);
-            testF->bias = 0.1;
         }
 
         virtual void TearDown() {

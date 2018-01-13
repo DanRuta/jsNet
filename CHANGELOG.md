@@ -2,6 +2,7 @@
 ---
 #### ConvLayer
 - Optimized errors structure
+- Optimized bias structure
 
 #### NetUtil
 - Optimized convolve

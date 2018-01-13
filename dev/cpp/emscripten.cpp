@@ -1014,16 +1014,16 @@ extern "C" {
     double* get_filter_weights (int instanceIndex, int layerIndex, int filterIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
-        Filter* filter = net->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = net->layers[layerIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
+        int weightsDepth = layer->filterWeights[filterIndex].size();
+        int weightsSpan = layer->filterWeights[filterIndex][0].size();
         double weights[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weights[d][r][c];
+                    weights[d*weightsSpan + r*weightsSpan + c] = layer->filterWeights[filterIndex][d][r][c];
                 }
             }
         }
@@ -1035,12 +1035,12 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_weights (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int d=0; d<depth; d++) {
             for (int r=0; r<rows; r++) {
                 for (int c=0; c<cols; c++) {
-                    filter->weights[d][r][c] = buf[d*rows*cols + r*cols + c];
+                    layer->filterWeights[filterIndex][d][r][c] = buf[d*rows*cols + r*cols + c];
                 }
             }
         }
@@ -1108,19 +1108,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->weightGain.size();
+        int weightsSpan = filter->weightGain[0].size();
+        double weightGain[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weightGain[d][r][c];
+                    weightGain[d*weightsSpan + r*weightsSpan + c] = filter->weightGain[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &weightGain[0];
         return ptr;
     }
 
@@ -1154,19 +1154,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->weightsCache.size();
+        int weightsSpan = filter->weightsCache[0].size();
+        double weightsCache[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weightsCache[d][r][c];
+                    weightsCache[d*weightsSpan + r*weightsSpan + c] = filter->weightsCache[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &weightsCache[0];
         return ptr;
     }
 
@@ -1200,19 +1200,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->adadeltaCache.size();
+        int weightsSpan = filter->adadeltaCache[0].size();
+        double adadeltaCache[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->adadeltaCache[d][r][c];
+                    adadeltaCache[d*weightsSpan + r*weightsSpan + c] = filter->adadeltaCache[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &adadeltaCache[0];
         return ptr;
     }
 

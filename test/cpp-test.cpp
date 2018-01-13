@@ -1243,15 +1243,15 @@ namespace ConvLayer_cpp {
         Network* net;
     };
 
-    // Assigns a volume of weights to each filter
+    // Creates the weights volume
     TEST_F(ConvLayerInitFixture, init_1) {
         layer->assignPrev(prevFC);
         layer->init(1);
 
         for (int f=0; f<4; f++) {
-            EXPECT_EQ( layer->filters[f]->weights.size(), 2 );
-            EXPECT_EQ( layer->filters[f]->weights[0].size(), 3 );
-            EXPECT_EQ( layer->filters[f]->weights[0][0].size(), 3 );
+            EXPECT_EQ( layer->filterWeights[f].size(), 2 );
+            EXPECT_EQ( layer->filterWeights[f][0].size(), 3 );
+            EXPECT_EQ( layer->filterWeights[f][0][0].size(), 3 );
         }
     }
 
@@ -1475,17 +1475,17 @@ namespace ConvLayer_cpp {
             nextLayerB->init(2);
 
             for (int f=0; f<layer->filters.size(); f++) {
-                layer->filters[f]->weights = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
+                layer->filterWeights[f] = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
                 layer->filters[f]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
                 layer->errors.push_back({{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}});
             }
 
             for (int f=0; f<nextLayerB->filters.size(); f++) {
-                nextLayerB->filters[f]->weights = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
-                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
-                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
-                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
-                                                   {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
+                nextLayerB->filterWeights[f] = {{{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                               {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                               {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                               {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}},
+                                               {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}}};
                 nextLayerB->filters[f]->sumMap = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
                 nextLayerB->errors.push_back({{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3},{3,3,3,3,3}});
             }
@@ -1656,16 +1656,16 @@ namespace ConvLayer_cpp {
         nextLayerB->stride = 2;
 
         Filter* filter = new Filter();
-        filter->weights = {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}, {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}};
-        filter->init(0);
+        filter->init(0, 2, 3);
         nextLayerB->errors = { {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}} };
 
         nextLayerB->filters = {filter};
+        nextLayerB->filterWeights = {{ {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}, {{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}} }};
         layer->filters = {new Filter(), new Filter()};
-        layer->filters[0]->weights = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
-        layer->filters[0]->init(0);
-        layer->filters[1]->weights = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
-        layer->filters[1]->init(0);
+        layer->filterWeights[0] = { {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}} };
+        layer->filters[0]->init(0, 1, 5);
+        layer->filterWeights[1] = {{{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}};
+        layer->filters[1]->init(0, 1, 5);
 
         layer->errors = { {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}}, {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}} };
 
@@ -1880,7 +1880,7 @@ namespace ConvLayer_cpp {
 
             for (int i=0; i<4; i++) {
                 layer->filters.push_back(new Filter());
-                layer->filters[i]->weights = {{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}};
+                layer->filterWeights.push_back({{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}},{{0.5,0.5,0.5},{0.5,0.5,0.5},{0.5,0.5,0.5}}});
                 layer->biases.push_back(0.5);
                 layer->filters[i]->deltaBias = 1;
                 layer->filters[i]->deltaWeights = {{{1,1,1},{1,1,1},{1,1,1}},{{1,1,1},{1,1,1},{1,1,1}}};
@@ -1901,10 +1901,10 @@ namespace ConvLayer_cpp {
         layer->applyDeltaWeights();
 
         std::vector<std::vector<std::vector<double> > > expected = {{{1.5,1.5,1.5},{1.5,1.5,1.5},{1.5,1.5,1.5}},{{1.5,1.5,1.5},{1.5,1.5,1.5},{1.5,1.5,1.5}}};
-        EXPECT_EQ( layer->filters[0]->weights, expected );
-        EXPECT_EQ( layer->filters[1]->weights, expected );
-        EXPECT_EQ( layer->filters[2]->weights, expected );
-        EXPECT_EQ( layer->filters[3]->weights, expected );
+        EXPECT_EQ( layer->filterWeights[0], expected );
+        EXPECT_EQ( layer->filterWeights[1], expected );
+        EXPECT_EQ( layer->filterWeights[2], expected );
+        EXPECT_EQ( layer->filterWeights[3], expected );
     }
 
     // Increments the bias of all filters with their deltaBias
@@ -2330,11 +2330,11 @@ namespace PoolLayer_cpp {
             {1,7,3,7,3,5}
         } };
 
-        convLayer->filters[0]->weights = {{
+        convLayer->filterWeights.push_back({{
             {1,2,3},
             {4,5,2},
             {3,2,1}
-        }};
+        }});
 
         layer->errors = {{
             {0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -2722,7 +2722,6 @@ namespace Filter_cpp {
             Network::newNetwork();
             net = Network::getInstance(0);
             testFilter = new Filter();
-            testFilter->weights = {{{1,2,3},{4,5,6},{7,8,9}}, {{1,2,3},{4,5,6},{7,8,9}}};
         }
 
         virtual void TearDown () {
@@ -2736,7 +2735,7 @@ namespace Filter_cpp {
 
     // Creates a volume of delta weights with depth==channels and the same spacial dimensions as the weights map, with 0 values
     TEST_F(FilterInitFixture, init_1) {
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
         EXPECT_EQ( testFilter->deltaWeights,  expected);
     }
@@ -2744,14 +2743,14 @@ namespace Filter_cpp {
     // Sets the filter.deltaBias value to 0
     TEST_F(FilterInitFixture, init_2) {
         testFilter->deltaBias = 99;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->deltaBias, 0 );
     }
 
     // Creates a weightGain map if the updateFn parameter is gain, with the same dimensions as weights, with 1 values
     TEST_F(FilterInitFixture, init_3) {
         net->updateFnIndex = 1;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{1,1,1},{1,1,1},{1,1,1}}, {{1,1,1},{1,1,1},{1,1,1}}};
         EXPECT_EQ( testFilter->weightGain,  expected);
     }
@@ -2760,7 +2759,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_4) {
         testFilter->biasGain = 0;
         net->updateFnIndex = 1;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->biasGain, 1 );
     }
 
@@ -2768,7 +2767,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_5) {
         net->updateFnIndex = 99;
         testFilter->biasGain = 123;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->biasGain, 123 );
         EXPECT_EQ( testFilter->weightGain.size(), 0 );
     }
@@ -2777,7 +2776,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_6) {
         testFilter->biasCache = 123;
         net->updateFnIndex = 2;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
         EXPECT_EQ( testFilter->weightsCache,  expected);
         EXPECT_EQ( testFilter->biasCache, 0 );
@@ -2787,7 +2786,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_7) {
         testFilter->biasCache = 123;
         net->updateFnIndex = 2;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
         EXPECT_EQ( testFilter->weightsCache,  expected);
         EXPECT_EQ( testFilter->biasCache, 0 );
@@ -2797,7 +2796,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_8) {
         testFilter->biasCache = 123;
         net->updateFnIndex = 2;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
         EXPECT_EQ( testFilter->weightsCache,  expected);
         EXPECT_EQ( testFilter->biasCache, 0 );
@@ -2807,7 +2806,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_9) {
         testFilter->biasCache = 123;
         net->updateFnIndex = 99;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->weightsCache.size(), 0 );
         EXPECT_EQ( testFilter->biasCache, 123 );
     }
@@ -2816,7 +2815,7 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_10) {
         net->updateFnIndex = 5;
         testFilter->adadeltaBiasCache = 123;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         std::vector<std::vector<std::vector<double> > > expected = {{{0,0,0},{0,0,0},{0,0,0}}, {{0,0,0},{0,0,0},{0,0,0}}};
         EXPECT_EQ( testFilter->adadeltaBiasCache, 0 );
         EXPECT_EQ( testFilter->adadeltaCache, expected );
@@ -2826,14 +2825,14 @@ namespace Filter_cpp {
     TEST_F(FilterInitFixture, init_11a) {
         net->updateFnIndex = 2;
         testFilter->adadeltaBiasCache = 123;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->adadeltaBiasCache, 123 );
         EXPECT_EQ( testFilter->adadeltaCache.size(), 0 );
     }
     TEST_F(FilterInitFixture, init_11b) {
         net->updateFnIndex = 3;
         testFilter->adadeltaBiasCache = 123;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->adadeltaBiasCache, 123 );
         EXPECT_EQ( testFilter->adadeltaCache.size(), 0 );
     }
@@ -2843,7 +2842,7 @@ namespace Filter_cpp {
         net->updateFnIndex = 4;
         testFilter->m = 99;
         testFilter->v = 99;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->m, 0 );
         EXPECT_EQ( testFilter->v, 0 );
     }
@@ -2853,7 +2852,7 @@ namespace Filter_cpp {
         net->updateFnIndex = 123;
         testFilter->m = 99;
         testFilter->v = 99;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->m, 99 );
         EXPECT_EQ( testFilter->v, 99 );
     }
@@ -2863,14 +2862,14 @@ namespace Filter_cpp {
         net->activation = &NetMath::lrelu;
         net->lreluSlope = 123;
         testFilter->lreluSlope = 0;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->lreluSlope, 123 );
     }
 
     // Creates a random filter.rreluSlope number if the activation is rrelu
     TEST_F(FilterInitFixture, init_15) {
         net->activation = &NetMath::rrelu;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_NE( testFilter->rreluSlope, 0 );
         EXPECT_NE( testFilter->rreluSlope, 0.1 );
         EXPECT_GE( testFilter->rreluSlope, -0.1);
@@ -2882,7 +2881,7 @@ namespace Filter_cpp {
         net->activation = &NetMath::elu;
         net->eluAlpha = 123;
         testFilter->eluAlpha = 0;
-        testFilter->init(0);
+        testFilter->init(0, 2, 3);
         EXPECT_EQ( testFilter->eluAlpha, 123 );
     }
 }
@@ -3051,8 +3050,7 @@ namespace NetMath_cpp {
             testN->init(0, 5);
 
             testF = new Filter();
-            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
-            testF->init(0);
+            testF->init(0, 1, 3);
         }
 
         virtual void TearDown() {
@@ -3138,7 +3136,6 @@ namespace NetMath_cpp {
         EXPECT_EQ( testN->weightGain[0], 1.05 );
         EXPECT_EQ( testN->weightGain[1], 5 );
 
-        testF->weights = { {{0.1,0.1,  1},{1,1,1},{1,1,1}} };
         testF->weightGain = { {{1,4.99  ,1},{1,1,1},{1,1,1}} };
         NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 0);
         NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 1);
@@ -3155,7 +3152,6 @@ namespace NetMath_cpp {
         EXPECT_EQ( testN->weightGain[0], 0.95 );
         EXPECT_EQ( testN->weightGain[1], 0.5 );
 
-        testF->weights = { {{0.1,0.1,  1},{1,1,1},{1,1,1}} };
         testF->weightGain = { {{1,0.51  ,1},{1,1,1},{1,1,1}} };
         NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 0);
         NetMath::gain(0, (double)0.1, (double)1, testF, 0, 0, 1);
@@ -3175,8 +3171,7 @@ namespace NetMath_cpp {
             testN->biasCache = 0;
 
             testF = new Filter();
-            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
-            testF->init(0);
+            testF->init(0, 1, 3);
             testF->biasCache = 0;
         }
 
@@ -3244,8 +3239,7 @@ namespace NetMath_cpp {
             testN->biasCache = 10;
 
             testF = new Filter();
-            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
-            testF->init(0);
+            testF->init(0, 1, 3);
             testF->biasCache = 10;
         }
 
@@ -3312,8 +3306,7 @@ namespace NetMath_cpp {
             testN->init(0, 5);
 
             testF = new Filter();
-            testF->weights = { {{1,1,1},{1,1,1},{1,1,1}} };
-            testF->init(0);
+            testF->init(0, 1, 3);
         }
 
         virtual void TearDown() {
@@ -3375,9 +3368,8 @@ namespace NetMath_cpp {
             testN->biasCache = 0.5;
 
             testF = new Filter();
-            testF->weights = { {{1,1},{1,1}} };
             testF->adadeltaCache = { {{1,1},{1,1}} };
-            testF->init(0);
+            testF->init(0, 1, 2);
             testF->biasCache = 0.5;
         }
 
@@ -4258,13 +4250,8 @@ namespace NetUtil_cpp {
             nextLayerC->stride = 1;
 
             nlFilterA = new Filter();
-            nlFilterA->weights = {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}};
-
             nlFilterB = new Filter();
-            nlFilterB->weights = {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}};
-
             nlFilterC = new Filter();
-            nlFilterC->weights = {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}};
         }
 
         virtual void TearDown() {
@@ -4289,6 +4276,7 @@ namespace NetUtil_cpp {
 
         nextLayerA->filters = {nlFilterA};
         nextLayerA->errors = { {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}} };
+        nextLayerA->filterWeights = { {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}} };
         layer->assignNext(nextLayerA);
 
         std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
@@ -4310,6 +4298,7 @@ namespace NetUtil_cpp {
         layer->errors[0] = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
         nextLayerA->filters = {nlFilterA};
         nextLayerA->errors = { {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}} };
+        nextLayerA->filterWeights = { {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}} };
         layer->assignNext(nextLayerA);
         std::vector<std::vector<double> > expectedA = {{0,0.3,0,-0.1,0},{-0.5,0.2,0.2,0.6,-0.1},{0,-0.4,0,-0.5,0},{0,-1.2,0.4,-1,0.1},{0,0.8,0,0.9,0}};
         layer->errors[0] = NetUtil::buildConvErrorMap(5+2, nextLayerA, 0);
@@ -4325,6 +4314,7 @@ namespace NetUtil_cpp {
     TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_3) {
         nextLayerA->filters = {nlFilterB};
         nextLayerA->errors = { {{0.1, 0.4, 0.2}, {-0.1,0.2,-0.3}, {0, -0.4, 0.5}} };
+        nextLayerA->filterWeights = { {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}} };
         layer->assignNext(nextLayerA);
         std::vector<std::vector<double> > expectedB = {{0.1,-0.4,0.4,-0.2,0.2},{-0.2,0.7,-0.2,0.3,-0.5},{-0.1,-0.2,0.2,0.3,-0.3},{0.1,-0.3,-0.6,0.4,0.8},{0,0.4,-0.4,-0.5,0.5}};
         layer->errors[0] = NetUtil::buildConvErrorMap(5+2, nextLayerA, 0);
@@ -4340,6 +4330,7 @@ namespace NetUtil_cpp {
     TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_4) {
         nextLayerB->filters = {nlFilterA, nlFilterB};
         nextLayerB->errors = { {{0.5, -0.2, 0.1}, {0, -0.4, -0.1}, {0.2, 0.6, 0.3}}, {{0.1, 0.4, 0.2}, {-0.1,0.2,-0.3}, {0, -0.4, 0.5}} };
+        nextLayerB->filterWeights = { {{{-1, 0, -1}, {1, 0, 1}, {1, -1, 0}}}, {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}} };
         layer->assignNext(nextLayerB);
         std::vector<std::vector<double> > expectedC = {{0.1,-0.1,0.4,-0.3,0.2},{-0.7,0.9,0,0.9,-0.6},{-0.1,-0.6,0.2,-0.2,-0.3},{0.1,-1.5,-0.2,-0.6,0.9},{0,1.2,-0.4,0.4,0.5}};
         layer->errors[0] = NetUtil::buildConvErrorMap(5+2, nextLayerB, 0);
@@ -4355,6 +4346,7 @@ namespace NetUtil_cpp {
     TEST_F(BuildConvErrorMapFixture, buildConvErrorMap_5) {
         nextLayerC->filters = {nlFilterC};
         nextLayerC->errors = { {{0.1,0.4,-0.2,0.3,0},{0.9,0.2,-0.7,1.1,0.6},{0.4,0,0.3,-0.8,0.1},{0.2,0.3,0.1,-0.1,0.5},{-0.3,0.4,0.5,-0.2,0.3}} };
+        nextLayerC->filterWeights = { {{{1, 1, 0}, {-1, 1, 0}, {1, -1, 1}}} };
         layer->assignNext(nextLayerC);
         std::vector<std::vector<double> > expectedD = {{0.8,0.1,-0.1,2.0,0.6},{1.4,0.7,-1.4,-0.7,1},{0.2,0.1,3.1,-1.7,1.1},{-0.4,1.8,-0.6,0.7,-0.1},{-0.6,-0.1,0.8,0.2,-0.3}};
         layer->errors[0] = NetUtil::buildConvErrorMap(5+2, nextLayerC, 0);

@@ -182,7 +182,7 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
     // For each channel in filter in the next layer which corresponds to this filter
     for (int nlFilterI=0; nlFilterI<nextLayer->filters.size(); nlFilterI++) {
 
-        std::vector<std::vector<double> > weights = nextLayer->filters[nlFilterI]->weights[filterI];
+        std::vector<std::vector<double> > weights = nextLayer->filterWeights[nlFilterI][filterI];
         std::vector<std::vector<double> > errMap = nextLayer->errors[nlFilterI];
 
         // Unconvolve their error map using the weights
@@ -214,9 +214,9 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
 
 void NetUtil::buildConvDWeights (ConvLayer* layer) {
 
-    int weightsCount = layer->filters[0]->weights[0].size();
+    int weightsCount = layer->filterWeights[0][0].size();
     int fsSpread = floor(weightsCount / 2);
-    int channelsCount = layer->filters[0]->weights.size();
+    int channelsCount = layer->filterWeights[0].size();
 
     // For each filter
     for (int f=0; f<layer->filters.size(); f++) {

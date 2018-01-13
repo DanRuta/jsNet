@@ -93,6 +93,8 @@ public:
     std::vector<std::vector<std::vector<double> > > activations;
 
     std::vector<std::vector<double> > weights; // FC
+    std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
+
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<double> biases; // FC
     std::vector<double> sums; // FC
@@ -225,7 +227,6 @@ class Neuron {
 
 class Filter {
 public:
-    std::vector<std::vector<std::vector<double> > > weights;
     std::vector<std::vector<std::vector<double> > > deltaWeights;
     std::vector<std::vector<std::vector<double> > > weightGain;
     std::vector<std::vector<std::vector<double> > > weightsCache;
@@ -249,7 +250,7 @@ public:
 
     Filter (void) {}
 
-    void init (int netInstance);
+    void init (int netInstance, int channels, int filterSize);
 };
 
 

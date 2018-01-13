@@ -4,6 +4,7 @@
 - Optimized errors structure
 - Optimized bias structure
 - Optimized activations structure
+- Optimized weights structure
 
 #### NetUtil
 - Optimized convolve

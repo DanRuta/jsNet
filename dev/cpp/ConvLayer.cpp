@@ -29,15 +29,16 @@ void ConvLayer::init (int layerIndex) {
     Network* net = Network::getInstance(netInstance);
     for (int f=0; f<filters.size(); f++) {
 
+        filterWeights.push_back({});
+
         // Weights
         for (int c=0; c<channels; c++) {
-            std::vector<std::vector<double> > weightsMap;
+
+            filterWeights[f].push_back({});
 
             for (int r=0; r<filterSize; r++) {
-                weightsMap.push_back(net->weightInitFn(netInstance, layerIndex, filterSize));
+                filterWeights[f][c].push_back(net->weightInitFn(netInstance, layerIndex, filterSize));
             }
-
-            filters[f]->weights.push_back(weightsMap);
         }
 
         biases.push_back(1);
@@ -46,7 +47,7 @@ void ConvLayer::init (int layerIndex) {
             filters[f]->dropoutMap = NetUtil::createVolume<bool>(1, outMapSize, outMapSize, 0)[0];
         }
 
-        filters[f]->init(netInstance);
+        filters[f]->init(netInstance, channels, filterSize);
     }
 
     errors = NetUtil::createVolume<double>(filters.size(), outMapSize, outMapSize, 0);
@@ -67,7 +68,7 @@ void ConvLayer::forward (void) {
 
     for (int f=0; f<filters.size(); f++) {
 
-        filters[f]->sumMap = NetUtil::convolve(actvs, zeroPadding, filters[f]->weights, channels, stride, biases[f]);
+        filters[f]->sumMap = NetUtil::convolve(actvs, zeroPadding, filterWeights[f], channels, stride, biases[f]);
 
         for (int sumY=0; sumY<filters[f]->sumMap.size(); sumY++) {
             for (int sumX=0; sumX<filters[f]->sumMap.size(); sumX++) {
@@ -182,8 +183,8 @@ void ConvLayer::applyDeltaWeights (void) {
         for (int c=0; c<filters[f]->deltaWeights.size(); c++) {
             for (int r=0; r<filters[f]->deltaWeights[0].size(); r++) {
                 for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
-                    if (net->l2) net->l2Error += 0.5 * net->l2 * pow(filters[f]->weights[c][r][v], 2);
-                    if (net->l1) net->l1Error += net->l1 * fabs(filters[f]->weights[c][r][v]);
+                    if (net->l2) net->l2Error += 0.5 * net->l2 * pow(filterWeights[f][c][r][v], 2);
+                    if (net->l1) net->l1Error += net->l1 * fabs(filterWeights[f][c][r][v]);
                 }
             }
         }
@@ -200,12 +201,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                + net->l2 * filters[f]->weights[c][r][v]
-                                + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                + net->l2 * filterWeights[f][c][r][v]
+                                + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::vanillaupdatefn(netInstance, filters[f]->weights[c][r][v], regularized);
+                            filterWeights[f][c][r][v] = NetMath::vanillaupdatefn(netInstance, filterWeights[f][c][r][v], regularized);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
@@ -219,12 +220,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                                            + net->l2 * filters[f]->weights[c][r][v]
-                                                            + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                                            + net->l2 * filterWeights[f][c][r][v]
+                                                            + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::gain(netInstance, filters[f]->weights[c][r][v], regularized, filters[f], c, r, v);
+                            filterWeights[f][c][r][v] = NetMath::gain(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
@@ -238,12 +239,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                                            + net->l2 * filters[f]->weights[c][r][v]
-                                                            + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                                            + net->l2 * filterWeights[f][c][r][v]
+                                                            + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::adagrad(netInstance, filters[f]->weights[c][r][v], regularized, filters[f], c, r, v);
+                            filterWeights[f][c][r][v] = NetMath::adagrad(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
@@ -257,12 +258,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                                            + net->l2 * filters[f]->weights[c][r][v]
-                                                            + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                                            + net->l2 * filterWeights[f][c][r][v]
+                                                            + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::rmsprop(netInstance, filters[f]->weights[c][r][v], regularized, filters[f], c, r, v);
+                            filterWeights[f][c][r][v] = NetMath::rmsprop(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
@@ -276,12 +277,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                                            + net->l2 * filters[f]->weights[c][r][v]
-                                                            + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                                            + net->l2 * filterWeights[f][c][r][v]
+                                                            + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::adam(netInstance, filters[f]->weights[c][r][v], regularized, filters[f], c, r, v);
+                            filterWeights[f][c][r][v] = NetMath::adam(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
@@ -295,12 +296,12 @@ void ConvLayer::applyDeltaWeights (void) {
                         for (int v=0; v<filters[f]->deltaWeights[0][0].size(); v++) {
 
                             double regularized = (filters[f]->deltaWeights[c][r][v]
-                                                            + net->l2 * filters[f]->weights[c][r][v]
-                                                            + net->l1 * (filters[f]->weights[c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+                                                            + net->l2 * filterWeights[f][c][r][v]
+                                                            + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filters[f]->weights[c][r][v] = NetMath::adadelta(netInstance, filters[f]->weights[c][r][v], regularized, filters[f], c, r, v);
+                            filterWeights[f][c][r][v] = NetMath::adadelta(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
 
-                            if (net->maxNorm) net->maxNormTotal += filters[f]->weights[c][r][v] * filters[f]->weights[c][r][v];
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }

@@ -89,8 +89,10 @@ public:
     std::vector<Neuron*> neurons;
     std::vector<Filter*> filters;
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
-    std::vector<std::vector<std::vector<double> > > errors; // Conv
+    std::vector<std::vector<std::vector<double> > > errors; // Pool
     std::vector<std::vector<std::vector<double> > > activations; // Conv
+
+    std::vector<std::vector<std::vector<double> > > errorVol; // Conv
 
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<double> > deltaWeights; // FC
@@ -232,7 +234,6 @@ public:
     std::vector<std::vector<std::vector<double> > > adadeltaCache;
     std::vector<std::vector<double> > activationMap;
     std::vector<std::vector<double> > sumMap;
-    std::vector<std::vector<double> > errorMap;
     std::vector<std::vector<bool> > dropoutMap;
     double lreluSlope;
     double rreluSlope;

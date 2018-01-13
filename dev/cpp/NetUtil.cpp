@@ -183,7 +183,7 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
     for (int nlFilterI=0; nlFilterI<nextLayer->filters.size(); nlFilterI++) {
 
         std::vector<std::vector<double> > weights = nextLayer->filters[nlFilterI]->weights[filterI];
-        std::vector<std::vector<double> > errMap = nextLayer->filters[nlFilterI]->errorMap;
+        std::vector<std::vector<double> > errMap = nextLayer->errorVol[nlFilterI];
 
         // Unconvolve their error map using the weights
         for (int inY=fsSpread; inY<paddedLength - fsSpread; inY+=nextLayer->stride) {
@@ -231,7 +231,7 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
             for (int inY=fsSpread; inY<inputMap.size()-fsSpread; inY+= layer->stride) {
                 for (int inX=fsSpread; inX<inputMap.size()-fsSpread; inX+= layer->stride) {
 
-                    double error = layer->filters[f]->errorMap[(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
+                    double error = layer->errorVol[f][(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
 
                     // ...and at each location...
                     for (int wY=0; wY<weightsCount; wY++) {
@@ -245,9 +245,9 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
         }
 
         // Increment the deltaBias by the sum of all errors in the filter
-        for (int eY=0; eY<layer->filters[f]->errorMap.size(); eY++) {
-            for (int eX=0; eX<layer->filters[f]->errorMap.size(); eX++) {
-                layer->filters[f]->deltaBias += layer->filters[f]->errorMap[eY][eX];
+        for (int eY=0; eY<layer->errorVol[f].size(); eY++) {
+            for (int eX=0; eX<layer->errorVol[f].size(); eX++) {
+                layer->filters[f]->deltaBias += layer->errorVol[f][eY][eX];
             }
         }
     }

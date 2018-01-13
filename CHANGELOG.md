@@ -1,9 +1,12 @@
 # Upcoming - 3.1.0 - Optimizations
 ---
+#### ConvLayer
+- Optimized errors structure
+
 #### NetUtil
 - Optimized convolve
 
-#### FCLayers
+#### FCLayer
 - Optimized weights structure
 - Optimized bias structure
 - Optimized deltaWeights structure

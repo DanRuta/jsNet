@@ -1284,15 +1284,15 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
-        int errorMapDepth = filter->errorMap.size();
-        int errorMapSpan = filter->errorMap[0].size();
+        int errorMapDepth = layer->errorVol[filterIndex].size();
+        int errorMapSpan = layer->errorVol[filterIndex][0].size();
         double errorMap[errorMapDepth * errorMapSpan * errorMapSpan];
 
         for (int r=0; r<errorMapSpan; r++) {
             for (int c=0; c<errorMapSpan; c++) {
-                errorMap[r*errorMapSpan + c] = filter->errorMap[r][c];
+                errorMap[r*errorMapSpan + c] = layer->errorVol[filterIndex][r][c];
             }
         }
 
@@ -1303,11 +1303,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
-                filter->errorMap[r][c] = buf[r*cols + c];
+                layer->errorVol[filterIndex][r][c] = buf[r*cols + c];
             }
         }
     }

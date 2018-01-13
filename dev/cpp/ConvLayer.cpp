@@ -41,7 +41,6 @@ void ConvLayer::init (int layerIndex) {
         }
 
         filters[f]->activationMap = NetUtil::createVolume<double>(1, outMapSize, outMapSize, 0)[0];
-        filters[f]->errorMap = NetUtil::createVolume<double>(1, outMapSize, outMapSize, 0)[0];
         filters[f]->bias = 1;
 
         if (net->dropout != 1) {
@@ -50,6 +49,8 @@ void ConvLayer::init (int layerIndex) {
 
         filters[f]->init(netInstance);
     }
+
+    errorVol = NetUtil::createVolume<double>(filters.size(), outMapSize, outMapSize, 0);
 }
 
 void ConvLayer::forward (void) {
@@ -99,13 +100,13 @@ void ConvLayer::backward (bool lastLayer) {
         // For each filter, build the errorMap from the weighted neuron errors in the next FCLayer corresponding to each value in the activation map
         for (int f=0; f<filters.size(); f++) {
 
-            for (int emY=0; emY<filters[f]->errorMap.size(); emY++) {
-                for (int emX=0; emX<filters[f]->errorMap.size(); emX++) {
+            for (int emY=0; emY<errorVol[f].size(); emY++) {
+                for (int emX=0; emX<errorVol[f].size(); emX++) {
 
-                    int weightI = f * outMapSize*outMapSize + emY * filters[f]->errorMap.size() + emX;
+                    int weightI = f * outMapSize*outMapSize + emY * errorVol[f].size() + emX;
 
                     for (int n=0; n < nextLayer->neurons.size(); n++) {
-                        filters[f]->errorMap[emY][emX] += nextLayer->errs[n] * nextLayer->weights[n][weightI];
+                        errorVol[f][emY][emX] += nextLayer->errs[n] * nextLayer->weights[n][weightI];
                     }
                 }
             }
@@ -114,16 +115,15 @@ void ConvLayer::backward (bool lastLayer) {
     } else if (nextLayer->type == "Conv") {
 
         for (int f=0; f<filters.size(); f++) {
-            filters[f]->errorMap = NetUtil::buildConvErrorMap(outMapSize + nextLayer->zeroPadding*2, nextLayer, f);
+            errorVol[f] = NetUtil::buildConvErrorMap(outMapSize + nextLayer->zeroPadding*2, nextLayer, f);
         }
 
     } else {
 
         for (int f=0; f<filters.size(); f++) {
-
-            for (int r=0; r<filters[f]->errorMap.size(); r++) {
-                for (int v=0; v<filters[f]->errorMap.size(); v++) {
-                    filters[f]->errorMap[r][v] = nextLayer->errors[f][r][v];
+            for (int r=0; r<errorVol[f].size(); r++) {
+                for (int v=0; v<errorVol[f].size(); v++) {
+                    errorVol[f][r][v] = nextLayer->errors[f][r][v];
                 }
             }
         }
@@ -131,13 +131,13 @@ void ConvLayer::backward (bool lastLayer) {
 
     // Apply derivative to each error value
     for (int f=0; f<filters.size(); f++) {
-        for (int row=0; row<filters[f]->errorMap.size(); row++) {
-            for (int col=0; col<filters[f]->errorMap[0].size(); col++) {
+        for (int row=0; row<errorVol[f].size(); row++) {
+            for (int col=0; col<errorVol[f][0].size(); col++) {
 
                 if (filters[f]->dropoutMap.size() && filters[f]->dropoutMap[row][col]) {
-                    filters[f]->errorMap[row][col] = 0;
+                    errorVol[f][row][col] = 0;
                 } else if (hasActivation) {
-                    filters[f]->errorMap[row][col] *= activationC(filters[f]->sumMap[row][col], true, filters[f]);
+                    errorVol[f][row][col] *= activationC(filters[f]->sumMap[row][col], true, filters[f]);
                 }
             }
         }
@@ -160,9 +160,9 @@ void ConvLayer::resetDeltaWeights (void) {
             }
         }
 
-        for (int row=0; row<filters[f]->errorMap.size(); row++) {
-            for (int col=0; col<filters[f]->errorMap.size(); col++) {
-                filters[f]->errorMap[row][col] = 0;
+        for (int row=0; row<errorVol[f].size(); row++) {
+            for (int col=0; col<errorVol[f].size(); col++) {
+                errorVol[f][row][col] = 0;
             }
         }
 

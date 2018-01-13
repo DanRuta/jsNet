@@ -1253,15 +1253,15 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
-        int activationMapDepth = filter->activationMap.size();
-        int activationMapSpan = filter->activationMap[0].size();
+        int activationMapDepth = layer->activations[filterIndex].size();
+        int activationMapSpan = layer->activations[filterIndex][0].size();
         double activationMap[activationMapDepth * activationMapSpan * activationMapSpan];
 
         for (int r=0; r<activationMapSpan; r++) {
             for (int c=0; c<activationMapSpan; c++) {
-                activationMap[r*activationMapSpan + c] = filter->activationMap[r][c];
+                activationMap[r*activationMapSpan + c] = layer->activations[filterIndex][r][c];
             }
         }
 
@@ -1272,11 +1272,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
-                filter->activationMap[r][c] = buf[r*cols + c];
+                layer->activations[filterIndex][r][c] = buf[r*cols + c];
             }
         }
     }
@@ -1286,13 +1286,13 @@ extern "C" {
 
         Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
-        int errorMapDepth = layer->errorVol[filterIndex].size();
-        int errorMapSpan = layer->errorVol[filterIndex][0].size();
+        int errorMapDepth = layer->errors[filterIndex].size();
+        int errorMapSpan = layer->errors[filterIndex][0].size();
         double errorMap[errorMapDepth * errorMapSpan * errorMapSpan];
 
         for (int r=0; r<errorMapSpan; r++) {
             for (int c=0; c<errorMapSpan; c++) {
-                errorMap[r*errorMapSpan + c] = layer->errorVol[filterIndex][r][c];
+                errorMap[r*errorMapSpan + c] = layer->errors[filterIndex][r][c];
             }
         }
 
@@ -1307,7 +1307,7 @@ extern "C" {
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
-                layer->errorVol[filterIndex][r][c] = buf[r*cols + c];
+                layer->errors[filterIndex][r][c] = buf[r*cols + c];
             }
         }
     }

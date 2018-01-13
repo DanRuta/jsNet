@@ -183,7 +183,7 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
     for (int nlFilterI=0; nlFilterI<nextLayer->filters.size(); nlFilterI++) {
 
         std::vector<std::vector<double> > weights = nextLayer->filters[nlFilterI]->weights[filterI];
-        std::vector<std::vector<double> > errMap = nextLayer->errorVol[nlFilterI];
+        std::vector<std::vector<double> > errMap = nextLayer->errors[nlFilterI];
 
         // Unconvolve their error map using the weights
         for (int inY=fsSpread; inY<paddedLength - fsSpread; inY+=nextLayer->stride) {
@@ -231,7 +231,7 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
             for (int inY=fsSpread; inY<inputMap.size()-fsSpread; inY+= layer->stride) {
                 for (int inX=fsSpread; inX<inputMap.size()-fsSpread; inX+= layer->stride) {
 
-                    double error = layer->errorVol[f][(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
+                    double error = layer->errors[f][(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
 
                     // ...and at each location...
                     for (int wY=0; wY<weightsCount; wY++) {
@@ -245,45 +245,12 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
         }
 
         // Increment the deltaBias by the sum of all errors in the filter
-        for (int eY=0; eY<layer->errorVol[f].size(); eY++) {
-            for (int eX=0; eX<layer->errorVol[f].size(); eX++) {
-                layer->filters[f]->deltaBias += layer->errorVol[f][eY][eX];
+        for (int eY=0; eY<layer->errors[f].size(); eY++) {
+            for (int eX=0; eX<layer->errors[f].size(); eX++) {
+                layer->filters[f]->deltaBias += layer->errors[f][eY][eX];
             }
         }
     }
-}
-
-
-std::vector<double> NetUtil::getActivations (Layer* layer) {
-
-    std::vector<double> activations;
-
-    if (layer->type == "FC") {
-
-        return layer->actvns;
-
-    } else if (layer->type == "Conv") {
-
-        for (int f=0; f<layer->filters.size(); f++) {
-            for (int r=0; r<layer->filters[f]->activationMap.size(); r++) {
-                for (int c=0; c<layer->filters[f]->activationMap[r].size(); c++) {
-                    activations.push_back(layer->filters[f]->activationMap[r][c]);
-                }
-            }
-        }
-
-    } else {
-
-        for (int c=0; c<layer->activations.size(); c++) {
-            for (int r=0; r<layer->activations[0].size(); r++) {
-                for (int v=0; v<layer->activations[0].size(); v++) {
-                    activations.push_back(layer->activations[c][r][v]);
-                }
-            }
-        }
-    }
-
-    return activations;
 }
 
 std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int mapSize) {
@@ -298,9 +265,9 @@ std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int ma
 
     } else if (layer->type == "Conv") {
 
-        for (int r=0; r<layer->filters[mapStartI]->activationMap.size(); r++) {
-            for (int c=0; c<layer->filters[mapStartI]->activationMap[r].size(); c++) {
-                activations.push_back(layer->filters[mapStartI]->activationMap[r][c]);
+        for (int r=0; r<layer->activations[mapStartI].size(); r++) {
+            for (int c=0; c<layer->activations[mapStartI][r].size(); c++) {
+                activations.push_back(layer->activations[mapStartI][r][c]);
             }
         }
 

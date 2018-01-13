@@ -74,7 +74,7 @@ void FCLayer::forward (void) {
                 for (int f=0; f<prevLayer->size; f++) {
                     for (int y=0; y<prevLayer->outMapSize; y++) {
                         for (int x=0; x<prevLayer->outMapSize; x++) {
-                            sums[n] += prevLayer->filters[f]->activationMap[y][x]
+                            sums[n] += prevLayer->activations[f][y][x]
                                 * weights[n][f*prevLayer->outMapSize*prevLayer->outMapSize + y*prevLayer->outMapSize + x];
                         }
                     }
@@ -131,26 +131,17 @@ void FCLayer::backward (bool lastLayer) {
                 for (int wi=0; wi<weights[n].size(); wi++) {
                     deltaWeights[n][wi] += errs[n] * prevLayer->actvns[wi];
                 }
-
-            } else if (prevLayer->type == "Conv") {
-
-                for (int f=0; f<prevLayer->size; f++) {
-
-                    int size = prevLayer->filters[f]->activationMap.size();
-
-                    for (int ay=0; ay<size; ay++) {
-                        for (int ax=0; ax<size; ax++) {
-                            deltaWeights[n][ay*size + ax] += errs[ay*size + ax] * prevLayer->filters[f]->activationMap[ay][ax];
-                        }
-                    }
-                }
-
             } else {
 
-                std::vector<double> activations = NetUtil::getActivations(prevLayer);
+                int counter = 0;
+                int span = prevLayer->activations[0].size();
 
-                for (int wi=0; wi<weights[n].size(); wi++) {
-                    deltaWeights[n][wi] += errs[n] * activations[wi];
+                for (int c=0; c<prevLayer->activations.size(); c++) {
+                    for (int row=0; row<span; row++) {
+                        for (int col=0; col<span; col++) {
+                            deltaWeights[n][counter++] += errs[n] * prevLayer->activations[c][row][col];
+                        }
+                    }
                 }
             }
 

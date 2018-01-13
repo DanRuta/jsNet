@@ -89,10 +89,8 @@ public:
     std::vector<Neuron*> neurons;
     std::vector<Filter*> filters;
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
-    std::vector<std::vector<std::vector<double> > > errors; // Pool
-    std::vector<std::vector<std::vector<double> > > activations; // Conv
-
-    std::vector<std::vector<std::vector<double> > > errorVol; // Conv
+    std::vector<std::vector<std::vector<double> > > errors;
+    std::vector<std::vector<std::vector<double> > > activations;
 
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<double> > deltaWeights; // FC
@@ -232,7 +230,6 @@ public:
     std::vector<std::vector<std::vector<double> > > weightGain;
     std::vector<std::vector<std::vector<double> > > weightsCache;
     std::vector<std::vector<std::vector<double> > > adadeltaCache;
-    std::vector<std::vector<double> > activationMap;
     std::vector<std::vector<double> > sumMap;
     std::vector<std::vector<bool> > dropoutMap;
     double lreluSlope;
@@ -346,8 +343,6 @@ public:
     static std::vector<std::vector<double> > buildConvErrorMap (int paddedLength, Layer* nextLayer, int filterI);
 
     static void buildConvDWeights (ConvLayer* layer);
-
-    static std::vector<double> getActivations (Layer* layer);
 
     static std::vector<double> getActivations (Layer* layer, int mapStartI, int mapSize);
 

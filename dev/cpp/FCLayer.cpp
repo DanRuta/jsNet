@@ -21,6 +21,12 @@ void FCLayer::assignPrev (Layer* l) {
 }
 
 void FCLayer::init (int layerIndex) {
+
+    if (layerIndex) {
+        biases = std::vector<double>(size, 1);
+        deltaBiases = std::vector<double>(size, 0);
+    }
+
     for (int n=0; n<size; n++) {
 
         Neuron* neuron = new Neuron();
@@ -39,7 +45,6 @@ void FCLayer::init (int layerIndex) {
 
             weights.push_back(Network::getInstance(netInstance)->weightInitFn(netInstance, layerIndex, weightsCount));
             deltaWeights.push_back(std::vector<double>(weightsCount, 0));
-            biases.push_back(1);
         }
 
         neuron->init(netInstance, weightsCount);
@@ -107,7 +112,7 @@ void FCLayer::backward (bool lastLayer) {
 
         if (neurons[n]->dropped) {
             errs[n] = 0;
-            neurons[n]->deltaBias = 0;
+            deltaBiases[n] = 0;
 
         } else {
 
@@ -145,14 +150,16 @@ void FCLayer::backward (bool lastLayer) {
                 }
             }
 
-            neurons[n]->deltaBias += errs[n];
+            deltaBiases[n] += errs[n];
         }
     }
 }
 
 void FCLayer::resetDeltaWeights (void) {
+
+    deltaBiases = std::vector<double>(neurons.size(), 0);
+
     for(int n=0; n<neurons.size(); n++) {
-        neurons[n]->deltaBias = 0;
         deltaWeights[n] = std::vector<double>(weights[n].size(), 0);
     }
 }
@@ -185,7 +192,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::vanillaupdatefn(netInstance, biases[n], neurons[n]->deltaBias);
+                biases[n] = NetMath::vanillaupdatefn(netInstance, biases[n], deltaBiases[n]);
             }
             break;
         case 1: // gain
@@ -200,7 +207,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::gain(netInstance, biases[n], neurons[n]->deltaBias, neurons[n], -1);
+                biases[n] = NetMath::gain(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
         case 2: // adagrad
@@ -215,7 +222,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::adagrad(netInstance, biases[n], neurons[n]->deltaBias, neurons[n], -1);
+                biases[n] = NetMath::adagrad(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
         case 3: // rmsprop
@@ -230,7 +237,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::rmsprop(netInstance, biases[n], neurons[n]->deltaBias, neurons[n], -1);
+                biases[n] = NetMath::rmsprop(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
         case 4: // adam
@@ -245,7 +252,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::adam(netInstance, biases[n], neurons[n]->deltaBias, neurons[n], -1);
+                biases[n] = NetMath::adam(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
         case 5: // adadelta
@@ -260,7 +267,7 @@ void FCLayer::applyDeltaWeights (void) {
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::adadelta(netInstance, biases[n], neurons[n]->deltaBias, neurons[n], -1);
+                biases[n] = NetMath::adadelta(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
     }

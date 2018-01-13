@@ -19,6 +19,7 @@
 - Optimized activations structure
 - Optimized forward()
 - Optimized backward()
+- Optimized deltaBias structure
 
 #### Global
 - Changed framework loading to allow choosing between versions at runtime

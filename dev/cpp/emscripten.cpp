@@ -819,12 +819,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE

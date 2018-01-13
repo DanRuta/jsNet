@@ -91,6 +91,7 @@ public:
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
     std::vector<std::vector<std::vector<double> > > errors;
     std::vector<std::vector<std::vector<double> > > activations;
+    std::vector<double> deltaBiases;
 
     std::vector<std::vector<double> > weights; // FC
     std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
@@ -212,7 +213,6 @@ class Neuron {
         std::vector<double> adadeltaCache;
         double lreluSlope;
         double rreluSlope;
-        double deltaBias;
         double derivative;
         double eluAlpha;
         double biasGain;

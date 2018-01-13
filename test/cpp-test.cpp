@@ -744,9 +744,8 @@ namespace FCLayer_cpp {
     TEST_F(FCBackwardFixture, backward_6) {
         std::vector<double> expected = {1,1,3};
 
-        l2->neurons[0]->deltaBias = 1;
-        l2->neurons[1]->deltaBias = 1;
-        l2->neurons[2]->deltaBias = 1;
+        l2->deltaBiases = {1,1,1};
+
         l2->neurons[0]->dropped = false;
         l2->neurons[1]->dropped = false;
         l2->neurons[2]->dropped = false;
@@ -757,9 +756,9 @@ namespace FCLayer_cpp {
         expected = {1,1,3};
         EXPECT_EQ( l2->errs, expected );
 
-        EXPECT_EQ( l2->neurons[0]->deltaBias, 2 );
-        EXPECT_EQ( l2->neurons[1]->deltaBias, 2 );
-        EXPECT_EQ( l2->neurons[2]->deltaBias, 4 );
+        EXPECT_EQ( l2->deltaBiases[0], 2 );
+        EXPECT_EQ( l2->deltaBiases[1], 2 );
+        EXPECT_EQ( l2->deltaBiases[2], 4 );
     }
 
     // Sets the neurons' error and deltaBias values to 0 when they are dropped
@@ -767,13 +766,11 @@ namespace FCLayer_cpp {
         std::vector<double> expected = {1,2,3};
 
         l2->actvns = {0, 1, 0};
+        l2->deltaBiases ={456, 456, 456};
 
         l2->neurons[0]->dropped = true;
         l2->neurons[1]->dropped = true;
         l2->neurons[2]->dropped = true;
-        l2->neurons[0]->deltaBias = 456;
-        l2->neurons[2]->deltaBias = 456;
-        l2->neurons[1]->deltaBias = 456;
 
         l2->errs = expected;
         l2->backward(true);
@@ -781,9 +778,9 @@ namespace FCLayer_cpp {
         expected = {0,0,0};
         EXPECT_EQ( l2->errs, expected );
 
-        EXPECT_EQ( l2->neurons[0]->deltaBias, 0 );
-        EXPECT_EQ( l2->neurons[1]->deltaBias, 0 );
-        EXPECT_EQ( l2->neurons[2]->deltaBias, 0 );
+        EXPECT_EQ( l2->deltaBiases[0], 0 );
+        EXPECT_EQ( l2->deltaBiases[1], 0 );
+        EXPECT_EQ( l2->deltaBiases[2], 0 );
     }
 
     // Increments the deltaWeights by the orig value, multiplied by the l2 amount * existing deltaWeight value
@@ -918,6 +915,7 @@ namespace FCLayer_cpp {
             l2->neurons.push_back(new Neuron());
             l2->neurons.push_back(new Neuron());
             l2->neurons.push_back(new Neuron());
+            l2->deltaBiases = {};
 
             l3->neurons.push_back(new Neuron());
             l4->neurons.push_back(new Neuron());
@@ -964,10 +962,8 @@ namespace FCLayer_cpp {
 
     // Increments the bias by the deltaBias
     TEST_F(FCApplyDeltaWeightsFixture, applyDeltaWeights_2) {
-        for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
-        }
 
+        l2->deltaBiases = {0, 2, 4};
         l2->biases = {0, 1, 2};
 
         l2->applyDeltaWeights();
@@ -982,7 +978,7 @@ namespace FCLayer_cpp {
         Network::getInstance(l2->netInstance)->l2Error = 0;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
         }
 
         l2->biases = {0, 1, 2};
@@ -995,7 +991,7 @@ namespace FCLayer_cpp {
         Network::getInstance(l2->netInstance)->l1Error = 0;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
         }
 
         l2->biases = {0, 1, 2};
@@ -1009,7 +1005,7 @@ namespace FCLayer_cpp {
         net->updateFnIndex = 1;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
             l2->neurons[n]->biasGain = 1;
             l2->neurons[n]->weightGain = {0.25, 0.25};
         }
@@ -1030,7 +1026,7 @@ namespace FCLayer_cpp {
         net->updateFnIndex = 2;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
             l2->neurons[n]->biasCache = 1;
             l2->neurons[n]->weightsCache = {0.25, 0.25};
         }
@@ -1051,7 +1047,7 @@ namespace FCLayer_cpp {
         net->rmsDecay = 0.99;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
             l2->neurons[n]->biasCache = 1;
             l2->neurons[n]->weightsCache = {0.25, 0.25};
         }
@@ -1073,7 +1069,7 @@ namespace FCLayer_cpp {
         net->l2 = 0;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
             l2->neurons[n]->m = 0;
             l2->neurons[n]->v = 0;
         }
@@ -1094,7 +1090,7 @@ namespace FCLayer_cpp {
         net->rho = 0.95;
 
         for (int n=0; n<3; n++) {
-            l2->neurons[n]->deltaBias = n*2;
+            l2->deltaBiases.push_back(n*2);
             l2->neurons[n]->biasCache = 1;
             l2->neurons[n]->adadeltaBiasCache = 1;
             l2->neurons[n]->weightsCache = {0.25, 0.25};
@@ -1127,14 +1123,16 @@ namespace FCLayer_cpp {
         l2->weights = {{}, {}, {}};
         l2->deltaWeights = {{}, {}, {}};
 
+        l2->deltaBiases = {};
+
         for (int n=1; n<3; n++) {
-            l2->neurons[n]->deltaBias = 1;
+            l2->deltaBiases.push_back(1);
         }
 
         l2->resetDeltaWeights();
 
         for (int n=1; n<3; n++) {
-            EXPECT_EQ( l2->neurons[n]->deltaBias, 0 );
+            EXPECT_EQ( l2->deltaBiases[n], 0 );
         }
 
         delete l1;
@@ -2574,13 +2572,6 @@ namespace Neuron_cpp {
         Network* net;
         Neuron* testN;
     };
-
-    // Sets the neuron deltaBias to 0
-    TEST_F(NeuronInitFixture, init_2) {
-        testN->deltaBias = 999;
-        testN->init(0, 5);
-        EXPECT_EQ( testN->deltaBias, 0 );
-    }
 
     // Sets the neuron biasGain to 1 if the net's updateFn is gain
     TEST_F(NeuronInitFixture, init_3) {

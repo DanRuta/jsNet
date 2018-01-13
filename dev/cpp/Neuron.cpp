@@ -1,8 +1,6 @@
 
 void Neuron::init (int netInstance, int weightsCount) {
 
-    deltaBias = 0;
-
     Network* net = Network::getInstance(netInstance);
 
     switch (net->updateFnIndex) {

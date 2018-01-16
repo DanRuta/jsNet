@@ -9,10 +9,6 @@ jsNet is a browser/nodejs based deep learning framework for MLPs and convolution
 
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
-## Current WebAssembly version: 3.0
-The WebAssembly version is now finished, and fully matches the JavaScript feature set. This notice will be removed in general release 3.1.
-
-
 
 ## Demos
 https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLayers only.

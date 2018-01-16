@@ -1,4 +1,4 @@
-# Upcoming - 3.1.0 - Optimizations
+# 3.1.0 - Optimizations
 ---
 #### ConvLayer
 - Optimized errors structure

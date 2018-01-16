@@ -553,10 +553,10 @@ net = new Network({
 More and more features will be added, as time goes by, and I learn more. General improvements and optimizations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
 ##### Short term
-The WebAssembly version, a complete re-write, has just shipped in general release version 3.0. Next, in 3.1, I'll be going through a list of optimization ideas I've racked up. You can keep track of progress on the dev branch.
+Next up are some general framework improvements, in 3.2, following which, the WebGL version, in 4.0. You can keep track of progress on the dev branch.
 
 ##### Long term
-Once that is done, I will be experimenting with a WebAssembly+WebGL version, using shaders to run computations on the GPU.
+A WebAssembly+WebGL version, using shaders to run computations on the GPU.
 
 ## Contributing
 ---

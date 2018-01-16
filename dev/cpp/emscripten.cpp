@@ -41,6 +41,16 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    float get_iterations (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->iterations;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_iterations (int instanceIndex, float it) {
+        Network::getInstance(instanceIndex)->iterations = it;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
@@ -763,11 +773,11 @@ extern "C" {
     double* get_neuron_weights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
-        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->weights.size();
+        int neuronSize = net->layers[layerIndex]->weights[neuronIndex].size();
         double weights[neuronSize];
 
         for (int i=0; i<neuronSize; i++) {
-            weights[i] = net->layers[layerIndex]->neurons[neuronIndex]->weights[i];
+            weights[i] = net->layers[layerIndex]->weights[neuronIndex][i];
         }
 
         auto ptr = &weights[0];
@@ -779,29 +789,29 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int w=0; w<bufSize; w++) {
-            net->layers[layerIndex]->neurons[neuronIndex]->weights[w] = buf[w];
+            net->layers[layerIndex]->weights[neuronIndex][w] = buf[w];
         }
     }
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->biases[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_bias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->bias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->biases[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
     double* get_neuron_deltaWeights (int instanceIndex, int layerIndex, int neuronIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
-        int neuronSize = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights.size();
+        int neuronSize = net->layers[layerIndex]->deltaWeights[neuronIndex].size();
         double deltaWeights[neuronSize];
 
         for (int i=0; i<neuronSize; i++) {
-            deltaWeights[i] = net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights[i];
+            deltaWeights[i] = net->layers[layerIndex]->deltaWeights[neuronIndex][i];
         }
 
         auto ptr = &deltaWeights[0];
@@ -813,18 +823,18 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
 
         for (int dw=0; dw<bufSize; dw++) {
-            net->layers[layerIndex]->neurons[neuronIndex]->deltaWeights[dw] = buf[dw];
+            net->layers[layerIndex]->deltaWeights[neuronIndex][dw] = buf[dw];
         }
     }
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_deltaBias (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->deltaBias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -951,12 +961,12 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->sums[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_sum (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->sum = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->sums[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -971,22 +981,22 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->actvns[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_activation (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->activation = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->actvns[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
     double get_neuron_error (int instanceIndex, int layerIndex, int neuronIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->errs[neuronIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_neuron_error (int instanceIndex, int layerIndex, int neuronIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->neurons[neuronIndex]->error = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->errs[neuronIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -1002,28 +1012,28 @@ extern "C" {
     /* Filter */
     EMSCRIPTEN_KEEPALIVE
     double get_filter_bias (int instanceIndex, int layerIndex, int filterIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->bias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->biases[filterIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_filter_bias (int instanceIndex, int layerIndex, int filterIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->bias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->biases[filterIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_weights (int instanceIndex, int layerIndex, int filterIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
-        Filter* filter = net->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = net->layers[layerIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
+        int weightsDepth = layer->filterWeights[filterIndex].size();
+        int weightsSpan = layer->filterWeights[filterIndex][0].size();
         double weights[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weights[d][r][c];
+                    weights[d*weightsSpan + r*weightsSpan + c] = layer->filterWeights[filterIndex][d][r][c];
                 }
             }
         }
@@ -1035,12 +1045,12 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_weights (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int d=0; d<depth; d++) {
             for (int r=0; r<rows; r++) {
                 for (int c=0; c<cols; c++) {
-                    filter->weights[d][r][c] = buf[d*rows*cols + r*cols + c];
+                    layer->filterWeights[filterIndex][d][r][c] = buf[d*rows*cols + r*cols + c];
                 }
             }
         }
@@ -1048,28 +1058,28 @@ extern "C" {
 
     EMSCRIPTEN_KEEPALIVE
     double get_filter_deltaBias (int instanceIndex, int layerIndex, int filterIndex) {
-        return Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->deltaBias;
+        return Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[filterIndex];
     }
 
     EMSCRIPTEN_KEEPALIVE
     void set_filter_deltaBias (int instanceIndex, int layerIndex, int filterIndex, double value) {
-        Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex]->deltaBias = value;
+        Network::getInstance(instanceIndex)->layers[layerIndex]->deltaBiases[filterIndex] = value;
     }
 
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_deltaWeights (int instanceIndex, int layerIndex, int filterIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
-        Filter* filter = net->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = net->layers[layerIndex];;
 
-        int weightsDepth = filter->deltaWeights.size();
-        int weightsSpan = filter->deltaWeights[0].size();
+        int weightsDepth = layer->filterDeltaWeights[filterIndex].size();
+        int weightsSpan = layer->filterDeltaWeights[filterIndex][0].size();
         double deltaWeights[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    deltaWeights[d*weightsSpan + r*weightsSpan + c] = filter->deltaWeights[d][r][c];
+                    deltaWeights[d*weightsSpan + r*weightsSpan + c] = layer->filterDeltaWeights[filterIndex][d][r][c];
                 }
             }
         }
@@ -1081,12 +1091,12 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_deltaWeights (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int d=0; d<depth; d++) {
             for (int r=0; r<rows; r++) {
                 for (int c=0; c<cols; c++) {
-                    filter->deltaWeights[d][r][c] = buf[d*rows*cols + r*cols + c];
+                    layer->filterDeltaWeights[filterIndex][d][r][c] = buf[d*rows*cols + r*cols + c];
                 }
             }
         }
@@ -1108,19 +1118,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->weightGain.size();
+        int weightsSpan = filter->weightGain[0].size();
+        double weightGain[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weightGain[d][r][c];
+                    weightGain[d*weightsSpan + r*weightsSpan + c] = filter->weightGain[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &weightGain[0];
         return ptr;
     }
 
@@ -1154,19 +1164,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->weightsCache.size();
+        int weightsSpan = filter->weightsCache[0].size();
+        double weightsCache[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->weightsCache[d][r][c];
+                    weightsCache[d*weightsSpan + r*weightsSpan + c] = filter->weightsCache[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &weightsCache[0];
         return ptr;
     }
 
@@ -1200,19 +1210,19 @@ extern "C" {
         Network* net = Network::getInstance(instanceIndex);
         Filter* filter = net->layers[layerIndex]->filters[filterIndex];
 
-        int weightsDepth = filter->weights.size();
-        int weightsSpan = filter->weights[0].size();
-        double weights[weightsDepth * weightsSpan * weightsSpan];
+        int weightsDepth = filter->adadeltaCache.size();
+        int weightsSpan = filter->adadeltaCache[0].size();
+        double adadeltaCache[weightsDepth * weightsSpan * weightsSpan];
 
         for (int d=0; d<weightsDepth; d++) {
             for (int r=0; r<weightsSpan; r++) {
                 for (int c=0; c<weightsSpan; c++) {
-                    weights[d*weightsSpan + r*weightsSpan + c] = filter->adadeltaCache[d][r][c];
+                    adadeltaCache[d*weightsSpan + r*weightsSpan + c] = filter->adadeltaCache[d][r][c];
                 }
             }
         }
 
-        auto ptr = &weights[0];
+        auto ptr = &adadeltaCache[0];
         return ptr;
     }
 
@@ -1253,15 +1263,15 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
-        int activationMapDepth = filter->activationMap.size();
-        int activationMapSpan = filter->activationMap[0].size();
+        int activationMapDepth = layer->activations[filterIndex].size();
+        int activationMapSpan = layer->activations[filterIndex][0].size();
         double activationMap[activationMapDepth * activationMapSpan * activationMapSpan];
 
         for (int r=0; r<activationMapSpan; r++) {
             for (int c=0; c<activationMapSpan; c++) {
-                activationMap[r*activationMapSpan + c] = filter->activationMap[r][c];
+                activationMap[r*activationMapSpan + c] = layer->activations[filterIndex][r][c];
             }
         }
 
@@ -1272,11 +1282,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_activationMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
-                filter->activationMap[r][c] = buf[r*cols + c];
+                layer->activations[filterIndex][r][c] = buf[r*cols + c];
             }
         }
     }
@@ -1284,15 +1294,15 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     double* get_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
-        int errorMapDepth = filter->errorMap.size();
-        int errorMapSpan = filter->errorMap[0].size();
+        int errorMapDepth = layer->errors[filterIndex].size();
+        int errorMapSpan = layer->errors[filterIndex][0].size();
         double errorMap[errorMapDepth * errorMapSpan * errorMapSpan];
 
         for (int r=0; r<errorMapSpan; r++) {
             for (int c=0; c<errorMapSpan; c++) {
-                errorMap[r*errorMapSpan + c] = filter->errorMap[r][c];
+                errorMap[r*errorMapSpan + c] = layer->errors[filterIndex][r][c];
             }
         }
 
@@ -1303,11 +1313,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_filter_errorMap (int instanceIndex, int layerIndex, int filterIndex, double *buf, int total, int depth, int rows, int cols) {
 
-        Filter* filter = Network::getInstance(instanceIndex)->layers[layerIndex]->filters[filterIndex];
+        Layer* layer = Network::getInstance(instanceIndex)->layers[layerIndex];
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
-                filter->errorMap[r][c] = buf[r*cols + c];
+                layer->errors[filterIndex][r][c] = buf[r*cols + c];
             }
         }
     }

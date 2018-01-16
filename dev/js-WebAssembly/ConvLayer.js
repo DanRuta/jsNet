@@ -150,7 +150,10 @@ class ConvLayer {
 
 // https://github.com/DanRuta/jsNet/issues/33
 /* istanbul ignore next */
-typeof window!="undefined" && (window.exports = window.exports || {})
-/* istanbul ignore next */
-typeof window!="undefined" && (window.ConvLayer = ConvLayer)
+if (typeof window!="undefined") {
+    window.exports = window.exports || {}
+    window.global = window.global || {}
+    window.global.jsNetWASMPath = "./NetWASM.wasm"
+    window.ConvLayer = ConvLayer
+}
 exports.ConvLayer = ConvLayer

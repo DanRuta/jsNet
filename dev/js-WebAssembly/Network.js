@@ -204,7 +204,9 @@ class Network {
 
         this.layers = []
         this.epochs = 0
-        this.iterations = 0
+        // this.iterations = 0
+
+        NetUtil.defineProperty(this, "iterations", ["number"], [this.netInstance])
 
 
         if (layers.length) {
@@ -377,10 +379,10 @@ class Network {
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
                     callback({
-                        iterations: (iterationIndex+1),
+                        iterations: (this.iterations),
                         error: this.error,
                         elapsed: Date.now() - startTime,
-                        input: data[this.iterations].input
+                        input: data[iterationIndex].input
                     })
 
                     iterationIndex += miniBatchSize
@@ -533,7 +535,7 @@ class Network {
     }
 
     static get version () {
-        return "3.0.0"
+        return "3.1.0"
     }
 }
 

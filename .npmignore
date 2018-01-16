@@ -6,3 +6,8 @@ Plan.todo
 /build
 /test/
 /dev/
+.travis.yml
+.gitmodules
+CHANGELOG.md
+CMakeLists.txt
+gruntfile.js

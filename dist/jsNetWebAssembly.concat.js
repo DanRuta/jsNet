@@ -150,9 +150,12 @@ class ConvLayer {
 
 // https://github.com/DanRuta/jsNet/issues/33
 /* istanbul ignore next */
-typeof window!="undefined" && (window.exports = window.exports || {})
-/* istanbul ignore next */
-typeof window!="undefined" && (window.ConvLayer = ConvLayer)
+if (typeof window!="undefined") {
+    window.exports = window.exports || {}
+    window.global = window.global || {}
+    window.global.jsNetWASMPath = "./NetWASM.wasm"
+    window.ConvLayer = ConvLayer
+}
 exports.ConvLayer = ConvLayer
 
 "use strict"
@@ -739,7 +742,9 @@ class Network {
 
         this.layers = []
         this.epochs = 0
-        this.iterations = 0
+        // this.iterations = 0
+
+        NetUtil.defineProperty(this, "iterations", ["number"], [this.netInstance])
 
 
         if (layers.length) {
@@ -912,10 +917,10 @@ class Network {
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
                     callback({
-                        iterations: (iterationIndex+1),
+                        iterations: (this.iterations),
                         error: this.error,
                         elapsed: Date.now() - startTime,
-                        input: data[this.iterations].input
+                        input: data[iterationIndex].input
                     })
 
                     iterationIndex += miniBatchSize
@@ -1068,7 +1073,7 @@ class Network {
     }
 
     static get version () {
-        return "3.0.0"
+        return "3.1.0"
     }
 }
 
@@ -1097,7 +1102,10 @@ class Neuron {
         NetUtil.defineProperty(this, "derivative", paramTypes, params, {pre: "neuron_"})
 
         NetUtil.defineProperty(this, "bias", paramTypes, params, {pre: "neuron_"})
-        NetUtil.defineArrayProperty(this, "weights", paramTypes, params, this.size, {pre: "neuron_"})
+
+        if (layerIndex) {
+            NetUtil.defineArrayProperty(this, "weights", paramTypes, params, this.size, {pre: "neuron_"})
+        }
 
         NetUtil.defineProperty(this, "deltaBias", paramTypes, params, {pre: "neuron_"})
         NetUtil.defineArrayProperty(this, "deltaWeights", paramTypes, params, this.size, {pre: "neuron_"})

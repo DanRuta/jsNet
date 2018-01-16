@@ -41,7 +41,7 @@ void PoolLayer::forward (void) {
     }
 }
 
-void PoolLayer::backward (void) {
+void PoolLayer::backward (bool lastLayer) {
 
     // Clear the existing error values, first
     for (int c=0; c<channels; c++) {
@@ -63,7 +63,7 @@ void PoolLayer::backward (void) {
                     int weightI = c * outMapSize*outMapSize + r * outMapSize + v;
 
                     for (int n=0; n<nextLayer->neurons.size(); n++) {
-                        errors[c][rowI][colI] += nextLayer->neurons[n]->error * nextLayer->neurons[n]->weights[weightI];
+                        errors[c][rowI][colI] += nextLayer->errs[n] * nextLayer->weights[n][weightI];
                     }
                 }
             }

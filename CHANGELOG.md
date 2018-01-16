@@ -1,3 +1,33 @@
+# 3.1.0 - Optimizations
+---
+#### ConvLayer
+- Optimized errors structure
+- Optimized bias structure
+- Optimized activations structure
+- Optimized weights structure
+- Optimized deltaWeights structure
+- Optimized deltaBiase structure
+
+#### NetUtil
+- Optimized convolve
+
+#### FCLayer
+- Optimized weights structure
+- Optimized bias structure
+- Optimized deltaWeights structure
+- Optimized sums structure
+- Optimized errors structure and net errors propagation
+- Optimized activations structure
+- Optimized forward()
+- Optimized backward()
+- Optimized deltaBias structure
+
+#### Global
+- Changed framework loading to allow choosing between versions at runtime
+- Added basic server and browser + nodejs demos for how to load jsNet
+- Bug fixes
+- Changed the way classes were bundled, to fix some bundler compatibility issues (see #33)
+
 # 3.0.0 - WebAssembly
 ---
 #### WebAssembly
@@ -18,15 +48,15 @@
 # 2.1.0 - Optimizations
 ---
 #### NetUtil
-- Optimised addZeroPadding() - ~68% faster
-- Optimised uniform() - ~588% faster
-- Optimised gaussian() - ~450% faster
+- Optimized addZeroPadding() - ~68% faster
+- Optimized uniform() - ~588% faster
+- Optimized gaussian() - ~450% faster
 
 #### FCLayer
-- Optimised resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
+- Optimized resetDeltaWeights() and applyDeltaWeights() - ~18% faster (overall)
 
 #### NetMath
-- Optimised softmax() - ~924% faster
+- Optimized softmax() - ~924% faster
 
 #### ConvLayer
 - Restricted filters' dropout maps only to when dropout is configured - less memory usage

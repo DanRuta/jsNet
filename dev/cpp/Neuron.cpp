@@ -1,18 +1,14 @@
 
-void Neuron::init (int netInstance) {
-
-    for (int i=0; i<weights.size(); i++) {
-        deltaWeights.push_back(0);
-    }
-
-    deltaBias = 0;
+void Neuron::init (int netInstance, int weightsCount) {
 
     Network* net = Network::getInstance(netInstance);
+
+    dropped = false;
 
     switch (net->updateFnIndex) {
         case 1: // gain
             biasGain = 1;
-            for (int i=0; i<weights.size(); i++) {
+            for (int i=0; i<weightsCount; i++) {
                 weightGain.push_back(1);
             }
             break;
@@ -20,13 +16,13 @@ void Neuron::init (int netInstance) {
         case 3: // rmsprop
         case 5: // adadelta
             biasCache = 0;
-            for (int i=0; i<weights.size(); i++) {
+            for (int i=0; i<weightsCount; i++) {
                 weightsCache.push_back(0);
             }
 
             if (net->updateFnIndex == 5) {
                 adadeltaBiasCache = 0;
-                for (int i=0; i<weights.size(); i++) {
+                for (int i=0; i<weightsCount; i++) {
                     adadeltaCache.push_back(0);
                 }
             }

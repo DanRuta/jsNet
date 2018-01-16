@@ -57,7 +57,7 @@ public:
 
     std::vector<double> forward (std::vector<double> input);
 
-    void backward (std::vector<double> expected);
+    void backward ();
 
     void train (int iterations, int startIndex);
 
@@ -91,6 +91,19 @@ public:
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;
     std::vector<std::vector<std::vector<double> > > errors;
     std::vector<std::vector<std::vector<double> > > activations;
+    std::vector<double> deltaBiases;
+
+    std::vector<std::vector<double> > weights; // FC
+    std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
+
+    std::vector<std::vector<double> > deltaWeights; // FC
+    std::vector<std::vector<std::vector<std::vector<double> > > > filterDeltaWeights;
+
+    std::vector<double> biases; // FC
+    std::vector<double> sums; // FC
+    std::vector<double> errs; // FC
+    std::vector<double> actvns; // FC
+
     Layer* nextLayer;
     Layer* prevLayer;
     double (*activation)(double, bool, Neuron*);
@@ -109,7 +122,7 @@ public:
 
     virtual void forward (void) = 0;
 
-    virtual void backward (std::vector<double> expected) = 0;
+    virtual void backward (bool lastLayer) = 0;
 
     virtual void applyDeltaWeights (void) = 0;
 
@@ -132,7 +145,7 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> errors);
+    void backward (bool lastLayer);
 
     void applyDeltaWeights (void);
 
@@ -154,11 +167,11 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> expected) {
-        backward();
-    }
+    void backward (bool lastLayer);
 
-    void backward (void);
+    void backward (void) {
+        backward(false);
+    };
 
     void applyDeltaWeights (void);
 
@@ -181,11 +194,11 @@ public:
 
     void forward (void);
 
-    void backward (std::vector<double> expected) {
-        backward();
-    }
+    void backward (bool lastLayer);
 
-    void backward (void);
+    void backward (void) {
+        backward(false);
+    };
 
     void applyDeltaWeights (void) {};
 
@@ -195,19 +208,12 @@ public:
 
 class Neuron {
     public:
-        std::vector<double> weights;
-        std::vector<double> deltaWeights;
         std::vector<double> weightGain;
         std::vector<double> weightsCache;
         std::vector<double> adadeltaCache;
         double lreluSlope;
         double rreluSlope;
-        double bias;
-        double deltaBias;
         double derivative;
-        double activation = 0;
-        double sum;
-        double error;
         double eluAlpha;
         double biasGain;
         double adadeltaBiasCache;
@@ -218,28 +224,20 @@ class Neuron {
 
         Neuron(void) {}
 
-        void init (int netInstance);
+        void init (int netInstance, int weightsCount);
 };
 
 class Filter {
 public:
-    std::vector<std::vector<std::vector<double> > > weights;
-    std::vector<std::vector<std::vector<double> > > deltaWeights;
     std::vector<std::vector<std::vector<double> > > weightGain;
     std::vector<std::vector<std::vector<double> > > weightsCache;
     std::vector<std::vector<std::vector<double> > > adadeltaCache;
-    std::vector<std::vector<double> > activationMap;
     std::vector<std::vector<double> > sumMap;
-    std::vector<std::vector<double> > errorMap;
     std::vector<std::vector<bool> > dropoutMap;
     double lreluSlope;
     double rreluSlope;
-    double bias;
-    double deltaBias;
     double derivative;
     double activation;
-    double sum;
-    double error;
     double eluAlpha;
     double biasGain;
     double adadeltaBiasCache;
@@ -250,7 +248,7 @@ public:
 
     Filter (void) {}
 
-    void init (int netInstance);
+    void init (int netInstance, int channels, int filterSize);
 };
 
 
@@ -331,7 +329,7 @@ public:
 
     static std::vector<std::vector<double> > addZeroPadding (std::vector<std::vector<double> > map, int zP);
 
-    static std::vector<std::vector<double> > convolve(std::vector<double> input, int zP,
+    static std::vector<std::vector<double> > convolve(std::vector<std::vector<std::vector<double> > > input, int zP,
         std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias);
 
     static std::vector<std::vector<double> > arrayToMap (std::vector<double> array, int size);
@@ -344,8 +342,6 @@ public:
     static std::vector<std::vector<double> > buildConvErrorMap (int paddedLength, Layer* nextLayer, int filterI);
 
     static void buildConvDWeights (ConvLayer* layer);
-
-    static std::vector<double> getActivations (Layer* layer);
 
     static std::vector<double> getActivations (Layer* layer, int mapStartI, int mapSize);
 

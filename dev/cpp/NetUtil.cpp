@@ -84,15 +84,12 @@ std::vector<std::vector<std::vector<double> > > NetUtil::arrayToVolume (std::vec
     return vol;
 }
 
-std::vector<std::vector<double> > NetUtil::convolve(std::vector<double> input, int zP,
+std::vector<std::vector<double> > NetUtil::convolve(std::vector<std::vector<std::vector<double> > > input, int zP,
     std::vector<std::vector<std::vector<double> > > weights, int channels, int stride, double bias) {
 
-    std::vector<std::vector<std::vector<double> > > inputVol = NetUtil::arrayToVolume(input, channels);
     std::vector<std::vector<double> > output;
 
-    int paddedLength = inputVol[0].size() + zP * 2;
-    int fsSpread = floor(weights[0].size() / 2);
-    int outSize = (inputVol[0].size() - weights[0].size() + 2*zP) / stride + 1;
+    int outSize = (input[0].size() - weights[0].size() + 2*zP) / stride + 1;
 
     // Fill with 0 values
     for (int r=0; r<outSize; r++) {
@@ -103,38 +100,36 @@ std::vector<std::vector<double> > NetUtil::convolve(std::vector<double> input, i
         output.push_back(row);
     }
 
-    // For each input channel
-    for (int ci=0; ci<channels; ci++) {
+    int x = -zP;
+    int y = -zP;
 
-        inputVol[ci] = addZeroPadding(inputVol[ci], zP);
+    for (int outY=0; outY<outSize; y+=stride, outY++) {
 
-        // For each inputY without zP
-        for (int inputY=fsSpread; inputY<paddedLength-fsSpread; inputY+=stride) {
+        x = -zP;
 
-            int vi = (inputY-fsSpread)/stride;
+        for (int outX=0; outX<outSize; x+=stride, outX++) {
 
-            // For each inputX without zP
-            for (int inputX=fsSpread; inputX<paddedLength-fsSpread; inputX+=stride) {
+            double sum = 0;
 
-                double sum = 0;
+            for (int weightsY=0; weightsY<weights[0].size(); weightsY++) {
 
-                // For each weightsY on input
-                for (int weightsY=0; weightsY<weights[0].size(); weightsY++) {
-                    // For each weightsX on input
-                    for (int weightsX=0; weightsX<weights[0].size(); weightsX++) {
-                        sum += inputVol[ci][inputY+(weightsY-fsSpread)][inputX+(weightsX-fsSpread)] * weights[ci][weightsY][weightsX];
+                int inputY = y+weightsY;
+
+                for (int weightsX=0; weightsX<weights[0].size(); weightsX++) {
+
+                    int inputX = x+weightsX;
+
+                    if (inputY>=0 && inputY<input[0].size() && inputX>=0 && inputX<input[0].size()) {
+                        for (int di=0; di<channels; di++) {
+                            sum += input[di][inputY][inputX] * weights[di][weightsY][weightsX];
+                        }
                     }
                 }
-
-                output[vi][(inputX-fsSpread)/stride] += sum;
             }
-        }
-    }
 
-    // Then add bias
-    for (int outY=0; outY<output.size(); outY++) {
-        for (int outX=0; outX<output.size(); outX++) {
-            output[outY][outX] += bias;
+            sum += bias;
+
+            output[outY][outX] = sum;
         }
     }
 
@@ -187,8 +182,8 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
     // For each channel in filter in the next layer which corresponds to this filter
     for (int nlFilterI=0; nlFilterI<nextLayer->filters.size(); nlFilterI++) {
 
-        std::vector<std::vector<double> > weights = nextLayer->filters[nlFilterI]->weights[filterI];
-        std::vector<std::vector<double> > errMap = nextLayer->filters[nlFilterI]->errorMap;
+        std::vector<std::vector<double> > weights = nextLayer->filterWeights[nlFilterI][filterI];
+        std::vector<std::vector<double> > errMap = nextLayer->errors[nlFilterI];
 
         // Unconvolve their error map using the weights
         for (int inY=fsSpread; inY<paddedLength - fsSpread; inY+=nextLayer->stride) {
@@ -219,9 +214,9 @@ std::vector<std::vector<double> > NetUtil::buildConvErrorMap (int paddedLength, 
 
 void NetUtil::buildConvDWeights (ConvLayer* layer) {
 
-    int weightsCount = layer->filters[0]->weights[0].size();
+    int weightsCount = layer->filterWeights[0][0].size();
     int fsSpread = floor(weightsCount / 2);
-    int channelsCount = layer->filters[0]->weights.size();
+    int channelsCount = layer->filterWeights[0].size();
 
     // For each filter
     for (int f=0; f<layer->filters.size(); f++) {
@@ -236,13 +231,13 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
             for (int inY=fsSpread; inY<inputMap.size()-fsSpread; inY+= layer->stride) {
                 for (int inX=fsSpread; inX<inputMap.size()-fsSpread; inX+= layer->stride) {
 
-                    double error = layer->filters[f]->errorMap[(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
+                    double error = layer->errors[f][(inY-fsSpread)/layer->stride][(inX-fsSpread)/layer->stride];
 
                     // ...and at each location...
                     for (int wY=0; wY<weightsCount; wY++) {
                         for (int wX=0; wX<weightsCount; wX++) {
                             // activation * error
-                            layer->filters[f]->deltaWeights[c][wY][wX] += inputMap[inY-fsSpread+wY][inX-fsSpread+wX] * error;
+                            layer->filterDeltaWeights[f][c][wY][wX] += inputMap[inY-fsSpread+wY][inX-fsSpread+wX] * error;
                         }
                     }
                 }
@@ -250,47 +245,12 @@ void NetUtil::buildConvDWeights (ConvLayer* layer) {
         }
 
         // Increment the deltaBias by the sum of all errors in the filter
-        for (int eY=0; eY<layer->filters[f]->errorMap.size(); eY++) {
-            for (int eX=0; eX<layer->filters[f]->errorMap.size(); eX++) {
-                layer->filters[f]->deltaBias += layer->filters[f]->errorMap[eY][eX];
+        for (int eY=0; eY<layer->errors[f].size(); eY++) {
+            for (int eX=0; eX<layer->errors[f].size(); eX++) {
+                layer->deltaBiases[f] += layer->errors[f][eY][eX];
             }
         }
     }
-}
-
-
-std::vector<double> NetUtil::getActivations (Layer* layer) {
-
-    std::vector<double> activations;
-
-    if (layer->type == "FC") {
-
-        for (int n=0; n<layer->size; n++) {
-            activations.push_back(layer->neurons[n]->activation);
-        }
-
-    } else if (layer->type == "Conv") {
-
-        for (int f=0; f<layer->filters.size(); f++) {
-            for (int r=0; r<layer->filters[f]->activationMap.size(); r++) {
-                for (int c=0; c<layer->filters[f]->activationMap[r].size(); c++) {
-                    activations.push_back(layer->filters[f]->activationMap[r][c]);
-                }
-            }
-        }
-
-    } else {
-
-        for (int c=0; c<layer->activations.size(); c++) {
-            for (int r=0; r<layer->activations[0].size(); r++) {
-                for (int v=0; v<layer->activations[0].size(); v++) {
-                    activations.push_back(layer->activations[c][r][v]);
-                }
-            }
-        }
-    }
-
-    return activations;
 }
 
 std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int mapSize) {
@@ -300,14 +260,14 @@ std::vector<double> NetUtil::getActivations (Layer* layer, int mapStartI, int ma
     if (layer->type == "FC") {
 
         for (int n=mapStartI*mapSize; n<(mapStartI+1)*mapSize; n++) {
-            activations.push_back(layer->neurons[n]->activation);
+            activations.push_back(layer->actvns[n]);
         }
 
     } else if (layer->type == "Conv") {
 
-        for (int r=0; r<layer->filters[mapStartI]->activationMap.size(); r++) {
-            for (int c=0; c<layer->filters[mapStartI]->activationMap[r].size(); c++) {
-                activations.push_back(layer->filters[mapStartI]->activationMap[r][c]);
+        for (int r=0; r<layer->activations[mapStartI].size(); r++) {
+            for (int c=0; c<layer->activations[mapStartI][r].size(); c++) {
+                activations.push_back(layer->activations[mapStartI][r][c]);
             }
         }
 

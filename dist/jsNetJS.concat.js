@@ -1511,7 +1511,7 @@ class Network {
     }
 
     static get version () {
-        return "3.0.0"
+        return "3.1.0"
     }
 }
 
@@ -1765,4 +1765,4 @@ class PoolLayer {
 /* istanbul ignore next */
 typeof window!="undefined" && (window.PoolLayer = PoolLayer)
 exports.PoolLayer = PoolLayer
-//# sourceMappingURL=jsNet.concat.js.map
+//# sourceMappingURL=jsNetJS.concat.js.map

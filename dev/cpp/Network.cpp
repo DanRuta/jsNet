@@ -85,33 +85,60 @@ void Network::train (int its, int startI) {
 
     double totalErrors = 0.0;
     double iterationError = 0.0;
+    double valError = 0.0;
+
+    // This is used to increment the upper bounds of the loop, for use when training with a callback
+    // If not used, and a validation happens, the training data would get ignored. If the validationCount
+    // is used, then only the first validation item gets used
+    int validationsThisTrain = 0;
 
     isTraining = true;
+    validationError = 0;
 
-    for (int i=startI; i<(startI+its); i++) {
+    for (int iterationIndex=startI; iterationIndex<(startI+its+validationsThisTrain); iterationIndex++) {
 
-        iterations++;
+        // Do validation instead of training
+        if (validationRate!=0 && iterationIndex!=0 && iterationIndex%validationRate==0) {
 
-        std::vector<double> output = forward(std::get<0>(trainingData[i]));
-        iterationError = costFunction(std::get<1>(trainingData[i]), output);
-        totalErrors += iterationError;
+            std::vector<double> output = forward(std::get<0>(validationData[validationCount%validationData.size()]));
+            valError = costFunction(std::get<1>(validationData[validationCount%validationData.size()]), output);
 
-        for (int n=0; n<output.size(); n++) {
-            layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[i])[n]==1 ? 1 : 0) - output[n];
-        }
+            totalValidationErrors += valError;
+            validationCount++;
+            validationsThisTrain++;
+            validations++;
+            validationError += valError;
 
-        backward();
+        } else {
 
-        if ((i+1) % miniBatchSize == 0) {
-            applyDeltaWeights();
-            resetDeltaWeights();
-        } else if (i >= trainingData.size()) {
-            applyDeltaWeights();
+            iterations++;
+
+            std::vector<double> output = forward(std::get<0>(trainingData[iterationIndex-validationCount]));
+
+            for (int n=0; n<output.size(); n++) {
+                layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[iterationIndex-validationCount])[n]==1 ? 1 : 0) - output[n];
+            }
+
+            backward();
+
+            iterationError = costFunction(std::get<1>(trainingData[iterationIndex-validationCount]), output);
+            totalErrors += iterationError;
+
+            if ((iterationIndex-validationCount+1) % miniBatchSize == 0) {
+                applyDeltaWeights();
+                resetDeltaWeights();
+            } else if (iterationIndex-validationCount >= trainingData.size()) {
+                applyDeltaWeights();
+            }
         }
     }
 
     isTraining = false;
     error = totalErrors / its;
+
+    if (validationError>0 && validationsThisTrain>0) {
+        validationError /= validationsThisTrain;
+    }
 }
 
 double Network::test (int its, int startI) {

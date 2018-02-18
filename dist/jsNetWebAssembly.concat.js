@@ -606,6 +606,9 @@ class Network {
         Object.defineProperty(this, "error", {
             get: () => Module.ccall("getError", "number", ["number"], [this.netInstance])
         })
+        Object.defineProperty(this, "validationError", {
+            get: () => Module.ccall("getValidationError", "number", ["number"], [this.netInstance])
+        })
 
         // Activation function get / set
         this.activationName = NetUtil.format(activation)
@@ -745,7 +748,10 @@ class Network {
         // this.iterations = 0
 
         NetUtil.defineProperty(this, "iterations", ["number"], [this.netInstance])
-
+        NetUtil.defineProperty(this, "validations", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "validationRate", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "validationCount", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "totalValidationErrors", ["number"], [this.netInstance])
 
         if (layers.length) {
 
@@ -840,7 +846,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, miniBatchSize=1, log=true, shuffle=false}={}) {
+    train (data, {epochs=1, callback, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
@@ -861,11 +867,12 @@ class Network {
             const itemSize = dimension + (data[0].expected || data[0].output).length
             const itemsCount = itemSize * data.length
 
-            const typedArray = new Float32Array(itemsCount)
-
             if (log) {
                 console.log(`Training started. Epochs: ${epochs} Batch size: ${miniBatchSize}`)
             }
+
+            // Load training data
+            const typedArray = new Float32Array(itemsCount)
 
             for (let di=0; di<data.length; di++) {
 
@@ -892,10 +899,43 @@ class Network {
             let elapsed
 
             this.Module.ccall("loadTrainingData", "number", ["number", "number", "number", "number", "number"],
-                                            [this.netInstance, buf, itemsCount, itemSize, dimension])
+                                                      [this.netInstance, buf, itemsCount, itemSize, dimension])
 
             if (shuffle) {
                 this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            }
+
+            let validationBuf
+
+            if (validation) {
+                if (validation.rate) {
+                    this.validationRate = validation.rate
+                }
+
+                // Load validation data
+                if (validation.data) {
+                    const typedArray = new Float32Array(validation.data.length)
+
+                    for (let di=0; di<validation.data.length; di++) {
+
+                        let index = itemSize*di
+
+                        for (let ii=0; ii<validation.data[di].input.length; ii++) {
+                            typedArray[index] = validation.data[di].input[ii]
+                            index++
+                        }
+
+                        for (let ei=0; ei<(validation.data[di].expected || validation.data[di].output).length; ei++) {
+                            typedArray[index] = (validation.data[di].expected || validation.data[di].output)[ei]
+                            index++
+                        }
+                    }
+                    validationBuf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
+                    this.Module.HEAPF32.set(typedArray, buf >> 2)
+
+                    this.Module.ccall("loadValidationData", "number", ["number", "number", "number", "number", "number"],
+                                                    [this.netInstance, buf, itemsCount, itemSize, dimension])
+                }
             }
 
             if (callback) {
@@ -908,6 +948,7 @@ class Network {
                     if (this.l2) this.l2Error = 0
                     if (this.l1) this.l1Error = 0
 
+                    this.validationCount = 0
                     iterationIndex = 0
                     doIteration()
                 }
@@ -918,27 +959,42 @@ class Network {
 
                     callback({
                         iterations: (this.iterations),
-                        error: this.error,
+                        validations: (this.validations),
+                        trainingError: this.error,
+                        validationError: this.validationError,
                         elapsed: Date.now() - startTime,
-                        input: data[iterationIndex].input
+                        input: data[iterationIndex-this.validationCount].input
                     })
 
                     iterationIndex += miniBatchSize
 
-                    if (iterationIndex < data.length) {
+                    if (iterationIndex < data.length+this.validationCount) {
                         setTimeout(doIteration.bind(this), 0)
                     } else {
                         epochIndex++
 
                         elapsed = Date.now() - startTime
 
-                        log && console.log(`Epoch ${epochIndex} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`)
+                        if (log) {
+                            let text = `Epoch: ${epochIndex}\nTraining Error: ${this.error}`
+
+                            if (validation && this.validationCount!=0) {
+                                text += `\nValidation Error: ${this.totalValidationErrors/this.validationCount}`
+                            }
+
+                            if (this.l2Error!=undefined) {
+                                text += `\nL2 Error: ${this.l2Error/iterationIndex}`
+                            }
+
+                            text += `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochIndex, "time")}`
+                            console.log(text)
+                        }
 
                         if (epochIndex < epochs) {
                             doEpoch()
                         } else {
                             this.Module._free(buf)
+                            this.Module._free(validationBuf)
                             resolve()
                         }
                     }
@@ -951,14 +1007,28 @@ class Network {
                     if (this.l2) this.l2Error = 0
                     if (this.l1) this.l1Error = 0
 
+                    this.validationCount = 0
+
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime
                     if (log) {
-                        console.log(`Epoch ${e+1} Error: ${this.error}${this.l2==undefined ? "": ` L2 Error: ${this.l2Error/data.length}`}`,
-                                    `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`)
+                        let text = `Epoch: ${e+1}\nTraining Error: ${this.error}`
+
+                        if (validation && this.validationCount!=0) {
+                            text += `\nValidation Error: ${this.totalValidationErrors/this.validationCount}`
+                        }
+
+                        if (this.l2Error!=undefined) {
+                            text += `\nL2 Error: ${this.l2Error/data.length}`
+                        }
+
+                        text += `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`
+                        console.log(text)
                     }
                 }
                 this.Module._free(buf)
+                this.Module._free(validationBuf)
+
                 if (log) {
                     console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
                 }

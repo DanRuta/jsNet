@@ -1,3 +1,8 @@
+# 3.2.0 - Upcoming
+#### Network
+- Added validation config to .train(), with rate config
+- Breaking change: "error" key in training callbacks have been changed to "trainingError"
+
 # 3.1.0 - Optimizations
 ---
 #### ConvLayer

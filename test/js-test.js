@@ -1149,14 +1149,16 @@ describe("Network", () => {
             })
         })
 
-        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'error' and 'input', for each iteration", () => {
+        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'validations', 'trainingError', 'validationError', and 'input', for each iteration", () => {
             sinon.stub(console, "warn")
 
             return net.train(testData, {callback: console.warn}).then(() => {
                 expect(console.warn).to.have.been.called
                 expect(console.warn.callCount).to.equal(4)
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("iterations"))
-                expect(console.warn).to.have.been.calledWith(sinon.match.has("error"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("validations"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("trainingError"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("validationError"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
@@ -1252,7 +1254,7 @@ describe("Network", () => {
         })
 
         it("Only resets weight deltas for half the iterations +1 when miniBatchSize is set to 2", () => {
-            return net.train(testData, {miniBatchSize: 2}).then(() => {
+            return net.train(testData, {miniBatchSize: 2, callback: ()=>{}, validation: {data: testData, rate: 0}}).then(() => {
                 expect(net.resetDeltaWeights.callCount).to.equal(3)
             })
         })
@@ -1276,6 +1278,27 @@ describe("Network", () => {
             return net.train(testData, {shuffle: true}).then(() => {
                 expect(NetUtil.shuffle).to.be.calledWith(testData)
                 NetUtil.shuffle.restore()
+            })
+        })
+
+        it("Runs validation when validation data is given", () => {
+            return net.train(testDataWithOutput, {epochs: 10, validation: {data: testDataWithOutput, rate: 2}}).then(() => {
+                expect(net.validations).to.not.equal(0)
+                expect(net.validationError).to.not.equal(0)
+            })
+        })
+
+        it("Defaults validation rate to 10", () => {
+            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10}}).then(() => {
+                expect(net.validations).to.equal(2)
+                expect(net.validationError).to.not.equal(0)
+            })
+        })
+
+        it("Allows setting the validation rate to custom value", () => {
+            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10, rate: 5}}).then(() => {
+                expect(net.validations).to.equal(4)
+                expect(net.validationError).to.not.equal(0)
             })
         })
     })

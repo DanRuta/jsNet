@@ -952,7 +952,7 @@ describe("Network", () => {
 
         it("CCalls the WASM Module's train function for every iteration when a callback is given", () => {
             const network = new Network({Module: fakeModule})
-            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
             const cb = () => {}
 
@@ -966,17 +966,28 @@ describe("Network", () => {
             let counter = 0
             const cb = () => counter++
             const network = new Network({Module: fakeModule})
-            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
-            return network.train(testData, {epochs: 2, callback: cb}).then(() => {
+            return network.train(testData, {epochs: 2, callback: cb, validation: {data: testDataWithOutput}}).then(() => {
                 expect(counter).to.equal(8)
+                stub.restore()
+            })
+        })
+
+        it("Allows setting a custom validation rate", () => {
+            const network = new Network({Module: fakeModule})
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
+
+            return network.train(testData, {validation: {rate: 2, data: testData}}).then(() => {
+                expect(stub.withArgs("set_validationRate")).to.be.calledWith("set_validationRate", null, ["number", "number"], [0, 2])
                 stub.restore()
             })
         })
 
         it("Sets the l2Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
+
             network.iterations++
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -986,7 +997,7 @@ describe("Network", () => {
 
         it("Does not set the l2Error to 0 if l2 was not configured", () => {
             const network = new Network({Module: fakeModule})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1) // simulates this.l2==false
+            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1) // simulates this.l2==false
 
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
@@ -997,7 +1008,7 @@ describe("Network", () => {
         it("Sets the l2Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
             network.iterations = 2
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1007,7 +1018,7 @@ describe("Network", () => {
         it("Does not set the l2Error to 0 if l2 was not configured (with callbacks)", () => {
             const network = new Network({Module: fakeModule})
             sinon.stub(fakeModule, "ccall").callsFake(() => 0) // simulates this.l2==false
-            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+            return network.train(testData, {epochs: 5, log: false, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
                 fakeModule.ccall.restore()
             })
@@ -1016,7 +1027,7 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1034,8 +1045,8 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake(() => true)
-            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?-1:true)
+            return network.train(testData, {epochs: 5, validation: {}, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
             })
@@ -1053,7 +1064,7 @@ describe("Network", () => {
         it("console.logs once for each epoch, + 2", () => {
             sinon.stub(console, "log")
             const network = new Network({Module: fakeModule})
-            return network.train(testData, {epochs: 4}).then(() => {
+            return network.train(testData, {epochs: 4, validation: {}}).then(() => {
                 expect(console.log.callCount).to.equal(6)
                 console.log.restore()
             })

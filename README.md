@@ -187,9 +187,9 @@ By default, this is ```1``` and represents how many times the data passed will b
 net.train(training, {epochs: 5}) // This will run through the training data 5 times
 ```
 ###### Callback
-You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the error, the milliseconds elapsed and the input data for that iteration.
+You can also provide a callback in the options parameter, which will get called after each iteration (Maybe updating a graph?). The callback is passed how many iterations have passed, the milliseconds elapsed since training started, and the validation error OR the training error with input data for that iteration.
 ```javascript
-const doSomeStuff = ({iterations, error, elapsed, input}) => ....
+const doSomeStuff = ({iterations, trainingError, validationError, elapsed, input}) => ....
 net.train(training, {callback: doSomeStuff})
 ```
 ###### Log
@@ -197,6 +197,16 @@ You can turn off the logging by passing log: false in the options parameter.
 ```javascript
 net.train(training, {log: false})
 ```
+
+###### Validation
+You can specify an array of data to use as validation. This must have the same structure as the training/test data. The validation config contains two parts: data, and rate. The data is where the data is provided. The rate is an integer number representing how many training iterations validation data is used. Once the validation data has been exhaused, it will be looped through again, from the start. By default, a validation item is used every 10 training iterations.
+```javascript
+net.train(training, {validation: {
+    data: [...],
+    rate: 5
+}})
+```
+
 ###### Mini Batch Size
 You can use mini batch SGD training by specifying a mini batch size to use (changing it from the default, 1). You can set it to true, and it will default to how many classifications there are in the training data.
 

@@ -11,6 +11,7 @@ class Network {
         this.pool = {}
         this.epochs = 0
         this.iterations = 0
+        this.validations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
         activation = NetUtil.format(activation)
@@ -227,7 +228,7 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false}={}) {
+    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
 
@@ -252,13 +253,22 @@ class Network {
             this.layers.forEach(layer => layer.state = "training")
 
             let iterationIndex = 0
+            let validationCount = 0
+            let validationRate = 0
+
+            if (validation) {
+                validationRate = validation.rate || 10
+            }
+
             let epochsCounter = 0
             const startTime = Date.now()
 
             const doEpoch = () => {
                 this.epochs++
                 this.error = 0
+                this.validationError = 0
                 iterationIndex = 0
+                validationCount = 0
 
                 if (this.l2Error!=undefined) this.l2Error = 0
                 if (this.l1Error!=undefined) this.l1Error = 0
@@ -268,50 +278,87 @@ class Network {
 
             const doIteration = () => {
 
-                if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
+                if (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("input") || (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("expected") && !dataSet[(iterationIndex-validationCount)].hasOwnProperty("output"))) {
                     return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
 
-                const input = dataSet[iterationIndex].input
-                const output = this.forward(input)
-                const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
+                let trainingError
+                let validationError
+                let input
 
-                const errors = []
-                for (let n=0; n<output.length; n++) {
-                    errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                // Do validation instead of training
+                if (validationRate && iterationIndex && iterationIndex%validationRate==0) {
+
+                    input = validation.data[validationCount%validation.data.length].input
+                    const output = this.forward(input)
+                    const target = validation.data[validationCount%validation.data.length].expected || validation.data[validationCount%validation.data.length].output
+
+                    const errors = []
+                    for (let n=0; n<output.length; n++) {
+                        errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                    }
+
+                    iterationIndex++
+                    validationCount++
+                    validationError = this.cost(target, output)
+                    this.validationError += validationError
+                    this.validations++
+
+                } else {
+
+                    input = dataSet[(iterationIndex-validationCount)].input
+                    const output = this.forward(input)
+                    const target = dataSet[(iterationIndex-validationCount)].expected || dataSet[(iterationIndex-validationCount)].output
+
+                    const errors = []
+                    for (let n=0; n<output.length; n++) {
+                        errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                    }
+
+                    this.backward(errors)
+
+                    if ((++iterationIndex-validationCount)%this.miniBatchSize==0) {
+                        this.applyDeltaWeights()
+                        this.resetDeltaWeights()
+                    } else if ((iterationIndex-validationCount) >= dataSet.length) {
+                        this.applyDeltaWeights()
+                    }
+
+                    trainingError = this.cost(target, output)
+                    this.error += trainingError
+                    this.iterations++
                 }
 
-                this.backward(errors)
-
-                if (++iterationIndex%this.miniBatchSize==0) {
-                    this.applyDeltaWeights()
-                    this.resetDeltaWeights()
-                } else if (iterationIndex >= dataSet.length) {
-                    this.applyDeltaWeights()
-                }
-
-                const iterationError = this.cost(target, output)
                 const elapsed = Date.now() - startTime
-                this.error += iterationError
-                this.iterations++
 
                 if (typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
-                        error: iterationError,
+                        validations: this.validations,
+                        trainingError, validationError,
                         elapsed, input
                     })
                 }
 
-                if (iterationIndex < dataSet.length) {
+                if ((iterationIndex-validationCount) < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
 
                 } else {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        let text = `Epoch: ${this.epochs}\nTraining Error: ${this.error/(iterationIndex-validationCount)}`
+
+                        if (validation && validationCount) {
+                            text += `\nValidation Error: ${this.validationError/validationCount}`
+                        }
+
+                        if (this.l2Error!=undefined) {
+                            text += `\nL2 Error: ${this.l2Error/iterationIndex}`
+                        }
+
+                        text += `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`
+                        console.log(text)
                     }
 
                     if (epochsCounter < epochs) {

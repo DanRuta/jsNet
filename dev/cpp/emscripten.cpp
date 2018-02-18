@@ -41,6 +41,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    double getValidationError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     float get_iterations (int instanceIndex) {
         return Network::getInstance(instanceIndex)->iterations;
     }
@@ -48,6 +53,46 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void set_iterations (int instanceIndex, float it) {
         Network::getInstance(instanceIndex)->iterations = it;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_validations (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validations;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_validations (int instanceIndex, float v) {
+        Network::getInstance(instanceIndex)->validations = v;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_validationRate (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationRate;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_validationRate (int instanceIndex, float vr) {
+        Network::getInstance(instanceIndex)->validationRate = vr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_validationCount (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationCount;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_validationCount (int instanceIndex, float vc) {
+        Network::getInstance(instanceIndex)->validationCount = vc;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_totalValidationErrors (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->totalValidationErrors;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_totalValidationErrors (int instanceIndex, float tve) {
+        Network::getInstance(instanceIndex)->totalValidationErrors = tve;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -338,6 +383,30 @@ extern "C" {
 
             if (i && i%size==0) {
                 net->trainingData.push_back(epoch);
+                std::get<0>(epoch).clear();
+                std::get<1>(epoch).clear();
+            }
+
+            if (i%size<dimension) {
+                std::get<0>(epoch).push_back((double)buf[i]);
+            } else {
+                std::get<1>(epoch).push_back((double)buf[i]);
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void loadValidationData (int instanceIndex, float *buf, int total, int size, int dimension) {
+        Network* net = Network::getInstance(instanceIndex);
+        net->validationData.clear();
+
+        std::tuple<std::vector<double>, std::vector<double> > epoch;
+
+        // Push validation data to memory
+        for (int i=0; i<=total; i++) {
+
+            if (i && i%size==0) {
+                net->validationData.push_back(epoch);
                 std::get<0>(epoch).clear();
                 std::get<1>(epoch).clear();
             }

@@ -13,7 +13,10 @@ class Network {
 public:
     static std::vector<Network*> netInstances;
     int instanceIndex;
-    int iterations;
+    int iterations=0;
+    int validations=0;
+    int validationRate=10;
+    int validationCount=0;
     int miniBatchSize;
     int channels;
     float learningRate;
@@ -31,8 +34,11 @@ public:
     float maxNorm;
     double maxNormTotal;
     double error;
+    double validationError;
+    double totalValidationErrors;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
+    std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
     std::map<std::string, float> weightsConfig;
     double (*activation)(double, bool, Neuron*);
@@ -112,7 +118,7 @@ public:
 
     Layer (int netI, int s) {};
 
-    virtual ~Layer(void) {} ;
+    virtual ~Layer(void) {};
 
     virtual void assignNext (Layer* l) = 0;
 

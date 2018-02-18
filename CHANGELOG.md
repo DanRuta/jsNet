@@ -3,6 +3,9 @@
 - Added validation config to .train(), with rate config
 - Breaking change: "error" key in training callbacks have been changed to "trainingError"
 
+#### NetUtil
+- Added splitData function
+
 # 3.1.0 - Optimizations
 ---
 #### ConvLayer

@@ -493,6 +493,43 @@ class NetUtil {
         return value
     }
 
+    static shuffle (arr) {
+        for (let i=arr.length; i; i--) {
+            const j = Math.floor(Math.random() * i)
+            const x = arr[i-1]
+            arr[i-1] = arr[j]
+            arr[j] = x
+        }
+    }
+
+    static splitData (data, {training=0.7, validation=0.15, test=0.15}={}) {
+
+        const split = {
+            training: [],
+            validation: [],
+            test: []
+        }
+
+        // Define here splits, for returning at the end
+        for (let i=0; i<data.length; i++) {
+            let x = Math.random()
+
+            if (x > 1-training) {
+                split.training.push(data[i])
+            } else {
+
+                if (x<validation) {
+                    split.validation.push(data[i])
+                } else {
+                    split.test.push(data[i])
+                }
+
+            }
+        }
+
+        return split
+    }
+
     static defineProperty (self, prop, valTypes=[], values=[], {getCallback=x=>x, setCallback=x=>x, pre=""}={}) {
         Object.defineProperty(self, prop, {
             get: () => getCallback(this.Module.ccall(`get_${pre}${prop}`, "number", valTypes, values)),
@@ -963,7 +1000,7 @@ class Network {
                         trainingError: this.error,
                         validationError: this.validationError,
                         elapsed: Date.now() - startTime,
-                        input: data[iterationIndex-this.validationCount].input
+                        input: this.validationError ? undefined : data[iterationIndex-this.validationCount].input
                     })
 
                     iterationIndex += miniBatchSize

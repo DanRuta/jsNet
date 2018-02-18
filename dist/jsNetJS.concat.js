@@ -1026,7 +1026,7 @@ class NetUtil {
         }
     }
 
-    static getActivations (layer, mapStartI, mapSize){
+    static getActivations (layer, mapStartI, mapSize) {
 
         const returnArr = []
 
@@ -1086,6 +1086,34 @@ class NetUtil {
         }
 
         return returnArr
+    }
+
+    static splitData (data, {training=0.7, validation=0.15, test=0.15}={}) {
+
+        const split = {
+            training: [],
+            validation: [],
+            test: []
+        }
+
+        // Define here splits, for returning at the end
+        for (let i=0; i<data.length; i++) {
+            let x = Math.random()
+
+            if (x > 1-training) {
+                split.training.push(data[i])
+            } else {
+
+                if (x<validation) {
+                    split.validation.push(data[i])
+                } else {
+                    split.test.push(data[i])
+                }
+
+            }
+        }
+
+        return split
     }
 }
 

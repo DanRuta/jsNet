@@ -5303,4 +5303,19 @@ describe("NetUtil", () => {
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedD)
         })
     })
+
+    describe("splitData", () => {
+
+        const testData = [1,2,3,4,5,6,7,8,9,10]
+
+        it("Returns data split into 3 keys: training, validation, and test", () => {
+            const result = NetUtil.splitData(testData)
+            expect(result).to.have.keys("training", "validation", "test")
+        })
+
+        it("Keeps the same total number of items", () => {
+            const {training, validation, test} = NetUtil.splitData(testData)
+            expect(training.length + validation.length + test.length).to.equal(testData.length)
+        })
+    })
 })

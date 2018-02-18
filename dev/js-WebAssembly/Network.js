@@ -425,7 +425,7 @@ class Network {
                         trainingError: this.error,
                         validationError: this.validationError,
                         elapsed: Date.now() - startTime,
-                        input: data[iterationIndex-this.validationCount].input
+                        input: this.validationError ? undefined : data[iterationIndex-this.validationCount].input
                     })
 
                     iterationIndex += miniBatchSize

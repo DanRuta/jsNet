@@ -206,6 +206,7 @@ net.train(training, {validation: {
     rate: 5
 }})
 ```
+**Tip**: You can use ```NetUtil.splitData(data)``` to split a large array of data into training, validation, and test arrays, with default or specified ratios. See the NetUtil section at the bottom.
 
 ###### Mini Batch Size
 You can use mini batch SGD training by specifying a mini batch size to use (changing it from the default, 1). You can set it to true, and it will default to how many classifications there are in the training data.
@@ -552,6 +553,32 @@ net = new Network({
     updateFn: "adagrad",
     learningRate: 0.05
 })
+```
+### NetUtil
+There is a NetUtil class included, containing some potentially useful functions.
+
+### shuffle(data)
+_array_ **data** - The data array to shuffle
+
+This randomly shuffles an array _in place_ (aka, data passed by reference, the parameter passed will be changed).
+##### Example
+```javascript
+const data = [1,2,3,4,5]
+NetUtil.shuffle(data)
+// data != [1,2,3,4,5]
+```
+
+### splitData(data), splitData(data, {training=0.7, validation=0.15, test=0.15})
+_array_ **data** - The data array to split
+_object_ configs: Override values for the ratios to split. The values should add up to 1.
+
+This is used for splitting a large array of data into the different parts needed for training.
+##### Example
+```javascript
+const data = [1,2,3,4,5]
+const {training, validation, test} = NetUtil.splitData(data)
+// or
+const {training, validation, test} = NetUtil.splitData(data, {training: 0.5, validation: 0.25, test: 0.25})
 ```
 
 ## Future plans

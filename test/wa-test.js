@@ -3065,6 +3065,45 @@ describe("NetUtil", () => {
             expect(scope.stuff3).to.equal(321)
         })
     })
+
+    describe("shuffle", () => {
+
+        const testArr = [1,2,3,4,5, "a", "b", "c"]
+        const original = testArr.slice(0)
+        NetUtil.shuffle(testArr)
+
+        it("Keeps the same number of elements", () => {
+            expect(testArr).to.have.lengthOf(8)
+        })
+
+        it("Changes the order of the elements", () => {
+            expect(testArr).to.not.deep.equal(original)
+        })
+
+        it("Does not include any new elements", () => {
+            expect(testArr.every(elem => original.includes(elem))).to.be.true
+        })
+
+        it("Still includes all original elements", () => {
+            expect(original.every(elem => testArr.includes(elem))).to.be.true
+        })
+    })
+
+    describe("splitData", () => {
+
+        const testData = [1,2,3,4,5,6,7,8,9,10]
+
+        it("Returns data split into 3 keys: training, validation, and test", () => {
+            const result = NetUtil.splitData(testData)
+            expect(result).to.have.keys("training", "validation", "test")
+        })
+
+        it("Keeps the same total number of items", () => {
+            const {training, validation, test} = NetUtil.splitData(testData)
+            expect(training.length + validation.length + test.length).to.equal(testData.length)
+        })
+    })
+
 })
 
 describe("NetMath", () => {

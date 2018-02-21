@@ -169,6 +169,8 @@ The data structure must be an object with key ```input``` having an array of num
 {input: [1,0,0.2], expected: [1, 2]}
 {input: [1,0,0.2], output: [1, 2]}
 ```
+***Tip**: You can normalize your data using the ```NetUtil.normalize()``` function (see at the bottom)*
+
 You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch, as well as time elapsed and average epoch duration.
 ```javascript
 const {training} = mnist.set(800, 200) // Get the training data from the mnist library, linked above
@@ -579,6 +581,19 @@ const data = [1,2,3,4,5]
 const {training, validation, test} = NetUtil.splitData(data)
 // or
 const {training, validation, test} = NetUtil.splitData(data, {training: 0.5, validation: 0.25, test: 0.25})
+```
+
+### normalize(data)
+_array_ **data** - The data array to normalize
+
+This normalizes an array of positive and/or negative numbers to a [0-1] range. The data is changed in place, similar to the shuffle function.
+##### Example
+```javascript
+const data = [1,2,3,-5,0.4,2]
+const {minValue, maxValue} = NetUtil.normalize(data)
+// data == [0.75, 0.875, 1, 0, 0.675, 0.875]
+// minValue == -5
+// maxValue == 3
 ```
 
 ## Future plans

@@ -1115,6 +1115,32 @@ class NetUtil {
 
         return split
     }
+
+    static normalize (data) {
+        let minVal = Infinity
+        let maxVal = -Infinity
+
+        for (let i=0; i<data.length; i++) {
+            if (data[i] < minVal) {
+                minVal = data[i]
+            }
+            if (data[i] > maxVal) {
+                maxVal = data[i]
+            }
+        }
+
+        if ((-1*minVal + maxVal) != 0) {
+            for (let i=0; i<data.length; i++) {
+                data[i] = (data[i] + -1*minVal) / (-1*minVal + maxVal)
+            }
+        } else {
+            for (let i=0; i<data.length; i++) {
+                data[i] = 0.5
+            }
+        }
+
+        return {minVal, maxVal}
+    }
 }
 
 /* istanbul ignore next */

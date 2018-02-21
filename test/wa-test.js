@@ -3104,6 +3104,33 @@ describe("NetUtil", () => {
         })
     })
 
+    describe("normalize", () => {
+
+        it("Example 1 (Handles negative numbers correctly)", () => {
+            const data = [1,2,3,-5,0.4,2]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-5)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.75, 0.875, 1, 0, 0.675, 0.875])
+        })
+
+        it("Example 2 (Handles arrays with equal values correctly)", () => {
+            const data = [3, 3, 3, 3]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(3)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.5, 0.5, 0.5, 0.5])
+        })
+
+        it("Example 3", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(5)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+        })
+    })
+
 })
 
 describe("NetMath", () => {

@@ -5,6 +5,7 @@
 
 #### NetUtil
 - Added splitData function
+- Added normalize function
 
 # 3.1.0 - Optimizations
 ---

@@ -969,8 +969,8 @@ describe("Network", () => {
             const network = new Network({Module: fakeModule})
             const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
-            return network.train(testData, {validation: {rate: 2, data: testData}}).then(() => {
-                expect(stub.withArgs("set_validationRate")).to.be.calledWith("set_validationRate", null, ["number", "number"], [0, 2])
+            return network.train(testData, {validation: {interval: 2, data: testData}}).then(() => {
+                expect(stub.withArgs("set_validationInterval")).to.be.calledWith("set_validationInterval", null, ["number", "number"], [0, 2])
                 stub.restore()
             })
         })

@@ -46,6 +46,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    double getLastValidationError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->lastValidationError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     float get_iterations (int instanceIndex) {
         return Network::getInstance(instanceIndex)->iterations;
     }
@@ -66,33 +71,13 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
-    float get_validationRate (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->validationRate;
+    float get_validationInterval (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationInterval;
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void set_validationRate (int instanceIndex, float vr) {
-        Network::getInstance(instanceIndex)->validationRate = vr;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_validationCount (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->validationCount;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_validationCount (int instanceIndex, float vc) {
-        Network::getInstance(instanceIndex)->validationCount = vc;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    float get_totalValidationErrors (int instanceIndex) {
-        return Network::getInstance(instanceIndex)->totalValidationErrors;
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void set_totalValidationErrors (int instanceIndex, float tve) {
-        Network::getInstance(instanceIndex)->totalValidationErrors = tve;
+    void set_validationInterval (int instanceIndex, float vr) {
+        Network::getInstance(instanceIndex)->validationInterval = vr;
     }
 
     EMSCRIPTEN_KEEPALIVE

@@ -1281,23 +1281,22 @@ describe("Network", () => {
         })
 
         it("Runs validation when validation data is given", () => {
-            return net.train(testData, {epochs: 10, validation: {data: testData, rate: 2}}).then(() => {
-                expect(net.validations).to.not.equal(0)
-                expect(net.validationError).to.not.equal(0)
+            sinon.spy(net, "validate")
+            return net.train(testData, {epochs: 10, validation: {data: testData, interval: 2}}).then(() => {
+                expect(net.validate).to.be.called
+                net.validate.restore()
             })
         })
 
-        it("Defaults validation rate to 10", () => {
+        it("Defaults validation interval to 1 epoch (number of training samples)", () => {
             return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10}}).then(() => {
-                expect(net.validations).to.equal(2)
-                expect(net.validationError).to.not.equal(0)
+                expect(net.validation.interval).to.equal(20)
             })
         })
 
         it("Allows setting the validation rate to custom value", () => {
-            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10, rate: 5}}).then(() => {
-                expect(net.validations).to.equal(4)
-                expect(net.validationError).to.not.equal(0)
+            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10, interval: 5}}).then(() => {
+                expect(net.validation.interval).to.equal(5)
             })
         })
     })

@@ -71,6 +71,9 @@ class Network {
         Object.defineProperty(this, "validationError", {
             get: () => Module.ccall("getValidationError", "number", ["number"], [this.netInstance])
         })
+        Object.defineProperty(this, "lastValidationError", {
+            get: () => Module.ccall("getLastValidationError", "number", ["number"], [this.netInstance])
+        })
 
         // Activation function get / set
         this.activationName = NetUtil.format(activation)
@@ -207,13 +210,10 @@ class Network {
 
         this.layers = []
         this.epochs = 0
-        // this.iterations = 0
 
         NetUtil.defineProperty(this, "iterations", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "validations", ["number"], [this.netInstance])
-        NetUtil.defineProperty(this, "validationRate", ["number"], [this.netInstance])
-        NetUtil.defineProperty(this, "validationCount", ["number"], [this.netInstance])
-        NetUtil.defineProperty(this, "totalValidationErrors", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "validationInterval", ["number"], [this.netInstance])
 
         if (layers.length) {
 
@@ -312,6 +312,7 @@ class Network {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
+        this.validation = validation
 
         return new Promise((resolve, reject) => {
 
@@ -369,26 +370,25 @@ class Network {
 
             let validationBuf
 
-            if (validation) {
-                if (validation.rate) {
-                    this.validationRate = validation.rate
-                }
+            if (this.validation) {
+
+                this.validationInterval = this.validation.interval || data.length // Default to 1 epoch
 
                 // Load validation data
-                if (validation.data) {
-                    const typedArray = new Float32Array(validation.data.length)
+                if (this.validation.data) {
+                    const typedArray = new Float32Array(this.validation.data.length)
 
-                    for (let di=0; di<validation.data.length; di++) {
+                    for (let di=0; di<this.validation.data.length; di++) {
 
                         let index = itemSize*di
 
-                        for (let ii=0; ii<validation.data[di].input.length; ii++) {
-                            typedArray[index] = validation.data[di].input[ii]
+                        for (let ii=0; ii<this.validation.data[di].input.length; ii++) {
+                            typedArray[index] = this.validation.data[di].input[ii]
                             index++
                         }
 
-                        for (let ei=0; ei<validation.data[di].expected.length; ei++) {
-                            typedArray[index] = validation.data[di].expected[ei]
+                        for (let ei=0; ei<this.validation.data[di].expected.length; ei++) {
+                            typedArray[index] = this.validation.data[di].expected[ei]
                             index++
                         }
                     }
@@ -410,7 +410,6 @@ class Network {
                     if (this.l2) this.l2Error = 0
                     if (this.l1) this.l1Error = 0
 
-                    this.validationCount = 0
                     iterationIndex = 0
                     doIteration()
                 }
@@ -425,12 +424,12 @@ class Network {
                         trainingError: this.error,
                         validationError: this.validationError,
                         elapsed: Date.now() - startTime,
-                        input: this.validationError ? undefined : data[iterationIndex-this.validationCount].input
+                        input: data[iterationIndex].input
                     })
 
                     iterationIndex += miniBatchSize
 
-                    if (iterationIndex < data.length+this.validationCount) {
+                    if (iterationIndex < data.length) {
                         setTimeout(doIteration.bind(this), 0)
                     } else {
                         epochIndex++
@@ -440,8 +439,8 @@ class Network {
                         if (log) {
                             let text = `Epoch: ${epochIndex}\nTraining Error: ${this.error}`
 
-                            if (validation && this.validationCount!=0) {
-                                text += `\nValidation Error: ${this.totalValidationErrors/this.validationCount}`
+                            if (this.validation) {
+                                text += `\nValidation Error: ${this.lastValidationError}`
                             }
 
                             if (this.l2Error!=undefined) {
@@ -469,15 +468,14 @@ class Network {
                     if (this.l2) this.l2Error = 0
                     if (this.l1) this.l1Error = 0
 
-                    this.validationCount = 0
-
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, -1, 0])
                     elapsed = Date.now() - startTime
+
                     if (log) {
                         let text = `Epoch: ${e+1}\nTraining Error: ${this.error}`
 
-                        if (validation && this.validationCount!=0) {
-                            text += `\nValidation Error: ${this.totalValidationErrors/this.validationCount}`
+                        if (validation) {
+                            text += `\nValidation Error: ${this.lastValidationError}`
                         }
 
                         if (this.l2Error!=undefined) {

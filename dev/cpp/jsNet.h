@@ -15,8 +15,7 @@ public:
     int instanceIndex;
     int iterations=0;
     int validations=0;
-    int validationRate=10;
-    int validationCount=0;
+    int validationInterval;
     int miniBatchSize;
     int channels;
     float learningRate;
@@ -35,7 +34,7 @@ public:
     double maxNormTotal;
     double error;
     double validationError;
-    double totalValidationErrors;
+    double lastValidationError;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;
@@ -63,9 +62,11 @@ public:
 
     std::vector<double> forward (std::vector<double> input);
 
-    void backward ();
+    void backward (void);
 
     void train (int iterations, int startIndex);
+
+    double validate (void);
 
     double test (int iterations, int startIndex);
 

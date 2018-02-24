@@ -200,11 +200,17 @@ net.train(training, {log: false})
 ```
 
 ###### Validation
-You can specify an array of data to use as validation. This must have the same structure as the training/test data. The validation config contains two parts: data, and rate. The data is where the data is provided. The rate is an integer number representing how many training iterations validation data is used. Once the validation data has been exhaused, it will be looped through again, from the start. By default, a validation item is used every 10 training iterations.
+You can specify an array of data to use as validation. This must have the same structure as the training/test data. The validation config contains two parts: data, and interval. The data is where the data is provided. The interval is an integer, representing how many training iterations pass between validations of the entire validation set. By default, this is set to 1 epoch, aka the length of the given training data set.
 ```javascript
+// Validate every 5 training iterations
 net.train(training, {validation: {
     data: [...],
-    rate: 5
+    interval: 5
+}})
+// Validate every 3 epochs
+net.train(training, {validation: {
+    data: [...],
+    interval: training.length * 3
 }})
 ```
 **Tip**: You can use ```NetUtil.splitData(data)``` to split a large array of data into training, validation, and test arrays, with default or specified ratios. See the NetUtil section at the bottom.

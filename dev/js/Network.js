@@ -231,6 +231,7 @@ class Network {
     train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
+        this.validation = validation
 
         return new Promise((resolve, reject) => {
 
@@ -253,11 +254,9 @@ class Network {
             this.layers.forEach(layer => layer.state = "training")
 
             let iterationIndex = 0
-            let validationCount = 0
-            let validationRate = 0
 
-            if (validation) {
-                validationRate = validation.rate || 10
+            if (this.validation) {
+                this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
             }
 
             let epochsCounter = 0
@@ -268,7 +267,6 @@ class Network {
                 this.error = 0
                 this.validationError = 0
                 iterationIndex = 0
-                validationCount = 0
 
                 if (this.l2Error!=undefined) this.l2Error = 0
                 if (this.l1Error!=undefined) this.l1Error = 0
@@ -276,9 +274,9 @@ class Network {
                 doIteration()
             }
 
-            const doIteration = () => {
+            const doIteration = async () => {
 
-                if (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("input") || !dataSet[(iterationIndex-validationCount)].hasOwnProperty("expected")) {
+                if (!dataSet[iterationIndex].hasOwnProperty("input") || !dataSet[iterationIndex].hasOwnProperty("expected")) {
                     return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
                 }
 
@@ -286,48 +284,33 @@ class Network {
                 let validationError
                 let input
 
-                // Do validation instead of training
-                if (validationRate && iterationIndex && iterationIndex%validationRate==0) {
-
-                    input = validation.data[validationCount%validation.data.length].input
-                    const output = this.forward(input)
-                    const target = validation.data[validationCount%validation.data.length].expected
-
-                    const errors = []
-                    for (let n=0; n<output.length; n++) {
-                        errors[n] = (target[n]==1 ? 1 : 0) - output[n]
-                    }
-
-                    iterationIndex++
-                    validationCount++
-                    validationError = this.cost(target, output)
-                    this.validationError += validationError
-                    this.validations++
-
-                } else {
-
-                    input = dataSet[(iterationIndex-validationCount)].input
-                    const output = this.forward(input)
-                    const target = dataSet[(iterationIndex-validationCount)].expected
-
-                    const errors = []
-                    for (let n=0; n<output.length; n++) {
-                        errors[n] = (target[n]==1 ? 1 : 0) - output[n]
-                    }
-
-                    this.backward(errors)
-
-                    if ((++iterationIndex-validationCount)%this.miniBatchSize==0) {
-                        this.applyDeltaWeights()
-                        this.resetDeltaWeights()
-                    } else if ((iterationIndex-validationCount) >= dataSet.length) {
-                        this.applyDeltaWeights()
-                    }
-
-                    trainingError = this.cost(target, output)
-                    this.error += trainingError
-                    this.iterations++
+                // Do validation
+                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
+                    // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
+                    validationError = await this.validate(this.validation.data)
                 }
+
+                input = dataSet[iterationIndex].input
+                const output = this.forward(input)
+                const target = dataSet[iterationIndex].expected
+
+                const errors = []
+                for (let n=0; n<output.length; n++) {
+                    errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                this.backward(errors)
+
+                if (++iterationIndex%this.miniBatchSize==0) {
+                    this.applyDeltaWeights()
+                    this.resetDeltaWeights()
+                } else if (iterationIndex >= dataSet.length) {
+                    this.applyDeltaWeights()
+                }
+
+                trainingError = this.cost(target, output)
+                this.error += trainingError
+                this.iterations++
 
                 const elapsed = Date.now() - startTime
 
@@ -335,22 +318,22 @@ class Network {
                     callback({
                         iterations: this.iterations,
                         validations: this.validations,
-                        trainingError, validationError,
+                        validationError, trainingError,
                         elapsed, input
                     })
                 }
 
-                if ((iterationIndex-validationCount) < dataSet.length) {
+                if (iterationIndex < dataSet.length) {
                     setTimeout(doIteration.bind(this), 0)
 
                 } else {
                     epochsCounter++
 
                     if (log) {
-                        let text = `Epoch: ${this.epochs}\nTraining Error: ${this.error/(iterationIndex-validationCount)}`
+                        let text = `Epoch: ${this.epochs}\nTraining Error: ${this.error/iterationIndex}`
 
-                        if (validation && validationCount) {
-                            text += `\nValidation Error: ${this.validationError/validationCount}`
+                        if (validation) {
+                            text += `\nValidation Error: ${this.validationError}`
                         }
 
                         if (this.l2Error!=undefined) {
@@ -376,6 +359,31 @@ class Network {
 
             this.resetDeltaWeights()
             doEpoch()
+        })
+    }
+
+    validate (data) {
+        return new Promise((resolve, reject) => {
+            let validationIndex = 0
+            let totalValidationErrors = 0
+
+            const validateItem = (item) => {
+
+                const output = this.forward(data[validationIndex].input)
+                const target = data[validationIndex].expected
+
+                this.validations++
+                totalValidationErrors += this.cost(target, output)
+                // maybe do this only once, as there's no callback anyway
+                this.validationError = totalValidationErrors / (validationIndex+1)
+
+                if (++validationIndex<data.length) {
+                    setTimeout(() => validateItem(validationIndex), 0)
+                } else {
+                    resolve(totalValidationErrors / data.length)
+                }
+            }
+            validateItem(validationIndex)
         })
     }
 

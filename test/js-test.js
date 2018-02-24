@@ -1299,6 +1299,79 @@ describe("Network", () => {
                 expect(net.validation.interval).to.equal(5)
             })
         })
+
+        describe("Early stopping", () => {
+
+            it("Defaults the threshold to 0.01 when the type is 'threshold'", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.01)
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold",
+                    threshold: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                })
+            })
+
+            it("Checks the early stopping with each validation", () => {
+                sinon.stub(net, "checkEarlyStopping")
+                return net.train(testDataX10, {validation: {
+                    data: testData,
+                    interval: 1,
+                    earlyStopping: {
+                        type: "threshold",
+                        threshold: 0.2
+                    }
+                }}).then(() => {
+                    expect(net.checkEarlyStopping.callCount).to.equal(9)
+                    net.checkEarlyStopping.restore()
+                })
+            })
+
+
+            it("Stops the training when checkEarlyStopping returns true", () => {
+                let checkEarlyCounter = 0
+                const stub = sinon.stub(net, "checkEarlyStopping").callsFake(() => ++checkEarlyCounter>=5)
+
+                return net.train(testDataX10, {validation: {
+                    data: testData,
+                    interval: 1,
+                    earlyStopping: {
+                        type: "threshold",
+                        threshold: 0.2
+                    }
+                }}).then(() => {
+                    expect(stub.callCount).to.equal(5)
+                    stub.restore()
+                })
+            })
+
+        })
+    })
+
+    describe("checkEarlyStopping", () => {
+
+        let net
+
+        before(() => {
+            net = new Network()
+            net.validation = {earlyStopping: {}}
+        })
+
+        describe("threshold", () => {
+            it("Returns true when the lastValidationError is lower than the threshold", () => {
+                net.validation.earlyStopping.type = "threshold"
+                net.validation.earlyStopping.threshold = 0.01
+                net.lastValidationError = 0.005
+                expect(net.checkEarlyStopping()).to.be.true
+            })
+        })
     })
 
     describe("test", () => {

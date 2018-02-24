@@ -214,6 +214,10 @@ class Network {
         NetUtil.defineProperty(this, "iterations", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "validations", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "validationInterval", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "trainingLogging", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "stoppedEarly", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingType", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingThreshold", ["number"], [this.netInstance])
 
         if (layers.length) {
 
@@ -313,6 +317,8 @@ class Network {
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
         this.validation = validation
+        this.trainingLogging = log
+        this.stoppedEarly = false
 
         return new Promise((resolve, reject) => {
 
@@ -374,6 +380,17 @@ class Network {
 
                 this.validationInterval = this.validation.interval || data.length // Default to 1 epoch
 
+                if (this.validation.earlyStopping) {
+                    // switch (this.validation.earlyStopping.type) {
+                        // case "threshold":
+                            this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
+                            this.earlyStoppingThreshold = this.validation.earlyStopping.threshold
+                            this.earlyStoppingType = 1
+                            // break
+                    // }
+                }
+
+
                 // Load validation data
                 if (this.validation.data) {
                     const typedArray = new Float32Array(this.validation.data.length)
@@ -429,7 +446,7 @@ class Network {
 
                     iterationIndex += miniBatchSize
 
-                    if (iterationIndex < data.length) {
+                    if (iterationIndex < data.length && !this.stoppedEarly) {
                         setTimeout(doIteration.bind(this), 0)
                     } else {
                         epochIndex++
@@ -451,7 +468,7 @@ class Network {
                             console.log(text)
                         }
 
-                        if (epochIndex < epochs) {
+                        if (epochIndex < epochs && !this.stoppedEarly) {
                             doEpoch()
                         } else {
                             this.Module._free(buf)
@@ -484,6 +501,10 @@ class Network {
 
                         text += `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/(e+1), "time")}`
                         console.log(text)
+                    }
+
+                    if (this.stoppedEarly) {
+                        break
                     }
                 }
                 this.Module._free(buf)

@@ -977,7 +977,9 @@ describe("Network", () => {
 
         it("Sets the l2Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
-            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
 
             network.iterations++
             return network.train(testData, {epochs: 5}).then(() => {
@@ -988,7 +990,9 @@ describe("Network", () => {
 
         it("Does not set the l2Error to 0 if l2 was not configured", () => {
             const network = new Network({Module: fakeModule})
-            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1) // simulates this.l2==false
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            }) // simulates this.l2==false
 
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
@@ -999,7 +1003,9 @@ describe("Network", () => {
         it("Sets the l2Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
             network.iterations = 2
-            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1018,7 +1024,9 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?0:1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1036,7 +1044,14 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake((_) => _=="get_validationCount"?-1:true)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                if (_=="get_validationCount") {
+                    return -1
+                } else if (_=="get_stoppedEarly") {
+                    return 0
+                }
+                return true
+            })
             return network.train(testData, {epochs: 5, validation: {}, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1067,6 +1082,46 @@ describe("Network", () => {
             return network.train(testData, {epochs: 4, log: false}).then(() => {
                 expect(console.log).to.not.be.called
                 console.log.restore()
+            })
+        })
+
+        describe("Early stopping", () => {
+
+            it("Defaults the threshold to 0.01 when the type is 'threshold'", () => {
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold"
+                }}}).then(() => {
+                    expect(fakeModule.ccall).to.be.calledWith("set_earlyStoppingType", null, ["number", "number"], [0, 1])
+                    expect(fakeModule.ccall).to.be.calledWith("set_earlyStoppingThreshold")
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.01)
+                    fakeModule.ccall.restore()
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold",
+                    threshold: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                })
+            })
+
+            it("Stops ccalling the train function when the stoppedEarly value is true", () => {
+                const network = new Network({Module: fakeModule})
+                let counter = 0
+                const stub = sinon.stub(fakeModule, "ccall").callsFake(_ => {
+                    if (_=="get_stoppedEarly") {
+                        return ++counter>2
+                    }
+                    return 0
+                })
+
+                return network.train(testData, {epochs: 5}).then(() => {
+                    expect(stub.withArgs("train").callCount).to.equal(3)
+                    stub.restore()
+                })
             })
         })
     })

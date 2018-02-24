@@ -200,7 +200,7 @@ net.train(training, {log: false})
 ```
 
 ###### Validation
-You can specify an array of data to use as validation. This must have the same structure as the training/test data. The validation config contains two parts: data, and interval. The data is where the data is provided. The interval is an integer, representing how many training iterations pass between validations of the entire validation set. By default, this is set to 1 epoch, aka the length of the given training data set.
+You can specify an array of data to use as validation. This must have the same structure as the training/test data. The validation config contains three parts: data, interval, and early stopping (see below). The data is where the data is provided. The interval is an integer, representing how many training iterations pass between validations of the entire validation set. By default, this is set to 1 epoch, aka the length of the given training data set.
 ```javascript
 // Validate every 5 training iterations
 net.train(training, {validation: {
@@ -214,6 +214,25 @@ net.train(training, {validation: {
 }})
 ```
 **Tip**: You can use ```NetUtil.splitData(data)``` to split a large array of data into training, validation, and test arrays, with default or specified ratios. See the NetUtil section at the bottom.
+
+###### Early stopping
+When using validation data, you can specify an extra config object, `earlyStopping`, to configure stopping the training early, once a condition has been met, to counter overfitting. By default, this is turned off, but each option has default values, once the type is specified, via the `type` key.
+
+|  Type | What it does | Available Configurations | Default value |
+|:-------------:| :-----:| :-----:| :---: |
+| threshold | Stops the training the first time the validation error reaches, or goes below the specified threshold. | threshold. A final backward pass is made, and weights updated, before stopping. | 0.01 |
+
+Examples:
+```javascript
+// Threshold - Training stops once the validation error reaches down to at most 0.2
+net.train(training, {validation: {
+    data: [...],
+    earlyStopping: {
+        type: "threshold",
+        threshold: 0.2
+    }
+}})
+```
 
 ###### Mini Batch Size
 You can use mini batch SGD training by specifying a mini batch size to use (changing it from the default, 1). You can set it to true, and it will default to how many classifications there are in the training data.

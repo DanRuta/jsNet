@@ -253,14 +253,32 @@ class Network {
 
             this.layers.forEach(layer => layer.state = "training")
 
-            let iterationIndex = 0
-
             if (this.validation) {
                 this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
+
+                if (this.validation.earlyStopping) {
+                    // switch (this.validation.earlyStopping.type) {
+                        // case "threshold":
+                            this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
+                            // break
+                    // }
+                }
+
             }
 
+            let iterationIndex = 0
             let epochsCounter = 0
+            let elapsed
             const startTime = Date.now()
+
+            const logAndResolve = () => {
+                this.layers.forEach(layer => layer.state = "initialised")
+
+                if (log) {
+                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
+                }
+                resolve()
+            }
 
             const doEpoch = () => {
                 this.epochs++
@@ -282,21 +300,25 @@ class Network {
 
                 let trainingError
                 let validationError
-                let input
 
-                // Do validation
-                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
-                    // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
-                    validationError = await this.validate(this.validation.data)
-                }
-
-                input = dataSet[iterationIndex].input
+                const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected
 
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                // Do validation
+                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
+                    // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
+                    validationError = await this.validate(this.validation.data)
+
+                    if (this.validation.earlyStopping && this.checkEarlyStopping(errors)) {
+                        log && console.log("Stopping early")
+                        return logAndResolve()
+                    }
                 }
 
                 this.backward(errors)
@@ -312,7 +334,7 @@ class Network {
                 this.error += trainingError
                 this.iterations++
 
-                const elapsed = Date.now() - startTime
+                elapsed = Date.now() - startTime
 
                 if (typeof callback=="function") {
                     callback({
@@ -347,12 +369,7 @@ class Network {
                     if (epochsCounter < epochs) {
                         doEpoch()
                     } else {
-                        this.layers.forEach(layer => layer.state = "initialised")
-
-                        if (log) {
-                            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
-                        }
-                        resolve()
+                        logAndResolve()
                     }
                 }
             }
@@ -380,11 +397,28 @@ class Network {
                 if (++validationIndex<data.length) {
                     setTimeout(() => validateItem(validationIndex), 0)
                 } else {
+                    this.lastValidationError = totalValidationErrors / data.length
                     resolve(totalValidationErrors / data.length)
                 }
             }
             validateItem(validationIndex)
         })
+    }
+
+    checkEarlyStopping (errors) {
+        // switch (this.validation.earlyStopping.type) {
+            // case "threshold":
+                const stop = this.lastValidationError <= this.validation.earlyStopping.threshold
+
+                // Do the last backward pass
+                if (stop) {
+                    this.backward(errors)
+                    this.applyDeltaWeights()
+                }
+
+                return stop
+                // break
+        // }
     }
 
     test (testSet, {log=true, callback}={}) {

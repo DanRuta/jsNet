@@ -32,9 +32,13 @@ public:
     double l1Error;
     float maxNorm;
     double maxNormTotal;
+    double trainingLogging;
     double error;
     double validationError;
     double lastValidationError;
+    bool stoppedEarly=false;
+    double earlyStoppingType=0;
+    double earlyStoppingThreshold=0;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;
@@ -67,6 +71,8 @@ public:
     void train (int iterations, int startIndex);
 
     double validate (void);
+
+    bool checkEarlyStopping (void);
 
     double test (int iterations, int startIndex);
 

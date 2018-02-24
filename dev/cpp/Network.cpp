@@ -91,15 +91,23 @@ void Network::train (int its, int startI) {
 
     for (int iterationIndex=startI; iterationIndex<(startI+its); iterationIndex++) {
 
-        if (validationInterval!=0 && iterationIndex!=0 && iterationIndex%validationInterval==0) {
-            validationError = validate();
-        }
-
         iterations++;
         std::vector<double> output = forward(std::get<0>(trainingData[iterationIndex]));
 
         for (int n=0; n<output.size(); n++) {
             layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[iterationIndex])[n]==1 ? 1 : 0) - output[n];
+        }
+
+        if (validationInterval!=0 && iterationIndex!=0 && iterationIndex%validationInterval==0) {
+            validationError = validate();
+
+            if (earlyStoppingType && checkEarlyStopping()) {
+                if (trainingLogging) {
+                    printf("Stopping early\n");
+                }
+                stoppedEarly = true;
+                break;
+            }
         }
 
         backward();
@@ -133,6 +141,21 @@ double Network::validate (void) {
     return lastValidationError;
 }
 
+bool Network::checkEarlyStopping (void) {
+    // switch (earlyStoppingType) {
+        // case 1:
+            bool stop = lastValidationError <= earlyStoppingThreshold;
+
+            // Do the last backward pass
+            if (stop) {
+                backward();
+                applyDeltaWeights();
+            }
+
+            return stop;
+            // break
+    // }
+}
 
 double Network::test (int its, int startI) {
 

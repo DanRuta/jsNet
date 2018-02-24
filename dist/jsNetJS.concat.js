@@ -1401,14 +1401,32 @@ class Network {
 
             this.layers.forEach(layer => layer.state = "training")
 
-            let iterationIndex = 0
-
             if (this.validation) {
                 this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
+
+                if (this.validation.earlyStopping) {
+                    // switch (this.validation.earlyStopping.type) {
+                        // case "threshold":
+                            this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
+                            // break
+                    // }
+                }
+
             }
 
+            let iterationIndex = 0
             let epochsCounter = 0
+            let elapsed
             const startTime = Date.now()
+
+            const logAndResolve = () => {
+                this.layers.forEach(layer => layer.state = "initialised")
+
+                if (log) {
+                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
+                }
+                resolve()
+            }
 
             const doEpoch = () => {
                 this.epochs++
@@ -1436,6 +1454,11 @@ class Network {
                 if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
                     // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
                     validationError = await this.validate(this.validation.data)
+
+                    if (this.validation.earlyStopping && this.checkEarlyStopping()) {
+                        log && console.log("Stopping early")
+                        return logAndResolve()
+                    }
                 }
 
                 input = dataSet[iterationIndex].input
@@ -1460,7 +1483,7 @@ class Network {
                 this.error += trainingError
                 this.iterations++
 
-                const elapsed = Date.now() - startTime
+                elapsed = Date.now() - startTime
 
                 if (typeof callback=="function") {
                     callback({
@@ -1495,12 +1518,7 @@ class Network {
                     if (epochsCounter < epochs) {
                         doEpoch()
                     } else {
-                        this.layers.forEach(layer => layer.state = "initialised")
-
-                        if (log) {
-                            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
-                        }
-                        resolve()
+                        logAndResolve()
                     }
                 }
             }
@@ -1528,11 +1546,20 @@ class Network {
                 if (++validationIndex<data.length) {
                     setTimeout(() => validateItem(validationIndex), 0)
                 } else {
+                    this.lastValidationError = totalValidationErrors / data.length
                     resolve(totalValidationErrors / data.length)
                 }
             }
             validateItem(validationIndex)
         })
+    }
+
+    checkEarlyStopping () {
+        // switch (this.validation.earlyStopping.type) {
+            // case "threshold":
+                return this.lastValidationError <= this.validation.earlyStopping.threshold
+                // break
+        // }
     }
 
     test (testSet, {log=true, callback}={}) {

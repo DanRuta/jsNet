@@ -81,6 +81,46 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    float get_stoppedEarly (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->stoppedEarly;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_stoppedEarly (int instanceIndex, int se) {
+        Network::getInstance(instanceIndex)->stoppedEarly = se;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_trainingLogging (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->trainingLogging;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_trainingLogging (int instanceIndex, int tl) {
+        Network::getInstance(instanceIndex)->trainingLogging = tl;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingType (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingType;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingType (int instanceIndex, float est) {
+        Network::getInstance(instanceIndex)->earlyStoppingType = est;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingThreshold (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingThreshold;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingThreshold (int instanceIndex, float est) {
+        Network::getInstance(instanceIndex)->earlyStoppingThreshold = est;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 

@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.1.0")
+        expect(Network.version).to.equal("3.2.0")
     })
 })
 
@@ -883,16 +883,16 @@ describe("Network", () => {
             return expect(net.train()).to.be.rejectedWith("No data provided")
         })
 
-        it("Rejects the promise if some data does not have the key 'input' and 'expected'/'output'", () => {
-            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+        it("Rejects the promise if some data does not have the key 'input' and 'expected'", () => {
+            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected'")
         })
 
         it("Resolves the promise when you give it data", () => {
             return expect(net.train(testData)).to.be.fulfilled
         })
 
-        it("Accepts 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.be.fulfilled
+        it("Does not accept 'output' as an alternative name for expected values", () => {
+            return expect(net.train(testDataWithOutput)).to.not.be.fulfilled
         })
 
         it("CCalls the Module's set_miniBatchSize function with the given miniBatchSize value", () => {
@@ -931,15 +931,6 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function when the net state is not 'initialised' (When data uses 'output' keys)", () => {
-            const network = new Network({Module: fakeModule})
-            sinon.spy(network, "initLayers")
-
-            return network.train(testDataWithOutput).then(() => {
-                expect(network.initLayers).to.have.been.called
-            })
-        })
-
         it("CCalls the WASM Module's loadTrainingData function", () => {
             sinon.stub(fakeModule, "ccall")
             const network = new Network({Module: fakeModule})
@@ -968,7 +959,7 @@ describe("Network", () => {
             const network = new Network({Module: fakeModule})
             const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
-            return network.train(testData, {epochs: 2, callback: cb, validation: {data: testDataWithOutput}}).then(() => {
+            return network.train(testData, {epochs: 2, callback: cb, validation: {data: testData}}).then(() => {
                 expect(counter).to.equal(8)
                 stub.restore()
             })
@@ -1141,10 +1132,8 @@ describe("Network", () => {
             })
         })
 
-        it("Accepts test data with output key instead of expected", () => {
-            return net.test(testDataOutput).then(() => {
-                expect(fakeModule.ccall).to.be.called
-            })
+        it("Does not accept test data with output key instead of expected", () => {
+            return expect(net.test(testDataOutput)).to.not.be.fulfilled
         })
 
         it("Logs to the console twice", () => {

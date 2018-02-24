@@ -247,7 +247,7 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
+                this.initLayers.bind(this, dataSet[0].input.length, dataSet[0].expected.length)()
             }
 
             this.layers.forEach(layer => layer.state = "training")
@@ -278,8 +278,8 @@ class Network {
 
             const doIteration = () => {
 
-                if (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("input") || (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("expected") && !dataSet[(iterationIndex-validationCount)].hasOwnProperty("output"))) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+                if (!dataSet[(iterationIndex-validationCount)].hasOwnProperty("input") || !dataSet[(iterationIndex-validationCount)].hasOwnProperty("expected")) {
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
                 }
 
                 let trainingError
@@ -291,7 +291,7 @@ class Network {
 
                     input = validation.data[validationCount%validation.data.length].input
                     const output = this.forward(input)
-                    const target = validation.data[validationCount%validation.data.length].expected || validation.data[validationCount%validation.data.length].output
+                    const target = validation.data[validationCount%validation.data.length].expected
 
                     const errors = []
                     for (let n=0; n<output.length; n++) {
@@ -308,7 +308,7 @@ class Network {
 
                     input = dataSet[(iterationIndex-validationCount)].input
                     const output = this.forward(input)
-                    const target = dataSet[(iterationIndex-validationCount)].expected || dataSet[(iterationIndex-validationCount)].output
+                    const target = dataSet[(iterationIndex-validationCount)].expected
 
                     const errors = []
                     for (let n=0; n<output.length; n++) {
@@ -398,7 +398,7 @@ class Network {
 
                 const input = testSet[iterationIndex].input
                 const output = this.forward(input)
-                const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
+                const target = testSet[iterationIndex].expected
                 const elapsed = Date.now() - startTime
 
                 const iterationError = this.cost(target, output)
@@ -464,7 +464,7 @@ class Network {
     }
 
     static get version () {
-        return "3.1.0"
+        return "3.2.0"
     }
 }
 

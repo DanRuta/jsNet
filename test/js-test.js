@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.1.0")
+        expect(Network.version).to.equal("3.2.0")
     })
 })
 
@@ -1080,16 +1080,16 @@ describe("Network", () => {
             return expect(net.train()).to.be.rejectedWith("No data provided")
         })
 
-        it("Rejects the promise if some data does not have the key 'input' and 'expected'/'output'", () => {
-            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+        it("Rejects the promise if some data does not have the key 'input' and 'expected'", () => {
+            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected")
         })
 
         it("Resolves the promise when you give it data", () => {
             return expect(net.train(testData)).to.be.fulfilled
         })
 
-        it("Accepts 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.be.fulfilled
+        it("Does not accept 'output' as an alternative name for expected values", () => {
+            return expect(net.train(testDataWithOutput)).to.not.be.fulfilled
         })
 
         it("Does one iteration when not passing any config data", () => {
@@ -1175,16 +1175,15 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
+        it("Calls the initLayers function with the length of the first input and length of first expected", () => {
             const network = new Network({updateFn: null})
             sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
-            return network.train(testDataWithOutput).then(() => {
+            return network.train(testData).then(() => {
                 expect(network.initLayers).to.have.been.calledWith(2, 2)
                 network.initLayers.restore()
             })
-
         })
 
         it("Logs to the console once for each epoch, +2 (for start/stop logs)", () => {
@@ -1282,7 +1281,7 @@ describe("Network", () => {
         })
 
         it("Runs validation when validation data is given", () => {
-            return net.train(testDataWithOutput, {epochs: 10, validation: {data: testDataWithOutput, rate: 2}}).then(() => {
+            return net.train(testData, {epochs: 10, validation: {data: testData, rate: 2}}).then(() => {
                 expect(net.validations).to.not.equal(0)
                 expect(net.validationError).to.not.equal(0)
             })

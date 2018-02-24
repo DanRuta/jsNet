@@ -1,4 +1,7 @@
 # 3.2.0 - Upcoming
+#### Global
+- Breaking change: Removed ability to use either data keys 'expected' and 'output'. Now just 'expected'.
+
 #### Network
 - Added validation config to .train(), with rate config
 - Breaking change: "error" key in training callbacks have been changed to "trainingError"

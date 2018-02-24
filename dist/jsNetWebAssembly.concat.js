@@ -921,13 +921,13 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers(data[0].input.length, (data[0].expected || data[0].output).length)
+                this.initLayers(data[0].input.length, data[0].expected.length)
             }
 
             const startTime = Date.now()
 
             const dimension = data[0].input.length
-            const itemSize = dimension + (data[0].expected || data[0].output).length
+            const itemSize = dimension + data[0].expected.length
             const itemsCount = itemSize * data.length
 
             if (log) {
@@ -939,8 +939,8 @@ class Network {
 
             for (let di=0; di<data.length; di++) {
 
-                if (!data[di].hasOwnProperty("input") || (!data[di].hasOwnProperty("expected") && !data[di].hasOwnProperty("output"))) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+                if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
                 }
 
                 let index = itemSize*di
@@ -950,8 +950,8 @@ class Network {
                     index++
                 }
 
-                for (let ei=0; ei<(data[di].expected || data[di].output).length; ei++) {
-                    typedArray[index] = (data[di].expected || data[di].output)[ei]
+                for (let ei=0; ei<data[di].expected.length; ei++) {
+                    typedArray[index] = data[di].expected[ei]
                     index++
                 }
             }
@@ -988,8 +988,8 @@ class Network {
                             index++
                         }
 
-                        for (let ei=0; ei<(validation.data[di].expected || validation.data[di].output).length; ei++) {
-                            typedArray[index] = (validation.data[di].expected || validation.data[di].output)[ei]
+                        for (let ei=0; ei<validation.data[di].expected.length; ei++) {
+                            typedArray[index] = validation.data[di].expected[ei]
                             index++
                         }
                     }
@@ -1113,7 +1113,7 @@ class Network {
 
             const startTime = Date.now()
             const dimension = data[0].input.length
-            const itemSize = dimension + (data[0].expected || data[0].output).length
+            const itemSize = dimension + data[0].expected.length
             const itemsCount = itemSize * data.length
             const typedArray = new Float32Array(itemsCount)
 
@@ -1126,8 +1126,8 @@ class Network {
                     index++
                 }
 
-                for (let ei=0; ei<(data[di].expected || data[di].output).length; ei++) {
-                    typedArray[index] = (data[di].expected || data[di].output)[ei]
+                for (let ei=0; ei<data[di].expected.length; ei++) {
+                    typedArray[index] = data[di].expected[ei]
                     index++
                 }
             }
@@ -1206,7 +1206,7 @@ class Network {
     }
 
     static get version () {
-        return "3.1.0"
+        return "3.2.0"
     }
 }
 

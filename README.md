@@ -164,12 +164,11 @@ When building a convolutional network, make sure that the number of neurons in t
 ### Training
 ----
 
-The data structure must be an object with key ```input``` having an array of numbers, and key ```expected``` or ```output``` holding the expected output of the network. For example, the following are both valid inputs for both training and testing.
+The data structure must be an object with key ```input``` having an array of numbers, and key ```expected```  holding the expected output of the network. For example, the following is a valid input for training, validation and testing.
 ```javascript
 {input: [1,0,0.2], expected: [1, 2]}
-{input: [1,0,0.2], output: [1, 2]}
 ```
-***Tip**: You can normalize your data using the ```NetUtil.normalize()``` function (see at the bottom)*
+***Tip**: You can normalize data using the ```NetUtil.normalize()``` function (see at the bottom)*
 
 You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch, as well as time elapsed and average epoch duration.
 ```javascript

@@ -315,6 +315,8 @@ public:
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 
+    static double rootmeansquarederror (std::vector<double> calculated, std::vector<double> desired);
+
     static double crossentropy (std::vector<double> target, std::vector<double> output);
 
     static double vanillaupdatefn (int netInstance, double value, double deltaValue);

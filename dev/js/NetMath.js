@@ -51,6 +51,10 @@ class NetMath {
                          .reduce((prev, curr) => prev+curr, 0) / calculated.length
     }
 
+    static rootmeansquarederror (calculated, desired) {
+        return Math.sqrt(NetMath.meansquarederror(calculated, desired))
+    }
+
     // Weight updating functions
     static vanillaupdatefn (value, deltaValue) {
         return value + this.learningRate * deltaValue

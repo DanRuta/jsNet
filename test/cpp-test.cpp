@@ -3032,6 +3032,12 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::meansquarederror(values1, values2), (double)2.6 );
     }
 
+    TEST(NetMath, rootmeansquarederror) {
+        std::vector<double> values1 = {13,17,18,20,24};
+        std::vector<double> values2 = {12,15,20,22,24};
+        EXPECT_EQ( NetMath::rootmeansquarederror(values1, values2), (double)1.61245154965971 );
+    }
+
     TEST(NetMath, crossentropy) {
         std::vector<double> values1 = {1, 0, 0.3};
         std::vector<double> values2 = {0, 1, 0.8};

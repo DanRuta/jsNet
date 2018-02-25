@@ -4666,6 +4666,13 @@ describe("Netmath", () => {
         })
     })
 
+    describe("Root Mean Squared Error", () => {
+
+        it("rootmeansquarederror([13,17,18,20,24], [12,15,20,22,24]) == 1.61245154965971", () => {
+            expect(NetMath.rootmeansquarederror([13,17,18,20,24], [12,15,20,22,24])).to.equal(1.61245154965971)
+        })
+    })
+
     describe("vanillaupdatefn", () => {
 
         const fn = NetMath.vanillaupdatefn.bind({learningRate: 0.5})

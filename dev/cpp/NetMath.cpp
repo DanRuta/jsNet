@@ -54,6 +54,10 @@ double NetMath::meansquarederror (std::vector<double> calculated, std::vector<do
     return error / calculated.size();
 }
 
+double NetMath::rootmeansquarederror (std::vector<double> calculated, std::vector<double> desired) {
+    return sqrt(NetMath::meansquarederror(calculated, desired));
+}
+
 double NetMath::crossentropy (std::vector<double> target, std::vector<double> output) {
     double error = 0.0;
 

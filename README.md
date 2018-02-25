@@ -344,7 +344,7 @@ You can check the framework version via Network.version (static).
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | learningRate | The speed at which the net will learn. | Any number | 0.2 (see below for exceptions) |
-| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError | meansquarederror |
+| cost | Cost function to use when printing out the net error | crossEntropy, meanSquaredError, rootMeanSquaredError | meansquarederror |
 | channels | Specifies the number of channels in the input data. EG, 3 for RGB images. Used by convolutional networks. | Any number | undefined |
 | conv | (See ConvLayer) An object where the optional keys filterSize, zeroPadding and stride set values for all Conv layers to default to  | Object | {} |
 | pool | (See PoolLayer) An object where the optional keys size and stride set values for all Pool layers to default to  | Object | {} |

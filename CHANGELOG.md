@@ -12,6 +12,9 @@
 - Added splitData function
 - Added normalize function
 
+#### NetMath
+- Added root mean squared error cost function
+
 # 3.1.0 - Optimizations
 ---
 #### ConvLayer

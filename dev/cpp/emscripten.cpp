@@ -150,6 +150,16 @@ extern "C" {
         Network::getInstance(instanceIndex)->earlyStoppingPatience = esp;
     }
 
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPercent (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPercent;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPercent (int instanceIndex, float esp) {
+        Network::getInstance(instanceIndex)->earlyStoppingPercent = esp;
+    }
+
 
     EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {

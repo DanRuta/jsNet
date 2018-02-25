@@ -1461,6 +1461,10 @@ class Network {
                             this.validation.earlyStopping.bestError = Infinity
                             this.validation.earlyStopping.patience = this.validation.earlyStopping.patience || 20
                             break
+                        case "divergence":
+                            this.validation.earlyStopping.percent = this.validation.earlyStopping.percent || 30
+                            this.validation.earlyStopping.bestError = Infinity
+                            break
                     }
                 }
             }
@@ -1473,7 +1477,7 @@ class Network {
             const logAndResolve = () => {
                 this.layers.forEach(layer => layer.state = "initialised")
 
-                if (this.validation && this.validation.earlyStopping && this.validation.earlyStopping.type == "patience") {
+                if (this.validation && this.validation.earlyStopping && (this.validation.earlyStopping.type == "patience" || this.validation.earlyStopping.type == "divergence")) {
                     for (let l=1; l<this.layers.length; l++) {
                         this.layers[l].restoreValidation()
                     }
@@ -1627,8 +1631,7 @@ class Network {
                 return stop
 
             case "patience":
-
-                if (this.lastValidationError<this.validation.earlyStopping.bestError) {
+                if (this.lastValidationError < this.validation.earlyStopping.bestError) {
                     this.validation.earlyStopping.patienceCounter = 0
                     this.validation.earlyStopping.bestError = this.lastValidationError
 
@@ -1640,6 +1643,19 @@ class Network {
                     this.validation.earlyStopping.patienceCounter++
                     stop = this.validation.earlyStopping.patienceCounter>=this.validation.earlyStopping.patience
                 }
+                return stop
+
+            case "divergence":
+                if (this.lastValidationError < this.validation.earlyStopping.bestError) {
+                    this.validation.earlyStopping.bestError = this.lastValidationError
+
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].backUpValidation()
+                    }
+                } else {
+                    stop = this.lastValidationError / this.validation.earlyStopping.bestError >= (1+this.validation.earlyStopping.percent/100)
+                }
+
                 return stop
         }
     }

@@ -1352,9 +1352,9 @@ describe("Network", () => {
                 }
                 return net.train(testData, {validation: {data: testData, earlyStopping: {
                     type: "patience",
-                    threshold: 0.2
+                    patience: 0.2
                 }}}).then(() => {
-                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                    expect(net.validation.earlyStopping.patience).to.equal(0.2)
                 })
             })
 
@@ -1384,6 +1384,40 @@ describe("Network", () => {
                     for (let l=1; l<net.layers.length; l++) {
                         expect(net.layers[l].restoreValidation.callCount).to.equal(1)
                     }
+                })
+            })
+
+            it("Defaults the divergence percent to 30 when the type is 'divergence'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(30)
+                })
+            })
+
+            it("Allows setting a custom percent value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence",
+                    percent: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.bestError).to.equal(Infinity)
                 })
             })
 
@@ -1471,6 +1505,38 @@ describe("Network", () => {
 
                 expect(net.validation.earlyStopping.bestError).to.equal(2)
                 expect(net.validation.earlyStopping.patienceCounter).to.equal(0)
+            })
+        })
+
+        describe("divergence", () => {
+            it("Returns true when the validation error is higher than the best by at least the defined percent amount", () => {
+                net.validation.earlyStopping.type = "divergence"
+                net.validation.earlyStopping.bestError = 1
+                net.lastValidationError = 1.15
+                net.validation.earlyStopping.percent = 15
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.true
+            })
+            it("Backs up the layer weights when a new best validation error is calculated, sets bestError, and returns false", () => {
+                net.validation.earlyStopping.type = "divergence"
+                net.validation.earlyStopping.bestError = 1.16
+                net.lastValidationError = 1.15
+
+                const layer1 = new FCLayer(1)
+                const layer2 = new FCLayer(2)
+                const layer3 = new FCLayer(3)
+                net.layers = [layer1, layer2, layer3]
+
+                sinon.stub(layer1, "backUpValidation")
+                sinon.stub(layer2, "backUpValidation")
+                sinon.stub(layer3, "backUpValidation")
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.false
+                expect(layer1.backUpValidation).to.not.be.called
+                expect(layer2.backUpValidation).to.be.called
+                expect(layer3.backUpValidation).to.be.called
+
+                expect(net.validation.earlyStopping.bestError).to.equal(1.15)
             })
         })
     })

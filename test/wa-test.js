@@ -1120,27 +1120,67 @@ describe("Network", () => {
                 })
             })
 
-            it("Allows setting a custom threshold value", () => {
+            it("Allows setting a custom patience value", () => {
                 for (let l=0; l<net.layers.length; l++) {
                     net.layers[l].restoreValidation = () => {}
                 }
                 return net.train(testData, {validation: {data: testData, earlyStopping: {
                     type: "patience",
-                    threshold: 0.2
+                    patience: 0.2
                 }}}).then(() => {
-                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                    expect(net.validation.earlyStopping.patience).to.equal(0.2)
                 })
             })
 
-            it("Sets the bestError to Infinity and patienceCounter to 0", () => {
+            it("Sets the bestError to Infinity and patienceCounter to 0 when early stopping is patience", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingBestError")).to.be.calledWith("set_earlyStoppingBestError", null, ["number", "number"], [0, Infinity])
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingPatienceCounter")).to.be.calledWith("set_earlyStoppingPatienceCounter", null, ["number", "number"], [0, 0])
+                    fakeModule.ccall.restore()
+                })
+            })
+
+
+            it("Defaults the percent to 30 when the type is 'divergence'", () => {
                 for (let l=0; l<net.layers.length; l++) {
                     net.layers[l].restoreValidation = () => {}
                 }
                 return net.train(testData, {validation: {data: testData, earlyStopping: {
-                    type: "patience"
+                    type: "divergence"
                 }}}).then(() => {
-                    expect(net.earlyStoppingBestError).to.equal(Infinity)
-                    expect(net.earlyStoppingPatienceCounter).to.equal(0)
+                    expect(net.validation.earlyStopping.percent).to.equal(30)
+                })
+            })
+
+            it("Allows setting a custom percent value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence",
+                    percent: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity and earlyStoppingPercent to the percent value, when early stopping is divergence", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingBestError")).to.be.calledWith("set_earlyStoppingBestError", null, ["number", "number"], [0, Infinity])
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingPercent")).to.be.calledWith("set_earlyStoppingPercent", null, ["number", "number"], [0, 30])
+                    fakeModule.ccall.restore()
                 })
             })
 

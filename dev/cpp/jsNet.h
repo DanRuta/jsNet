@@ -42,6 +42,7 @@ public:
     double earlyStoppingBestError;
     int earlyStoppingPatience;
     int earlyStoppingPatienceCounter;
+    float earlyStoppingPercent;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;

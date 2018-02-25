@@ -222,6 +222,7 @@ When using validation data, you can specify an extra config object, `earlyStoppi
 |:-------------:| :-----:| :-----:| :---: |
 | threshold | Stops the training the first time the validation error reaches, or goes below the specified threshold. A final backward pass is made, and weights updated, before stopping. | threshold.  | 0.01 |
 | patience | This backs up the weights and biases of the network when the validation error reaches a new best low, following which, if the validation error is worse, a certain number of times in a row, it stops the training and reverts the network weights and biases to the backed up values. The number of times in a row to tolerate is configured via the `patience` hyperparameter | patience | 20 |
+| divergence | This backs up the weights and biases of the network when the validation error reaches a new best low, following which, if the validation error is worse, by at least a percent value equal to that specified, it stops the training and reverts the network weights and biases to the backed up values. The percentage is configured via the `percent` hyperparameter. A very jittery validation error is likely to stop the training very early, when using this condition. | percent | 30 |
 
 Examples:
 ```javascript
@@ -238,7 +239,15 @@ net.train(training, {validation: {
     data: [...],
     earlyStopping: {
         type: "patience",
-        threshold: 10
+        patience: 10
+    }
+}})
+// Divergence - Training stops once the validation error is worse than the best found, by 30%
+net.train(training, {validation: {
+    data: [...],
+    earlyStopping: {
+        type: "divergence",
+        percent: 30
     }
 }})
 ```

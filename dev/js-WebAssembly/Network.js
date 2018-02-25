@@ -221,6 +221,7 @@ class Network {
         NetUtil.defineProperty(this, "earlyStoppingBestError", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingPatienceCounter", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingPatience", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingPercent", ["number"], [this.netInstance])
 
         if (layers.length) {
 
@@ -397,6 +398,12 @@ class Network {
                             this.earlyStoppingPatience = this.validation.earlyStopping.patience
                             this.earlyStoppingType = 2
                             break
+                        case "divergence":
+                            this.validation.earlyStopping.percent = this.validation.earlyStopping.percent || 30
+                            this.earlyStoppingBestError = Infinity
+                            this.earlyStoppingPercent = this.validation.earlyStopping.percent
+                            this.earlyStoppingType = 3
+                            break
                     }
                 }
 
@@ -431,7 +438,7 @@ class Network {
                 this.Module._free(buf)
                 this.Module._free(validationBuf)
 
-                if (this.validation && this.validation.earlyStopping && this.validation.earlyStopping.type == "patience") {
+                if (this.validation && this.validation.earlyStopping && (this.validation.earlyStopping.type == "patience" || this.validation.earlyStopping.type == "divergence")) {
                     this.Module.ccall("restoreValidation", null, ["number"], [this.netInstance])
                 }
 

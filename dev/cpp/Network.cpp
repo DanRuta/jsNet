@@ -146,6 +146,7 @@ bool Network::checkEarlyStopping (void) {
     bool stop = false;
 
     switch (earlyStoppingType) {
+        // threshold
         case 1:
             stop = lastValidationError <= earlyStoppingThreshold;
 
@@ -156,7 +157,7 @@ bool Network::checkEarlyStopping (void) {
             }
 
             return stop;
-            // break
+        // patience
         case 2:
 
             if (lastValidationError < earlyStoppingBestError) {
@@ -172,6 +173,24 @@ bool Network::checkEarlyStopping (void) {
             }
 
             return stop;
+
+        // divergence
+        case 3:
+
+            if (lastValidationError < earlyStoppingBestError) {
+
+                earlyStoppingBestError = lastValidationError;
+
+                for (int l=1; l<layers.size(); l++) {
+                    layers[l]->backUpValidation();
+                }
+
+            } else {
+                stop = lastValidationError / earlyStoppingBestError >= (1+earlyStoppingPercent/100);
+            }
+
+            return stop;
+
     }
     return stop;
 }

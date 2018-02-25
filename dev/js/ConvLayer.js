@@ -246,6 +246,37 @@ class ConvLayer {
         }
     }
 
+    backUpValidation () {
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            filter.validationBias = filter.bias
+            filter.validationWeights = []
+
+            for (let wd=0; wd<filter.weights.length; wd++) {
+                const channel = []
+                for (let wy=0; wy<filter.weights[wd].length; wy++) {
+                    channel[wy] = filter.weights[wd][wy].slice(0)
+                }
+                filter.validationWeights[wd] = channel
+            }
+        }
+    }
+
+    restoreValidation () {
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            filter.bias = filter.validationBias
+
+            for (let wd=0; wd<filter.weights.length; wd++) {
+                for (let wy=0; wy<filter.weights[wd].length; wy++) {
+                    filter.weights[wd][wy] = filter.validationWeights[wd][wy].slice(0)
+                }
+            }
+        }
+    }
+
     toJSON () {
         return {
             weights: this.filters.map(filter => {

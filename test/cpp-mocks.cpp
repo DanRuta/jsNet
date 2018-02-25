@@ -20,4 +20,8 @@ public:
     MOCK_METHOD0(applyDeltaWeights, void(void));
 
     MOCK_METHOD0(resetDeltaWeights, void(void));
+
+    MOCK_METHOD0(backUpValidation, void(void));
+
+    MOCK_METHOD0(restoreValidation, void(void));
 };

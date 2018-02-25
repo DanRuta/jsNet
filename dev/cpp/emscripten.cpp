@@ -121,6 +121,37 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingBestError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingBestError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingBestError (int instanceIndex, float esbe) {
+        Network::getInstance(instanceIndex)->earlyStoppingBestError = esbe;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPatienceCounter (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPatienceCounter;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPatienceCounter (int instanceIndex, float espc) {
+        Network::getInstance(instanceIndex)->earlyStoppingPatienceCounter = espc;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPatience (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPatience;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPatience (int instanceIndex, float esp) {
+        Network::getInstance(instanceIndex)->earlyStoppingPatience = esp;
+    }
+
+
+    EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
         Network* net = Network::getInstance(instanceIndex);
 
@@ -483,6 +514,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void shuffleTrainingData (int instanceIndex) {
         NetUtil::shuffle(Network::getInstance(instanceIndex)->trainingData);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void restoreValidation (int instanceIndex) {
+        Network::getInstance(instanceIndex)->restoreValidation();
     }
 
     EMSCRIPTEN_KEEPALIVE

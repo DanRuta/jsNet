@@ -257,13 +257,17 @@ class Network {
                 this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
 
                 if (this.validation.earlyStopping) {
-                    // switch (this.validation.earlyStopping.type) {
-                        // case "threshold":
+                    switch (this.validation.earlyStopping.type) {
+                        case "threshold":
                             this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
-                            // break
-                    // }
+                            break
+                        case "patience":
+                            this.validation.earlyStopping.patienceCounter = 0
+                            this.validation.earlyStopping.bestError = Infinity
+                            this.validation.earlyStopping.patience = this.validation.earlyStopping.patience || 20
+                            break
+                    }
                 }
-
             }
 
             let iterationIndex = 0
@@ -273,6 +277,12 @@ class Network {
 
             const logAndResolve = () => {
                 this.layers.forEach(layer => layer.state = "initialised")
+
+                if (this.validation && this.validation.earlyStopping && this.validation.earlyStopping.type == "patience") {
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].restoreValidation()
+                    }
+                }
 
                 if (log) {
                     console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
@@ -312,7 +322,7 @@ class Network {
 
                 // Do validation
                 if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
-                    // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
+
                     validationError = await this.validate(this.validation.data)
 
                     if (this.validation.earlyStopping && this.checkEarlyStopping(errors)) {
@@ -406,9 +416,12 @@ class Network {
     }
 
     checkEarlyStopping (errors) {
-        // switch (this.validation.earlyStopping.type) {
-            // case "threshold":
-                const stop = this.lastValidationError <= this.validation.earlyStopping.threshold
+
+        let stop = false
+
+        switch (this.validation.earlyStopping.type) {
+            case "threshold":
+                stop = this.lastValidationError <= this.validation.earlyStopping.threshold
 
                 // Do the last backward pass
                 if (stop) {
@@ -417,8 +430,23 @@ class Network {
                 }
 
                 return stop
-                // break
-        // }
+
+            case "patience":
+
+                if (this.lastValidationError<this.validation.earlyStopping.bestError) {
+                    this.validation.earlyStopping.patienceCounter = 0
+                    this.validation.earlyStopping.bestError = this.lastValidationError
+
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].backUpValidation()
+                    }
+
+                } else {
+                    this.validation.earlyStopping.patienceCounter++
+                    stop = this.validation.earlyStopping.patienceCounter>=this.validation.earlyStopping.patience
+                }
+                return stop
+        }
     }
 
     test (testSet, {log=true, callback}={}) {

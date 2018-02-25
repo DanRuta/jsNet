@@ -167,6 +167,10 @@ class PoolLayer {
 
     applyDeltaWeights () {}
 
+    backUpValidation () {}
+
+    restoreValidation () {}
+
     toJSON () {return {}}
 
     fromJSON () {}

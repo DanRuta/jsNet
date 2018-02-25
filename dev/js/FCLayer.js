@@ -133,6 +133,22 @@ class FCLayer {
         }
     }
 
+    backUpValidation () {
+        for (let n=0; n<this.neurons.length; n++) {
+            const neuron = this.neurons[n]
+            neuron.validationBias = neuron.bias
+            neuron.validationWeights = neuron.weights.slice(0)
+        }
+    }
+
+    restoreValidation () {
+        for (let n=0; n<this.neurons.length; n++) {
+            const neuron = this.neurons[n]
+            neuron.bias = neuron.validationBias
+            neuron.weights = neuron.validationWeights.slice(0)
+        }
+    }
+
     toJSON () {
         return {
             weights: this.neurons.map(neuron => {

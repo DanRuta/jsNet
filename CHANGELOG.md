@@ -2,7 +2,8 @@
 ---
 #### Network
 - Added validation config to .train(), with interval config
-- Added early stopping to validation, with threshold stopping
+- Added early stopping to validation, with threshold stopping condition
+- Added early stopping patience condition
 - Breaking change: "error" key in training callbacks have been changed to "trainingError"
 - Breaking change: Removed ability to use either data keys 'expected' and 'output'. Now just 'expected'.
 

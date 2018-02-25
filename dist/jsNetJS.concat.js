@@ -246,6 +246,37 @@ class ConvLayer {
         }
     }
 
+    backUpValidation () {
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            filter.validationBias = filter.bias
+            filter.validationWeights = []
+
+            for (let wd=0; wd<filter.weights.length; wd++) {
+                const channel = []
+                for (let wy=0; wy<filter.weights[wd].length; wy++) {
+                    channel[wy] = filter.weights[wd][wy].slice(0)
+                }
+                filter.validationWeights[wd] = channel
+            }
+        }
+    }
+
+    restoreValidation () {
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            filter.bias = filter.validationBias
+
+            for (let wd=0; wd<filter.weights.length; wd++) {
+                for (let wy=0; wy<filter.weights[wd].length; wy++) {
+                    filter.weights[wd][wy] = filter.validationWeights[wd][wy].slice(0)
+                }
+            }
+        }
+    }
+
     toJSON () {
         return {
             weights: this.filters.map(filter => {
@@ -412,6 +443,22 @@ class FCLayer {
             }
 
             neuron.bias = this.net.weightUpdateFn.bind(this.net, neuron.bias, neuron.deltaBias, neuron)()
+        }
+    }
+
+    backUpValidation () {
+        for (let n=0; n<this.neurons.length; n++) {
+            const neuron = this.neurons[n]
+            neuron.validationBias = neuron.bias
+            neuron.validationWeights = neuron.weights.slice(0)
+        }
+    }
+
+    restoreValidation () {
+        for (let n=0; n<this.neurons.length; n++) {
+            const neuron = this.neurons[n]
+            neuron.bias = neuron.validationBias
+            neuron.weights = neuron.validationWeights.slice(0)
         }
     }
 
@@ -1405,13 +1452,17 @@ class Network {
                 this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
 
                 if (this.validation.earlyStopping) {
-                    // switch (this.validation.earlyStopping.type) {
-                        // case "threshold":
+                    switch (this.validation.earlyStopping.type) {
+                        case "threshold":
                             this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
-                            // break
-                    // }
+                            break
+                        case "patience":
+                            this.validation.earlyStopping.patienceCounter = 0
+                            this.validation.earlyStopping.bestError = Infinity
+                            this.validation.earlyStopping.patience = this.validation.earlyStopping.patience || 20
+                            break
+                    }
                 }
-
             }
 
             let iterationIndex = 0
@@ -1421,6 +1472,12 @@ class Network {
 
             const logAndResolve = () => {
                 this.layers.forEach(layer => layer.state = "initialised")
+
+                if (this.validation && this.validation.earlyStopping && this.validation.earlyStopping.type == "patience") {
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].restoreValidation()
+                    }
+                }
 
                 if (log) {
                     console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
@@ -1448,26 +1505,25 @@ class Network {
 
                 let trainingError
                 let validationError
-                let input
 
-                // Do validation
-                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
-                    // if (validation && validation.shuffle) { NetUtil.shuffle(validation.data) }
-                    validationError = await this.validate(this.validation.data)
-
-                    if (this.validation.earlyStopping && this.checkEarlyStopping()) {
-                        log && console.log("Stopping early")
-                        return logAndResolve()
-                    }
-                }
-
-                input = dataSet[iterationIndex].input
+                const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected
 
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                // Do validation
+                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
+
+                    validationError = await this.validate(this.validation.data)
+
+                    if (this.validation.earlyStopping && this.checkEarlyStopping(errors)) {
+                        log && console.log("Stopping early")
+                        return logAndResolve()
+                    }
                 }
 
                 this.backward(errors)
@@ -1554,12 +1610,38 @@ class Network {
         })
     }
 
-    checkEarlyStopping () {
-        // switch (this.validation.earlyStopping.type) {
-            // case "threshold":
-                return this.lastValidationError <= this.validation.earlyStopping.threshold
-                // break
-        // }
+    checkEarlyStopping (errors) {
+
+        let stop = false
+
+        switch (this.validation.earlyStopping.type) {
+            case "threshold":
+                stop = this.lastValidationError <= this.validation.earlyStopping.threshold
+
+                // Do the last backward pass
+                if (stop) {
+                    this.backward(errors)
+                    this.applyDeltaWeights()
+                }
+
+                return stop
+
+            case "patience":
+
+                if (this.lastValidationError<this.validation.earlyStopping.bestError) {
+                    this.validation.earlyStopping.patienceCounter = 0
+                    this.validation.earlyStopping.bestError = this.lastValidationError
+
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].backUpValidation()
+                    }
+
+                } else {
+                    this.validation.earlyStopping.patienceCounter++
+                    stop = this.validation.earlyStopping.patienceCounter>=this.validation.earlyStopping.patience
+                }
+                return stop
+        }
     }
 
     test (testSet, {log=true, callback}={}) {
@@ -1892,6 +1974,10 @@ class PoolLayer {
     resetDeltaWeights () {}
 
     applyDeltaWeights () {}
+
+    backUpValidation () {}
+
+    restoreValidation () {}
 
     toJSON () {return {}}
 

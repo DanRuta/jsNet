@@ -218,6 +218,9 @@ class Network {
         NetUtil.defineProperty(this, "stoppedEarly", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingType", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingThreshold", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingBestError", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingPatienceCounter", ["number"], [this.netInstance])
+        NetUtil.defineProperty(this, "earlyStoppingPatience", ["number"], [this.netInstance])
 
         if (layers.length) {
 
@@ -381,13 +384,20 @@ class Network {
                 this.validationInterval = this.validation.interval || data.length // Default to 1 epoch
 
                 if (this.validation.earlyStopping) {
-                    // switch (this.validation.earlyStopping.type) {
-                        // case "threshold":
+                    switch (this.validation.earlyStopping.type) {
+                        case "threshold":
                             this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
                             this.earlyStoppingThreshold = this.validation.earlyStopping.threshold
                             this.earlyStoppingType = 1
-                            // break
-                    // }
+                            break
+                        case "patience":
+                            this.validation.earlyStopping.patience = this.validation.earlyStopping.patience || 20
+                            this.earlyStoppingBestError = Infinity
+                            this.earlyStoppingPatienceCounter = 0
+                            this.earlyStoppingPatience = this.validation.earlyStopping.patience
+                            this.earlyStoppingType = 2
+                            break
+                    }
                 }
 
 
@@ -415,6 +425,20 @@ class Network {
                     this.Module.ccall("loadValidationData", "number", ["number", "number", "number", "number", "number"],
                                                     [this.netInstance, buf, itemsCount, itemSize, dimension])
                 }
+            }
+
+            const logAndResolve = () => {
+                this.Module._free(buf)
+                this.Module._free(validationBuf)
+
+                if (this.validation && this.validation.earlyStopping && this.validation.earlyStopping.type == "patience") {
+                    this.Module.ccall("restoreValidation", null, ["number"], [this.netInstance])
+                }
+
+                if (log) {
+                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
+                }
+                resolve()
             }
 
             if (callback) {
@@ -471,9 +495,7 @@ class Network {
                         if (epochIndex < epochs && !this.stoppedEarly) {
                             doEpoch()
                         } else {
-                            this.Module._free(buf)
-                            this.Module._free(validationBuf)
-                            resolve()
+                            logAndResolve()
                         }
                     }
                 }
@@ -507,13 +529,7 @@ class Network {
                         break
                     }
                 }
-                this.Module._free(buf)
-                this.Module._free(validationBuf)
-
-                if (log) {
-                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}`)
-                }
-                resolve()
+                logAndResolve()
             }
         })
     }

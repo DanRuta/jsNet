@@ -37,8 +37,11 @@ public:
     double validationError;
     double lastValidationError;
     bool stoppedEarly=false;
-    double earlyStoppingType=0;
+    int earlyStoppingType=0;
     double earlyStoppingThreshold=0;
+    double earlyStoppingBestError;
+    int earlyStoppingPatience;
+    int earlyStoppingPatienceCounter;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;
@@ -80,6 +83,8 @@ public:
 
     void applyDeltaWeights (void);
 
+    void restoreValidation (void);
+
 };
 
 
@@ -105,9 +110,12 @@ public:
     std::vector<std::vector<std::vector<double> > > errors;
     std::vector<std::vector<std::vector<double> > > activations;
     std::vector<double> deltaBiases;
+    std::vector<double> validationBiases;
 
     std::vector<std::vector<double> > weights; // FC
+    std::vector<std::vector<double> > validationWeights; // FC
     std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
+    std::vector<std::vector<std::vector<std::vector<double> > > > validationFilterWeights;
 
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<std::vector<std::vector<std::vector<double> > > > filterDeltaWeights;
@@ -141,6 +149,10 @@ public:
 
     virtual void resetDeltaWeights (void) = 0;
 
+    virtual void backUpValidation (void) = 0;
+
+    virtual void restoreValidation (void) = 0;
+
 };
 
 class FCLayer : public Layer {
@@ -163,6 +175,10 @@ public:
     void applyDeltaWeights (void);
 
     void resetDeltaWeights (void);
+
+    void backUpValidation (void);
+
+    void restoreValidation (void);
 };
 
 class ConvLayer : public Layer {
@@ -190,6 +206,10 @@ public:
 
     void resetDeltaWeights (void);
 
+    void backUpValidation (void);
+
+    void restoreValidation (void);
+
 };
 
 class PoolLayer : public Layer {
@@ -216,6 +236,10 @@ public:
     void applyDeltaWeights (void) {};
 
     void resetDeltaWeights (void) {};
+
+    void backUpValidation (void) {};
+
+    void restoreValidation (void) {};
 };
 
 

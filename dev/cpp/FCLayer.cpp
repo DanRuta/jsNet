@@ -277,3 +277,32 @@ void FCLayer::applyDeltaWeights (void) {
         NetMath::maxNorm(netInstance);
     }
 }
+
+void FCLayer::backUpValidation (void) {
+
+    validationBiases = {};
+    validationWeights = {};
+
+    for (int n=0; n<neurons.size(); n++) {
+        validationBiases.push_back(biases[n]);
+
+        std::vector<double> neuron;
+
+        for (int w=0; w<weights[n].size(); w++) {
+            neuron.push_back(weights[n][w]);
+        }
+
+        validationWeights.push_back(neuron);
+    }
+}
+
+void FCLayer::restoreValidation (void) {
+
+    for (int n=0; n<neurons.size(); n++) {
+        biases[n] = validationBiases[n];
+
+        for (int w=0; w<weights[n].size(); w++) {
+            weights[n][w] = validationWeights[n][w];
+        }
+    }
+}

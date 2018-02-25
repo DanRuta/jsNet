@@ -142,9 +142,12 @@ double Network::validate (void) {
 }
 
 bool Network::checkEarlyStopping (void) {
-    // switch (earlyStoppingType) {
-        // case 1:
-            bool stop = lastValidationError <= earlyStoppingThreshold;
+
+    bool stop = false;
+
+    switch (earlyStoppingType) {
+        case 1:
+            stop = lastValidationError <= earlyStoppingThreshold;
 
             // Do the last backward pass
             if (stop) {
@@ -154,7 +157,23 @@ bool Network::checkEarlyStopping (void) {
 
             return stop;
             // break
-    // }
+        case 2:
+
+            if (lastValidationError < earlyStoppingBestError) {
+                earlyStoppingPatienceCounter = 0;
+                earlyStoppingBestError = lastValidationError;
+
+                for (int l=1; l<layers.size(); l++) {
+                    layers[l]->backUpValidation();
+                }
+            } else {
+                earlyStoppingPatienceCounter++;
+                stop = earlyStoppingPatienceCounter >= earlyStoppingPatience;
+            }
+
+            return stop;
+    }
+    return stop;
 }
 
 double Network::test (int its, int startI) {
@@ -178,6 +197,12 @@ void Network::resetDeltaWeights (void) {
 void Network::applyDeltaWeights (void) {
     for (int l=1; l<layers.size(); l++) {
         layers[l]->applyDeltaWeights();
+    }
+}
+
+void Network::restoreValidation (void) {
+    for (int l=1; l<layers.size(); l++) {
+        layers[l]->restoreValidation();
     }
 }
 

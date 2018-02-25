@@ -319,3 +319,56 @@ void ConvLayer::applyDeltaWeights (void) {
         NetMath::maxNorm(netInstance);
     }
 }
+
+void ConvLayer::backUpValidation (void) {
+
+    printf("backing up conv\n");
+
+    validationBiases = {};
+    validationFilterWeights = {};
+
+    for (int f=0; f<filters.size(); f++) {
+        validationBiases.push_back(biases[f]);
+
+        std::vector<std::vector<std::vector<double> > > filter;
+
+        for (int wd=0; wd<filterWeights[f].size(); wd++) {
+
+            std::vector<std::vector<double> > map;
+
+            for (int wy=0; wy<filterWeights[f][wd].size(); wy++) {
+
+                std::vector<double> row;
+
+                for (int wx=0; wx<filterWeights[f][wd].size(); wx++) {
+                    row.push_back(filterWeights[f][wd][wy][wx]);
+                }
+
+                map.push_back(row);
+            }
+
+            filter.push_back(map);
+        }
+
+        validationFilterWeights.push_back(filter);
+    }
+}
+
+void ConvLayer::restoreValidation (void) {
+
+    printf("restoring conv\n");
+
+    for (int f=0; f<filters.size(); f++) {
+
+        biases[f] = validationBiases[f];
+
+        for (int wd=0; wd<filterWeights[f].size(); wd++) {
+            for (int wy=0; wy<filterWeights[f][wd].size(); wy++) {
+
+                for (int wx=0; wx<filterWeights[f][wd][wy].size(); wx++) {
+                    filterWeights[f][wd][wy][wx] = validationFilterWeights[f][wd][wy][wx];
+                }
+            }
+        }
+    }
+}

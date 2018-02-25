@@ -1108,6 +1108,44 @@ describe("Network", () => {
                 })
             })
 
+
+            it("Defaults the patience to 20 when the type is 'patience'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.patience).to.equal(20)
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience",
+                    threshold: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity and patienceCounter to 0", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(net.earlyStoppingBestError).to.equal(Infinity)
+                    expect(net.earlyStoppingPatienceCounter).to.equal(0)
+                })
+            })
+
+
+
             it("Stops ccalling the train function when the stoppedEarly value is true", () => {
                 const network = new Network({Module: fakeModule})
                 let counter = 0

@@ -66,17 +66,17 @@ describe("Network", () => {
                 expect(net.cost).to.equal(NetMath.meansquarederror)
             })
 
-            it("Defaults the updateFn to vanillaupdatefn", () => {
-                expect(net.updateFn).to.equal("vanillaupdatefn")
+            it("Defaults the updateFn to vanillasgd", () => {
+                expect(net.updateFn).to.equal("vanillasgd")
             })
 
-            it("Sets the net.weightUpdateFn to NetMath.vanillaupdatefn when setting it to false, null, or 'vanillaupdatefn'", () => {
+            it("Sets the net.weightUpdateFn to NetMath.vanillasgd when setting it to false, null, or 'vanillasgd'", () => {
                 const net2 = new Network({updateFn: null})
-                expect(net2.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                expect(net2.weightUpdateFn).to.equal(NetMath.vanillasgd)
                 const net3 = new Network({updateFn: false})
-                expect(net3.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
-                const net4 = new Network({updateFn: "vanillaupdatefn"})
-                expect(net4.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                expect(net3.weightUpdateFn).to.equal(NetMath.vanillasgd)
+                const net4 = new Network({updateFn: "vanillasgd"})
+                expect(net4.weightUpdateFn).to.equal(NetMath.vanillasgd)
             })
 
             it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
@@ -2055,7 +2055,7 @@ describe("FCLayer", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
+            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillasgd"})
             net.miniBatchSize = 1
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
@@ -2071,7 +2071,7 @@ describe("FCLayer", () => {
         it("Increments the bias of all neurons with their deltaBias", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], updateFn: "vanillasgd"})
 
             layer2.neurons.forEach(neuron => neuron.bias = 0.25)
             layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
@@ -3753,7 +3753,7 @@ describe("ConvLayer", () => {
                 filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
             })
 
-            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillaupdatefn, miniBatchSize: 1, l2: 0, l1: 0}
+            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillasgd, miniBatchSize: 1, l2: 0, l1: 0}
         })
 
 
@@ -4673,9 +4673,9 @@ describe("Netmath", () => {
         })
     })
 
-    describe("vanillaupdatefn", () => {
+    describe("vanillasgd", () => {
 
-        const fn = NetMath.vanillaupdatefn.bind({learningRate: 0.5})
+        const fn = NetMath.vanillasgd.bind({learningRate: 0.5})
 
         it("Increments a weight with half of its delta weight when the learning rate is 0.5", () => {
             expect(fn(10, 10)).to.equal(15)

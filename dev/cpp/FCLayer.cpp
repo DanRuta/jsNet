@@ -188,11 +188,11 @@ void FCLayer::applyDeltaWeights (void) {
                         + net->l2 * weights[n][dw]
                         + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    weights[n][dw] = NetMath::vanillaupdatefn(netInstance, weights[n][dw], regularized);
+                    weights[n][dw] = NetMath::vanillasgd(netInstance, weights[n][dw], regularized);
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::vanillaupdatefn(netInstance, biases[n], deltaBiases[n]);
+                biases[n] = NetMath::vanillasgd(netInstance, biases[n], deltaBiases[n]);
             }
             break;
         case 1: // gain

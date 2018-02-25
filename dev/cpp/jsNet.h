@@ -319,7 +319,7 @@ public:
 
     static double crossentropy (std::vector<double> target, std::vector<double> output);
 
-    static double vanillaupdatefn (int netInstance, double value, double deltaValue);
+    static double vanillasgd (int netInstance, double value, double deltaValue);
 
     static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 

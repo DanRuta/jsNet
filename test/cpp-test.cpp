@@ -3044,13 +3044,13 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::crossentropy(values1, values2), (double)70.16654147569186 );
     }
 
-    TEST(NetMath, vanillaupdatefn) {
+    TEST(NetMath, vanillasgd) {
         Network::deleteNetwork();
         Network::newNetwork();
         Network::getInstance(0)->learningRate = 0.5;
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 10), 15 );
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 20), 20 );
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, -30), -5 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, 10), 15 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, 20), 20 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, -30), -5 );
     }
 
     class GainFixture : public ::testing::Test {

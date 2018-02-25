@@ -330,7 +330,7 @@ const net = new Network({
     l2: undefined,
     l1: undefined,
     layers: [ /* 3 FCLayers */ ]
-    updateFn: "vanillaupdatefn",
+    updateFn: "vanillasgd",
     weightsConfig: {
         distribution: "xavieruniform"
     }
@@ -382,7 +382,7 @@ Learning rate is 0.2 by default, except when using the following configurations:
 ### Weight update functions
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| updateFn | The function used for updating the weights/bias. The vanillaupdatefn option just sets the network to update the weights without any changes to learning rate. | vanillaupdatefn, gain, adagrad, RMSProp, adam , adadelta| vanillaupdatefn |
+| updateFn | The function used for updating the weights/bias. The vanillasgd option just sets the network to update the weights without any changes to learning rate. | vanillasgd, gain, adagrad, RMSProp, adam , adadelta| vanillasgd |
 | rmsDecay | The decay rate for RMSProp, when used | Any number | 0.99 |
 | rho | Momentum for Adadelta, when used | Any number | 0.95 |
 

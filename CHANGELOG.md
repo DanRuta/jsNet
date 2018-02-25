@@ -14,6 +14,7 @@
 
 #### NetMath
 - Added root mean squared error cost function
+- Breaking change: Renamed "vanilla update fn" to "vanilla sgd"
 
 # 3.1.0 - Optimizations
 ---

@@ -69,7 +69,7 @@ double NetMath::crossentropy (std::vector<double> target, std::vector<double> ou
 }
 
 // Weight update functions
-double NetMath::vanillaupdatefn (int netInstance, double value, double deltaValue) {
+double NetMath::vanillasgd (int netInstance, double value, double deltaValue) {
     return value + Network::getInstance(netInstance)->learningRate * deltaValue;
 }
 

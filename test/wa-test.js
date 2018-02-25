@@ -294,7 +294,7 @@ describe("Network", () => {
                 sinon.stub(fakeModule, "ccall").callsFake(() => 0)
                 const res = net.updateFn
                 fakeModule.ccall.restore()
-                expect(res).to.equal("vanillaupdatefn")
+                expect(res).to.equal("vanillasgd")
             })
 
             it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
@@ -1630,18 +1630,18 @@ describe("Neuron", () => {
 
 
         it("Calls the NetUtil.defineProperty for neuron.sum", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "sum", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.dropped", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "dropped", paramTypes, params)
         })
 
         it("Getting a neuron.dropped value returns a boolean", () => {
             NetUtil.defineProperty.restore()
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(neuron.dropped).to.be.boolean
             sinon.stub(NetUtil, "defineProperty")
         })
@@ -1649,7 +1649,7 @@ describe("Neuron", () => {
         it("Sets a neuron.dropped value as a 1 or 0", () => {
             NetUtil.defineProperty.restore()
             sinon.stub(NetUtil.Module, "ccall")
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             neuron.dropped = true
             expect(NetUtil.Module.ccall).to.be.calledWith("set_neuron_dropped", null, ["number", "number", "number", "number"], [789, 1, 13, 1])
             neuron.dropped = false
@@ -1660,32 +1660,32 @@ describe("Neuron", () => {
         })
 
         it("Calls the NetUtil.defineProperty for neuron.activation", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "activation", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.error", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "error", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.derivative", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "derivative", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.weights", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.bias", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "bias", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.deltaWeights", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
@@ -1696,7 +1696,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasGain when the updateFn is not gain", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1707,7 +1707,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is not gain", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1718,7 +1718,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache when the updateFn is not adagrad", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1729,7 +1729,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is not adagrad", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1755,7 +1755,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is not adadelta", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "adadeltaBiasCache", paramTypes, params, {pre: "neuron_"})
         })
@@ -1768,7 +1768,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is not adadelta", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, neuron.size, {pre: "neuron_"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "adadeltaCache", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
@@ -1796,22 +1796,22 @@ describe("Filter", () => {
         })
 
         it("Calls the NetUtil.defineProperty for filter.bias", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(filter, "bias")
         })
 
         it("Calls the NetUtil.defineVolumeProperty for filter.weights", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineVolumeProperty).to.be.calledWith(filter, "weights")
         })
 
         it("Calls the NetUtil.defineVolumeProperty for filter.deltaWeights", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineVolumeProperty).to.be.calledWith(filter, "deltaWeights")
         })
 
         it("Calls the NetUtil.defineProperty for filter.deltaBias", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(filter, "deltaBias")
         })
 
@@ -1826,7 +1826,7 @@ describe("Filter", () => {
         })
 
         it("Doesn't call the define property functions for biasGain or weightGain when updateFn is not gain", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(filter, "biasGain")
             expect(NetUtil.defineVolumeProperty).to.not.be.calledWith(filter, "weightGain")
         })
@@ -1842,7 +1842,7 @@ describe("Filter", () => {
         })
 
         it("Doesn't call the define property functions for biasCache or weightsCache when updateFn is not adagrad", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(filter, "biasCache")
             expect(NetUtil.defineVolumeProperty).to.not.be.calledWith(filter, "weightsCache")
         })

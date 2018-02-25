@@ -603,7 +603,7 @@ exports.NetUtil = NetUtil
 
 class Network {
 
-    constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillaupdatefn", cost="meansquarederror", layers=[],
+    constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillasgd", cost="meansquarederror", layers=[],
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}) {
 
         if (!Module) {
@@ -710,7 +710,7 @@ class Network {
         this.cost = costFunctionName
 
         const updateFnIndeces = {
-            vanillaupdatefn: 0,
+            vanillasgd: 0,
             gain: 1,
             adagrad: 2,
             rmsprop: 3,

@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror",
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
@@ -88,7 +88,7 @@ class Network {
                 }
         }
 
-        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillaupdatefn" : updateFn
+        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillasgd" : updateFn
         this.weightUpdateFn = NetMath[this.updateFn]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation

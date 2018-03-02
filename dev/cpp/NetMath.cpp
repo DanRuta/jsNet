@@ -238,7 +238,7 @@ double NetMath::momentum(int netInstance, double value, double deltaValue, Neuro
 
     double v;
 
-    if (c>-1) {
+    if (weightIndex>-1) {
         v = net->momentum * neuron->weightsCache[weightIndex] - net->learningRate * deltaValue;
         neuron->weightsCache[weightIndex] = v;
     } else {

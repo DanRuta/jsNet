@@ -3490,7 +3490,7 @@ namespace NetMath_cpp {
             testN->weightsCache = {1,1,1};
 
             testF = new Filter();
-            testF->adadeltaCache = { {{1,1},{1,1}} };
+            testF->weightsCache = { {{1,1},{1,1}} };
             testF->init(0, 1, 2);
             testF->biasCache = 0.123;
         }
@@ -3528,25 +3528,25 @@ namespace NetMath_cpp {
         double result2 = NetMath::momentum(0, (double)1, (double)4, testN, 1);
         double result3 = NetMath::momentum(0, (double)1, (double)2, testN, 2);
 
-        EXPECT_EQ( testN->weightsCache[0], -0.3999999999999999 );
-        EXPECT_EQ( testN->weightsCache[1], -0.7 );
+        EXPECT_DOUBLE_EQ( testN->weightsCache[0], -0.4 );
+        EXPECT_DOUBLE_EQ( testN->weightsCache[1], -0.7 );
         EXPECT_NEAR( testN->weightsCache[2], -0.1, 1e-2 );
 
-        EXPECT_EQ( result1, 1.4 );
-        EXPECT_EQ( result2, 1.7 );
-        EXPECT_EQ( result3, 1.1 );
+        EXPECT_DOUBLE_EQ( result1, 1.4 );
+        EXPECT_DOUBLE_EQ( result2, 1.7 );
+        EXPECT_DOUBLE_EQ( result3, 1.1 );
 
         double fResult1 = NetMath::momentum(0, (double)1, (double)3, testF, 0, 0, 0);
         double fResult2 = NetMath::momentum(0, (double)1, (double)4, testF, 0, 0, 1);
         double fResult3 = NetMath::momentum(0, (double)1, (double)5, testF, 0, 1, 0);
 
-        EXPECT_EQ( testF->weightsCache[0][0][0], -0.3999999999999999 );
-        EXPECT_EQ( testF->weightsCache[0][0][1], -0.7 );
+        EXPECT_DOUBLE_EQ( testF->weightsCache[0][0][0], -0.4 );
+        EXPECT_DOUBLE_EQ( testF->weightsCache[0][0][1], -0.7 );
         EXPECT_NEAR( testF->weightsCache[0][1][0], -0.1, 1e-2 );
 
-        EXPECT_EQ( fResult1, 1.4 );
-        EXPECT_EQ( fResult2, 1.7 );
-        EXPECT_EQ( fResult3, 1.1 );
+        EXPECT_DOUBLE_EQ( fResult1, 1.4 );
+        EXPECT_DOUBLE_EQ( fResult2, 1.7 );
+        EXPECT_DOUBLE_EQ( fResult3, 1.1 );
     }
 
 

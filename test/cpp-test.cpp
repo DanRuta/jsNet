@@ -3490,9 +3490,9 @@ namespace NetMath_cpp {
             testN->weightsCache = {1,1,1};
 
             testF = new Filter();
-            testF->weightsCache = { {{1,1},{1,1}} };
             testF->init(0, 1, 2);
             testF->biasCache = 0.123;
+            testF->weightsCache = { {{1,1},{1,1}} };
         }
 
         virtual void TearDown() {
@@ -3538,7 +3538,7 @@ namespace NetMath_cpp {
 
         double fResult1 = NetMath::momentum(0, (double)1, (double)3, testF, 0, 0, 0);
         double fResult2 = NetMath::momentum(0, (double)1, (double)4, testF, 0, 0, 1);
-        double fResult3 = NetMath::momentum(0, (double)1, (double)5, testF, 0, 1, 0);
+        double fResult3 = NetMath::momentum(0, (double)1, (double)2, testF, 0, 1, 0);
 
         EXPECT_NEAR( testF->weightsCache[0][0][0], -0.4, 1e-2 );
         EXPECT_NEAR( testF->weightsCache[0][0][1], -0.7, 1e-2 );

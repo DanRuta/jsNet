@@ -15,6 +15,7 @@ void Neuron::init (int netInstance, int weightsCount) {
         case 2: // adagrad
         case 3: // rmsprop
         case 5: // adadelta
+        case 6: // momentum
             biasCache = 0;
             for (int i=0; i<weightsCount; i++) {
                 weightsCache.push_back(0);

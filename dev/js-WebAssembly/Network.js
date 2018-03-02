@@ -3,7 +3,7 @@
 class Network {
 
     constructor ({Module, learningRate, activation="sigmoid", updateFn="vanillasgd", cost="meansquarederror", layers=[],
-        rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}) {
+        momentum=0.9, rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}) {
 
         if (!Module) {
             throw new Error("WASM module not provided")
@@ -114,7 +114,8 @@ class Network {
             adagrad: 2,
             rmsprop: 3,
             adam: 4,
-            adadelta: 5
+            adadelta: 5,
+            momentum: 6
         }
         NetUtil.defineProperty(this, "updateFn", ["number"], [this.netInstance], {
             getCallback: index => Object.keys(updateFnIndeces).find(key => updateFnIndeces[key]==index),
@@ -170,6 +171,11 @@ class Network {
             case "adadelta":
                 NetUtil.defineProperty(this, "rho", ["number"], [this.netInstance])
                 this.rho = rho==null ? 0.95 : rho
+                break
+
+            case "momentum":
+                NetUtil.defineProperty(this, "momentum", ["number"], [this.netInstance])
+                this.momentum = momentum
                 break
 
             default:

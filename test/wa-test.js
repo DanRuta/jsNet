@@ -289,6 +289,12 @@ describe("Network", () => {
                 expect(net.rho).to.equal(2)
             })
 
+            it("Calls the NetUtil.defineProperty function for momentum, when updateFn is 'momentum'", () => {
+                const net = new Network({Module: fakeModule, updateFn: "momentum", momentum: 2})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "momentum", ["number"], [0])
+                expect(net.momentum).to.equal(2)
+            })
+
             it("Passes the updateFn index from the WASM module through the updateFnIndeces map", () => {
                 const net = new Network({Module: fakeModule})
                 sinon.stub(fakeModule, "ccall").callsFake(() => 0)
@@ -300,6 +306,11 @@ describe("Network", () => {
             it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
                 const net = new Network({Module: fakeModule, updateFn: "adadelta"})
                 expect(net.rho).to.equal(0.95)
+            })
+
+            it("Defaults the momentum value to 0.9 when calling the defineProperty function", () => {
+                const net = new Network({Module: fakeModule, updateFn: "momentum"})
+                expect(net.momentum).to.equal(0.9)
             })
 
             it("Sets the rmsDecay property when the updateFn is rmsprop", () => {

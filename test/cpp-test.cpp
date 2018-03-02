@@ -3474,6 +3474,83 @@ namespace NetMath_cpp {
         EXPECT_NEAR( testF->adadeltaCache[0][0][1], 0.192, 0.1 );
     }
 
+    class MomentumFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightsConfig["limit"] = 0.1;
+            net->weightInitFn = &NetMath::uniform;
+            net->momentum = 0.75;
+            net->learningRate = 0.2;
+            testN = new Neuron();
+            testN->init(0, 5);
+            testN->biasCache = 0.123;
+            testN->weightsCache = {1,1,1};
+
+            testF = new Filter();
+            testF->adadeltaCache = { {{1,1},{1,1}} };
+            testF->init(0, 1, 2);
+            testF->biasCache = 0.123;
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+            delete testF;
+        }
+
+        Network* net;
+        Neuron* testN;
+        Filter* testF;
+    };
+
+    // Sets the neuron.biasCache to the correct value, following the momentum formula
+    TEST_F(MomentumFixture, momentum_1) {
+        testN->biasCache = 0.123;
+        NetMath::momentum(0, (double)1, (double)3, testN, -1);
+        EXPECT_NEAR( testN->biasCache, -0.50775, 1e-5 );
+
+        testF->biasCache = 0.123;
+        NetMath::momentum(0, (double)1, (double)3, testF, -1, -1, -1);
+        EXPECT_NEAR( testF->biasCache, -0.50775, 1e-5 );
+    }
+
+    // Sets the weightsCache to the correct value, following the momentum formula, same as biasCache
+    //  And calculates the return value correctly
+    TEST_F(MomentumFixture, momentum_2) {
+
+        net->learningRate = 0.3;
+        net->momentum = 0.5;
+
+        double result1 = NetMath::momentum(0, (double)1, (double)3, testN, 0);
+        double result2 = NetMath::momentum(0, (double)1, (double)4, testN, 1);
+        double result3 = NetMath::momentum(0, (double)1, (double)2, testN, 2);
+
+        EXPECT_EQ( testN->weightsCache[0], -0.3999999999999999 );
+        EXPECT_EQ( testN->weightsCache[1], -0.7 );
+        EXPECT_NEAR( testN->weightsCache[2], -0.1, 1e-2 );
+
+        EXPECT_EQ( result1, 1.4 );
+        EXPECT_EQ( result2, 1.7 );
+        EXPECT_EQ( result3, 1.1 );
+
+        double fResult1 = NetMath::momentum(0, (double)1, (double)3, testF, 0, 0, 0);
+        double fResult2 = NetMath::momentum(0, (double)1, (double)4, testF, 0, 0, 1);
+        double fResult3 = NetMath::momentum(0, (double)1, (double)5, testF, 0, 1, 0);
+
+        EXPECT_EQ( testF->weightsCache[0][0][0], -0.3999999999999999 );
+        EXPECT_EQ( testF->weightsCache[0][0][1], -0.7 );
+        EXPECT_NEAR( testF->weightsCache[0][1][0], -0.1, 1e-2 );
+
+        EXPECT_EQ( fResult1, 1.4 );
+        EXPECT_EQ( fResult2, 1.7 );
+        EXPECT_EQ( fResult3, 1.1 );
+    }
+
+
+
     TEST(NetMath, sech) {
         EXPECT_DOUBLE_EQ( NetMath::sech(-0.5), 0.886818883970074 );
         EXPECT_DOUBLE_EQ( NetMath::sech(1),    0.6480542736638853 );

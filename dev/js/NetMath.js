@@ -132,6 +132,21 @@ class NetMath {
         }
     }
 
+    static momentum (value, deltaValue, neuron, weightI) {
+
+        let v
+
+        if (weightI!=null) {
+            v = this.momentum * (neuron.getWeightsCache(weightI)) - this.learningRate * deltaValue
+            neuron.setWeightsCache(weightI, v)
+        } else {
+            v = this.momentum * (neuron.biasCache) - this.learningRate * deltaValue
+            neuron.biasCache = v
+        }
+
+        return value - v
+    }
+
     // Weights init
     static uniform (size, {limit}) {
         const values = []

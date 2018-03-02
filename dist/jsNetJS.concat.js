@@ -514,6 +514,7 @@ class Filter {
             case "adagrad":
             case "rmsprop":
             case "adadelta":
+            case "momentum":
                 this.biasCache = 0
                 this.weightsCache = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
                 this.getWeightsCache = ([channel, row, column]) => this.weightsCache[channel][row][column]
@@ -693,6 +694,21 @@ class NetMath {
             neuron.adadeltaBiasCache = this.rho * neuron.adadeltaBiasCache + (1-this.rho) * Math.pow(deltaValue, 2)
             return newVal
         }
+    }
+
+    static momentum (value, deltaValue, neuron, weightI) {
+
+        let v
+
+        if (weightI!=null) {
+            v = this.momentum * (neuron.getWeightsCache(weightI)) - this.learningRate * deltaValue
+            neuron.setWeightsCache(weightI, v)
+        } else {
+            v = this.momentum * (neuron.biasCache) - this.learningRate * deltaValue
+            neuron.biasCache = v
+        }
+
+        return value - v
     }
 
     // Weights init
@@ -1201,7 +1217,7 @@ exports.NetUtil = NetUtil
 
 class Network {
 
-    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror", momentum=0.9,
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
@@ -1257,6 +1273,11 @@ class Network {
 
             case "adam":
                 this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                break
+
+            case "momentum":
+                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
+                this.momentum = momentum
                 break
 
             case "adadelta":
@@ -1779,6 +1800,7 @@ class Neuron {
             case "adagrad":
             case "rmsprop":
             case "adadelta":
+            case "momentum":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)
                 this.getWeightsCache = i => this.weightsCache[i]

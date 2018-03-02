@@ -119,6 +119,16 @@ describe("Network", () => {
                 expect(net2.learningRate).to.equal(0.5)
             })
 
+            it("Defaults the learning rate to 0.2 if the updateFn is momentum", () => {
+                const net2 = new Network({updateFn: "momentum"})
+                expect(net2.learningRate).to.equal(0.2)
+            })
+
+            it("Still allows user configurable learning rate, if the updateFn is momentum", () => {
+                const net2 = new Network({updateFn: "momentum", learningRate: 0.1})
+                expect(net2.learningRate).to.equal(0.1)
+            })
+
             it("Defaults the net.rho to 0.95 if the updateFn is adadelta", () => {
                 const net2 = new Network({updateFn: "adadelta"})
                 expect(net2.rho).to.equal(0.95)
@@ -4682,6 +4692,39 @@ describe("Netmath", () => {
             expect(fn(10, 20)).to.equal(20)
             expect(fn(10, -30)).to.equal(-5)
         })
+    })
+
+    describe("momentum", () => {
+
+        let neuron
+
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init({updateFn: "momentum"})
+        })
+
+        it("Increments the biasCache by the momentum value times learning rate times delta bias", () => {
+            neuron.biasCache = 0.123
+            NetMath.momentum.bind({learningRate: 0.2, momentum: 0.75}, 1, 3, neuron)()
+            expect(neuron.biasCache.toFixed(5)).to.equal("-0.50775")
+        })
+
+        it("Increments the neuron's weights cache by the momentum value times learning rate times weight delta", () => {
+            neuron.weightsCache = [1,1,1]
+            const result1 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 3, neuron, 0)()
+            const result2 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 4, neuron, 1)()
+            const result3 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 2, neuron, 2)()
+            expect(neuron.weightsCache[0]).to.equal(-0.3999999999999999)
+            expect(neuron.weightsCache[1]).to.equal(-0.7)
+            expect(neuron.weightsCache[2].toFixed(1)).to.equal("-0.1")
+
+            expect(result1).to.equal(1.4)
+            expect(result2).to.equal(1.7)
+            expect(result3).to.equal(1.1)
+        })
+
+
     })
 
     describe("gain", () => {

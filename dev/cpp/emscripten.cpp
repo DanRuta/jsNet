@@ -206,6 +206,16 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void set_momentum  (int instanceIndex, float momentum) {
+        Network::getInstance(instanceIndex)->momentum = momentum;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_momentum (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->momentum;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_rmsDecay  (int instanceIndex, float rmsDecay) {
         Network::getInstance(instanceIndex)->rmsDecay = rmsDecay;
     }

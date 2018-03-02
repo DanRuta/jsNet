@@ -1,4 +1,4 @@
-# 3.2.0 - Upcoming - Validation, early stopping, PNG weights
+# 3.2.0 - Upcoming - Validation, early stopping, img weights
 ---
 #### Network
 - Added validation config to .train(), with interval config
@@ -14,6 +14,7 @@
 
 #### NetMath
 - Added root mean squared error cost function
+- Added momentum weight update function
 - Breaking change: Renamed "vanilla update fn" to "vanilla sgd"
 
 # 3.1.0 - Optimizations

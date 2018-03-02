@@ -232,6 +232,40 @@ double NetMath::adadelta(int netInstance, double value, double deltaValue, Filte
     }
 }
 
+double NetMath::momentum(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    double v;
+
+    if (c>-1) {
+        v = net->momentum * neuron->weightsCache[weightIndex] - net->learningRate * deltaValue;
+        neuron->weightsCache[weightIndex] = v;
+    } else {
+        v = net->momentum * neuron->biasCache - net->learningRate * deltaValue;
+        neuron->biasCache = v;
+    }
+
+    return value - v;
+}
+
+double NetMath::momentum(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    double v;
+
+    if (c>-1) {
+        v = net->momentum * filter->weightsCache[c][r][v] - net->learningRate * deltaValue;
+        filter->weightsCache[c][r][v] = v;
+    } else {
+        v = net->momentum * filter->biasCache - net->learningRate * deltaValue;
+        filter->biasCache = v;
+    }
+
+    return value - v;
+}
+
 // Weights init
 std::vector<double> NetMath::uniform (int netInstance, int layerIndex, int size) {
     std::vector<double> values;

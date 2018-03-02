@@ -19,6 +19,7 @@ public:
     int miniBatchSize;
     int channels;
     float learningRate;
+    float momentum;
     float rmsDecay;
     float rho;
     float lreluSlope;
@@ -340,6 +341,10 @@ public:
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double adadelta(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
+
+    static double momentum(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double momentum(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
 
     static std::vector<double> uniform (int netInstance, int layerIndex, int size);
 

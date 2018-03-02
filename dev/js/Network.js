@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror", momentum=0.9,
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
@@ -58,6 +58,11 @@ class Network {
 
             case "adam":
                 this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                break
+
+            case "momentum":
+                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
+                this.momentum = momentum
                 break
 
             case "adadelta":

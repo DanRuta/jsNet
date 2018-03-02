@@ -382,9 +382,10 @@ Learning rate is 0.2 by default, except when using the following configurations:
 ### Weight update functions
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
-| updateFn | The function used for updating the weights/bias. The vanillasgd option just sets the network to update the weights without any changes to learning rate. | vanillasgd, gain, adagrad, RMSProp, adam , adadelta| vanillasgd |
+| updateFn | The function used for updating the weights/bias. The vanillasgd option just sets the network to update the weights without any changes to learning rate. | vanillasgd, gain, adagrad, RMSProp, adam , adadelta, momentum | vanillasgd |
 | rmsDecay | The decay rate for RMSProp, when used | Any number | 0.99 |
 | rho | Momentum for Adadelta, when used | Any number | 0.95 |
+| momentum | Momentum for the (sgd) momentum update function. | Any number | 0.9 |
 
 ##### Examples
 ```javascript

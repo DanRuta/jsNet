@@ -21,6 +21,7 @@ class Neuron {
             case "adagrad":
             case "rmsprop":
             case "adadelta":
+            case "momentum":
                 this.biasCache = 0
                 this.weightsCache = [...new Array(size)].map(v => 0)
                 this.getWeightsCache = i => this.weightsCache[i]

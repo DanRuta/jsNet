@@ -253,17 +253,17 @@ double NetMath::momentum(int netInstance, double value, double deltaValue, Filte
 
     Network* net = Network::getInstance(netInstance);
 
-    double v;
+    double val;
 
     if (c>-1) {
-        v = net->momentum * filter->weightsCache[c][r][v] - net->learningRate * deltaValue;
-        filter->weightsCache[c][r][v] = v;
+        val = net->momentum * filter->weightsCache[c][r][v] - net->learningRate * deltaValue;
+        filter->weightsCache[c][r][v] = val;
     } else {
-        v = net->momentum * filter->biasCache - net->learningRate * deltaValue;
-        filter->biasCache = v;
+        val = net->momentum * filter->biasCache - net->learningRate * deltaValue;
+        filter->biasCache = val;
     }
 
-    return value - v;
+    return value - val;
 }
 
 // Weights init

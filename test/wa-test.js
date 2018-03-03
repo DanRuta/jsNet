@@ -1386,6 +1386,55 @@ describe("Network", () => {
             expect(net.layers[2].fromJSON).to.be.calledWith(testData.layers[2])
         })
     })
+
+    describe("toIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network({Module: fakeModule})
+            expect(net.toIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's toIMG function", () => {
+            const net = new Network({Module: fakeModule})
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "toIMG")
+            sinon.stub(l2, "toIMG").callsFake(() => [1,2,3])
+            sinon.stub(l3, "toIMG").callsFake(() => [1,2,3])
+            net.layers = [l1, l2, l3]
+            net.toIMG({toIMG: () => {}})
+            expect(l1.toIMG).to.not.be.called
+            expect(l2.toIMG).to.be.called
+            expect(l3.toIMG).to.be.called
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network({Module: fakeModule})
+            expect(net.fromIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's fromIMG function with the data segment matching their size", () => {
+            const net = new Network({Module: fakeModule})
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "fromIMG")
+            sinon.stub(l2, "fromIMG")
+            sinon.stub(l2, "getDataSize").callsFake(() => 4)
+            sinon.stub(l3, "fromIMG")
+            sinon.stub(l3, "getDataSize").callsFake(() => 3)
+            net.layers = [l1, l2, l3]
+
+            const fakeIMGArrays = {fromIMG: () => [1,2,3,4, 5,6,7]}
+            net.fromIMG(null, fakeIMGArrays)
+
+            expect(l1.fromIMG).to.not.be.called
+            expect(l2.fromIMG).to.be.calledWith([1,2,3,4])
+            expect(l3.fromIMG).to.be.calledWith([5,6,7])
+        })
+    })
 })
 
 describe("FCLayer", () => {
@@ -1614,6 +1663,91 @@ describe("FCLayer", () => {
             expect(fakeModule.ccall).to.be.calledWith("set_neuron_bias")
 
             fakeModule.ccall.restore()
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(20)
+        })
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(15)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3,4]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(75)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 1)", () => {
+
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3])
+        })
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 2)", () => {
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,4,5]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,4,5,1,1,2,4,5])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [2,1,2,3, 3,1,2,4]
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2,3])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2,4])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [2,1,2, 3,1,2, 4,0,2]
+
+            const fc = new FCLayer(3)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2])
+            expect(fc.neurons[2].bias).to.equal(4)
+            expect(fc.neurons[2].weights).to.deep.equal([0,2])
         })
     })
 })
@@ -2516,6 +2650,99 @@ describe("ConvLayer", () => {
             NetUtil.ccallVolume.restore()
         })
     })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(10)
+        })
+        it("Returns the correct total number of weights and biases (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(20)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4])
+        })
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4]  
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[2].bias).to.equal(1)
+            expect(conv.filters[3].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[2].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[3].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4] 
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+    })
 })
 
 describe("PoolLayer", () => {
@@ -2820,6 +3047,27 @@ describe("PoolLayer", () => {
         it("Does nothing", () => {
             const layer = new PoolLayer()
             expect(layer.fromJSON()).to.be.undefined
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns 0", () => {
+            const pool = new PoolLayer()
+            expect(pool.getDataSize()).to.equal(0)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns an empty array", () => {
+            const pool = new PoolLayer()
+            expect(pool.toIMG()).to.deep.equal([])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Does nothing", () => {
+            const pool = new PoolLayer()
+            expect(pool.fromIMG([])).to.be.undefined
         })
     })
 })
@@ -3261,6 +3509,14 @@ describe("NetUtil", () => {
             expect(minVal).to.equal(5)
             expect(maxVal).to.equal(15)
             expect(data).to.deep.equal([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+        })
+
+        it("Example 4", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 13, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-1)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0.375,0.4375,0.5,0.5625,0.625,0.6875,0.75,0.8125,0.875,0.9375,1,0.9375,0.875,0.875,0.8125,0.75,0.6875,0.625,0.5625,0.5,0.4375,0.375,0.3125,0.25,0.1875,0.125,0.0625,0])
         })
     })
 

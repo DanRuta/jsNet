@@ -554,6 +554,41 @@ class Network {
         this.layers.forEach((layer, li) => li && layer.fromJSON(data.layers[li], li))
     }
 
+    toIMG (IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        const data = []
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const layerData = this.layers[l].toIMG()
+            for (let v=0; v<layerData.length; v++) {
+                data.push(layerData[v])
+            }
+        }
+
+        return IMGArrays.toIMG(data, opts)
+    }
+
+    fromIMG (rawData, IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        let valI = 0
+        const data = IMGArrays.fromIMG(rawData, opts)
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const dataCount = this.layers[l].getDataSize()
+            this.layers[l].fromIMG(data.splice(0, dataCount))
+        }
+    }
+
     static get version () {
         return "3.2.0"
     }

@@ -174,6 +174,12 @@ class PoolLayer {
     toJSON () {return {}}
 
     fromJSON () {}
+
+    getDataSize () {return 0}
+
+    toIMG () {return []}
+
+    fromIMG () {}
 }
 
 /* istanbul ignore next */

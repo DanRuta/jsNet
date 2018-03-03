@@ -290,19 +290,45 @@ net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
 
 ### Exporting
 ---
-Weights data is exported as a JSON object.
+There are two way you can manage your data. The built in way is to use JSON for importing and exporting. If you provide my IMGArrays library (https://github.com/DanRuta/IMGArrays), you can alternatively use images, which are much quicker and easier to use, when using the browser.
+
+To export weights data as JSON:
 ```javascript
 const data = trainedNet.toJSON()
 ```
 
+See the IMGArrays library documentation for more details, and nodejs instructions, but its integration into jsNet is as follows:
+```javascript
+const canvas = trainedNet.toIMG(IMGArrays, opts)
+IMGArrays.downloadImage(canvas)
+```
+
 ### Importing
 ---
-Only the weights are exported. You still need to build the net with the same structure and configs, eg activation function.
+Only the weights are exported. You still need to build the net with the same structure and configs, eg activation function. Again, data can be imported as either JSON or an image, when using IMGArrays, like above.
+
+When using json:
 ```javascript
 const freshNetwork = new Network(...)
 freshNetwork.fromJSON(data)
 ```
 If using exported data from before version 2.0.0, just do a find-replace of "neurons" -> "weights" on the exported data and it will work with the new version.
+
+When using IMGArrays:
+```javascript
+const freshNetwork = new Network(...)
+freshNetwork.fromIMG(document.querySelector("img"), IMGArrays, opts)
+```
+
+As an example you could run, you can use the image below to load data for the following jsNet configuration, to have a basic model trained on MNIST.
+```javascript
+const net = new Network({
+    layers: [new FCLayer(784), new FCLayer(100), new FCLayer(10)]
+})
+net.fromIMG(document.querySelector("img"), IMGArrays)
+```
+
+<img width="100%" src="fc-784f-100f-10f.png">
 
 ### Trained usage
 ---

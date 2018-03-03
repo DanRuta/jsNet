@@ -303,6 +303,69 @@ class ConvLayer {
             filter.weights = data.weights[fi].weights
         })
     }
+
+    // Used for importing data
+    getDataSize () {
+
+        let size = 0
+
+        for (let f=0; f<this.filters.length; f++) {
+
+            const filter = this.filters[f]
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    size += filter.weights[c][r].length
+                }
+            }
+
+            size += 1
+        }
+
+        return size
+    }
+
+    toIMG () {
+
+        const data = []
+
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            data.push(filter.bias)
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    for (let v=0; v<filter.weights[c][r].length; v++) {
+                        data.push(filter.weights[c][r][v])
+                    }
+                }
+            }
+        }
+
+        return data
+    }
+
+    fromIMG (data) {
+
+        let valI = 0
+
+        for (let f=0; f<this.filters.length; f++) {
+
+            const filter = this.filters[f]
+            filter.bias = data[valI]
+            valI++
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    for (let v=0; v<filter.weights[c][r].length; v++) {
+                        filter.weights[c][r][v] = data[valI]
+                        valI++
+                    }
+                }
+            }
+        }
+    }
 }
 
 // https://github.com/DanRuta/jsNet/issues/33
@@ -483,6 +546,49 @@ class FCLayer {
             neuron.bias = data.weights[ni].bias
             neuron.weights = data.weights[ni].weights
         })
+    }
+
+    // Used for importing data
+    getDataSize () {
+
+        let size = 0
+
+        for (let n=0; n<this.neurons.length; n++) {
+            size += this.neurons[n].weights.length + 1
+        }
+
+        return size
+    }
+
+    toIMG () {
+        const data = []
+
+        for (let n=0; n<this.neurons.length; n++) {
+            data.push(this.neurons[n].bias)
+
+            for (let w=0; w<this.neurons[n].weights.length; w++) {
+                data.push(this.neurons[n].weights[w])
+            }
+        }
+
+        return data
+    }    
+
+    fromIMG (data) {
+
+        let valI = 0
+
+        for (let n=0; n<this.neurons.length; n++) {
+
+            const neuron = this.neurons[n]
+            neuron.bias = data[valI]
+            valI++
+
+            for (let w=0; w<neuron.weights.length; w++) {
+                neuron.weights[w] = data[valI]
+                valI++
+            }
+        }
     }
 }
 
@@ -1769,6 +1875,41 @@ class Network {
         this.layers.forEach((layer, li) => li && layer.fromJSON(data.layers[li], li))
     }
 
+    toIMG (IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        const data = []
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const layerData = this.layers[l].toIMG()
+            for (let v=0; v<layerData.length; v++) {
+                data.push(layerData[v])
+            }
+        }
+
+        return IMGArrays.toIMG(data, opts)
+    }
+
+    fromIMG (rawData, IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        let valI = 0
+        const data = IMGArrays.fromIMG(rawData, opts)
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const dataCount = this.layers[l].getDataSize()
+            this.layers[l].fromIMG(data.splice(0, dataCount))
+        }
+    }
+
     static get version () {
         return "3.2.0"
     }
@@ -2024,6 +2165,12 @@ class PoolLayer {
     toJSON () {return {}}
 
     fromJSON () {}
+
+    getDataSize () {return 0}
+
+    toIMG () {return []}
+
+    fromIMG () {}
 }
 
 /* istanbul ignore next */

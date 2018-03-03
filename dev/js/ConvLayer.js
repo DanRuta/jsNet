@@ -303,6 +303,69 @@ class ConvLayer {
             filter.weights = data.weights[fi].weights
         })
     }
+
+    // Used for importing data
+    getDataSize () {
+
+        let size = 0
+
+        for (let f=0; f<this.filters.length; f++) {
+
+            const filter = this.filters[f]
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    size += filter.weights[c][r].length
+                }
+            }
+
+            size += 1
+        }
+
+        return size
+    }
+
+    toIMG () {
+
+        const data = []
+
+        for (let f=0; f<this.filters.length; f++) {
+            const filter = this.filters[f]
+
+            data.push(filter.bias)
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    for (let v=0; v<filter.weights[c][r].length; v++) {
+                        data.push(filter.weights[c][r][v])
+                    }
+                }
+            }
+        }
+
+        return data
+    }
+
+    fromIMG (data) {
+
+        let valI = 0
+
+        for (let f=0; f<this.filters.length; f++) {
+
+            const filter = this.filters[f]
+            filter.bias = data[valI]
+            valI++
+
+            for (let c=0; c<filter.weights.length; c++) {
+                for (let r=0; r<filter.weights[c].length; r++) {
+                    for (let v=0; v<filter.weights[c][r].length; v++) {
+                        filter.weights[c][r][v] = data[valI]
+                        valI++
+                    }
+                }
+            }
+        }
+    }
 }
 
 // https://github.com/DanRuta/jsNet/issues/33

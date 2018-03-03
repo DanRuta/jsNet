@@ -1,6 +1,7 @@
-# 3.2.0 - Upcoming - Validation, early stopping, img weights
+# 3.2.0 - IMG data, validation, early stopping
 ---
 #### Network
+- Added weight+bias importing and exporting via images, using IMGArrays
 - Added validation config to .train(), with interval config
 - Added early stopping to validation, with threshold stopping condition
 - Added early stopping patience condition

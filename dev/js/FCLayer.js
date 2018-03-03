@@ -171,6 +171,49 @@ class FCLayer {
             neuron.weights = data.weights[ni].weights
         })
     }
+
+    // Used for importing data
+    getDataSize () {
+
+        let size = 0
+
+        for (let n=0; n<this.neurons.length; n++) {
+            size += this.neurons[n].weights.length + 1
+        }
+
+        return size
+    }
+
+    toIMG () {
+        const data = []
+
+        for (let n=0; n<this.neurons.length; n++) {
+            data.push(this.neurons[n].bias)
+
+            for (let w=0; w<this.neurons[n].weights.length; w++) {
+                data.push(this.neurons[n].weights[w])
+            }
+        }
+
+        return data
+    }    
+
+    fromIMG (data) {
+
+        let valI = 0
+
+        for (let n=0; n<this.neurons.length; n++) {
+
+            const neuron = this.neurons[n]
+            neuron.bias = data[valI]
+            valI++
+
+            for (let w=0; w<neuron.weights.length; w++) {
+                neuron.weights[w] = data[valI]
+                valI++
+            }
+        }
+    }
 }
 
 const Layer = FCLayer

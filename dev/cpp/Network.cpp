@@ -186,7 +186,7 @@ bool Network::checkEarlyStopping (void) {
                 }
 
             } else {
-                stop = lastValidationError / earlyStoppingBestError >= (1+earlyStoppingPercent/100);
+                stop = (lastValidationError / earlyStoppingBestError) >= (1+earlyStoppingPercent/100);
             }
 
             return stop;

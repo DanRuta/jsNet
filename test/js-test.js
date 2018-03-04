@@ -2209,8 +2209,9 @@ describe("FCLayer", () => {
             const layer = new FCLayer(10)
             const prevLayer = new FCLayer(10)
             layer.assignPrev(prevLayer)
-            layer.net = {weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
             layer.init()
+
             for (let n=0; n<layer.neurons.length; n++) {
                 expect(layer.neurons[n].validationWeights).to.be.undefined
             }
@@ -2226,7 +2227,7 @@ describe("FCLayer", () => {
             const layer = new FCLayer(10)
             const prevLayer = new FCLayer(10)
             layer.assignPrev(prevLayer)
-            layer.net = {weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
             layer.init()
 
             for (let n=0; n<layer.neurons.length; n++) {
@@ -2246,7 +2247,7 @@ describe("FCLayer", () => {
             const layer = new FCLayer(10)
             const prevLayer = new FCLayer(10)
             layer.assignPrev(prevLayer)
-            layer.net = {weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
             layer.init()
             for (let n=0; n<layer.neurons.length; n++) {
                 layer.neurons[n].validationWeights = [1,2,3]
@@ -2263,7 +2264,7 @@ describe("FCLayer", () => {
             const layer = new FCLayer(10)
             const prevLayer = new FCLayer(10)
             layer.assignPrev(prevLayer)
-            layer.net = {weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
             layer.init()
             for (let n=0; n<layer.neurons.length; n++) {
                 layer.neurons[n].validationWeights = [1,2,3]
@@ -4056,7 +4057,7 @@ describe("ConvLayer", () => {
 
     describe("fromIMG", () => {
         it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
-            const testData = [1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4]  
+            const testData = [1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4]
 
             const conv = new ConvLayer(4)
             conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
@@ -4078,7 +4079,7 @@ describe("ConvLayer", () => {
             expect(conv.filters[3].weights).to.deep.equal([[[1,2],[3,4]]])
         })
         it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
-            const testData = [1,1,2,3,4,1,1,2,3,4] 
+            const testData = [1,1,2,3,4,1,1,2,3,4]
 
             const conv = new ConvLayer(4)
             conv.filters = [new Filter(), new Filter()]

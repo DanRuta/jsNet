@@ -351,6 +351,151 @@ namespace Network_cpp {
         delete l2;
         delete l3;
     }
+
+    // Calls every layer's (except the first) restoreValidation function
+    TEST(Network, restoreValidation) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
+
+        EXPECT_CALL(*l1, restoreValidation()).Times(0);
+        EXPECT_CALL(*l2, restoreValidation()).Times(1);
+        EXPECT_CALL(*l3, restoreValidation()).Times(1);
+
+        Network::getInstance(0)->restoreValidation();
+
+        delete l1;
+        delete l2;
+        delete l3;
+    }
+
+
+    class CheckEarlyStoppingFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+            l1 = new FCLayer(0, 2);
+            l2 = new FCLayer(0, 5);
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
+            l2->prevLayer = l1;
+            l2->netInstance = 0;
+        }
+
+        virtual void TearDown() {
+            delete l1;
+            delete l2;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+        FCLayer* l2;
+    };
+
+    // Returns true when the lastValidationError is equal or lower than the threshold
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_1) {
+        net->earlyStoppingType = 1;
+        net->earlyStoppingThreshold = 0.1;
+        net->lastValidationError = 0.005;
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Returns false when the lastValidationError is not equal or lower than the threshold
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_2) {
+        net->earlyStoppingType = 1;
+        net->earlyStoppingThreshold = 0.1;
+        net->lastValidationError = 0.5;
+        EXPECT_FALSE( net->checkEarlyStopping() );
+    }
+
+    // Returns true when the patienceCounter is higher than the patience hyperparameter, and new validation is not the best
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_3) {
+        net->lastValidationError = 5;
+        net->earlyStoppingBestError = 4;
+        net->earlyStoppingType = 2;
+        net->earlyStoppingPatienceCounter = 5;
+        net->earlyStoppingPatience = 4;
+
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Increments the patienceCounter and returns false, when patienceCounter is lower than patience hyperparameter and new validation is not the best
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_4) {
+        net->lastValidationError = 5;
+        net->earlyStoppingBestError = 4;
+        net->earlyStoppingType = 2;
+        net->earlyStoppingPatienceCounter = 2;
+        net->earlyStoppingPatience = 4;
+
+        EXPECT_FALSE( net->checkEarlyStopping() );
+        EXPECT_EQ( net->earlyStoppingPatienceCounter, 3 );
+    }
+
+    // Backs up the layer weights when a new best validation error is calculated, sets bestError, resets patienceCounter, and returns false
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_5) {
+        net->earlyStoppingType = 2;
+        net->lastValidationError = 2;
+        net->earlyStoppingPatienceCounter = 4;
+        net->earlyStoppingBestError = 4;
+
+        MockLayer* ml1 = new MockLayer(0, 2);
+        MockLayer* ml2 = new MockLayer(0, 5);
+        net->layers = {};
+        net->layers.push_back(ml1);
+        net->layers.push_back(ml2);
+
+        EXPECT_CALL(*ml1, backUpValidation()).Times(0);
+        EXPECT_CALL(*ml2, backUpValidation()).Times(1);
+        EXPECT_FALSE( net->checkEarlyStopping() );
+
+        EXPECT_EQ( net->earlyStoppingBestError, 2 );
+        EXPECT_EQ( net->earlyStoppingPatienceCounter, 0 );
+
+        delete ml1;
+        delete ml2;
+    }
+
+    // Returns true when the validation error is higher than the best by at least the defined percent amount
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_6) {
+        net->earlyStoppingType = 3;
+        net->earlyStoppingBestError = 1;
+        net->lastValidationError = 1.150001;
+        net->earlyStoppingPercent = 15;
+
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Backs up the layer weights when a new best validation error is calculated, sets bestError, and returns false
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_7) {
+        net->earlyStoppingType = 3;
+        net->earlyStoppingBestError = 1.16;
+        net->lastValidationError = 1.15;
+
+        MockLayer* ml1 = new MockLayer(0, 2);
+        MockLayer* ml2 = new MockLayer(0, 5);
+        net->layers = {};
+        net->layers.push_back(ml1);
+        net->layers.push_back(ml2);
+
+        EXPECT_CALL(*ml1, backUpValidation()).Times(0);
+        EXPECT_CALL(*ml2, backUpValidation()).Times(1);
+        EXPECT_FALSE( net->checkEarlyStopping() );
+
+        EXPECT_EQ( net->earlyStoppingBestError, 1.15 );
+
+        delete ml1;
+        delete ml2;
+    }
+
 }
 
 namespace FCLayer_cpp {
@@ -1177,6 +1322,96 @@ namespace FCLayer_cpp {
         delete l1;
         delete l2;
         Network::deleteNetwork();
+    }
+
+    // Copies the neuron weights to a 'validationWeights' array, for each neuron
+    TEST(FCLayer, backUpValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationWeights.size(), 0 );
+        }
+
+        l1->backUpValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationWeights[n], l1->weights[n] );
+        }
+    }
+
+    // Copies over the neuron biases into a 'validationBias' value
+    TEST(FCLayer, backUpValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->biases[n] = n;
+            EXPECT_EQ( l1->validationBiases.size(), 0 );
+        }
+
+        l1->backUpValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationBiases[n], l1->biases[n] );
+        }
+    }
+
+    // Copies backed up 'validationWeights' values into every neuron's weights arrays
+    TEST(FCLayer, restoreValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        std::vector<double> expected = {1,2,3};
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->validationWeights.push_back({1,2,3});
+            l1->validationBiases.push_back(n+5);
+            l1->weights[n] = {0,0,0};
+            EXPECT_NE( l1->weights[n], expected );
+        }
+
+        l1->restoreValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->weights[n], expected );
+        }
+    }
+
+    // Copies backed up 'validationBias' values into every neuron's bias values
+    TEST(FCLayer, restoreValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->validationWeights.push_back({1,2,3});
+            l1->validationBiases.push_back(n+5);
+        }
+
+        l1->restoreValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->biases[n], n+5 );
+        }
     }
 }
 

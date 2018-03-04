@@ -11,6 +11,7 @@ void Filter::init (int netInstance, int channels, int filterSize) {
         case 2: // adagrad
         case 3: // rmsprop
         case 5: // adadelta
+        case 6: // momentum
             biasCache = 0;
             weightsCache = NetUtil::createVolume<double>(channels, filterSize, filterSize, 0);
 

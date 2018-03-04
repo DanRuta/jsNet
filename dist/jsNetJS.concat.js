@@ -572,7 +572,7 @@ class FCLayer {
         }
 
         return data
-    }    
+    }
 
     fromIMG (data) {
 

@@ -2340,10 +2340,11 @@ namespace ConvLayer_cpp {
         l1->channels = 2;
         l1->filterSize = 3;
         Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        std::vector<std::vector<std::vector<double> > > weights = {{{1,2},{1,2}}};
 
         for (int f=0; f<5; f++) {
             l1->filters.push_back(new Filter());
-            l1->filterWeights.push_back({{{1,2},{1,2}}});
+            l1->filterWeights.push_back(weights);
             l1->biases.push_back(f);
         }
 
@@ -2370,10 +2371,11 @@ namespace ConvLayer_cpp {
         l1->channels = 2;
         l1->filterSize = 3;
         Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        std::vector<std::vector<std::vector<double> > > weights = {{{1,2},{1,2}}};
 
         for (int f=0; f<5; f++) {
             l1->filters.push_back(new Filter());
-            l1->filterWeights.push_back({{{1,2},{1,2}}});
+            l1->filterWeights.push_back(weights);
             l1->biases.push_back(f);
         }
 
@@ -2400,12 +2402,13 @@ namespace ConvLayer_cpp {
         l1->channels = 2;
         l1->filterSize = 3;
         Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        std::vector<std::vector<std::vector<double> > >  expected = {{{1,2,3},{1,2,3}}};
+        std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3},{1,2,3}}};
+        std::vector<std::vector<std::vector<double> > > weights = {{{0,0,0},{0,0,0}}};
         l1->init(1);
 
         for (int f=0; f<l1->filters.size(); f++) {
             l1->validationFilterWeights.push_back(expected);
-            l1->filterWeights.push_back({{{0,0,0},{0,0,0}}});
+            l1->filterWeights.push_back(weights);
             l1->validationBiases.push_back(f+5);
             l1->biases.push_back(f);
             EXPECT_NE( l1->filterWeights[f], expected );

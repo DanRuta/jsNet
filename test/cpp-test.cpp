@@ -2334,94 +2334,49 @@ namespace ConvLayer_cpp {
     TEST(ConvLayer, backUpValidation_1) {
         Network::deleteNetwork();
         Network::newNetwork();
-        ConvLayer* l1 = new ConvLayer(0, 5);
-        ConvLayer* l2 = new ConvLayer(0, 2);
-        l1->prevLayer = l2;
-        l1->channels = 2;
-        l1->filterSize = 3;
-        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        std::vector<std::vector<std::vector<double> > > weights = {{{1,2},{1,2}}};
+        ConvLayer* conv = new ConvLayer(0, 5);
+        conv->filterWeights = {{{{1,2},{1,2}}}};
 
-        for (int f=0; f<5; f++) {
-            l1->filters.push_back(new Filter());
-            l1->filterWeights.push_back(weights);
-            l1->biases.push_back(f);
-        }
+        EXPECT_EQ( conv->validationFilterWeights.size(), 0 );
 
-        EXPECT_EQ( l1->validationFilterWeights.size(), 0 );
+        conv->backUpValidation();
 
-        l1->backUpValidation();
+        EXPECT_EQ( conv->validationFilterWeights, conv->filterWeights );
 
-        EXPECT_EQ( l1->validationFilterWeights, l1->filterWeights );
-
-        for (int f=0; f<5; f++) {
-            delete l1->filters[f];
-        }
-        delete l1;
-        delete l2;
+        delete conv;
     }
 
     // Copies the filter biases to a 'validationBias' array, for each filter
     TEST(ConvLayer, backUpValidation_2) {
         Network::deleteNetwork();
         Network::newNetwork();
-        ConvLayer* l1 = new ConvLayer(0, 5);
-        ConvLayer* l2 = new ConvLayer(0, 2);
-        l1->prevLayer = l2;
-        l1->channels = 2;
-        l1->filterSize = 3;
-        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        std::vector<std::vector<std::vector<double> > > weights = {{{1,2},{1,2}}};
+        ConvLayer* conv = new ConvLayer(0, 5);
+        conv->biases = {1,2,3};
 
-        for (int f=0; f<5; f++) {
-            l1->filters.push_back(new Filter());
-            l1->filterWeights.push_back(weights);
-            l1->biases.push_back(f);
-        }
+        EXPECT_EQ( conv->validationBiases.size(), 0 );
 
-        EXPECT_EQ( l1->validationFilterWeights.size(), 0 );
+        conv->backUpValidation();
 
-        l1->backUpValidation();
+        EXPECT_EQ( conv->validationBiases, conv->biases );
 
-        EXPECT_EQ( l1->validationBiases, l1->biases );
-
-        for (int f=0; f<5; f++) {
-            delete l1->filters[f];
-        }
-        delete l1;
-        delete l2;
+        delete conv;
     }
 
     // Copies backed up 'validationWeights' values into every filter's weights arrays
     TEST(ConvLayer, restoreValidation) {
         Network::deleteNetwork();
         Network::newNetwork();
-        ConvLayer* l1 = new ConvLayer(0, 5);
-        ConvLayer* l2 = new ConvLayer(0, 2);
-        l1->prevLayer = l2;
-        l1->channels = 2;
-        l1->filterSize = 3;
-        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
-        std::vector<std::vector<std::vector<double> > > expected = {{{1,2,3},{1,2,3}}};
-        std::vector<std::vector<std::vector<double> > > weights = {{{0,0,0},{0,0,0}}};
-        l1->init(1);
+        ConvLayer* conv = new ConvLayer(0, 5);
+        std::vector<std::vector<std::vector<std::vector<double> > > > expected = {{{{1,2,3},{1,2,3}}}};
 
-        for (int f=0; f<l1->filters.size(); f++) {
-            l1->validationFilterWeights.push_back(expected);
-            l1->filterWeights.push_back(weights);
-            l1->validationBiases.push_back(f+5);
-            l1->biases.push_back(f);
-            EXPECT_NE( l1->filterWeights[f], expected );
-        }
+        conv->filterWeights = {{{{0,0,0},{0,0,0}}}};
+        conv->validationFilterWeights = expected;
 
-        l1->restoreValidation();
+        conv->restoreValidation();
 
-        for (int f=0; f<l1->filters.size(); f++) {
-            EXPECT_EQ( l1->filterWeights[f], expected );
-        }
+        EXPECT_EQ( conv->filterWeights, expected );
 
-        delete l1;
-        delete l2;
+        delete conv;
     }
 
 }

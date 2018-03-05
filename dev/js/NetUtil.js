@@ -241,7 +241,7 @@ class NetUtil {
         }
     }
 
-    static getActivations (layer, mapStartI, mapSize){
+    static getActivations (layer, mapStartI, mapSize) {
 
         const returnArr = []
 
@@ -301,6 +301,60 @@ class NetUtil {
         }
 
         return returnArr
+    }
+
+    static splitData (data, {training=0.7, validation=0.15, test=0.15}={}) {
+
+        const split = {
+            training: [],
+            validation: [],
+            test: []
+        }
+
+        // Define here splits, for returning at the end
+        for (let i=0; i<data.length; i++) {
+            let x = Math.random()
+
+            if (x > 1-training) {
+                split.training.push(data[i])
+            } else {
+
+                if (x<validation) {
+                    split.validation.push(data[i])
+                } else {
+                    split.test.push(data[i])
+                }
+
+            }
+        }
+
+        return split
+    }
+
+    static normalize (data) {
+        let minVal = Infinity
+        let maxVal = -Infinity
+
+        for (let i=0; i<data.length; i++) {
+            if (data[i] < minVal) {
+                minVal = data[i]
+            }
+            if (data[i] > maxVal) {
+                maxVal = data[i]
+            }
+        }
+
+        if ((-1*minVal + maxVal) != 0) {
+            for (let i=0; i<data.length; i++) {
+                data[i] = (data[i] + -1*minVal) / (-1*minVal + maxVal)
+            }
+        } else {
+            for (let i=0; i<data.length; i++) {
+                data[i] = 0.5
+            }
+        }
+
+        return {minVal, maxVal}
     }
 }
 

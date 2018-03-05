@@ -13,10 +13,13 @@ class Network {
 public:
     static std::vector<Network*> netInstances;
     int instanceIndex;
-    int iterations;
+    int iterations=0;
+    int validations=0;
+    int validationInterval;
     int miniBatchSize;
     int channels;
     float learningRate;
+    float momentum;
     float rmsDecay;
     float rho;
     float lreluSlope;
@@ -30,9 +33,20 @@ public:
     double l1Error;
     float maxNorm;
     double maxNormTotal;
+    double trainingLogging;
     double error;
+    double validationError;
+    double lastValidationError;
+    bool stoppedEarly=false;
+    int earlyStoppingType=0;
+    double earlyStoppingThreshold=0;
+    double earlyStoppingBestError;
+    int earlyStoppingPatience;
+    int earlyStoppingPatienceCounter;
+    float earlyStoppingPercent;
     std::vector<Layer*> layers;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData;
+    std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData;
     std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData;
     std::map<std::string, float> weightsConfig;
     double (*activation)(double, bool, Neuron*);
@@ -57,15 +71,21 @@ public:
 
     std::vector<double> forward (std::vector<double> input);
 
-    void backward ();
+    void backward (void);
 
     void train (int iterations, int startIndex);
+
+    double validate (void);
+
+    bool checkEarlyStopping (void);
 
     double test (int iterations, int startIndex);
 
     void resetDeltaWeights (void);
 
     void applyDeltaWeights (void);
+
+    void restoreValidation (void);
 
 };
 
@@ -92,9 +112,12 @@ public:
     std::vector<std::vector<std::vector<double> > > errors;
     std::vector<std::vector<std::vector<double> > > activations;
     std::vector<double> deltaBiases;
+    std::vector<double> validationBiases;
 
     std::vector<std::vector<double> > weights; // FC
+    std::vector<std::vector<double> > validationWeights; // FC
     std::vector<std::vector<std::vector<std::vector<double> > > > filterWeights;
+    std::vector<std::vector<std::vector<std::vector<double> > > > validationFilterWeights;
 
     std::vector<std::vector<double> > deltaWeights; // FC
     std::vector<std::vector<std::vector<std::vector<double> > > > filterDeltaWeights;
@@ -112,7 +135,7 @@ public:
 
     Layer (int netI, int s) {};
 
-    virtual ~Layer(void) {} ;
+    virtual ~Layer(void) {};
 
     virtual void assignNext (Layer* l) = 0;
 
@@ -127,6 +150,10 @@ public:
     virtual void applyDeltaWeights (void) = 0;
 
     virtual void resetDeltaWeights (void) = 0;
+
+    virtual void backUpValidation (void) = 0;
+
+    virtual void restoreValidation (void) = 0;
 
 };
 
@@ -150,6 +177,10 @@ public:
     void applyDeltaWeights (void);
 
     void resetDeltaWeights (void);
+
+    void backUpValidation (void);
+
+    void restoreValidation (void);
 };
 
 class ConvLayer : public Layer {
@@ -177,6 +208,10 @@ public:
 
     void resetDeltaWeights (void);
 
+    void backUpValidation (void);
+
+    void restoreValidation (void);
+
 };
 
 class PoolLayer : public Layer {
@@ -203,6 +238,10 @@ public:
     void applyDeltaWeights (void) {};
 
     void resetDeltaWeights (void) {};
+
+    void backUpValidation (void) {};
+
+    void restoreValidation (void) {};
 };
 
 
@@ -277,9 +316,11 @@ public:
 
     static double meansquarederror (std::vector<double> calculated, std::vector<double> desired);
 
+    static double rootmeansquarederror (std::vector<double> calculated, std::vector<double> desired);
+
     static double crossentropy (std::vector<double> target, std::vector<double> output);
 
-    static double vanillaupdatefn (int netInstance, double value, double deltaValue);
+    static double vanillasgd (int netInstance, double value, double deltaValue);
 
     static double gain(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
@@ -300,6 +341,10 @@ public:
     static double adadelta(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
 
     static double adadelta(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
+
+    static double momentum(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex);
+
+    static double momentum(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v);
 
     static std::vector<double> uniform (int netInstance, int layerIndex, int size);
 

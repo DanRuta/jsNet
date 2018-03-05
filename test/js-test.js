@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.1.0")
+        expect(Network.version).to.equal("3.2.0")
     })
 })
 
@@ -66,17 +66,17 @@ describe("Network", () => {
                 expect(net.cost).to.equal(NetMath.meansquarederror)
             })
 
-            it("Defaults the updateFn to vanillaupdatefn", () => {
-                expect(net.updateFn).to.equal("vanillaupdatefn")
+            it("Defaults the updateFn to vanillasgd", () => {
+                expect(net.updateFn).to.equal("vanillasgd")
             })
 
-            it("Sets the net.weightUpdateFn to NetMath.vanillaupdatefn when setting it to false, null, or 'vanillaupdatefn'", () => {
+            it("Sets the net.weightUpdateFn to NetMath.vanillasgd when setting it to false, null, or 'vanillasgd'", () => {
                 const net2 = new Network({updateFn: null})
-                expect(net2.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                expect(net2.weightUpdateFn).to.equal(NetMath.vanillasgd)
                 const net3 = new Network({updateFn: false})
-                expect(net3.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
-                const net4 = new Network({updateFn: "vanillaupdatefn"})
-                expect(net4.weightUpdateFn).to.equal(NetMath.vanillaupdatefn)
+                expect(net3.weightUpdateFn).to.equal(NetMath.vanillasgd)
+                const net4 = new Network({updateFn: "vanillasgd"})
+                expect(net4.weightUpdateFn).to.equal(NetMath.vanillasgd)
             })
 
             it("Sets the net.weightUpdateFn to NetMath.adagrad when setting it to 'adagrad'", () => {
@@ -117,6 +117,16 @@ describe("Network", () => {
             it("Still allows user learning rates to be set, even if updateFn is adam", () => {
                 const net2 = new Network({updateFn: "adam", learningRate: 0.5})
                 expect(net2.learningRate).to.equal(0.5)
+            })
+
+            it("Defaults the learning rate to 0.2 if the updateFn is momentum", () => {
+                const net2 = new Network({updateFn: "momentum"})
+                expect(net2.learningRate).to.equal(0.2)
+            })
+
+            it("Still allows user configurable learning rate, if the updateFn is momentum", () => {
+                const net2 = new Network({updateFn: "momentum", learningRate: 0.1})
+                expect(net2.learningRate).to.equal(0.1)
             })
 
             it("Defaults the net.rho to 0.95 if the updateFn is adadelta", () => {
@@ -1080,16 +1090,16 @@ describe("Network", () => {
             return expect(net.train()).to.be.rejectedWith("No data provided")
         })
 
-        it("Rejects the promise if some data does not have the key 'input' and 'expected'/'output'", () => {
-            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+        it("Rejects the promise if some data does not have the key 'input' and 'expected'", () => {
+            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected")
         })
 
         it("Resolves the promise when you give it data", () => {
             return expect(net.train(testData)).to.be.fulfilled
         })
 
-        it("Accepts 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.be.fulfilled
+        it("Does not accept 'output' as an alternative name for expected values", () => {
+            return expect(net.train(testDataWithOutput)).to.not.be.fulfilled
         })
 
         it("Does one iteration when not passing any config data", () => {
@@ -1149,14 +1159,16 @@ describe("Network", () => {
             })
         })
 
-        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'error' and 'input', for each iteration", () => {
+        it("Calls a given callback with an object containing keys: 'elapsed', 'iterations', 'validations', 'trainingError', 'validationError', and 'input', for each iteration", () => {
             sinon.stub(console, "warn")
 
             return net.train(testData, {callback: console.warn}).then(() => {
                 expect(console.warn).to.have.been.called
                 expect(console.warn.callCount).to.equal(4)
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("iterations"))
-                expect(console.warn).to.have.been.calledWith(sinon.match.has("error"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("validations"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("trainingError"))
+                expect(console.warn).to.have.been.calledWith(sinon.match.has("validationError"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
@@ -1173,16 +1185,15 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
+        it("Calls the initLayers function with the length of the first input and length of first expected", () => {
             const network = new Network({updateFn: null})
             sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
-            return network.train(testDataWithOutput).then(() => {
+            return network.train(testData).then(() => {
                 expect(network.initLayers).to.have.been.calledWith(2, 2)
                 network.initLayers.restore()
             })
-
         })
 
         it("Logs to the console once for each epoch, +2 (for start/stop logs)", () => {
@@ -1252,7 +1263,7 @@ describe("Network", () => {
         })
 
         it("Only resets weight deltas for half the iterations +1 when miniBatchSize is set to 2", () => {
-            return net.train(testData, {miniBatchSize: 2}).then(() => {
+            return net.train(testData, {miniBatchSize: 2, callback: ()=>{}, validation: {data: testData, rate: 0}}).then(() => {
                 expect(net.resetDeltaWeights.callCount).to.equal(3)
             })
         })
@@ -1276,6 +1287,266 @@ describe("Network", () => {
             return net.train(testData, {shuffle: true}).then(() => {
                 expect(NetUtil.shuffle).to.be.calledWith(testData)
                 NetUtil.shuffle.restore()
+            })
+        })
+
+        it("Runs validation when validation data is given", () => {
+            sinon.spy(net, "validate")
+            return net.train(testData, {epochs: 10, validation: {data: testData, interval: 2}}).then(() => {
+                expect(net.validate).to.be.called
+                net.validate.restore()
+            })
+        })
+
+        it("Defaults validation interval to 1 epoch (number of training samples)", () => {
+            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10}}).then(() => {
+                expect(net.validation.interval).to.equal(20)
+            })
+        })
+
+        it("Allows setting the validation rate to custom value", () => {
+            return net.train([...testDataX10, ...testDataX10], {validation: {data: testDataX10, interval: 5}}).then(() => {
+                expect(net.validation.interval).to.equal(5)
+            })
+        })
+
+        describe("Early stopping", () => {
+
+            it("Defaults the threshold to 0.01 when the type is 'threshold'", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.01)
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold",
+                    threshold: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                })
+            })
+
+            it("Checks the early stopping with each validation", () => {
+                sinon.stub(net, "checkEarlyStopping")
+                return net.train(testDataX10, {validation: {
+                    data: testData,
+                    interval: 1,
+                    earlyStopping: {
+                        type: "threshold",
+                        threshold: 0.2
+                    }
+                }}).then(() => {
+                    expect(net.checkEarlyStopping.callCount).to.equal(9)
+                    net.checkEarlyStopping.restore()
+                })
+            })
+
+
+            it("Defaults the patience to 20 when the type is 'patience'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.patience).to.equal(20)
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience",
+                    patience: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.patience).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity and patienceCounter to 0", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.bestError).to.equal(Infinity)
+                    expect(net.validation.earlyStopping.patienceCounter).to.equal(0)
+                })
+            })
+
+            it("Restores the validation values at the end of the training when using 'patience'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    sinon.stub(net.layers[l], "restoreValidation")
+                }
+
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+
+                    expect(net.layers[0].restoreValidation.callCount).to.equal(0)
+
+                    for (let l=1; l<net.layers.length; l++) {
+                        expect(net.layers[l].restoreValidation.callCount).to.equal(1)
+                    }
+                })
+            })
+
+            it("Defaults the divergence percent to 30 when the type is 'divergence'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(30)
+                })
+            })
+
+            it("Allows setting a custom percent value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence",
+                    percent: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.bestError).to.equal(Infinity)
+                })
+            })
+
+
+            it("Stops the training when checkEarlyStopping returns true", () => {
+                let checkEarlyCounter = 0
+                const stub = sinon.stub(net, "checkEarlyStopping").callsFake(() => ++checkEarlyCounter>=5)
+
+                return net.train(testDataX10, {validation: {
+                    data: testData,
+                    interval: 1,
+                    earlyStopping: {
+                        type: "threshold",
+                        threshold: 0.2
+                    }
+                }}).then(() => {
+                    expect(stub.callCount).to.equal(5)
+                    stub.restore()
+                })
+            })
+
+        })
+    })
+
+    describe("checkEarlyStopping", () => {
+
+        let net
+
+        before(() => {
+            net = new Network()
+            net.initLayers([1],[2])
+            net.validation = {earlyStopping: {}}
+        })
+
+        describe("threshold", () => {
+            it("Returns true when the lastValidationError is equal or lower than the threshold", () => {
+                net.validation.earlyStopping.type = "threshold"
+                net.validation.earlyStopping.threshold = 0.01
+                net.lastValidationError = 0.005
+                expect(net.checkEarlyStopping([1,2,3])).to.be.true
+            })
+            it("Returns false when the lastValidationError is not equal or lower than the threshold", () => {
+                net.validation.earlyStopping.type = "threshold"
+                net.validation.earlyStopping.threshold = 0.01
+                net.lastValidationError = 0.5
+                expect(net.checkEarlyStopping([1,2,3])).to.be.false
+            })
+        })
+
+        describe("patience", () => {
+            it("Returns true when the patienceCounter is higher than the patience hyperparameter, and new validation is not the best", () => {
+                net.validation.earlyStopping.type = "patience"
+                net.validation.earlyStopping.patienceCounter = 5
+                net.validation.earlyStopping.patience = 4
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.true
+            })
+            it("Increments the patienceCounter and returns false, when patienceCounter is lower than patience hyperparameter and new validation is not the best", () => {
+                net.validation.earlyStopping.type = "patience"
+                net.validation.earlyStopping.patienceCounter = 2
+                net.validation.earlyStopping.patience = 4
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.false
+                expect(net.validation.earlyStopping.patienceCounter).to.equal(3)
+            })
+
+            it("Backs up the layer weights when a new best validation error is calculated, sets bestError, resets patienceCounter, and returns false", () => {
+                net.validation.earlyStopping.type = "patience"
+                net.lastValidationError = 2
+                net.validation.earlyStopping.patienceCounter = 4
+                net.validation.earlyStopping.bestError = 4
+                const layer1 = new FCLayer(1)
+                const layer2 = new FCLayer(2)
+                const layer3 = new FCLayer(3)
+                net.layers = [layer1, layer2, layer3]
+
+                sinon.stub(layer1, "backUpValidation")
+                sinon.stub(layer2, "backUpValidation")
+                sinon.stub(layer3, "backUpValidation")
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.false
+                expect(layer1.backUpValidation).to.not.be.called
+                expect(layer2.backUpValidation).to.be.called
+                expect(layer3.backUpValidation).to.be.called
+
+                expect(net.validation.earlyStopping.bestError).to.equal(2)
+                expect(net.validation.earlyStopping.patienceCounter).to.equal(0)
+            })
+        })
+
+        describe("divergence", () => {
+            it("Returns true when the validation error is higher than the best by at least the defined percent amount", () => {
+                net.validation.earlyStopping.type = "divergence"
+                net.validation.earlyStopping.bestError = 1
+                net.lastValidationError = 1.15
+                net.validation.earlyStopping.percent = 15
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.true
+            })
+            it("Backs up the layer weights when a new best validation error is calculated, sets bestError, and returns false", () => {
+                net.validation.earlyStopping.type = "divergence"
+                net.validation.earlyStopping.bestError = 1.16
+                net.lastValidationError = 1.15
+
+                const layer1 = new FCLayer(1)
+                const layer2 = new FCLayer(2)
+                const layer3 = new FCLayer(3)
+                net.layers = [layer1, layer2, layer3]
+
+                sinon.stub(layer1, "backUpValidation")
+                sinon.stub(layer2, "backUpValidation")
+                sinon.stub(layer3, "backUpValidation")
+
+                expect(net.checkEarlyStopping([1,2,3])).to.be.false
+                expect(layer1.backUpValidation).to.not.be.called
+                expect(layer2.backUpValidation).to.be.called
+                expect(layer3.backUpValidation).to.be.called
+
+                expect(net.validation.earlyStopping.bestError).to.equal(1.15)
             })
         })
     })
@@ -1371,6 +1642,55 @@ describe("Network", () => {
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
             })
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network()
+            expect(net.toIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's toIMG function", () => {
+            const net = new Network()
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "toIMG")
+            sinon.stub(l2, "toIMG").callsFake(() => [1,2,3])
+            sinon.stub(l3, "toIMG").callsFake(() => [1,2,3])
+            net.layers = [l1, l2, l3]
+            net.toIMG({toIMG: () => {}})
+            expect(l1.toIMG).to.not.be.called
+            expect(l2.toIMG).to.be.called
+            expect(l3.toIMG).to.be.called
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network()
+            expect(net.fromIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's fromIMG function with the data segment matching their size", () => {
+            const net = new Network()
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "fromIMG")
+            sinon.stub(l2, "fromIMG")
+            sinon.stub(l2, "getDataSize").callsFake(() => 4)
+            sinon.stub(l3, "fromIMG")
+            sinon.stub(l3, "getDataSize").callsFake(() => 3)
+            net.layers = [l1, l2, l3]
+
+            const fakeIMGArrays = {fromIMG: () => [1,2,3,4, 5,6,7]}
+            net.fromIMG(null, fakeIMGArrays)
+
+            expect(l1.fromIMG).to.not.be.called
+            expect(l2.fromIMG).to.be.calledWith([1,2,3,4])
+            expect(l3.fromIMG).to.be.calledWith([5,6,7])
         })
     })
 })
@@ -1794,7 +2114,7 @@ describe("FCLayer", () => {
         it("Increments the weights of all neurons with their respective deltas (when learning rate is 1)", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
+            const net = new Network({learningRate: 1, l1: false, l2: false, layers: [layer1, layer2], updateFn: "vanillasgd"})
             net.miniBatchSize = 1
 
             layer2.neurons.forEach(neuron => neuron.weights = [0.25, 0.25])
@@ -1810,7 +2130,7 @@ describe("FCLayer", () => {
         it("Increments the bias of all neurons with their deltaBias", () => {
             const layer1 = new Layer(2)
             const layer2 = new Layer(3)
-            const net = new Network({learningRate: 1, layers: [layer1, layer2], updateFn: "vanillaupdatefn"})
+            const net = new Network({learningRate: 1, layers: [layer1, layer2], updateFn: "vanillasgd"})
 
             layer2.neurons.forEach(neuron => neuron.bias = 0.25)
             layer2.neurons.forEach(neuron => neuron.deltaBias = 0.5)
@@ -1883,6 +2203,168 @@ describe("FCLayer", () => {
             net.weightUpdateFn.restore()
         })
     })
+
+    describe("backUpValidation", () => {
+        it("Copies the neuron weights to a 'validationWeights' array, for each neuron", () => {
+            const layer = new FCLayer(10)
+            const prevLayer = new FCLayer(10)
+            layer.assignPrev(prevLayer)
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
+            layer.init()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].validationWeights).to.be.undefined
+            }
+
+            layer.backUpValidation()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].validationWeights).to.deep.equal(layer.neurons[n].weights)
+            }
+        })
+
+        it("Copies over the neuron biases into a 'validationBias' value", () => {
+            const layer = new FCLayer(10)
+            const prevLayer = new FCLayer(10)
+            layer.assignPrev(prevLayer)
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
+            layer.init()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].validationBias).to.be.undefined
+            }
+
+            layer.backUpValidation()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].validationBias).to.equal(layer.neurons[n].bias)
+            }
+        })
+    })
+
+    describe("restoreValidation", () => {
+        it("Copies backed up 'validationWeights' values into every neuron's weights arrays", () => {
+            const layer = new FCLayer(10)
+            const prevLayer = new FCLayer(10)
+            layer.assignPrev(prevLayer)
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
+            layer.init()
+            for (let n=0; n<layer.neurons.length; n++) {
+                layer.neurons[n].validationWeights = [1,2,3]
+                expect(layer.neurons[n].weights).to.not.deep.equal([1,2,3])
+            }
+
+            layer.restoreValidation()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].weights).to.deep.equal([1,2,3])
+            }
+        })
+        it("Copies backed up 'validationBias' values into every neuron's bias values", () => {
+            const layer = new FCLayer(10)
+            const prevLayer = new FCLayer(10)
+            layer.assignPrev(prevLayer)
+            layer.net = {weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
+            layer.init()
+            for (let n=0; n<layer.neurons.length; n++) {
+                layer.neurons[n].validationWeights = [1,2,3]
+                layer.neurons[n].validationBias = n + 5
+                expect(layer.neurons[n].bias).to.not.equal(n+5)
+            }
+
+            layer.restoreValidation()
+
+            for (let n=0; n<layer.neurons.length; n++) {
+                expect(layer.neurons[n].bias).to.equal(n+5)
+            }
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(20)
+        })
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(15)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3,4]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(75)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 1)", () => {
+
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3])
+        })
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 2)", () => {
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,4,5]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,4,5,1,1,2,4,5])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [2,1,2,3, 3,1,2,4]
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2,3])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2,4])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [2,1,2, 3,1,2, 4,0,2]
+
+            const fc = new FCLayer(3)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2])
+            expect(fc.neurons[2].bias).to.equal(4)
+            expect(fc.neurons[2].weights).to.deep.equal([0,2])
+        })
+    })
+
 })
 
 describe("Neuron", () => {
@@ -3417,7 +3899,7 @@ describe("ConvLayer", () => {
                 filter.deltaWeights = [[[1,1,1],[1,1,1],[1,1,1]],[[1,1,1],[1,1,1],[1,1,1]]]
             })
 
-            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillaupdatefn, miniBatchSize: 1, l2: 0, l1: 0}
+            layer.net = {learningRate: 1, weightUpdateFn: NetMath.vanillasgd, miniBatchSize: 1, l2: 0, l1: 0}
         })
 
 
@@ -3457,6 +3939,165 @@ describe("ConvLayer", () => {
             expect(layer.net.maxNormTotal).to.equal(18) // 4 * 18 * 0.5**2
         })
     })
+
+    describe("backUpValidation", () => {
+        it("Copies the filter weights to a 'validationWeights' array, for each filter", () => {
+            const layer = new ConvLayer(5)
+            layer.net = {conv: {}, weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            const prevLayer = new ConvLayer(2)
+            layer.filters = [...new Array(5)].map(f => new Filter())
+            layer.init()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                expect(layer.filters[f].validationWeights).to.be.undefined
+            }
+
+            layer.backUpValidation()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                expect(layer.filters[f].validationWeights).to.deep.equal(layer.filters[f].weights)
+            }
+        })
+
+        it("Copies the filter biases to a 'validationBias' array, for each filter", () => {
+            const layer = new ConvLayer(5)
+            layer.net = {conv: {}, weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
+            const prevLayer = new ConvLayer(2)
+            layer.filters = [...new Array(5)].map(f => new Filter())
+            layer.channels = 2
+            layer.filterSize = 3
+            layer.init()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                expect(layer.filters[f].validationBias).to.be.undefined
+            }
+
+            layer.backUpValidation()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                expect(layer.filters[f].validationBias).to.equal(layer.filters[f].bias)
+            }
+        })
+    })
+
+    describe("restoreValidation", () => {
+        it("Copies backed up 'validationWeights' values into every filter's weights arrays", () => {
+            const layer = new ConvLayer(5)
+            layer.net = {conv: {}, weightsInitFn: x => [...new Array(x)].map((_,i) => i)}
+            const prevLayer = new ConvLayer(2)
+            layer.filters = [...new Array(5)].map(f => new Filter())
+            layer.channels = 2
+            layer.filterSize = 3
+            layer.init()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                layer.filters[f].validationWeights = [...new Array(layer.channels)].map(channelWeights => {
+                    return [...new Array(layer.filterSize)].map((weightsRow, wr) => [...new Array(layer.filterSize)].map((_,i) => i*i))
+                })
+                expect(layer.filters[f].weights).to.not.deep.equal(layer.filters[f].validationWeights)
+            }
+
+            layer.restoreValidation()
+
+            for (let f=0; f<layer.filters.length; f++) {
+                expect(layer.filters[f].weights).to.deep.equal(layer.filters[f].validationWeights)
+            }
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(10)
+        })
+        it("Returns the correct total number of weights and biases (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(20)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4])
+        })
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4]
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[2].bias).to.equal(1)
+            expect(conv.filters[3].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[2].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[3].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4]
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+    })
+
 })
 
 describe("PoolLayer", () => {
@@ -4059,6 +4700,20 @@ describe("PoolLayer", () => {
         })
     })
 
+    describe("backUpValidation", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.backUpValidation()).to.be.undefined
+        })
+    })
+
+    describe("restoreValidation", () => {
+        it("Does nothing", () => {
+            const layer = new PoolLayer()
+            expect(layer.restoreValidation()).to.be.undefined
+        })
+    })
+
     describe("toJSON", () => {
         it("Exports an empty object", () => {
             const layer = new PoolLayer()
@@ -4070,6 +4725,27 @@ describe("PoolLayer", () => {
         it("Does nothing", () => {
             const layer = new PoolLayer()
             expect(layer.fromJSON()).to.be.undefined
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns 0", () => {
+            const pool = new PoolLayer()
+            expect(pool.getDataSize()).to.equal(0)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns an empty array", () => {
+            const pool = new PoolLayer()
+            expect(pool.toIMG()).to.deep.equal([])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Does nothing", () => {
+            const pool = new PoolLayer()
+            expect(pool.fromIMG([])).to.be.undefined
         })
     })
 })
@@ -4251,15 +4927,55 @@ describe("Netmath", () => {
         })
     })
 
-    describe("vanillaupdatefn", () => {
+    describe("Root Mean Squared Error", () => {
 
-        const fn = NetMath.vanillaupdatefn.bind({learningRate: 0.5})
+        it("rootmeansquarederror([13,17,18,20,24], [12,15,20,22,24]) == 1.61245154965971", () => {
+            expect(NetMath.rootmeansquarederror([13,17,18,20,24], [12,15,20,22,24])).to.equal(1.61245154965971)
+        })
+    })
+
+    describe("vanillasgd", () => {
+
+        const fn = NetMath.vanillasgd.bind({learningRate: 0.5})
 
         it("Increments a weight with half of its delta weight when the learning rate is 0.5", () => {
             expect(fn(10, 10)).to.equal(15)
             expect(fn(10, 20)).to.equal(20)
             expect(fn(10, -30)).to.equal(-5)
         })
+    })
+
+    describe("momentum", () => {
+
+        let neuron
+
+        beforeEach(() => {
+            neuron = new Neuron()
+            neuron.weights = [1,2,3,4,5]
+            neuron.init({updateFn: "momentum"})
+        })
+
+        it("Increments the biasCache by the momentum value times learning rate times delta bias", () => {
+            neuron.biasCache = 0.123
+            NetMath.momentum.bind({learningRate: 0.2, momentum: 0.75}, 1, 3, neuron)()
+            expect(neuron.biasCache.toFixed(5)).to.equal("-0.50775")
+        })
+
+        it("Increments the neuron's weights cache by the momentum value times learning rate times weight delta", () => {
+            neuron.weightsCache = [1,1,1]
+            const result1 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 3, neuron, 0)()
+            const result2 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 4, neuron, 1)()
+            const result3 = NetMath.momentum.bind({learningRate: 0.3, momentum: 0.5}, 1, 2, neuron, 2)()
+            expect(neuron.weightsCache[0]).to.equal(-0.3999999999999999)
+            expect(neuron.weightsCache[1]).to.equal(-0.7)
+            expect(neuron.weightsCache[2].toFixed(1)).to.equal("-0.1")
+
+            expect(result1).to.equal(1.4)
+            expect(result2).to.equal(1.7)
+            expect(result3).to.equal(1.1)
+        })
+
+
     })
 
     describe("gain", () => {
@@ -5279,5 +5995,56 @@ describe("NetUtil", () => {
             NetUtil.buildConvErrorMap(nextLayerC, filter.errorMap, 0)
             expect(roundMapValues(filter.errorMap)).to.deep.equal(expectedD)
         })
+    })
+
+    describe("splitData", () => {
+
+        const testData = [1,2,3,4,5,6,7,8,9,10]
+
+        it("Returns data split into 3 keys: training, validation, and test", () => {
+            const result = NetUtil.splitData(testData)
+            expect(result).to.have.keys("training", "validation", "test")
+        })
+
+        it("Keeps the same total number of items", () => {
+            const {training, validation, test} = NetUtil.splitData(testData)
+            expect(training.length + validation.length + test.length).to.equal(testData.length)
+        })
+    })
+
+    describe("normalize", () => {
+
+        it("Example 1 (Handles negative numbers correctly)", () => {
+            const data = [1,2,3,-5,0.4,2]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-5)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.75, 0.875, 1, 0, 0.675, 0.875])
+        })
+
+        it("Example 2 (Handles arrays with equal values correctly)", () => {
+            const data = [3, 3, 3, 3]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(3)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.5, 0.5, 0.5, 0.5])
+        })
+
+        it("Example 3", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(5)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+        })
+
+        it("Example 4", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 13, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-1)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0.375,0.4375,0.5,0.5625,0.625,0.6875,0.75,0.8125,0.875,0.9375,1,0.9375,0.875,0.875,0.8125,0.75,0.6875,0.625,0.5625,0.5,0.4375,0.375,0.3125,0.25,0.1875,0.125,0.0625,0])
+        })
+
     })
 })

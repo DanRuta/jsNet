@@ -41,6 +41,16 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    double getValidationError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double getLastValidationError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->lastValidationError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     float get_iterations (int instanceIndex) {
         return Network::getInstance(instanceIndex)->iterations;
     }
@@ -49,6 +59,107 @@ extern "C" {
     void set_iterations (int instanceIndex, float it) {
         Network::getInstance(instanceIndex)->iterations = it;
     }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_validations (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validations;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_validations (int instanceIndex, float v) {
+        Network::getInstance(instanceIndex)->validations = v;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_validationInterval (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->validationInterval;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_validationInterval (int instanceIndex, float vr) {
+        Network::getInstance(instanceIndex)->validationInterval = vr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_stoppedEarly (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->stoppedEarly;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_stoppedEarly (int instanceIndex, int se) {
+        Network::getInstance(instanceIndex)->stoppedEarly = se;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_trainingLogging (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->trainingLogging;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_trainingLogging (int instanceIndex, int tl) {
+        Network::getInstance(instanceIndex)->trainingLogging = tl;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingType (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingType;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingType (int instanceIndex, float est) {
+        Network::getInstance(instanceIndex)->earlyStoppingType = est;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingThreshold (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingThreshold;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingThreshold (int instanceIndex, float est) {
+        Network::getInstance(instanceIndex)->earlyStoppingThreshold = est;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingBestError (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingBestError;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingBestError (int instanceIndex, float esbe) {
+        Network::getInstance(instanceIndex)->earlyStoppingBestError = esbe;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPatienceCounter (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPatienceCounter;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPatienceCounter (int instanceIndex, float espc) {
+        Network::getInstance(instanceIndex)->earlyStoppingPatienceCounter = espc;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPatience (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPatience;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPatience (int instanceIndex, float esp) {
+        Network::getInstance(instanceIndex)->earlyStoppingPatience = esp;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_earlyStoppingPercent (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->earlyStoppingPercent;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_earlyStoppingPercent (int instanceIndex, float esp) {
+        Network::getInstance(instanceIndex)->earlyStoppingPercent = esp;
+    }
+
 
     EMSCRIPTEN_KEEPALIVE
     void setActivation (int instanceIndex, int activationFnIndex) {
@@ -92,6 +203,16 @@ extern "C" {
                 net->costFunction = &NetMath::crossentropy;
                 break;
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void set_momentum  (int instanceIndex, float momentum) {
+        Network::getInstance(instanceIndex)->momentum = momentum;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    float get_momentum (int instanceIndex) {
+        return Network::getInstance(instanceIndex)->momentum;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -351,6 +472,30 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void loadValidationData (int instanceIndex, float *buf, int total, int size, int dimension) {
+        Network* net = Network::getInstance(instanceIndex);
+        net->validationData.clear();
+
+        std::tuple<std::vector<double>, std::vector<double> > epoch;
+
+        // Push validation data to memory
+        for (int i=0; i<=total; i++) {
+
+            if (i && i%size==0) {
+                net->validationData.push_back(epoch);
+                std::get<0>(epoch).clear();
+                std::get<1>(epoch).clear();
+            }
+
+            if (i%size<dimension) {
+                std::get<0>(epoch).push_back((double)buf[i]);
+            } else {
+                std::get<1>(epoch).push_back((double)buf[i]);
+            }
+        }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void train (int instanceIndex, int iterations, int startIndex) {
 
         Network* net = Network::getInstance(instanceIndex);
@@ -389,6 +534,11 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
     void shuffleTrainingData (int instanceIndex) {
         NetUtil::shuffle(Network::getInstance(instanceIndex)->trainingData);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void restoreValidation (int instanceIndex) {
+        Network::getInstance(instanceIndex)->restoreValidation();
     }
 
     EMSCRIPTEN_KEEPALIVE

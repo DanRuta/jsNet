@@ -87,31 +87,112 @@ void Network::train (int its, int startI) {
     double iterationError = 0.0;
 
     isTraining = true;
+    validationError = 0;
 
-    for (int i=startI; i<(startI+its); i++) {
+    for (int iterationIndex=startI; iterationIndex<(startI+its); iterationIndex++) {
 
         iterations++;
-
-        std::vector<double> output = forward(std::get<0>(trainingData[i]));
-        iterationError = costFunction(std::get<1>(trainingData[i]), output);
-        totalErrors += iterationError;
+        std::vector<double> output = forward(std::get<0>(trainingData[iterationIndex]));
 
         for (int n=0; n<output.size(); n++) {
-            layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[i])[n]==1 ? 1 : 0) - output[n];
+            layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[iterationIndex])[n]==1 ? 1 : 0) - output[n];
+        }
+
+        if (validationInterval!=0 && iterationIndex!=0 && iterationIndex%validationInterval==0) {
+            validationError = validate();
+
+            if (earlyStoppingType && checkEarlyStopping()) {
+                if (trainingLogging) {
+                    printf("Stopping early\n");
+                }
+                stoppedEarly = true;
+                break;
+            }
         }
 
         backward();
 
-        if ((i+1) % miniBatchSize == 0) {
+        iterationError = costFunction(std::get<1>(trainingData[iterationIndex]), output);
+        totalErrors += iterationError;
+
+        if ((iterationIndex+1) % miniBatchSize == 0) {
             applyDeltaWeights();
             resetDeltaWeights();
-        } else if (i >= trainingData.size()) {
+        } else if (iterationIndex >= trainingData.size()) {
             applyDeltaWeights();
         }
     }
 
     isTraining = false;
     error = totalErrors / its;
+}
+
+double Network::validate (void) {
+
+    double totalValidationErrors = 0;
+
+    for (int i=0; i<validationData.size(); i++) {
+        std::vector<double> output = forward(std::get<0>(validationData[i]));
+        totalValidationErrors += costFunction(std::get<1>(validationData[i]), output);
+
+        validations++;
+    }
+    lastValidationError = totalValidationErrors / validationData.size();
+    return lastValidationError;
+}
+
+bool Network::checkEarlyStopping (void) {
+
+    bool stop = false;
+
+    switch (earlyStoppingType) {
+        // threshold
+        case 1:
+            stop = lastValidationError <= earlyStoppingThreshold;
+
+            // Do the last backward pass
+            if (stop) {
+                backward();
+                applyDeltaWeights();
+            }
+
+            return stop;
+        // patience
+        case 2:
+
+            if (lastValidationError < earlyStoppingBestError) {
+                earlyStoppingPatienceCounter = 0;
+                earlyStoppingBestError = lastValidationError;
+
+                for (int l=1; l<layers.size(); l++) {
+                    layers[l]->backUpValidation();
+                }
+            } else {
+                earlyStoppingPatienceCounter++;
+                stop = earlyStoppingPatienceCounter >= earlyStoppingPatience;
+            }
+
+            return stop;
+
+        // divergence
+        case 3:
+
+            if (lastValidationError < earlyStoppingBestError) {
+
+                earlyStoppingBestError = lastValidationError;
+
+                for (int l=1; l<layers.size(); l++) {
+                    layers[l]->backUpValidation();
+                }
+
+            } else {
+                stop = (lastValidationError / earlyStoppingBestError) >= (1+earlyStoppingPercent/100);
+            }
+
+            return stop;
+
+    }
+    return stop;
 }
 
 double Network::test (int its, int startI) {
@@ -135,6 +216,12 @@ void Network::resetDeltaWeights (void) {
 void Network::applyDeltaWeights (void) {
     for (int l=1; l<layers.size(); l++) {
         layers[l]->applyDeltaWeights();
+    }
+}
+
+void Network::restoreValidation (void) {
+    for (int l=1; l<layers.size(); l++) {
+        layers[l]->restoreValidation();
     }
 }
 

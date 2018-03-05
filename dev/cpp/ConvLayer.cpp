@@ -208,13 +208,13 @@ void ConvLayer::applyDeltaWeights (void) {
                                 + net->l2 * filterWeights[f][c][r][v]
                                 + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                            filterWeights[f][c][r][v] = NetMath::vanillaupdatefn(netInstance, filterWeights[f][c][r][v], regularized);
+                            filterWeights[f][c][r][v] = NetMath::vanillasgd(netInstance, filterWeights[f][c][r][v], regularized);
 
                             if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
                         }
                     }
                 }
-                biases[f] = NetMath::vanillaupdatefn(netInstance, biases[f], deltaBiases[f]);
+                biases[f] = NetMath::vanillasgd(netInstance, biases[f], deltaBiases[f]);
             }
             break;
         case 1: // gain
@@ -318,4 +318,14 @@ void ConvLayer::applyDeltaWeights (void) {
         net->maxNormTotal = sqrt(net->maxNormTotal);
         NetMath::maxNorm(netInstance);
     }
+}
+
+void ConvLayer::backUpValidation (void) {
+    validationBiases = biases;
+    validationFilterWeights = filterWeights;
+}
+
+void ConvLayer::restoreValidation (void) {
+    biases = validationBiases;
+    filterWeights = validationFilterWeights;
 }

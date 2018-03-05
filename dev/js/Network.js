@@ -2,7 +2,7 @@
 
 class Network {
 
-    constructor ({learningRate, layers=[], updateFn="vanillaupdatefn", activation="sigmoid", cost="meansquarederror",
+    constructor ({learningRate, layers=[], updateFn="vanillasgd", activation="sigmoid", cost="meansquarederror", momentum=0.9,
         rmsDecay, rho, lreluSlope, eluAlpha, dropout=1, l2, l1, maxNorm, weightsConfig, channels, conv, pool}={}) {
 
         this.state = "not-defined"
@@ -11,6 +11,7 @@ class Network {
         this.pool = {}
         this.epochs = 0
         this.iterations = 0
+        this.validations = 0
         this.dropout = dropout==false ? 1 : dropout
         this.error = 0
         activation = NetUtil.format(activation)
@@ -59,6 +60,11 @@ class Network {
                 this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
                 break
 
+            case "momentum":
+                this.learningRate = this.learningRate==undefined ? 0.2 : this.learningRate
+                this.momentum = momentum
+                break
+
             case "adadelta":
                 this.rho = rho==null ? 0.95 : rho
                 break
@@ -87,7 +93,7 @@ class Network {
                 }
         }
 
-        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillaupdatefn" : updateFn
+        this.updateFn = [false, null, undefined].includes(updateFn) ? "vanillasgd" : updateFn
         this.weightUpdateFn = NetMath[this.updateFn]
         this.activation = typeof activation=="function" ? activation : NetMath[activation].bind(this)
         this.activationConfig = activation
@@ -227,9 +233,10 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false}={}) {
+    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
+        this.validation = validation
 
         return new Promise((resolve, reject) => {
 
@@ -246,18 +253,56 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
+                this.initLayers.bind(this, dataSet[0].input.length, dataSet[0].expected.length)()
             }
 
             this.layers.forEach(layer => layer.state = "training")
 
+            if (this.validation) {
+                this.validation.interval = this.validation.interval || dataSet.length // Default to 1 epoch
+
+                if (this.validation.earlyStopping) {
+                    switch (this.validation.earlyStopping.type) {
+                        case "threshold":
+                            this.validation.earlyStopping.threshold = this.validation.earlyStopping.threshold || 0.01
+                            break
+                        case "patience":
+                            this.validation.earlyStopping.patienceCounter = 0
+                            this.validation.earlyStopping.bestError = Infinity
+                            this.validation.earlyStopping.patience = this.validation.earlyStopping.patience || 20
+                            break
+                        case "divergence":
+                            this.validation.earlyStopping.percent = this.validation.earlyStopping.percent || 30
+                            this.validation.earlyStopping.bestError = Infinity
+                            break
+                    }
+                }
+            }
+
             let iterationIndex = 0
             let epochsCounter = 0
+            let elapsed
             const startTime = Date.now()
+
+            const logAndResolve = () => {
+                this.layers.forEach(layer => layer.state = "initialised")
+
+                if (this.validation && this.validation.earlyStopping && (this.validation.earlyStopping.type == "patience" || this.validation.earlyStopping.type == "divergence")) {
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].restoreValidation()
+                    }
+                }
+
+                if (log) {
+                    console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
+                }
+                resolve()
+            }
 
             const doEpoch = () => {
                 this.epochs++
                 this.error = 0
+                this.validationError = 0
                 iterationIndex = 0
 
                 if (this.l2Error!=undefined) this.l2Error = 0
@@ -266,19 +311,33 @@ class Network {
                 doIteration()
             }
 
-            const doIteration = () => {
+            const doIteration = async () => {
 
-                if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+                if (!dataSet[iterationIndex].hasOwnProperty("input") || !dataSet[iterationIndex].hasOwnProperty("expected")) {
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
                 }
+
+                let trainingError
+                let validationError
 
                 const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
-                const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
+                const target = dataSet[iterationIndex].expected
 
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                }
+
+                // Do validation
+                if (this.validation && iterationIndex && iterationIndex%this.validation.interval==0) {
+
+                    validationError = await this.validate(this.validation.data)
+
+                    if (this.validation.earlyStopping && this.checkEarlyStopping(errors)) {
+                        log && console.log("Stopping early")
+                        return logAndResolve()
+                    }
                 }
 
                 this.backward(errors)
@@ -290,15 +349,17 @@ class Network {
                     this.applyDeltaWeights()
                 }
 
-                const iterationError = this.cost(target, output)
-                const elapsed = Date.now() - startTime
-                this.error += iterationError
+                trainingError = this.cost(target, output)
+                this.error += trainingError
                 this.iterations++
+
+                elapsed = Date.now() - startTime
 
                 if (typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
-                        error: iterationError,
+                        validations: this.validations,
+                        validationError, trainingError,
                         elapsed, input
                     })
                 }
@@ -310,19 +371,24 @@ class Network {
                     epochsCounter++
 
                     if (log) {
-                        console.log(`Epoch: ${this.epochs} Error: ${this.error/iterationIndex}${this.l2Error==undefined ? "": ` L2 Error: ${this.l2Error/iterationIndex}`}`,
-                                  `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`)
+                        let text = `Epoch: ${this.epochs}\nTraining Error: ${this.error/iterationIndex}`
+
+                        if (validation) {
+                            text += `\nValidation Error: ${this.validationError}`
+                        }
+
+                        if (this.l2Error!=undefined) {
+                            text += `\nL2 Error: ${this.l2Error/iterationIndex}`
+                        }
+
+                        text += `\nElapsed: ${NetUtil.format(elapsed, "time")} Average Duration: ${NetUtil.format(elapsed/epochsCounter, "time")}`
+                        console.log(text)
                     }
 
                     if (epochsCounter < epochs) {
                         doEpoch()
                     } else {
-                        this.layers.forEach(layer => layer.state = "initialised")
-
-                        if (log) {
-                            console.log(`Training finished. Total time: ${NetUtil.format(elapsed, "time")}  Average iteration time: ${NetUtil.format(elapsed/iterationIndex, "time")}`)
-                        }
-                        resolve()
+                        logAndResolve()
                     }
                 }
             }
@@ -330,6 +396,78 @@ class Network {
             this.resetDeltaWeights()
             doEpoch()
         })
+    }
+
+    validate (data) {
+        return new Promise((resolve, reject) => {
+            let validationIndex = 0
+            let totalValidationErrors = 0
+
+            const validateItem = (item) => {
+
+                const output = this.forward(data[validationIndex].input)
+                const target = data[validationIndex].expected
+
+                this.validations++
+                totalValidationErrors += this.cost(target, output)
+                // maybe do this only once, as there's no callback anyway
+                this.validationError = totalValidationErrors / (validationIndex+1)
+
+                if (++validationIndex<data.length) {
+                    setTimeout(() => validateItem(validationIndex), 0)
+                } else {
+                    this.lastValidationError = totalValidationErrors / data.length
+                    resolve(totalValidationErrors / data.length)
+                }
+            }
+            validateItem(validationIndex)
+        })
+    }
+
+    checkEarlyStopping (errors) {
+
+        let stop = false
+
+        switch (this.validation.earlyStopping.type) {
+            case "threshold":
+                stop = this.lastValidationError <= this.validation.earlyStopping.threshold
+
+                // Do the last backward pass
+                if (stop) {
+                    this.backward(errors)
+                    this.applyDeltaWeights()
+                }
+
+                return stop
+
+            case "patience":
+                if (this.lastValidationError < this.validation.earlyStopping.bestError) {
+                    this.validation.earlyStopping.patienceCounter = 0
+                    this.validation.earlyStopping.bestError = this.lastValidationError
+
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].backUpValidation()
+                    }
+
+                } else {
+                    this.validation.earlyStopping.patienceCounter++
+                    stop = this.validation.earlyStopping.patienceCounter>=this.validation.earlyStopping.patience
+                }
+                return stop
+
+            case "divergence":
+                if (this.lastValidationError < this.validation.earlyStopping.bestError) {
+                    this.validation.earlyStopping.bestError = this.lastValidationError
+
+                    for (let l=1; l<this.layers.length; l++) {
+                        this.layers[l].backUpValidation()
+                    }
+                } else {
+                    stop = this.lastValidationError / this.validation.earlyStopping.bestError >= (1+this.validation.earlyStopping.percent/100)
+                }
+
+                return stop
+        }
     }
 
     test (testSet, {log=true, callback}={}) {
@@ -351,7 +489,7 @@ class Network {
 
                 const input = testSet[iterationIndex].input
                 const output = this.forward(input)
-                const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
+                const target = testSet[iterationIndex].expected
                 const elapsed = Date.now() - startTime
 
                 const iterationError = this.cost(target, output)
@@ -416,8 +554,43 @@ class Network {
         this.layers.forEach((layer, li) => li && layer.fromJSON(data.layers[li], li))
     }
 
+    toIMG (IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        const data = []
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const layerData = this.layers[l].toIMG()
+            for (let v=0; v<layerData.length; v++) {
+                data.push(layerData[v])
+            }
+        }
+
+        return IMGArrays.toIMG(data, opts)
+    }
+
+    fromIMG (rawData, IMGArrays, opts={}) {
+
+        if (!IMGArrays) {
+            throw new Error("The IMGArrays library must be provided. See the documentation for instructions.")
+        }
+
+        let valI = 0
+        const data = IMGArrays.fromIMG(rawData, opts)
+
+        for (let l=1; l<this.layers.length; l++) {
+
+            const dataCount = this.layers[l].getDataSize()
+            this.layers[l].fromIMG(data.splice(0, dataCount))
+        }
+    }
+
     static get version () {
-        return "3.1.0"
+        return "3.2.0"
     }
 }
 

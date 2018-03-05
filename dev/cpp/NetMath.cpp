@@ -54,6 +54,10 @@ double NetMath::meansquarederror (std::vector<double> calculated, std::vector<do
     return error / calculated.size();
 }
 
+double NetMath::rootmeansquarederror (std::vector<double> calculated, std::vector<double> desired) {
+    return sqrt(NetMath::meansquarederror(calculated, desired));
+}
+
 double NetMath::crossentropy (std::vector<double> target, std::vector<double> output) {
     double error = 0.0;
 
@@ -65,7 +69,7 @@ double NetMath::crossentropy (std::vector<double> target, std::vector<double> ou
 }
 
 // Weight update functions
-double NetMath::vanillaupdatefn (int netInstance, double value, double deltaValue) {
+double NetMath::vanillasgd (int netInstance, double value, double deltaValue) {
     return value + Network::getInstance(netInstance)->learningRate * deltaValue;
 }
 
@@ -226,6 +230,40 @@ double NetMath::adadelta(int netInstance, double value, double deltaValue, Filte
         filter->adadeltaBiasCache = rho * filter->adadeltaBiasCache + (1-rho) * pow(deltaValue, 2);
         return newVal;
     }
+}
+
+double NetMath::momentum(int netInstance, double value, double deltaValue, Neuron* neuron, int weightIndex) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    double v;
+
+    if (weightIndex>-1) {
+        v = net->momentum * neuron->weightsCache[weightIndex] - net->learningRate * deltaValue;
+        neuron->weightsCache[weightIndex] = v;
+    } else {
+        v = net->momentum * neuron->biasCache - net->learningRate * deltaValue;
+        neuron->biasCache = v;
+    }
+
+    return value - v;
+}
+
+double NetMath::momentum(int netInstance, double value, double deltaValue, Filter* filter, int c, int r, int v) {
+
+    Network* net = Network::getInstance(netInstance);
+
+    double val;
+
+    if (c>-1) {
+        val = net->momentum * filter->weightsCache[c][r][v] - net->learningRate * deltaValue;
+        filter->weightsCache[c][r][v] = val;
+    } else {
+        val = net->momentum * filter->biasCache - net->learningRate * deltaValue;
+        filter->biasCache = val;
+    }
+
+    return value - val;
 }
 
 // Weights init

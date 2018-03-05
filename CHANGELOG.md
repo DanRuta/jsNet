@@ -1,3 +1,23 @@
+# 3.2.0 - IMG data, validation, early stopping
+---
+#### Network
+- Added weight+bias importing and exporting via images, using IMGArrays
+- Added validation config to .train(), with interval config
+- Added early stopping to validation, with threshold stopping condition
+- Added early stopping patience condition
+- Added early stopping divergence condition
+- Breaking change: "error" key in training callbacks have been changed to "trainingError"
+- Breaking change: Removed ability to use either data keys 'expected' and 'output'. Now just 'expected'.
+
+#### NetUtil
+- Added splitData function
+- Added normalize function
+
+#### NetMath
+- Added root mean squared error cost function
+- Added momentum weight update function
+- Breaking change: Renamed "vanilla update fn" to "vanilla sgd"
+
 # 3.1.0 - Optimizations
 ---
 #### ConvLayer

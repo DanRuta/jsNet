@@ -188,11 +188,11 @@ void FCLayer::applyDeltaWeights (void) {
                         + net->l2 * weights[n][dw]
                         + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
 
-                    weights[n][dw] = NetMath::vanillaupdatefn(netInstance, weights[n][dw], regularized);
+                    weights[n][dw] = NetMath::vanillasgd(netInstance, weights[n][dw], regularized);
 
                     if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
                 }
-                biases[n] = NetMath::vanillaupdatefn(netInstance, biases[n], deltaBiases[n]);
+                biases[n] = NetMath::vanillasgd(netInstance, biases[n], deltaBiases[n]);
             }
             break;
         case 1: // gain
@@ -275,5 +275,34 @@ void FCLayer::applyDeltaWeights (void) {
     if (net->maxNorm) {
         net->maxNormTotal = sqrt(net->maxNormTotal);
         NetMath::maxNorm(netInstance);
+    }
+}
+
+void FCLayer::backUpValidation (void) {
+
+    validationBiases = {};
+    validationWeights = {};
+
+    for (int n=0; n<neurons.size(); n++) {
+        validationBiases.push_back(biases[n]);
+
+        std::vector<double> neuron;
+
+        for (int w=0; w<weights[n].size(); w++) {
+            neuron.push_back(weights[n][w]);
+        }
+
+        validationWeights.push_back(neuron);
+    }
+}
+
+void FCLayer::restoreValidation (void) {
+
+    for (int n=0; n<neurons.size(); n++) {
+        biases[n] = validationBiases[n];
+
+        for (int w=0; w<weights[n].size(); w++) {
+            weights[n][w] = validationWeights[n][w];
+        }
     }
 }

@@ -21,6 +21,7 @@ class Filter {
             case "adagrad":
             case "rmsprop":
             case "adadelta":
+            case "momentum":
                 this.biasCache = 0
                 this.weightsCache = this.weights.map(channel => channel.map(wRow => wRow.map(w => 0)))
                 this.getWeightsCache = ([channel, row, column]) => this.weightsCache[channel][row][column]

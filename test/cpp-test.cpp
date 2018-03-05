@@ -351,6 +351,188 @@ namespace Network_cpp {
         delete l2;
         delete l3;
     }
+
+    // Calls every layer's (except the first) restoreValidation function
+    TEST(Network, restoreValidation) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        MockLayer* l1 = new MockLayer(0, 3);
+        MockLayer* l2 = new MockLayer(0, 3);
+        MockLayer* l3 = new MockLayer(0, 3);
+        Network::getInstance(0)->layers.push_back(l1);
+        Network::getInstance(0)->layers.push_back(l2);
+        Network::getInstance(0)->layers.push_back(l3);
+
+        EXPECT_CALL(*l1, restoreValidation()).Times(0);
+        EXPECT_CALL(*l2, restoreValidation()).Times(1);
+        EXPECT_CALL(*l3, restoreValidation()).Times(1);
+
+        Network::getInstance(0)->restoreValidation();
+
+        delete l1;
+        delete l2;
+        delete l3;
+    }
+
+
+    class CheckEarlyStoppingFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+            l1 = new FCLayer(0, 2);
+            l2 = new FCLayer(0, 5);
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
+            l2->prevLayer = l1;
+            l2->netInstance = 0;
+        }
+
+        virtual void TearDown() {
+            delete l1;
+            delete l2;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        FCLayer* l1;
+        FCLayer* l2;
+    };
+
+    // Returns true when the lastValidationError is equal or lower than the threshold
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_1) {
+        net->earlyStoppingType = 1;
+        net->earlyStoppingThreshold = 0.1;
+        net->lastValidationError = 0.005;
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Returns false when the lastValidationError is not equal or lower than the threshold
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_2) {
+        net->earlyStoppingType = 1;
+        net->earlyStoppingThreshold = 0.1;
+        net->lastValidationError = 0.5;
+        EXPECT_FALSE( net->checkEarlyStopping() );
+    }
+
+    // Returns true when the patienceCounter is higher than the patience hyperparameter, and new validation is not the best
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_3) {
+        net->lastValidationError = 5;
+        net->earlyStoppingBestError = 4;
+        net->earlyStoppingType = 2;
+        net->earlyStoppingPatienceCounter = 5;
+        net->earlyStoppingPatience = 4;
+
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Increments the patienceCounter and returns false, when patienceCounter is lower than patience hyperparameter and new validation is not the best
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_4) {
+        net->lastValidationError = 5;
+        net->earlyStoppingBestError = 4;
+        net->earlyStoppingType = 2;
+        net->earlyStoppingPatienceCounter = 2;
+        net->earlyStoppingPatience = 4;
+
+        EXPECT_FALSE( net->checkEarlyStopping() );
+        EXPECT_EQ( net->earlyStoppingPatienceCounter, 3 );
+    }
+
+    // Backs up the layer weights when a new best validation error is calculated, sets bestError, resets patienceCounter, and returns false
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_5) {
+        net->earlyStoppingType = 2;
+        net->lastValidationError = 2;
+        net->earlyStoppingPatienceCounter = 4;
+        net->earlyStoppingBestError = 4;
+
+        MockLayer* ml1 = new MockLayer(0, 2);
+        MockLayer* ml2 = new MockLayer(0, 5);
+        net->layers = {};
+        net->layers.push_back(ml1);
+        net->layers.push_back(ml2);
+
+        EXPECT_CALL(*ml1, backUpValidation()).Times(0);
+        EXPECT_CALL(*ml2, backUpValidation()).Times(1);
+        EXPECT_FALSE( net->checkEarlyStopping() );
+
+        EXPECT_EQ( net->earlyStoppingBestError, 2 );
+        EXPECT_EQ( net->earlyStoppingPatienceCounter, 0 );
+
+        delete ml1;
+        delete ml2;
+    }
+
+    // Returns true when the validation error is higher than the best by at least the defined percent amount
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_6) {
+        net->earlyStoppingType = 3;
+        net->earlyStoppingBestError = 1;
+        net->lastValidationError = 1.150001;
+        net->earlyStoppingPercent = 15;
+
+        EXPECT_TRUE( net->checkEarlyStopping() );
+    }
+
+    // Backs up the layer weights when a new best validation error is calculated, sets bestError, and returns false
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_7) {
+        net->earlyStoppingType = 3;
+        net->earlyStoppingBestError = 1.16;
+        net->lastValidationError = 1.15;
+
+        MockLayer* ml1 = new MockLayer(0, 2);
+        MockLayer* ml2 = new MockLayer(0, 5);
+        net->layers = {};
+        net->layers.push_back(ml1);
+        net->layers.push_back(ml2);
+
+        EXPECT_CALL(*ml1, backUpValidation()).Times(0);
+        EXPECT_CALL(*ml2, backUpValidation()).Times(1);
+        EXPECT_FALSE( net->checkEarlyStopping() );
+
+        EXPECT_EQ( net->earlyStoppingBestError, 1.15 );
+
+        delete ml1;
+        delete ml2;
+    }
+
+    // Returns false when the earlyStoppingType is not defined
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_8) {
+        net->earlyStoppingType = 0;
+        EXPECT_FALSE( net->checkEarlyStopping() );
+    }
+
+    TEST(Network, validate) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 3);
+        FCLayer* l2 = new FCLayer(0, 3);
+        Network* net = Network::getInstance(0);
+        net->costFunction = NetMath::meansquarederror;
+        net->layers.push_back(l1);
+        net->layers.push_back(l2);
+
+        l2->sums = {1,2,3};
+
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData = {};
+        std::tuple<std::vector<double>, std::vector<double> > data;
+        std::get<0>(data) = {1,2,3};
+        std::get<1>(data) = {1,2,3};
+        validationData.push_back(data);
+        validationData.push_back(data);
+
+        net->validationData = validationData;
+        net->validations = 0;
+
+        double result = net->validate();
+        EXPECT_EQ( net->validations, 2 );
+        EXPECT_NEAR( result, 3.120041, 1e-5 );
+
+        delete l1;
+        delete l2;
+        Network::deleteNetwork();
+    }
+
 }
 
 namespace FCLayer_cpp {
@@ -1177,6 +1359,96 @@ namespace FCLayer_cpp {
         delete l1;
         delete l2;
         Network::deleteNetwork();
+    }
+
+    // Copies the neuron weights to a 'validationWeights' array, for each neuron
+    TEST(FCLayer, backUpValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationWeights.size(), 0 );
+        }
+
+        l1->backUpValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationWeights[n], l1->weights[n] );
+        }
+    }
+
+    // Copies over the neuron biases into a 'validationBias' value
+    TEST(FCLayer, backUpValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->biases[n] = n;
+            EXPECT_EQ( l1->validationBiases.size(), 0 );
+        }
+
+        l1->backUpValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->validationBiases[n], l1->biases[n] );
+        }
+    }
+
+    // Copies backed up 'validationWeights' values into every neuron's weights arrays
+    TEST(FCLayer, restoreValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        std::vector<double> expected = {1,2,3};
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->validationWeights.push_back({1,2,3});
+            l1->validationBiases.push_back(n+5);
+            l1->weights[n] = {0,0,0};
+            EXPECT_NE( l1->weights[n], expected );
+        }
+
+        l1->restoreValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->weights[n], expected );
+        }
+    }
+
+    // Copies backed up 'validationBias' values into every neuron's bias values
+    TEST(FCLayer, restoreValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 10);
+        FCLayer* l2 = new FCLayer(0, 10);
+        l1->prevLayer = l2;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        l1->init(1);
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            l1->validationWeights.push_back({1,2,3});
+            l1->validationBiases.push_back(n+5);
+        }
+
+        l1->restoreValidation();
+
+        for (int n=0; n<l1->neurons.size(); n++) {
+            EXPECT_EQ( l1->biases[n], n+5 );
+        }
     }
 }
 
@@ -2057,6 +2329,56 @@ namespace ConvLayer_cpp {
             EXPECT_NEAR( layer->biases[f], 1.19007, 1e-3 );
         }
     }
+
+    // Copies the filter weights to a 'validationWeights' array, for each filter
+    TEST(ConvLayer, backUpValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* conv = new ConvLayer(0, 5);
+        conv->filterWeights = {{{{1,2},{1,2}}}};
+
+        EXPECT_EQ( conv->validationFilterWeights.size(), 0 );
+
+        conv->backUpValidation();
+
+        EXPECT_EQ( conv->validationFilterWeights, conv->filterWeights );
+
+        delete conv;
+    }
+
+    // Copies the filter biases to a 'validationBias' array, for each filter
+    TEST(ConvLayer, backUpValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* conv = new ConvLayer(0, 5);
+        conv->biases = {1,2,3};
+
+        EXPECT_EQ( conv->validationBiases.size(), 0 );
+
+        conv->backUpValidation();
+
+        EXPECT_EQ( conv->validationBiases, conv->biases );
+
+        delete conv;
+    }
+
+    // Copies backed up 'validationWeights' values into every filter's weights arrays
+    TEST(ConvLayer, restoreValidation) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* conv = new ConvLayer(0, 5);
+        std::vector<std::vector<std::vector<std::vector<double> > > > expected = {{{{1,2,3},{1,2,3}}}};
+
+        conv->filterWeights = {{{{0,0,0},{0,0,0}}}};
+        conv->validationFilterWeights = expected;
+
+        conv->restoreValidation();
+
+        EXPECT_EQ( conv->filterWeights, expected );
+
+        delete conv;
+    }
+
 }
 
 namespace PoolLayer_cpp {
@@ -2571,6 +2893,38 @@ namespace PoolLayer_cpp {
             }
         }
     }
+
+    // Does nothing
+    TEST(PoolLayer, applyDeltaWeights) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->applyDeltaWeights();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, resetDeltaWeights) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->resetDeltaWeights();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, backUpValidation) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->backUpValidation();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, restoreValidation) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->restoreValidation();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
 }
 
 namespace Neuron_cpp {
@@ -3032,19 +3386,25 @@ namespace NetMath_cpp {
         EXPECT_EQ( NetMath::meansquarederror(values1, values2), (double)2.6 );
     }
 
+    TEST(NetMath, rootmeansquarederror) {
+        std::vector<double> values1 = {13,17,18,20,24};
+        std::vector<double> values2 = {12,15,20,22,24};
+        EXPECT_EQ( NetMath::rootmeansquarederror(values1, values2), (double)1.61245154965971 );
+    }
+
     TEST(NetMath, crossentropy) {
         std::vector<double> values1 = {1, 0, 0.3};
         std::vector<double> values2 = {0, 1, 0.8};
         EXPECT_EQ( NetMath::crossentropy(values1, values2), (double)70.16654147569186 );
     }
 
-    TEST(NetMath, vanillaupdatefn) {
+    TEST(NetMath, vanillasgd) {
         Network::deleteNetwork();
         Network::newNetwork();
         Network::getInstance(0)->learningRate = 0.5;
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 10), 15 );
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, 20), 20 );
-        EXPECT_EQ( NetMath::vanillaupdatefn(0, 10, -30), -5 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, 10), 15 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, 20), 20 );
+        EXPECT_EQ( NetMath::vanillasgd(0, 10, -30), -5 );
     }
 
     class GainFixture : public ::testing::Test {
@@ -3467,6 +3827,82 @@ namespace NetMath_cpp {
         EXPECT_NEAR( testF->adadeltaCache[0][0][0], 0.097, 0.1 );
         EXPECT_NEAR( testF->adadeltaCache[0][0][1], 0.192, 0.1 );
     }
+
+    class MomentumFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightsConfig["limit"] = 0.1;
+            net->weightInitFn = &NetMath::uniform;
+            net->momentum = 0.75;
+            net->learningRate = 0.2;
+            testN = new Neuron();
+            testN->init(0, 5);
+            testN->biasCache = 0.123;
+            testN->weightsCache = {1,1,1};
+
+            testF = new Filter();
+            testF->init(0, 1, 2);
+            testF->biasCache = 0.123;
+            testF->weightsCache = { {{1,1},{1,1}} };
+        }
+
+        virtual void TearDown() {
+            Network::deleteNetwork();
+            delete testN;
+            delete testF;
+        }
+
+        Network* net;
+        Neuron* testN;
+        Filter* testF;
+    };
+
+    // Sets the neuron.biasCache to the correct value, following the momentum formula
+    TEST_F(MomentumFixture, momentum_1) {
+        testN->biasCache = 0.123;
+        NetMath::momentum(0, (double)1, (double)3, testN, -1);
+        EXPECT_NEAR( testN->biasCache, -0.50775, 1e-5 );
+
+        testF->biasCache = 0.123;
+        NetMath::momentum(0, (double)1, (double)3, testF, -1, -1, -1);
+        EXPECT_NEAR( testF->biasCache, -0.50775, 1e-5 );
+    }
+
+    // Sets the weightsCache to the correct value, following the momentum formula, same as biasCache
+    //  And calculates the return value correctly
+    TEST_F(MomentumFixture, momentum_2) {
+
+        net->learningRate = 0.3;
+        net->momentum = 0.5;
+
+        double result1 = NetMath::momentum(0, (double)1, (double)3, testN, 0);
+        double result2 = NetMath::momentum(0, (double)1, (double)4, testN, 1);
+        double result3 = NetMath::momentum(0, (double)1, (double)2, testN, 2);
+
+        EXPECT_NEAR( testN->weightsCache[0], -0.4, 1e-2 );
+        EXPECT_NEAR( testN->weightsCache[1], -0.7, 1e-2 );
+        EXPECT_NEAR( testN->weightsCache[2], -0.1, 1e-2 );
+
+        EXPECT_NEAR( result1, 1.4, 1e-2 );
+        EXPECT_NEAR( result2, 1.7, 1e-2 );
+        EXPECT_NEAR( result3, 1.1, 1e-2 );
+
+        double fResult1 = NetMath::momentum(0, (double)1, (double)3, testF, 0, 0, 0);
+        double fResult2 = NetMath::momentum(0, (double)1, (double)4, testF, 0, 0, 1);
+        double fResult3 = NetMath::momentum(0, (double)1, (double)2, testF, 0, 1, 0);
+
+        EXPECT_NEAR( testF->weightsCache[0][0][0], -0.4, 1e-2 );
+        EXPECT_NEAR( testF->weightsCache[0][0][1], -0.7, 1e-2 );
+        EXPECT_NEAR( testF->weightsCache[0][1][0], -0.1, 1e-2 );
+
+        EXPECT_NEAR( fResult1, 1.4, 1e-2 );
+        EXPECT_NEAR( fResult2, 1.7, 1e-2 );
+        EXPECT_NEAR( fResult3, 1.1, 1e-2 );
+    }
+
 
     TEST(NetMath, sech) {
         EXPECT_DOUBLE_EQ( NetMath::sech(-0.5), 0.886818883970074 );

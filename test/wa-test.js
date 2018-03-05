@@ -33,7 +33,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.1.0")
+        expect(Network.version).to.equal("3.2.0")
     })
 })
 
@@ -289,17 +289,28 @@ describe("Network", () => {
                 expect(net.rho).to.equal(2)
             })
 
+            it("Calls the NetUtil.defineProperty function for momentum, when updateFn is 'momentum'", () => {
+                const net = new Network({Module: fakeModule, updateFn: "momentum", momentum: 2})
+                expect(NetUtil.defineProperty).to.be.calledWith(net, "momentum", ["number"], [0])
+                expect(net.momentum).to.equal(2)
+            })
+
             it("Passes the updateFn index from the WASM module through the updateFnIndeces map", () => {
                 const net = new Network({Module: fakeModule})
                 sinon.stub(fakeModule, "ccall").callsFake(() => 0)
                 const res = net.updateFn
                 fakeModule.ccall.restore()
-                expect(res).to.equal("vanillaupdatefn")
+                expect(res).to.equal("vanillasgd")
             })
 
             it("Defaults the rho value to 0.95 when calling the defineProperty function", () => {
                 const net = new Network({Module: fakeModule, updateFn: "adadelta"})
                 expect(net.rho).to.equal(0.95)
+            })
+
+            it("Defaults the momentum value to 0.9 when calling the defineProperty function", () => {
+                const net = new Network({Module: fakeModule, updateFn: "momentum"})
+                expect(net.momentum).to.equal(0.9)
             })
 
             it("Sets the rmsDecay property when the updateFn is rmsprop", () => {
@@ -883,16 +894,16 @@ describe("Network", () => {
             return expect(net.train()).to.be.rejectedWith("No data provided")
         })
 
-        it("Rejects the promise if some data does not have the key 'input' and 'expected'/'output'", () => {
-            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
+        it("Rejects the promise if some data does not have the key 'input' and 'expected'", () => {
+            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected'")
         })
 
         it("Resolves the promise when you give it data", () => {
             return expect(net.train(testData)).to.be.fulfilled
         })
 
-        it("Accepts 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.be.fulfilled
+        it("Does not accept 'output' as an alternative name for expected values", () => {
+            return expect(net.train(testDataWithOutput)).to.not.be.fulfilled
         })
 
         it("CCalls the Module's set_miniBatchSize function with the given miniBatchSize value", () => {
@@ -931,15 +942,6 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function when the net state is not 'initialised' (When data uses 'output' keys)", () => {
-            const network = new Network({Module: fakeModule})
-            sinon.spy(network, "initLayers")
-
-            return network.train(testDataWithOutput).then(() => {
-                expect(network.initLayers).to.have.been.called
-            })
-        })
-
         it("CCalls the WASM Module's loadTrainingData function", () => {
             sinon.stub(fakeModule, "ccall")
             const network = new Network({Module: fakeModule})
@@ -952,7 +954,7 @@ describe("Network", () => {
 
         it("CCalls the WASM Module's train function for every iteration when a callback is given", () => {
             const network = new Network({Module: fakeModule})
-            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
             const cb = () => {}
 
@@ -966,17 +968,30 @@ describe("Network", () => {
             let counter = 0
             const cb = () => counter++
             const network = new Network({Module: fakeModule})
-            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
 
-            return network.train(testData, {epochs: 2, callback: cb}).then(() => {
+            return network.train(testData, {epochs: 2, callback: cb, validation: {data: testData}}).then(() => {
                 expect(counter).to.equal(8)
+                stub.restore()
+            })
+        })
+
+        it("Allows setting a custom validation rate", () => {
+            const network = new Network({Module: fakeModule})
+            const stub = sinon.stub(fakeModule, "ccall").callsFake(() => 0)
+
+            return network.train(testData, {validation: {interval: 2, data: testData}}).then(() => {
+                expect(stub.withArgs("set_validationInterval")).to.be.calledWith("set_validationInterval", null, ["number", "number"], [0, 2])
                 stub.restore()
             })
         })
 
         it("Sets the l2Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
+
             network.iterations++
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
@@ -986,7 +1001,9 @@ describe("Network", () => {
 
         it("Does not set the l2Error to 0 if l2 was not configured", () => {
             const network = new Network({Module: fakeModule})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1) // simulates this.l2==false
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            }) // simulates this.l2==false
 
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
@@ -997,7 +1014,9 @@ describe("Network", () => {
         it("Sets the l2Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l2: 0.01})
             network.iterations = 2
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
             return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1007,7 +1026,7 @@ describe("Network", () => {
         it("Does not set the l2Error to 0 if l2 was not configured (with callbacks)", () => {
             const network = new Network({Module: fakeModule})
             sinon.stub(fakeModule, "ccall").callsFake(() => 0) // simulates this.l2==false
-            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+            return network.train(testData, {epochs: 5, log: false, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l2Error")).to.not.be.called
                 fakeModule.ccall.restore()
             })
@@ -1016,7 +1035,9 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                return (_=="get_validationCount" || _=="get_stoppedEarly")?0:1
+            })
             return network.train(testData, {epochs: 5}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
@@ -1034,8 +1055,15 @@ describe("Network", () => {
 
         it("Sets the l1Error to 0 with each epoch (with callbacks)", () => {
             const network = new Network({Module: fakeModule, l1: 0.005})
-            sinon.stub(fakeModule, "ccall").callsFake(() => true)
-            return network.train(testData, {epochs: 5, callback: () => {}}).then(() => {
+            sinon.stub(fakeModule, "ccall").callsFake((_) => {
+                if (_=="get_validationCount") {
+                    return -1
+                } else if (_=="get_stoppedEarly") {
+                    return 0
+                }
+                return true
+            })
+            return network.train(testData, {epochs: 5, validation: {}, callback: () => {}}).then(() => {
                 expect(fakeModule.ccall.withArgs("set_l1Error").callCount).to.equal(5)
                 fakeModule.ccall.restore()
             })
@@ -1053,7 +1081,7 @@ describe("Network", () => {
         it("console.logs once for each epoch, + 2", () => {
             sinon.stub(console, "log")
             const network = new Network({Module: fakeModule})
-            return network.train(testData, {epochs: 4}).then(() => {
+            return network.train(testData, {epochs: 4, validation: {}}).then(() => {
                 expect(console.log.callCount).to.equal(6)
                 console.log.restore()
             })
@@ -1065,6 +1093,124 @@ describe("Network", () => {
             return network.train(testData, {epochs: 4, log: false}).then(() => {
                 expect(console.log).to.not.be.called
                 console.log.restore()
+            })
+        })
+
+        describe("Early stopping", () => {
+
+            it("Defaults the threshold to 0.01 when the type is 'threshold'", () => {
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold"
+                }}}).then(() => {
+                    expect(fakeModule.ccall).to.be.calledWith("set_earlyStoppingType", null, ["number", "number"], [0, 1])
+                    expect(fakeModule.ccall).to.be.calledWith("set_earlyStoppingThreshold")
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.01)
+                    fakeModule.ccall.restore()
+                })
+            })
+
+            it("Allows setting a custom threshold value", () => {
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "threshold",
+                    threshold: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.threshold).to.equal(0.2)
+                })
+            })
+
+
+            it("Defaults the patience to 20 when the type is 'patience'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.patience).to.equal(20)
+                })
+            })
+
+            it("Allows setting a custom patience value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience",
+                    patience: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.patience).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity and patienceCounter to 0 when early stopping is patience", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "patience"
+                }}}).then(() => {
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingBestError")).to.be.calledWith("set_earlyStoppingBestError", null, ["number", "number"], [0, Infinity])
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingPatienceCounter")).to.be.calledWith("set_earlyStoppingPatienceCounter", null, ["number", "number"], [0, 0])
+                    fakeModule.ccall.restore()
+                })
+            })
+
+
+            it("Defaults the percent to 30 when the type is 'divergence'", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(30)
+                })
+            })
+
+            it("Allows setting a custom percent value", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence",
+                    percent: 0.2
+                }}}).then(() => {
+                    expect(net.validation.earlyStopping.percent).to.equal(0.2)
+                })
+            })
+
+            it("Sets the bestError to Infinity and earlyStoppingPercent to the percent value, when early stopping is divergence", () => {
+                for (let l=0; l<net.layers.length; l++) {
+                    net.layers[l].restoreValidation = () => {}
+                }
+                sinon.stub(fakeModule, "ccall")
+                return net.train(testData, {validation: {data: testData, earlyStopping: {
+                    type: "divergence"
+                }}}).then(() => {
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingBestError")).to.be.calledWith("set_earlyStoppingBestError", null, ["number", "number"], [0, Infinity])
+                    expect(fakeModule.ccall.withArgs("set_earlyStoppingPercent")).to.be.calledWith("set_earlyStoppingPercent", null, ["number", "number"], [0, 30])
+                    fakeModule.ccall.restore()
+                })
+            })
+
+
+
+            it("Stops ccalling the train function when the stoppedEarly value is true", () => {
+                const network = new Network({Module: fakeModule})
+                let counter = 0
+                const stub = sinon.stub(fakeModule, "ccall").callsFake(_ => {
+                    if (_=="get_stoppedEarly") {
+                        return ++counter>2
+                    }
+                    return 0
+                })
+
+                return network.train(testData, {epochs: 5}).then(() => {
+                    expect(stub.withArgs("train").callCount).to.equal(3)
+                    stub.restore()
+                })
             })
         })
     })
@@ -1130,10 +1276,8 @@ describe("Network", () => {
             })
         })
 
-        it("Accepts test data with output key instead of expected", () => {
-            return net.test(testDataOutput).then(() => {
-                expect(fakeModule.ccall).to.be.called
-            })
+        it("Does not accept test data with output key instead of expected", () => {
+            return expect(net.test(testDataOutput)).to.not.be.fulfilled
         })
 
         it("Logs to the console twice", () => {
@@ -1240,6 +1384,55 @@ describe("Network", () => {
             net.fromJSON(testData)
             expect(net.layers[1].fromJSON).to.be.calledWith(testData.layers[1])
             expect(net.layers[2].fromJSON).to.be.calledWith(testData.layers[2])
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network({Module: fakeModule})
+            expect(net.toIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's toIMG function", () => {
+            const net = new Network({Module: fakeModule})
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "toIMG")
+            sinon.stub(l2, "toIMG").callsFake(() => [1,2,3])
+            sinon.stub(l3, "toIMG").callsFake(() => [1,2,3])
+            net.layers = [l1, l2, l3]
+            net.toIMG({toIMG: () => {}})
+            expect(l1.toIMG).to.not.be.called
+            expect(l2.toIMG).to.be.called
+            expect(l3.toIMG).to.be.called
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Throws an error if IMGArrays is not provided", () => {
+            const net = new Network({Module: fakeModule})
+            expect(net.fromIMG).to.throw("The IMGArrays library must be provided. See the documentation for instructions.")
+        })
+
+        it("Calls every layer except the first's fromIMG function with the data segment matching their size", () => {
+            const net = new Network({Module: fakeModule})
+            const l1 = new FCLayer(784)
+            const l2 = new FCLayer(100)
+            const l3 = new FCLayer(10)
+            sinon.stub(l1, "fromIMG")
+            sinon.stub(l2, "fromIMG")
+            sinon.stub(l2, "getDataSize").callsFake(() => 4)
+            sinon.stub(l3, "fromIMG")
+            sinon.stub(l3, "getDataSize").callsFake(() => 3)
+            net.layers = [l1, l2, l3]
+
+            const fakeIMGArrays = {fromIMG: () => [1,2,3,4, 5,6,7]}
+            net.fromIMG(null, fakeIMGArrays)
+
+            expect(l1.fromIMG).to.not.be.called
+            expect(l2.fromIMG).to.be.calledWith([1,2,3,4])
+            expect(l3.fromIMG).to.be.calledWith([5,6,7])
         })
     })
 })
@@ -1472,6 +1665,91 @@ describe("FCLayer", () => {
             fakeModule.ccall.restore()
         })
     })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(20)
+        })
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const fc = new FCLayer(15)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3,4]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.getDataSize()).to.equal(75)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 1)", () => {
+
+            const fc = new FCLayer(5)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,3]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3,1,1,2,3])
+        })
+        it("Returns all neurons' weights and biases as a 1 dimensional array (Example 2)", () => {
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,2,4,5]
+                fc.neurons[n].bias = 1
+            }
+
+            expect(fc.toIMG()).to.deep.equal([1,1,2,4,5,1,1,2,4,5])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [2,1,2,3, 3,1,2,4]
+
+            const fc = new FCLayer(2)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2,3])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2,4])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [2,1,2, 3,1,2, 4,0,2]
+
+            const fc = new FCLayer(3)
+
+            for (let n=0; n<fc.neurons.length; n++) {
+                fc.neurons[n].weights = [1,1]
+                fc.neurons[n].bias = 1
+            }
+
+            fc.fromIMG(testData)
+            expect(fc.neurons[0].bias).to.equal(2)
+            expect(fc.neurons[0].weights).to.deep.equal([1,2])
+            expect(fc.neurons[1].bias).to.equal(3)
+            expect(fc.neurons[1].weights).to.deep.equal([1,2])
+            expect(fc.neurons[2].bias).to.equal(4)
+            expect(fc.neurons[2].weights).to.deep.equal([0,2])
+        })
+    })
 })
 
 describe("Neuron", () => {
@@ -1497,18 +1775,18 @@ describe("Neuron", () => {
 
 
         it("Calls the NetUtil.defineProperty for neuron.sum", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "sum", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.dropped", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "dropped", paramTypes, params)
         })
 
         it("Getting a neuron.dropped value returns a boolean", () => {
             NetUtil.defineProperty.restore()
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(neuron.dropped).to.be.boolean
             sinon.stub(NetUtil, "defineProperty")
         })
@@ -1516,7 +1794,7 @@ describe("Neuron", () => {
         it("Sets a neuron.dropped value as a 1 or 0", () => {
             NetUtil.defineProperty.restore()
             sinon.stub(NetUtil.Module, "ccall")
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             neuron.dropped = true
             expect(NetUtil.Module.ccall).to.be.calledWith("set_neuron_dropped", null, ["number", "number", "number", "number"], [789, 1, 13, 1])
             neuron.dropped = false
@@ -1527,32 +1805,32 @@ describe("Neuron", () => {
         })
 
         it("Calls the NetUtil.defineProperty for neuron.activation", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "activation", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.error", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "error", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.derivative", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "derivative", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.weights", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "weights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineProperty for neuron.bias", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(neuron, "bias", paramTypes, params, {pre: "neuron_"})
         })
 
         it("Calls the NetUtil.defineArrayProperty for neuron.deltaWeights", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.be.calledWith(neuron, "deltaWeights", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
 
@@ -1563,7 +1841,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasGain when the updateFn is not gain", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1574,7 +1852,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightGain when the updateFn is not gain", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1585,7 +1863,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache when the updateFn is not adagrad", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1596,7 +1874,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache when the updateFn is not adagrad", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, {pre: "neuron_"})
         })
 
@@ -1622,7 +1900,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineProperty for neuron.biasCache and neuron.adadeltaBiasCache when the updateFn is not adadelta", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "biasGain", paramTypes, params, {pre: "neuron_"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(neuron, "adadeltaBiasCache", paramTypes, params, {pre: "neuron_"})
         })
@@ -1635,7 +1913,7 @@ describe("Neuron", () => {
         })
 
         it("Doesn't call the NetUtil.defineArrayProperty for neuron.weightsCache and neuron.adadeltaCache when the updateFn is not adadelta", () => {
-            neuron.init(789, 1, 13, {updateFn: "vanillaupdatefn"})
+            neuron.init(789, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "weightsCache", paramTypes, params, neuron.size, {pre: "neuron_"})
             expect(NetUtil.defineArrayProperty).to.not.be.calledWith(neuron, "adadeltaCache", paramTypes, params, neuron.size, {pre: "neuron_"})
         })
@@ -1663,22 +1941,22 @@ describe("Filter", () => {
         })
 
         it("Calls the NetUtil.defineProperty for filter.bias", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(filter, "bias")
         })
 
         it("Calls the NetUtil.defineVolumeProperty for filter.weights", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineVolumeProperty).to.be.calledWith(filter, "weights")
         })
 
         it("Calls the NetUtil.defineVolumeProperty for filter.deltaWeights", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineVolumeProperty).to.be.calledWith(filter, "deltaWeights")
         })
 
         it("Calls the NetUtil.defineProperty for filter.deltaBias", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.be.calledWith(filter, "deltaBias")
         })
 
@@ -1693,7 +1971,7 @@ describe("Filter", () => {
         })
 
         it("Doesn't call the define property functions for biasGain or weightGain when updateFn is not gain", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(filter, "biasGain")
             expect(NetUtil.defineVolumeProperty).to.not.be.calledWith(filter, "weightGain")
         })
@@ -1709,7 +1987,7 @@ describe("Filter", () => {
         })
 
         it("Doesn't call the define property functions for biasCache or weightsCache when updateFn is not adagrad", () => {
-            filter.init(0, 1, 13, {updateFn: "vanillaupdatefn"})
+            filter.init(0, 1, 13, {updateFn: "vanillasgd"})
             expect(NetUtil.defineProperty).to.not.be.calledWith(filter, "biasCache")
             expect(NetUtil.defineVolumeProperty).to.not.be.calledWith(filter, "weightsCache")
         })
@@ -2372,6 +2650,99 @@ describe("ConvLayer", () => {
             NetUtil.ccallVolume.restore()
         })
     })
+
+    describe("getDataSize", () => {
+        it("Returns the correct total number of weights and biases (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(10)
+        })
+        it("Returns the correct total number of weights and biases (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.getDataSize()).to.equal(20)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 1)", () => {
+            const conv = new ConvLayer(2)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4])
+        })
+        it("Returns all filters' weights and biases as a 1 dimensional array (Example 2)", () => {
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[1,2],[3,4]]]
+                conv.filters[n].bias = 1
+            }
+
+            expect(conv.toIMG()).to.deep.equal([1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Sets the weights and biases to the given 1 dimensional array (Example 1)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4,1,1,2,3,4,1,1,2,3,4]  
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter(), new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[2].bias).to.equal(1)
+            expect(conv.filters[3].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[2].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[3].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+        it("Sets the weights and biases to the given 1 dimensional array (Example 2)", () => {
+            const testData = [1,1,2,3,4,1,1,2,3,4] 
+
+            const conv = new ConvLayer(4)
+            conv.filters = [new Filter(), new Filter()]
+
+            for (let n=0; n<conv.filters.length; n++) {
+                conv.filters[n].weights = [[[0,0],[0,0]]]
+                conv.filters[n].bias = 0
+            }
+
+            conv.fromIMG(testData)
+
+            expect(conv.filters[0].bias).to.equal(1)
+            expect(conv.filters[1].bias).to.equal(1)
+            expect(conv.filters[0].weights).to.deep.equal([[[1,2],[3,4]]])
+            expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
+        })
+    })
 })
 
 describe("PoolLayer", () => {
@@ -2676,6 +3047,27 @@ describe("PoolLayer", () => {
         it("Does nothing", () => {
             const layer = new PoolLayer()
             expect(layer.fromJSON()).to.be.undefined
+        })
+    })
+
+    describe("getDataSize", () => {
+        it("Returns 0", () => {
+            const pool = new PoolLayer()
+            expect(pool.getDataSize()).to.equal(0)
+        })
+    })
+
+    describe("toIMG", () => {
+        it("Returns an empty array", () => {
+            const pool = new PoolLayer()
+            expect(pool.toIMG()).to.deep.equal([])
+        })
+    })
+
+    describe("fromIMG", () => {
+        it("Does nothing", () => {
+            const pool = new PoolLayer()
+            expect(pool.fromIMG([])).to.be.undefined
         })
     })
 })
@@ -3054,6 +3446,80 @@ describe("NetUtil", () => {
             expect(scope.stuff3).to.equal(321)
         })
     })
+
+    describe("shuffle", () => {
+
+        const testArr = [1,2,3,4,5, "a", "b", "c"]
+        const original = testArr.slice(0)
+        NetUtil.shuffle(testArr)
+
+        it("Keeps the same number of elements", () => {
+            expect(testArr).to.have.lengthOf(8)
+        })
+
+        it("Changes the order of the elements", () => {
+            expect(testArr).to.not.deep.equal(original)
+        })
+
+        it("Does not include any new elements", () => {
+            expect(testArr.every(elem => original.includes(elem))).to.be.true
+        })
+
+        it("Still includes all original elements", () => {
+            expect(original.every(elem => testArr.includes(elem))).to.be.true
+        })
+    })
+
+    describe("splitData", () => {
+
+        const testData = [1,2,3,4,5,6,7,8,9,10]
+
+        it("Returns data split into 3 keys: training, validation, and test", () => {
+            const result = NetUtil.splitData(testData)
+            expect(result).to.have.keys("training", "validation", "test")
+        })
+
+        it("Keeps the same total number of items", () => {
+            const {training, validation, test} = NetUtil.splitData(testData)
+            expect(training.length + validation.length + test.length).to.equal(testData.length)
+        })
+    })
+
+    describe("normalize", () => {
+
+        it("Example 1 (Handles negative numbers correctly)", () => {
+            const data = [1,2,3,-5,0.4,2]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-5)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.75, 0.875, 1, 0, 0.675, 0.875])
+        })
+
+        it("Example 2 (Handles arrays with equal values correctly)", () => {
+            const data = [3, 3, 3, 3]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(3)
+            expect(maxVal).to.equal(3)
+            expect(data).to.deep.equal([0.5, 0.5, 0.5, 0.5])
+        })
+
+        it("Example 3", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(5)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+        })
+
+        it("Example 4", () => {
+            const data = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 13, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1]
+            const {minVal, maxVal} = NetUtil.normalize(data)
+            expect(minVal).to.equal(-1)
+            expect(maxVal).to.equal(15)
+            expect(data).to.deep.equal([0.375,0.4375,0.5,0.5625,0.625,0.6875,0.75,0.8125,0.875,0.9375,1,0.9375,0.875,0.875,0.8125,0.75,0.6875,0.625,0.5625,0.5,0.4375,0.375,0.3125,0.25,0.1875,0.125,0.0625,0])
+        })
+    })
+
 })
 
 describe("NetMath", () => {

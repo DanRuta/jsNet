@@ -51,8 +51,12 @@ class NetMath {
                          .reduce((prev, curr) => prev+curr, 0) / calculated.length
     }
 
+    static rootmeansquarederror (calculated, desired) {
+        return Math.sqrt(NetMath.meansquarederror(calculated, desired))
+    }
+
     // Weight updating functions
-    static vanillaupdatefn (value, deltaValue) {
+    static vanillasgd (value, deltaValue) {
         return value + this.learningRate * deltaValue
     }
 
@@ -126,6 +130,21 @@ class NetMath {
             neuron.adadeltaBiasCache = this.rho * neuron.adadeltaBiasCache + (1-this.rho) * Math.pow(deltaValue, 2)
             return newVal
         }
+    }
+
+    static momentum (value, deltaValue, neuron, weightI) {
+
+        let v
+
+        if (weightI!=null) {
+            v = this.momentum * (neuron.getWeightsCache(weightI)) - this.learningRate * deltaValue
+            neuron.setWeightsCache(weightI, v)
+        } else {
+            v = this.momentum * (neuron.biasCache) - this.learningRate * deltaValue
+            neuron.biasCache = v
+        }
+
+        return value - v
     }
 
     // Weights init

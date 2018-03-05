@@ -90,11 +90,15 @@ class PoolLayer {
 
     init () {}
 
-    toJSON () {
-        return {}
-    }
+    toJSON () {return {}}
 
     fromJSON() {}
+
+    getDataSize () {return 0}
+
+    toIMG () {return []}
+
+    fromIMG () {}
 
 }
 

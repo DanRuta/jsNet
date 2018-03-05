@@ -322,8 +322,6 @@ void ConvLayer::applyDeltaWeights (void) {
 
 void ConvLayer::backUpValidation (void) {
 
-    printf("backing up conv\n");
-
     validationBiases = {};
     validationFilterWeights = {};
 
@@ -340,7 +338,7 @@ void ConvLayer::backUpValidation (void) {
 
                 std::vector<double> row;
 
-                for (int wx=0; wx<filterWeights[f][wd].size(); wx++) {
+                for (int wx=0; wx<filterWeights[f][wd][wy].size(); wx++) {
                     row.push_back(filterWeights[f][wd][wy][wx]);
                 }
 
@@ -355,8 +353,6 @@ void ConvLayer::backUpValidation (void) {
 }
 
 void ConvLayer::restoreValidation (void) {
-
-    printf("restoring conv\n");
 
     for (int f=0; f<filters.size(); f++) {
 

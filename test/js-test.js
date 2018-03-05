@@ -3959,7 +3959,7 @@ describe("ConvLayer", () => {
             }
         })
 
-        it("Copies the filter weights to a 'validationBias' array, for each filter", () => {
+        it("Copies the filter biases to a 'validationBias' array, for each filter", () => {
             const layer = new ConvLayer(5)
             layer.net = {conv: {}, weightsInitFn: x=> [...new Array(x)].map((_,i) => i)}
             const prevLayer = new ConvLayer(2)

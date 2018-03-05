@@ -496,6 +496,43 @@ namespace Network_cpp {
         delete ml2;
     }
 
+    // Returns false when the earlyStoppingType is not defined
+    TEST_F(CheckEarlyStoppingFixture, checkEarlyStopping_8) {
+        net->earlyStoppingType = 0;
+        EXPECT_FALSE( net->checkEarlyStopping() );
+    }
+
+    TEST(Network, validate) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        FCLayer* l1 = new FCLayer(0, 3);
+        FCLayer* l2 = new FCLayer(0, 3);
+        Network* net = Network::getInstance(0);
+        net->costFunction = NetMath::meansquarederror;
+        net->layers.push_back(l1);
+        net->layers.push_back(l2);
+
+        l2->sums = {1,2,3};
+
+        std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData = {};
+        std::tuple<std::vector<double>, std::vector<double> > data;
+        std::get<0>(data) = {1,2,3};
+        std::get<1>(data) = {1,2,3};
+        validationData.push_back(data);
+        validationData.push_back(data);
+
+        net->validationData = validationData;
+        net->validations = 0;
+
+        double result = net->validate();
+        EXPECT_EQ( net->validations, 2 );
+        EXPECT_NEAR( result, 3.120041, 1e-5 );
+
+        delete l1;
+        delete l2;
+        Network::deleteNetwork();
+    }
+
 }
 
 namespace FCLayer_cpp {
@@ -2292,6 +2329,98 @@ namespace ConvLayer_cpp {
             EXPECT_NEAR( layer->biases[f], 1.19007, 1e-3 );
         }
     }
+
+    // Copies the filter weights to a 'validationWeights' array, for each filter
+    TEST(ConvLayer, backUpValidation_1) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* l1 = new ConvLayer(0, 5);
+        ConvLayer* l2 = new ConvLayer(0, 2);
+        l1->prevLayer = l2;
+        l1->channels = 2;
+        l1->filterSize = 3;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+
+        for (int f=0; f<5; f++) {
+            l1->filters.push_back(new Filter());
+            l1->filterWeights.push_back({{{1,2},{1,2}}});
+            l1->biases.push_back(f);
+        }
+
+        EXPECT_EQ( l1->validationFilterWeights.size(), 0 );
+
+        l1->backUpValidation();
+
+        EXPECT_EQ( l1->validationFilterWeights, l1->filterWeights );
+
+        for (int f=0; f<5; f++) {
+            delete l1->filters[f];
+        }
+        delete l1;
+        delete l2;
+    }
+
+    // Copies the filter biases to a 'validationBias' array, for each filter
+    TEST(ConvLayer, backUpValidation_2) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* l1 = new ConvLayer(0, 5);
+        ConvLayer* l2 = new ConvLayer(0, 2);
+        l1->prevLayer = l2;
+        l1->channels = 2;
+        l1->filterSize = 3;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+
+        for (int f=0; f<5; f++) {
+            l1->filters.push_back(new Filter());
+            l1->filterWeights.push_back({{{1,2},{1,2}}});
+            l1->biases.push_back(f);
+        }
+
+        EXPECT_EQ( l1->validationFilterWeights.size(), 0 );
+
+        l1->backUpValidation();
+
+        EXPECT_EQ( l1->validationBiases, l1->biases );
+
+        for (int f=0; f<5; f++) {
+            delete l1->filters[f];
+        }
+        delete l1;
+        delete l2;
+    }
+
+    // Copies backed up 'validationWeights' values into every filter's weights arrays
+    TEST(ConvLayer, restoreValidation) {
+        Network::deleteNetwork();
+        Network::newNetwork();
+        ConvLayer* l1 = new ConvLayer(0, 5);
+        ConvLayer* l2 = new ConvLayer(0, 2);
+        l1->prevLayer = l2;
+        l1->channels = 2;
+        l1->filterSize = 3;
+        Network::getInstance(0)->weightInitFn = &NetMath::uniform;
+        std::vector<std::vector<std::vector<double> > >  expected = {{{1,2,3},{1,2,3}}};
+        l1->init(1);
+
+        for (int f=0; f<l1->filters.size(); f++) {
+            l1->validationFilterWeights.push_back(expected);
+            l1->filterWeights.push_back({{{0,0,0},{0,0,0}}});
+            l1->validationBiases.push_back(f+5);
+            l1->biases.push_back(f);
+            EXPECT_NE( l1->filterWeights[f], expected );
+        }
+
+        l1->restoreValidation();
+
+        for (int f=0; f<l1->filters.size(); f++) {
+            EXPECT_EQ( l1->filterWeights[f], expected );
+        }
+
+        delete l1;
+        delete l2;
+    }
+
 }
 
 namespace PoolLayer_cpp {
@@ -2805,6 +2934,38 @@ namespace PoolLayer_cpp {
                 EXPECT_NEAR( layer->errors[0][i][j], expected[0][i][j], 1e-8 );
             }
         }
+    }
+
+    // Does nothing
+    TEST(PoolLayer, applyDeltaWeights) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->applyDeltaWeights();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, resetDeltaWeights) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->resetDeltaWeights();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, backUpValidation) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->backUpValidation();
+        EXPECT_TRUE( true );
+        delete pool;
+    }
+
+    // Does nothing
+    TEST(PoolLayer, restoreValidation) {
+        PoolLayer* pool = new PoolLayer(0, 2);
+        pool->restoreValidation();
+        EXPECT_TRUE( true );
+        delete pool;
     }
 }
 

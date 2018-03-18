@@ -10,6 +10,37 @@ jsNet is a browser/nodejs based deep learning framework for MLPs and convolution
 *Disclaimer: I am the sole developer on this, and I'm learning things as I go along. There may be things I've misunderstood, not done quite right, or done outright wrong. If you notice something wrong, please let me know, and I'll fix it (or submit a PR).*
 
 
+## Table of Contents
+- [Demos](#demos)
+- [Loading](#loading)
+    - [As an NPM package](#as-an-npm-package)
+    - [Manual nodejs](#manually-loading---nodejs)
+    - [Manual browser](#manually-loading---browser)
+- [Constructing](#constructing)
+    - [InputLayer](#inputlayer)
+- [Training](#training)
+    - [Validation](#validation)
+    - [Early stopping](#early-stopping)
+    - [Mini batch size](#mini-batch-size)
+    - [Shuffle](#shuffle)
+- [Testing](#testing)
+- [Confusion Matrix](#confusion-matrix)
+- [Exporting](#exporting)
+- [Importing](#importing)
+- [Configurations](#configurations)
+    - [Network](#network)
+        - [Weight update function](#weight-update-functions)
+        - [Activation function](#activation-function)
+        - [Regularization](#regularization)
+        - [Weights Initialization](#weights-initialization)
+    - [FCLayer](#fclayer-fully-connected-layer)
+    - [ConvLayer](#convlayer-convolutional-layer)
+    - [PoolLayer](#poollayer)
+    - [NetUtil](#netutil)
+- [Future plans](#future-plans)
+- [Contributing](#contributing)
+---
+
 ## Demos
 https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLayers only.
 

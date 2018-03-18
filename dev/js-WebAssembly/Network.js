@@ -342,7 +342,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
+    train (data, {epochs=1, callback, callbackInterval=1, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
@@ -362,7 +362,7 @@ class Network {
 
             const startTime = Date.now()
 
-            const dimension = this.layers[0].size// data[0].input.length
+            const dimension = this.layers[0].size
             const itemSize = dimension + data[0].expected.length
             const itemsCount = itemSize * data.length
 
@@ -460,19 +460,25 @@ class Network {
 
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
-                    callback({
-                        iterations: (this.iterations),
-                        validations: (this.validations),
-                        trainingError: this.error,
-                        validationError: this.validationError,
-                        elapsed: Date.now() - startTime,
-                        input: data[iterationIndex].input
-                    })
+                    if (iterationIndex%callbackInterval == 0 || this.validationError) {
+                        callback({
+                            iterations: (this.iterations),
+                            validations: (this.validations),
+                            trainingError: this.error,
+                            validationError: this.validationError,
+                            elapsed: Date.now() - startTime,
+                            input: data[iterationIndex].input
+                        })
+                    }
 
                     iterationIndex += miniBatchSize
 
                     if (iterationIndex < data.length && !this.stoppedEarly) {
-                        setTimeout(doIteration.bind(this), 0)
+                        if (iterationIndex%callbackInterval == 0) {
+                            setTimeout(doIteration.bind(this), 0)
+                        } else {
+                            doIteration()
+                        }
                     } else {
                         epochIndex++
 

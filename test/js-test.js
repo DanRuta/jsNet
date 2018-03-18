@@ -1474,6 +1474,14 @@ describe("Network", () => {
                 })
             })
 
+            it("Does not use setTimeout for every iteration when the callback interval is used", () => {
+                let totalCalls = 0
+                const cb = () => totalCalls++
+                return net.train(testData, {callback: cb, callbackInterval: 2}).then(() => {
+                    expect(totalCalls).to.equal(2)
+                })
+            })
+
         })
     })
 

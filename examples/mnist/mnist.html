@@ -34,7 +34,7 @@
         width: 50px;
     }
 
-    @media screen and (max-width: 700px) {
+    @media screen and (max-width: 800px) {
         #tip {
             display: none;
         }
@@ -83,16 +83,19 @@ window.addEventListener((versionLoaded=="js" ? "load" : "jsNetWASMLoaded"), () =
 
     const chart = new NetChart({
         container: chartContainer,
-        size: {x: window.innerWidth-10, y: 500}
+        averageOver: 5,
+        interval: parseInt(callbackIntervalInput.value),
+        size: {x: window.innerWidth-20, y: 500}
     })
 
     eval(netDefTextArea.value)
 
     const mnistData = mnist.set(10000, 0).training // get all data
-    const {training, validation, test} = NetUtil.splitData(mnistData)
+    const {training, validation, test} = NetUtil.splitData(mnistData, {training: 0.7, test: 0.2, validation: 0.1})
     console.log({training, validation, test})
 
     trainButton.addEventListener("click", () => {
+        chart.interval = parseInt(callbackIntervalInput.value)
         net.train(training, {
             epochs: parseInt(epochsCount.value),
             callback: ({trainingError, validationError, elapsed, iterations, input, target}) => {
@@ -105,15 +108,13 @@ window.addEventListener((versionLoaded=="js" ? "load" : "jsNetWASMLoaded"), () =
                 totalIterationsLabel.innerHTML = iterations
                 errorLabel.innerHTML = trainingError.toFixed(5)
 
-                if (iterations%5 != 0) {
-                    chart.addTrainingError(trainingError)
-                }
-
+                chart.addTrainingError(trainingError)
                 fillPreviewCanvas(input)
             },
+            callbackInterval: parseInt(callbackIntervalInput.value),
             validation: {
                 data: validation,
-                interval: 100
+                interval: parseInt(validationIntervalInput.value)
             },
             miniBatchSize: parseInt(miniBatchSize.value)
         }).then(() => {
@@ -323,6 +324,10 @@ window.addEventListener((versionLoaded=="js" ? "load" : "jsNetWASMLoaded"), () =
     <br>
     <div id="classificationOutput" class="flexTable"></div>
     <div id="chartContainer"></div>
+    <div id="trainingOptions">
+        Callback Interval <input type="number" min="0" id="callbackIntervalInput" value="5" placeholder="5">
+        Validation Interval <input type="number" min="0" id="validationIntervalInput" value="100" placeholder="100">
+    </div><br>
     <textarea id="netDefTextArea">
 window.net = new Network({
     Module: Module,
@@ -333,6 +338,7 @@ window.net = new Network({
     ]
 })
     </textarea>
+
     <button id="evalButton">Eval</button>
     <button id="clearChartButton">Clear Chart</button>
     <button id="importButton">Import JSON</button>

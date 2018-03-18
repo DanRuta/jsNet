@@ -1206,8 +1206,6 @@ describe("Network", () => {
                 })
             })
 
-
-
             it("Stops ccalling the train function when the stoppedEarly value is true", () => {
                 const network = new Network({Module: fakeModule})
                 let counter = 0
@@ -1221,6 +1219,14 @@ describe("Network", () => {
                 return network.train(testData, {epochs: 5}).then(() => {
                     expect(stub.withArgs("train").callCount).to.equal(3)
                     stub.restore()
+                })
+            })
+
+            it("Does not use setTimeout for every iteration when the callback interval is used", () => {
+                let totalCalls = 0
+                const cb = () => totalCalls++
+                return net.train(testData, {callback: cb, callbackInterval: 2}).then(() => {
+                    expect(totalCalls).to.equal(2)
                 })
             })
         })

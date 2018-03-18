@@ -1,7 +1,7 @@
 "use strict"
 
 class NetChart {
-    constructor ({container, size = {x: 500, y: 500}, cutOff=0, avgSpan=10, validationSplit=avgSpan}) {
+    constructor ({container, size = {x: 500, y: 500}, cutOff=0, interval=5, averageOver=10}) {
         const canvas = document.createElement("canvas")
         canvas.width = size.x
         canvas.height = size.y
@@ -48,38 +48,38 @@ class NetChart {
         this.chartY = 0
         this.chartY2 = 0
         this.chartY2Count = 0
-        this.avgSpan = avgSpan
-        this.validationSplit = validationSplit
+        this.averageOver = averageOver
+        this.interval = interval
         this.cutOff = cutOff
         container.appendChild(canvas)
     }
 
     addTrainingError (err) {
 
-        if (this.chartYCount==this.avgSpan-1) {
+        this.chartY += err
+        this.chartYCount++
+
+        if (this.chartYCount==this.averageOver) {
 
             this.chart.data.datasets[0].data.push({
-                x: this.chartX,
-                y: this.chartY/this.avgSpan
+                x: this.chartX * this.interval,
+                y: this.chartY/this.averageOver
             })
 
-            if (this.cutOff && this.chart.data.datasets[0].data.length>this.cutOff/this.avgSpan) {
+            if (this.cutOff && this.chart.data.datasets[0].data.length>this.cutOff/this.averageOver) {
                 this.chart.data.datasets[0].data.shift()
             }
 
             this.chartYCount = 0
             this.chartY = 0
-            this.chartX += this.avgSpan
+            this.chartX += this.averageOver
             this.chart.update()
-        } else {
-            this.chartY += err
-            this.chartYCount++
         }
     }
 
     addValidationError (err) {
         this.chart.data.datasets[1].data.push({
-            x: this.chartX,
+            x: this.chartX * this.interval,
             y: err
         })
 

@@ -3,6 +3,7 @@
 #### Network
 - Added confusion matrix
 - Made it possible to pass volume (3D array) input data
+- Added callback interval config to .train()
 
 #### InputLayer
 - Added InputLayer class

@@ -1751,7 +1751,7 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
+    train (dataSet, {epochs=1, callback, callbackInterval=1, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
         this.validation = validation
@@ -1879,7 +1879,7 @@ class Network {
 
                 elapsed = Date.now() - startTime
 
-                if (typeof callback=="function") {
+                if ((iterationIndex%callbackInterval == 0 || validationError) && typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
                         validations: this.validations,
@@ -1889,7 +1889,12 @@ class Network {
                 }
 
                 if (iterationIndex < dataSet.length) {
-                    setTimeout(doIteration.bind(this), 0)
+
+                    if (iterationIndex%callbackInterval == 0) {
+                        setTimeout(doIteration.bind(this), 0)
+                    } else {
+                        doIteration()
+                    }
 
                 } else {
                     epochsCounter++

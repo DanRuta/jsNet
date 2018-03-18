@@ -46,7 +46,7 @@ https://ai.danruta.co.uk/mnist - Interactive MNIST Digit classifier, using FCLay
 
 https://ai.danruta.co.uk/webassembly - Performance comparison between JS and WebAssembly (v2.0) versions.
 
-`examples/mnist` - Development environment set up for the MNIST data set
+`examples/mnist` - Development environment set up for the MNIST data set (serve via included nodejs server)
 
 <img width="100%" src="./examples/mnist/readmeimg.png">
 
@@ -247,6 +247,17 @@ You can also provide a callback in the options parameter, which will get called 
 const doSomeStuff = ({iterations, trainingError, validationError, elapsed, input}) => ....
 net.train(training, {callback: doSomeStuff})
 ```
+###### Callback Interval
+The number of iterations between callbacks can be configured via the `callbackInterval` config. By default, it is set to 1, meaning the callback is called with each iteration. By turning it to 5, for example, callbacks are called only every 5 iterations.
+
+***Tip**: Setting the interval to a number slightly above 1 can **greatly** improve the network speed, especially the WebAssembly version, where callbacks greatly slow down training.
+
+Example:
+```javascript
+net.train(training, {callback: doSomeStuff, callbackInterval: 1}) // Every iteration
+net.train(training, {callback: doSomeStuff, callbackInterval: 5}) // Every 5 iterations, but considerably quicker
+```
+
 ###### Log
 You can turn off the logging by passing log: false in the options parameter.
 ```javascript

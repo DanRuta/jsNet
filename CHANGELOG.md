@@ -7,6 +7,9 @@
 #### InputLayer
 - Added InputLayer class
 
+#### Examples
+- Added MNIST dev enviromnment example
+
 # 3.2.0 - IMG data, validation, early stopping
 ---
 #### Network

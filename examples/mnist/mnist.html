@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>jsNet - MNIST</title>
+    <script src="mnist.js"></script>
+    <script src="NetChart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+</head>
+<style>
+    #drawingCanvas, #previewCanvas{
+        border: 1px solid black;
+        margin: 5px;
+    }
+    #container {
+        display: flex;
+        align-items: center;
+    }
+    #netOutputValue {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 72pt;
+        font-family: Helvetica;
+    }
+    #netDefTextArea {
+        width: 100%;
+        height: 150px;
+    }
+    #switchVersions, #tip {
+        float: right;
+        max-width: 25vw;
+    }
+    input[type=number] {
+        width: 50px;
+    }
+
+    @media screen and (max-width: 700px) {
+        #tip {
+            display: none;
+        }
+    }
+</style>
+<script>
+"use strict"
+let versionLoaded = localStorage.getItem("jsNetVersion") || "js"
+// window.global = window.global || {}
+// window.global.jsNetWASMPath = "../../dist/NetWASM.wasm"
+
+const loadScript = src => {
+    const script = document.createElement("script")
+    script.src = `../../dist/${src}`
+    document.head.appendChild(script)
+}
+
+// Get the latest version of my IMGArrays library
+fetch("https://raw.githubusercontent.com/DanRuta/IMGArrays/master/dist/index.min.js")
+.then(r => r.text())
+.then(s => {
+    const script = document.createElement("script")
+    script.innerHTML = s
+    document.head.appendChild(script)
+})
+
+if (versionLoaded == "wasm") {
+    loadScript("jsNetWebAssembly.min.js")
+    loadScript("NetWASM.js")
+} else {
+    loadScript("jsNetJS.concat.js")
+    localStorage.setItem("jsNetVersion", "js")
+}
+
+
+
+console.log("versionLoaded", versionLoaded)
+window.addEventListener((versionLoaded=="js" ? "load" : "jsNetWASMLoaded"), () => {
+
+    window.Module = window.Module // stop undefined errors when not loading the wasm version
+    switchVersions.innerHTML = `Switch to ${versionLoaded=="js"?"WASM":"JS"}`
+
+    if (typeof mnist == "undefined") {
+        console.log("https://github.com/cazala/mnist")
+        return alert("Is the mnist library loaded? (open the console for link)")
+    }
+
+    const chart = new NetChart({
+        container: chartContainer,
+        size: {x: window.innerWidth-10, y: 500}
+    })
+
+    eval(netDefTextArea.value)
+
+    const mnistData = mnist.set(10000, 0).training // get all data
+    const {training, validation, test} = NetUtil.splitData(mnistData)
+    console.log({training, validation, test})
+
+    trainButton.addEventListener("click", () => {
+        net.train(training.slice(0, 1000), {
+            epochs: parseInt(epochsCount.value),
+            callback: ({trainingError, validationError, elapsed, iterations, input, target}) => {
+
+                if (validationError) {
+                    chart.addValidationError(validationError)
+                    valErrorLabel.innerHTML = validationError.toFixed(5)
+                }
+
+                totalIterationsLabel.innerHTML = iterations
+                errorLabel.innerHTML = trainingError.toFixed(5)
+
+                if (iterations%5 != 0) {
+                    chart.addTrainingError(trainingError)
+                }
+
+                fillPreviewCanvas(input)
+            },
+            validation: {
+                data: validation,
+                interval: 100
+            },
+            miniBatchSize: parseInt(miniBatchSize.value)
+        }).then(() => {
+            net.test(test).then(err => {
+                testErrorLabel.innerHTML = err.toFixed(5)
+                console.log(err)
+                net.printConfusionMatrix()
+                console.log("done")
+            })
+        })
+    })
+
+    // UI stuff
+    epochsCount.addEventListener("keydown", e => e.keyCode==13 && trainButton.click())
+    logButton.addEventListener("click", () => console.log(net))
+    switchVersions.addEventListener("click", () => {
+        localStorage.setItem("jsNetVersion", versionLoaded=="js"?"wasm":"js")
+        location.reload()
+    })
+    evalButton.addEventListener("click", () => eval(netDefTextArea.value))
+    clearChartButton.addEventListener("click", () => chart.clear())
+
+    exportButton.addEventListener("click", () => impexpText.value = JSON.stringify(net.toJSON(), null, 4))
+
+    importButton.addEventListener("click", () => {
+        net.fromJSON(JSON.parse(impexpText.value))
+        impexpText.value = ""
+    })
+
+    fromIMGButton.addEventListener("click", () => net.fromIMG(document.querySelector("img"), IMGArrays))
+
+    toIMGButton.addEventListener("click", () => {
+        window.canvas = net.toIMG(IMGArrays)
+        IMGArrays.downloadImage(window.canvas, {format: "png"})
+    })
+
+
+    // Drawing stuff from here on
+    let points = []
+
+    const canvas = document.createElement("canvas")
+    canvas.id = "drawingCanvas"
+    canvas.width = 28*5
+    canvas.height = canvas.width
+
+    const context = canvas.getContext("2d")
+    context.lineCap = "round"
+    context.lineJoin = "round"
+    context.lineWidth = canvas.width/13
+
+    netOutputValue.style.height = canvas.height+"px"
+    netOutputValue.style.width = canvas.width+"px"
+
+    container.insertBefore(canvas, netOutputValue)
+
+    const startDrawing = event => {
+        points = []
+
+        if (event.button==2) return
+
+        canvas.addEventListener("mousemove", draw)
+        canvas.addEventListener("touchmove", draw)
+    }
+
+    const draw = event => {
+
+        const touches = event.changedTouches
+        const boundingRect = canvas.getBoundingClientRect()
+
+        if (touches) {
+            event.preventDefault()
+            const touchLocation = touches.item(touches.length-1)
+            points.push({
+                x: touchLocation.clientX - boundingRect.left,
+                y: event.clientY - boundingRect.top
+            })
+        } else {
+            points.push({
+                x: event.clientX - boundingRect.left,
+                y: event.clientY - boundingRect.top
+            })
+        }
+
+        if (points.length>2) {
+            if (points.length>3) {
+                points.shift()
+            }
+
+            render()
+        }
+    }
+
+    const render = () => {
+        context.beginPath()
+        context.moveTo(points[0].x, points[0].y)
+
+        points.forEach((point, pi) => {
+            if(!pi || pi==points.length-1)
+                return
+            const point2x = (point.x+points[pi+1].x)/2
+            const point2y = (point.y+points[pi+1].y)/2
+
+            context.quadraticCurveTo(point.x, point.y, point2x, point2y)
+
+        })
+
+        context.stroke()
+    }
+
+    const stopDrawing = () => {
+        canvas.removeEventListener("mousemove", draw)
+        canvas.removeEventListener("touchmove", draw)
+        readImage1D()
+    }
+
+    const readImage1D = () => {
+
+        const data = []
+        const squareSize = canvas.width/28
+        const imageData = context.getImageData(0,0, canvas.width, canvas.height)
+
+        for(let ri=0; ri<28; ri++){
+            for(let vi=0; vi<28; vi++){
+
+                const squarePixels = context.getImageData(vi*squareSize, ri*squareSize, squareSize, squareSize).data
+
+                let squareValue = 0
+                let averageValue = 0
+
+                for(let channel=3; channel<squarePixels.length; channel+=4){
+                    averageValue += squarePixels[channel]
+                }
+
+                data.push(averageValue/(squarePixels.length/4)/255)
+            }
+        }
+
+        passImageThroughNet(data)
+    }
+
+    const getOutputFromNet = output => {
+        const netResponse = net.forward(output)
+        const softmax = NetMath.softmax(netResponse)
+        const top = softmax.reduce((p,c) => Math.max(p,c), 0)
+        return softmax.indexOf(top)
+    }
+
+    const passImageThroughNet = data => {
+        netOutputValue.innerHTML = getOutputFromNet(data)
+        fillPreviewCanvas(data)
+    }
+
+    canvas.addEventListener("mousedown", startDrawing)
+    canvas.addEventListener("touchstart", startDrawing)
+    canvas.addEventListener("contextmenu", e => {
+        e.preventDefault()
+        context.clearRect(0,0, canvas.width, canvas.height)
+        points = []
+    })
+
+    canvas.addEventListener("mouseup", stopDrawing)
+    canvas.addEventListener("touchend", stopDrawing)
+
+    // Output canvas
+    const previewCanvas = document.createElement("canvas")
+    previewCanvas.id = "previewCanvas"
+    previewCanvas.width = canvas.width
+    previewCanvas.height = canvas.height
+    container.insertBefore(previewCanvas, netOutputValue)
+
+    const previewContext = previewCanvas.getContext("2d")
+
+    window.fillPreviewCanvas = data => {
+
+        const squareSize = previewCanvas.width / 28
+
+        previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height)
+
+        data.forEach((value, vi) => {
+            previewContext.fillStyle = `rgb(${Math.round(value*255)}, ${Math.round(value*255)}, ${Math.round(value*255)})`
+            previewContext.fillRect(vi%28*squareSize, Math.floor(vi/28)*squareSize, squareSize, squareSize)
+        })
+    }
+
+    fillPreviewCanvas(training[0].input)
+})
+</script>
+<body>
+    Epochs <input type="number" min="0" id="epochsCount" value="1" placeholder="20">
+    Mini Batch <input type="number" min="0" id="miniBatchSize" value="1" placeholder="Mini Batch Size">
+    <button id="trainButton">Train</button>
+    <button id="logButton">Log</button>
+    <span id="tip">Keep the console open for output. Right click clears the digit drawing.</span>
+
+    <br>Total iterations <span id="totalIterationsLabel">0</span>
+    <br>Training Error <span id="errorLabel">-</span>%
+    <br>Validation Error <span id="valErrorLabel">-</span>%
+    <br>Testing Error <span id="testErrorLabel">-</span>%
+    <br><br>
+
+    <div>
+        <div id="container">
+            <div id="netOutputValue"></div>
+        </div>
+    </div>
+
+    <br>
+    <div id="classificationOutput" class="flexTable"></div>
+    <div id="chartContainer"></div>
+    <textarea id="netDefTextArea">
+window.net = new Network({
+    Module: Module,
+    layers: [
+        new InputLayer(784),
+        new FCLayer(100),
+        new FCLayer(10)
+    ]
+})
+    </textarea>
+    <button id="evalButton">Eval</button>
+    <button id="clearChartButton">Clear Chart</button>
+    <button id="importButton">Import JSON</button>
+    <button id="exportButton">Export JSON</button>
+    <button id="switchVersions">Switch to WASM</button><br><br>
+    <textarea id="impexpText" placeholder="JSON import/export"></textarea>
+    <br><br> <!-- fight me -->
+    <button id="toIMGButton">Export IMG</button>
+    <button id="fromIMGButton">Import IMG</button>
+    <br><br>
+    <img src="fc-784f-100f-10f.png">
+</body>
+</html>

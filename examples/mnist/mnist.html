@@ -42,9 +42,8 @@
 </style>
 <script>
 "use strict"
+
 let versionLoaded = localStorage.getItem("jsNetVersion") || "js"
-// window.global = window.global || {}
-// window.global.jsNetWASMPath = "../../dist/NetWASM.wasm"
 
 const loadScript = src => {
     const script = document.createElement("script")
@@ -94,7 +93,7 @@ window.addEventListener((versionLoaded=="js" ? "load" : "jsNetWASMLoaded"), () =
     console.log({training, validation, test})
 
     trainButton.addEventListener("click", () => {
-        net.train(training.slice(0, 1000), {
+        net.train(training, {
             epochs: parseInt(epochsCount.value),
             callback: ({trainingError, validationError, elapsed, iterations, input, target}) => {
 

@@ -166,6 +166,12 @@ class Network {
         }
 
         this.layers.forEach(this.joinLayer.bind(this))
+
+        const outSize = this.layers[this.layers.length-1].size
+        this.trainingConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.testConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.validationConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+
         this.state = "initialised"
     }
 
@@ -324,9 +330,15 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected
 
+                let classification = -Infinity
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                    classification = Math.max(classification, output[n])
+                }
+
+                if (this.trainingConfusionMatrix[target.indexOf(1)]) {
+                    this.trainingConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
                 }
 
                 // Do validation
@@ -407,6 +419,15 @@ class Network {
 
                 const output = this.forward(data[validationIndex].input)
                 const target = data[validationIndex].expected
+
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.validationConfusionMatrix[target.indexOf(1)]) {
+                    this.validationConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
 
                 this.validations++
                 totalValidationErrors += this.cost(target, output)
@@ -491,6 +512,15 @@ class Network {
                 const output = this.forward(input)
                 const target = testSet[iterationIndex].expected
                 const elapsed = Date.now() - startTime
+
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.testConfusionMatrix[target.indexOf(1)]) {
+                    this.testConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
 
                 const iterationError = this.cost(target, output)
                 totalError += iterationError
@@ -586,6 +616,24 @@ class Network {
 
             const dataCount = this.layers[l].getDataSize()
             this.layers[l].fromIMG(data.splice(0, dataCount))
+        }
+    }
+
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
         }
     }
 

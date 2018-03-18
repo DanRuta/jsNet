@@ -688,6 +688,171 @@ class NetUtil {
             set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
         })
     }
+
+    static makeConfusionMatrix (originalData) {
+        let total = 0
+        let totalCorrect = 0
+        const data = []
+
+        for (let r=0; r<originalData.length; r++) {
+            const row = []
+            for (let c=0; c<originalData[r].length; c++) {
+                row.push(originalData[r][c])
+            }
+            data.push(row)
+        }
+
+
+        for (let r=0; r<data.length; r++) {
+            for (let c=0; c<data[r].length; c++) {
+                total += data[r][c]
+            }
+        }
+
+        for (let r=0; r<data.length; r++) {
+
+            let rowTotal = 0
+            totalCorrect += data[r][r]
+
+            for (let c=0; c<data[r].length; c++) {
+                rowTotal += data[r][c]
+                data[r][c] = {count: data[r][c], percent: (data[r][c] / total * 100)||0}
+            }
+
+            const correctPercent = data[r][r].count / rowTotal * 100
+
+            data[r].total = {
+                correct: (correctPercent||0),
+                wrong: (100 - correctPercent)||0
+            }
+        }
+
+        // Collect bottom row percentages
+        const bottomRow = []
+
+        for (let c=0; c<data[0].length; c++) {
+
+            let columnTotal = 0
+
+            for (let r=0; r<data.length; r++) {
+                columnTotal += data[r][c].count
+            }
+
+            const correctPercent = data[c][c].count / columnTotal * 100
+
+            bottomRow.push({
+                correct: (correctPercent)||0,
+                wrong: (100 - correctPercent)||0
+            })
+        }
+
+        data.total = bottomRow
+
+        // Calculate final matrix percentage
+        data.total.total = {
+            correct: (totalCorrect / total * 100)||0,
+            wrong: (100 - (totalCorrect / total * 100))||0
+        }
+
+        return data
+    }
+
+    /* istanbul ignore next */
+    static printConfusionMatrix (data) {
+        if (typeof window!="undefined") {
+
+            for (let r=0; r<data.length; r++) {
+                for (let c=0; c<data[r].length; c++) {
+                    data[r][c] = `${data[r][c].count} (${data[r][c].percent.toFixed(1)}%)`
+                }
+                data[r].total = `${data[r].total.correct.toFixed(1)}% / ${data[r].total.wrong.toFixed(1)}%`
+                data.total[r] = `${data.total[r].correct.toFixed(1)}% / ${data.total[r].wrong.toFixed(1)}%`
+            }
+
+            data.total.total = `${data.total.total.correct.toFixed(1)}% / ${data.total.total.wrong.toFixed(1)}%`
+
+            console.table(data)
+            return
+        }
+
+
+        const padNum = (num, percent) => {
+            num = percent ? num.toFixed(1) + "%" : num.toString()
+            const leftPad = Math.max(Math.floor((3*2+1 - num.length) / 2), 0)
+            const rightPad = Math.max(3*2+1 - (num.length + leftPad), 0)
+            return " ".repeat(leftPad)+num+" ".repeat(rightPad)
+        }
+
+        let colourText
+        let colourBackground
+
+        // Bright
+        process.stdout.write("\n\x1b[1m")
+
+        for (let r=0; r<data.length; r++) {
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+
+            // Count
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}\x1b[1m${padNum(data[r][c].count)}\x1b[22m`)
+            }
+
+            // Dim green text on white background
+            colourText = "\x1b[2m\x1b[32m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.correct, true)}`)
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+            process.stdout.write(`${colourText}\n`)
+
+            // Percent
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}${padNum(data[r][c].percent, true)}`)
+            }
+
+            // Dim red
+            colourText = "\x1b[2m\x1b[31m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.wrong, true)}`)
+
+            // Bright
+            process.stdout.write("\x1b[1m\x1b[30m\n")
+        }
+
+        // Dim green text
+        colourText = "\x1b[22m\x1b[32m"
+
+        // Bottom row correct percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.correct, true)}`)
+        }
+        // Total correct percentages
+        // Blue background
+        colourBackground = "\x1b[1m\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.correct, true)}\n`)
+
+        // Dim red on white background
+        colourText = "\x1b[22m\x1b[31m"
+        colourBackground = "\x1b[47m"
+
+        // Bottom row wrong percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.wrong, true)}`)
+        }
+
+        // Bright red on blue background
+        colourText = "\x1b[1m\x1b[31m"
+        colourBackground = "\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.wrong, true)}\n`)
+
+        // Reset
+        process.stdout.write("\x1b[0m\n")
+    }
 }
 
 NetUtil.activationsIndeces = {
@@ -994,6 +1159,12 @@ class Network {
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
+        const outSize = this.layers[this.layers.length-1].size
+        const floorFunc = map => map.map(row => row.map(v => Math.floor(v)))
+
+        NetUtil.defineMapProperty(this, "trainingConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "testConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "validationConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
     }
 
     joinLayer (layer, layerIndex) {
@@ -1390,7 +1561,26 @@ class Network {
 
             const dataCount = this.layers[l].getDataSize()
             this.layers[l].fromIMG(data.splice(0, dataCount))
-        }    }
+        }
+    }
+
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
+        }
+    }
 
     static get version () {
         return "3.2.0"

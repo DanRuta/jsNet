@@ -53,6 +53,10 @@ public:
     double (*costFunction)(std::vector<double> calculated, std::vector<double> desired);
     std::vector<double> (*weightInitFn)(int netInstance, int layerIndex, int size);
 
+    std::vector<std::vector<int>> trainingConfusionMatrix;
+    std::vector<std::vector<int>> testConfusionMatrix;
+    std::vector<std::vector<int>> validationConfusionMatrix;
+
     int updateFnIndex;
 
     Network () {}

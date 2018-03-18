@@ -1,3 +1,8 @@
+# Upcoming
+---
+#### Network
+- Added confusion matrix
+
 # 3.2.0 - IMG data, validation, early stopping
 ---
 #### Network

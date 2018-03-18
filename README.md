@@ -292,6 +292,15 @@ Like with training, you can provide a callback for testing, which will get calle
 const doSomeStuff = ({iterations, error, elapsed, input}) => ....
 net.train(training).then(() => net.test(test, {callback: doSomeStuff}))
 ```
+### Confusion matrix
+
+Confusion matrices can be generated for each training, validation, and testing, as well as merged. The raw data for each can be accessed as either `net.trainingConfusionMatrix`, `net.testConfusionMatrix`, or `net.validationConfusionMatrix`. The matrix can be printed out using `net.printConfusionMatrix(type)`, where the type is any of `"training"`, `"test"`, or `"validation"`. If no type is given, the data for all 3 is summed up.
+
+When calling the function in nodejs, the chart is printed out in the terminal. When called in the browser, it is printed in the console as a table.
+
+<img width="100%" src="confusion.png">
+
+To access the computed data yourself, including the percentages, without the printing, you can call `NetUtil.makeConfusionMatrix(net.trainingConfusionMatrix)`, `NetUtil.makeConfusionMatrix(net.testConfusionMatrix)`, or `NetUtil.makeConfusionMatrix(net.validationConfusionMatrix)`, which will return a JSON version of the printed data.
 
 ### Exporting
 ---
@@ -547,8 +556,8 @@ The first parameter, an integer, is for how many filters to use in the layer. Th
 |  Attribute | What it does | Available Configurations | Default value |
 |:-------------:| :-----:| :-----:| :---: |
 | filterSize | The spacial dimensions of each filter's weights. Giving 3 creates a 3x3 map in each channel | Any odd number | 3 |
-| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any number | Rounded down filterSize/2, keeping dimensions the same (equivalent to 'SAME' in TensorFlow) |
-| stride | How many values to move between convolutions | Any number | 1 |
+| zeroPadding | How much to pad the input map with zero values. Default value keeps output map dimension the same as the input | Any positive integer | Rounded down filterSize/2, keeping dimensions the same (equivalent to 'SAME' in TensorFlow) |
+| stride | How many values to move between convolutions | Any positive integer | 1 |
 | activation | Activation function to use (see below notes) | false, sigmoid, tanh, relu, lrelu, rrelu, lecuntanh, elu, _function_ | false |
 
 You need to make sure you configure the hyperparameters correctly (you'll be told if something's wrong), to have the filter convolve across all input values and avoiding otherwise decimal outgoing spacial dimensions.

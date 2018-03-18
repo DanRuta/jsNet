@@ -1314,6 +1314,171 @@ class NetUtil {
 
         return {minVal, maxVal}
     }
+
+    static makeConfusionMatrix (originalData) {
+        let total = 0
+        let totalCorrect = 0
+        const data = []
+
+        for (let r=0; r<originalData.length; r++) {
+            const row = []
+            for (let c=0; c<originalData[r].length; c++) {
+                row.push(originalData[r][c])
+            }
+            data.push(row)
+        }
+
+
+        for (let r=0; r<data.length; r++) {
+            for (let c=0; c<data[r].length; c++) {
+                total += data[r][c]
+            }
+        }
+
+        for (let r=0; r<data.length; r++) {
+
+            let rowTotal = 0
+            totalCorrect += data[r][r]
+
+            for (let c=0; c<data[r].length; c++) {
+                rowTotal += data[r][c]
+                data[r][c] = {count: data[r][c], percent: (data[r][c] / total * 100)||0}
+            }
+
+            const correctPercent = data[r][r].count / rowTotal * 100
+
+            data[r].total = {
+                correct: (correctPercent||0),
+                wrong: (100 - correctPercent)||0
+            }
+        }
+
+        // Collect bottom row percentages
+        const bottomRow = []
+
+        for (let c=0; c<data[0].length; c++) {
+
+            let columnTotal = 0
+
+            for (let r=0; r<data.length; r++) {
+                columnTotal += data[r][c].count
+            }
+
+            const correctPercent = data[c][c].count / columnTotal * 100
+
+            bottomRow.push({
+                correct: (correctPercent)||0,
+                wrong: (100 - correctPercent)||0
+            })
+        }
+
+        data.total = bottomRow
+
+        // Calculate final matrix percentage
+        data.total.total = {
+            correct: (totalCorrect / total * 100)||0,
+            wrong: (100 - (totalCorrect / total * 100))||0
+        }
+
+        return data
+    }
+
+    /* istanbul ignore next */
+    static printConfusionMatrix (data) {
+        if (typeof window!="undefined") {
+
+            for (let r=0; r<data.length; r++) {
+                for (let c=0; c<data[r].length; c++) {
+                    data[r][c] = `${data[r][c].count} (${data[r][c].percent.toFixed(1)}%)`
+                }
+                data[r].total = `${data[r].total.correct.toFixed(1)}% / ${data[r].total.wrong.toFixed(1)}%`
+                data.total[r] = `${data.total[r].correct.toFixed(1)}% / ${data.total[r].wrong.toFixed(1)}%`
+            }
+
+            data.total.total = `${data.total.total.correct.toFixed(1)}% / ${data.total.total.wrong.toFixed(1)}%`
+
+            console.table(data)
+            return
+        }
+
+
+        const padNum = (num, percent) => {
+            num = percent ? num.toFixed(1) + "%" : num.toString()
+            const leftPad = Math.max(Math.floor((3*2+1 - num.length) / 2), 0)
+            const rightPad = Math.max(3*2+1 - (num.length + leftPad), 0)
+            return " ".repeat(leftPad)+num+" ".repeat(rightPad)
+        }
+
+        let colourText
+        let colourBackground
+
+        // Bright
+        process.stdout.write("\n\x1b[1m")
+
+        for (let r=0; r<data.length; r++) {
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+
+            // Count
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}\x1b[1m${padNum(data[r][c].count)}\x1b[22m`)
+            }
+
+            // Dim green text on white background
+            colourText = "\x1b[2m\x1b[32m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.correct, true)}`)
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+            process.stdout.write(`${colourText}\n`)
+
+            // Percent
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}${padNum(data[r][c].percent, true)}`)
+            }
+
+            // Dim red
+            colourText = "\x1b[2m\x1b[31m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.wrong, true)}`)
+
+            // Bright
+            process.stdout.write("\x1b[1m\x1b[30m\n")
+        }
+
+        // Dim green text
+        colourText = "\x1b[22m\x1b[32m"
+
+        // Bottom row correct percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.correct, true)}`)
+        }
+        // Total correct percentages
+        // Blue background
+        colourBackground = "\x1b[1m\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.correct, true)}\n`)
+
+        // Dim red on white background
+        colourText = "\x1b[22m\x1b[31m"
+        colourBackground = "\x1b[47m"
+
+        // Bottom row wrong percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.wrong, true)}`)
+        }
+
+        // Bright red on blue background
+        colourText = "\x1b[1m\x1b[31m"
+        colourBackground = "\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.wrong, true)}\n`)
+
+        // Reset
+        process.stdout.write("\x1b[0m\n")
+    }
 }
 
 /* istanbul ignore next */
@@ -1487,6 +1652,12 @@ class Network {
         }
 
         this.layers.forEach(this.joinLayer.bind(this))
+
+        const outSize = this.layers[this.layers.length-1].size
+        this.trainingConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.testConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.validationConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+
         this.state = "initialised"
     }
 
@@ -1645,9 +1816,15 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected
 
+                let classification = -Infinity
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                    classification = Math.max(classification, output[n])
+                }
+
+                if (this.trainingConfusionMatrix[target.indexOf(1)]) {
+                    this.trainingConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
                 }
 
                 // Do validation
@@ -1728,6 +1905,15 @@ class Network {
 
                 const output = this.forward(data[validationIndex].input)
                 const target = data[validationIndex].expected
+
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.validationConfusionMatrix[target.indexOf(1)]) {
+                    this.validationConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
 
                 this.validations++
                 totalValidationErrors += this.cost(target, output)
@@ -1812,6 +1998,15 @@ class Network {
                 const output = this.forward(input)
                 const target = testSet[iterationIndex].expected
                 const elapsed = Date.now() - startTime
+
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.testConfusionMatrix[target.indexOf(1)]) {
+                    this.testConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
 
                 const iterationError = this.cost(target, output)
                 totalError += iterationError
@@ -1907,6 +2102,24 @@ class Network {
 
             const dataCount = this.layers[l].getDataSize()
             this.layers[l].fromIMG(data.splice(0, dataCount))
+        }
+    }
+
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
         }
     }
 

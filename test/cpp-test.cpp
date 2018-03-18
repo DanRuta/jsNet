@@ -1,3 +1,4 @@
+#include <limits>
 #include "../dev/cpp/Network.cpp"
 #include "cpp-mocks.cpp"
 #include "gmock/gmock.h"
@@ -511,6 +512,12 @@ namespace Network_cpp {
         net->costFunction = NetMath::meansquarederror;
         net->layers.push_back(l1);
         net->layers.push_back(l2);
+
+        for (int r=0; r<3; r++) {
+            net->trainingConfusionMatrix.push_back(std::vector<int>(3, 0));
+            net->testConfusionMatrix.push_back(std::vector<int>(3, 0));
+            net->validationConfusionMatrix.push_back(std::vector<int>(3, 0));
+        }
 
         l2->sums = {1,2,3};
 

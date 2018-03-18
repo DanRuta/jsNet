@@ -288,6 +288,12 @@ class Network {
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
+        const outSize = this.layers[this.layers.length-1].size
+        const floorFunc = map => map.map(row => row.map(v => Math.floor(v)))
+
+        NetUtil.defineMapProperty(this, "trainingConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "testConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "validationConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
     }
 
     joinLayer (layer, layerIndex) {
@@ -684,7 +690,26 @@ class Network {
 
             const dataCount = this.layers[l].getDataSize()
             this.layers[l].fromIMG(data.splice(0, dataCount))
-        }    }
+        }
+    }
+
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
+        }
+    }
 
     static get version () {
         return "3.2.0"

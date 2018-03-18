@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits>
 #include <emscripten.h>
 #include "Network.cpp"
 
@@ -203,6 +204,63 @@ extern "C" {
                 net->costFunction = &NetMath::crossentropy;
                 break;
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_trainingConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->trainingConfusionMatrix.size();
+        int mapSpan = net->trainingConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->trainingConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_testConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->testConfusionMatrix.size();
+        int mapSpan = net->testConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->testConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_validationConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->validationConfusionMatrix.size();
+        int mapSpan = net->validationConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->validationConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
     }
 
     EMSCRIPTEN_KEEPALIVE

@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, InputLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
 
 describe("Loading", () => {
 
@@ -22,6 +22,7 @@ describe("Loading", () => {
     it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
     it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
+    it("InputLayer is loaded", () => expect(InputLayer).to.not.be.undefined)
 
     it("Loads Layer as an alias of FCLayer", () => {
 
@@ -770,6 +771,15 @@ describe("Network", () => {
             const activations = net.layers[2].neurons.map(n => n.sum)
 
             expect(result).to.deep.equal(activations)
+        })
+
+        it("Flattens volume input data", () => {
+            const net = new Network({layers: [new FCLayer(4)]})
+            net.forward([[[1,2],[3,4]]])
+            expect(net.layers[0].neurons[0].activation).to.equal(1)
+            expect(net.layers[0].neurons[1].activation).to.equal(2)
+            expect(net.layers[0].neurons[2].activation).to.equal(3)
+            expect(net.layers[0].neurons[3].activation).to.equal(4)
         })
     })
 
@@ -2429,7 +2439,6 @@ describe("FCLayer", () => {
             expect(fc.neurons[2].weights).to.deep.equal([0,2])
         })
     })
-
 })
 
 describe("Neuron", () => {
@@ -4162,7 +4171,6 @@ describe("ConvLayer", () => {
             expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
         })
     })
-
 })
 
 describe("PoolLayer", () => {
@@ -4812,6 +4820,18 @@ describe("PoolLayer", () => {
             const pool = new PoolLayer()
             expect(pool.fromIMG([])).to.be.undefined
         })
+    })
+})
+
+describe("InputLayer", () => {
+    it("Returns an extended FCLayer", () => {
+        const il = new InputLayer(2)
+        expect(il).instanceof(FCLayer)
+    })
+    it("Configures itself with as many neurons as there would be filter 'neurons', when configured with 'span'", () => {
+        const il = new InputLayer(2, {span: 5})
+        expect(il).instanceof(FCLayer)
+        expect(il.size).to.equal(50)
     })
 })
 

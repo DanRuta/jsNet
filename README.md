@@ -149,7 +149,7 @@ Or you can fully configure the layers by constructing them. Check below what con
 ```javascript
 // Example 1 - fully connected network
 const net = new Network({
-    layers: [new Layer(784), new Layer(100), new Layer(10)]
+    layers: [new InputLayer(784), new Layer(100), new Layer(10)]
 })
 // Example 2 - convolutional network
 const net = new Network({
@@ -157,11 +157,20 @@ const net = new Network({
 })
 ```
 
+##### InputLayer
+The input data can be either a one dimensional array, or a volume (3D array). To define the input layer, you can configure the InputLayer with
+
+The input layer can be defined with either an FCLayer, or an InputLayer. The InputLayer can be configured either with the number of total inputs, or as the number of filters, with the filter spans, like so:
+```javascript
+const inputA = new InputLayer(10) // For 10 input items
+const inputB = new InputLayer(3, {span: 5}) // For 75 input items
+```
+
 The usual arrangement of layers would folow something like this:
 
-```FCLayer -> [ConvLayer]* -> [ConvLayer* -> PoolLayer*]* -> FCLayer+```
+```InputLayer -> [ConvLayer]* -> [ConvLayer* -> PoolLayer*]* -> FCLayer+```
 
-In words, an FCLayer, optionally followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
+In words, an InputLayer, optionally followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
 The first FCLayer needs to have as many neurons in it as there are data points per iteration, and the last FCLayer needs to have as many neurons as there are classes for your data set.
 
 When building a convolutional network, make sure that the number of neurons in the FC layer following a Conv or Pool layer matches the number of outgoing activations in the layer preceding it. See below for a tip on easily calculating that number.
@@ -173,8 +182,12 @@ The data structure must be an object with key ```input``` having an array of num
 ```javascript
 {input: [1,0,0.2], expected: [1, 2]}
 ```
-***Tip**: You can normalize data using the ```NetUtil.normalize()``` function (see at the bottom)*
+***Tip**: You can normalize 1D data using the ```NetUtil.normalize()``` function (see at the bottom)*
 
+Alternativelty, when using volume data, the following is also a valid input:
+```javascript
+{input: [ [[0.1,0.2],[0.3,0.4]], [[0.5,0.6],[0.7,0.8]] ], expected: [1, 2]}
+```
 You train the network by passing a set of data. The network will log to the console the error and epoch number, after each epoch, as well as time elapsed and average epoch duration.
 ```javascript
 const {training} = mnist.set(800, 200) // Get the training data from the mnist library, linked above
@@ -184,7 +197,7 @@ net.train(training) // This on its own is enough
 .then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
 
-Until more options are implemented, softmax is used by default during training, on the last layer (unless there is only one value). As such, activation configurations are not used there.
+Softmax is used by default during training, on the last layer (unless there is only one value). As such, activation configurations are not used there.
 
 ##### Options
 ###### Epochs

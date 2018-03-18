@@ -399,6 +399,18 @@ typeof window!="undefined" && (window.Filter = Filter)
 exports.Filter = Filter
 "use strict"
 
+class InputLayer extends FCLayer {
+    constructor (size, {span=1}={}) {
+        super(size * span*span)
+    }
+}
+
+/* istanbul ignore next */
+typeof window!="undefined" && (window.InputLayer = InputLayer)
+exports.InputLayer = InputLayer
+
+"use strict"
+
 class NetMath {
     static softmax (values) {
         let total = 0
@@ -450,12 +462,7 @@ class NetUtil {
 
                     if (paramTypes[p] == "array" || Array.isArray(params[p])) {
 
-                        const typedArray = new heapMap[heapIn](params[p].length)
-
-                        for (let i=0; i<params[p].length; i++) {
-                            typedArray[i] = params[p][i]
-                        }
-
+                        const typedArray = new heapMap[heapIn](params[p])
                         const buf = NetUtil.Module._malloc(typedArray.length * typedArray.BYTES_PER_ELEMENT)
 
                         switch (heapIn) {
@@ -1189,6 +1196,20 @@ class Network {
             throw new Error("No data passed to Network.forward()")
         }
 
+        // Flatten volume inputs
+        if (Array.isArray(data[0])) {
+            const flat = []
+
+            for (let c=0; c<data.length; c++) {
+                for (let r=0; r<data[0].length; r++) {
+                    for (let v=0; v<data[0].length; v++) {
+                        flat.push(data[c][r][v])
+                    }
+                }
+            }
+            data = flat
+        }
+
         if (data.length != this.layers[0].neurons.length) {
             console.warn("Input data length did not match input layer neurons count.")
         }
@@ -1219,7 +1240,7 @@ class Network {
 
             const startTime = Date.now()
 
-            const dimension = data[0].input.length
+            const dimension = this.layers[0].size// data[0].input.length
             const itemSize = dimension + data[0].expected.length
             const itemsCount = itemSize * data.length
 
@@ -1229,25 +1250,7 @@ class Network {
 
             // Load training data
             const typedArray = new Float32Array(itemsCount)
-
-            for (let di=0; di<data.length; di++) {
-
-                if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
-                }
-
-                let index = itemSize*di
-
-                for (let ii=0; ii<data[di].input.length; ii++) {
-                    typedArray[index] = data[di].input[ii]
-                    index++
-                }
-
-                for (let ei=0; ei<data[di].expected.length; ei++) {
-                    typedArray[index] = data[di].expected[ei]
-                    index++
-                }
-            }
+            this.loadData(data, typedArray, itemSize, reject)
 
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)
@@ -1294,21 +1297,7 @@ class Network {
                 // Load validation data
                 if (this.validation.data) {
                     const typedArray = new Float32Array(this.validation.data.length)
-
-                    for (let di=0; di<this.validation.data.length; di++) {
-
-                        let index = itemSize*di
-
-                        for (let ii=0; ii<this.validation.data[di].input.length; ii++) {
-                            typedArray[index] = this.validation.data[di].input[ii]
-                            index++
-                        }
-
-                        for (let ei=0; ei<this.validation.data[di].expected.length; ei++) {
-                            typedArray[index] = this.validation.data[di].expected[ei]
-                            index++
-                        }
-                    }
+                    this.loadData(this.validation.data, typedArray, itemSize , reject)
                     validationBuf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
                     this.Module.HEAPF32.set(typedArray, buf >> 2)
 
@@ -1424,6 +1413,40 @@ class Network {
         })
     }
 
+    loadData (data, typedArray, itemSize, reject) {
+        for (let di=0; di<data.length; di++) {
+
+            if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
+                return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
+            }
+
+            let index = itemSize * di
+
+            // Volume input
+            if (Array.isArray(data[di].input[0])) {
+                for (let c=0; c<data[di].input.length; c++) {
+                    for (let r=0; r<data[di].input[0].length; r++) {
+                        for (let v=0; v<data[di].input[0].length; v++) {
+                            typedArray[index] = data[di].input[c][r][v]
+                            index++
+                        }
+                    }
+                }
+            } else {
+                // Flat input
+                for (let ii=0; ii<data[di].input.length; ii++) {
+                    typedArray[index] = data[di].input[ii]
+                    index++
+                }
+            }
+
+            for (let ei=0; ei<data[di].expected.length; ei++) {
+                typedArray[index] = data[di].expected[ei]
+                index++
+            }
+        }
+    }
+
     test (data, {log=true, callback}={}) {
         return new Promise((resolve, reject) => {
 
@@ -1441,20 +1464,7 @@ class Network {
             const itemsCount = itemSize * data.length
             const typedArray = new Float32Array(itemsCount)
 
-            for (let di=0; di<data.length; di++) {
-
-                let index = itemSize*di
-
-                for (let ii=0; ii<data[di].input.length; ii++) {
-                    typedArray[index] = data[di].input[ii]
-                    index++
-                }
-
-                for (let ei=0; ei<data[di].expected.length; ei++) {
-                    typedArray[index] = data[di].expected[ei]
-                    index++
-                }
-            }
+            this.loadData(data, typedArray, itemSize, reject)
 
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)

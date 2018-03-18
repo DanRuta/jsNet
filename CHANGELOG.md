@@ -2,6 +2,10 @@
 ---
 #### Network
 - Added confusion matrix
+- Made it possible to pass volume (3D array) input data
+
+#### InputLayer
+- Added InputLayer class
 
 # 3.2.0 - IMG data, validation, early stopping
 ---

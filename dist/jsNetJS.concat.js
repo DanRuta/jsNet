@@ -670,6 +670,18 @@ typeof window!="undefined" && (window.Filter = Filter)
 exports.Filter = Filter
 "use strict"
 
+class InputLayer extends FCLayer {
+    constructor (size, {span=1}={}) {
+        super(size * span*span)
+    }
+}
+
+/* istanbul ignore next */
+typeof window!="undefined" && (window.InputLayer = InputLayer)
+exports.InputLayer = InputLayer
+
+"use strict"
+
 class NetMath {
 
     // Activation functions
@@ -1696,6 +1708,20 @@ class Network {
 
         if (data === undefined || data === null) {
             throw new Error("No data passed to Network.forward()")
+        }
+
+        // Flatten volume inputs
+        if (Array.isArray(data[0])) {
+            const flat = []
+
+            for (let c=0; c<data.length; c++) {
+                for (let r=0; r<data[0].length; r++) {
+                    for (let v=0; v<data[0].length; v++) {
+                        flat.push(data[c][r][v])
+                    }
+                }
+            }
+            data = flat
         }
 
         if (data.length != this.layers[0].neurons.length) {

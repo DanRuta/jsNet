@@ -28,12 +28,7 @@ class NetUtil {
 
                     if (paramTypes[p] == "array" || Array.isArray(params[p])) {
 
-                        const typedArray = new heapMap[heapIn](params[p].length)
-
-                        for (let i=0; i<params[p].length; i++) {
-                            typedArray[i] = params[p][i]
-                        }
-
+                        const typedArray = new heapMap[heapIn](params[p])
                         const buf = NetUtil.Module._malloc(typedArray.length * typedArray.BYTES_PER_ELEMENT)
 
                         switch (heapIn) {

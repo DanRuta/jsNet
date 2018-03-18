@@ -11,7 +11,7 @@ chai.use(chaiAsPromised)
 
 global.Module = require("./emscriptenTests.js")
 
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetUtil, NetMath} = require("../dist/jsNetWebAssembly.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, InputLayer, Neuron, Filter, NetUtil, NetMath} = require("../dist/jsNetWebAssembly.concat.js")
 
 describe("Loading", () => {
     it("Network is loaded", () => expect(Network).to.not.be.undefined)
@@ -19,6 +19,7 @@ describe("Loading", () => {
     it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
     it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
+    it("InputLayer is loaded", () => expect(InputLayer).to.not.be.undefined)
     it("Neuron is loaded", () => expect(Neuron).to.not.be.undefined)
     it("Filter is loaded", () => expect(Filter).to.not.be.undefined)
     it("NetUtil is loaded", () => expect(NetUtil).to.not.be.undefined)
@@ -846,6 +847,15 @@ describe("Network", () => {
             expect(NetUtil.ccallArrays).to.be.calledWith("forward", "array", ["number", "array"], [123, [1,2,3]], {heapOut: "HEAPF64", returnArraySize: 3})
             NetUtil.ccallArrays.restore()
         })
+
+        it("Flattens volume input data", () => {
+            const net = new Network({Module: fakeModule, layers: [new FCLayer(4)]})
+            sinon.stub(NetUtil, "ccallArrays")
+            net.netInstance = 123
+            net.forward([[[1,2],[3,4]]])
+            expect(NetUtil.ccallArrays).to.be.calledWith("forward", "array", ["number", "array"], [123, [1,2,3,4]], {heapOut: "HEAPF64", returnArraySize: 4})
+            NetUtil.ccallArrays.restore()
+        })
     })
 
     describe("train", () => {
@@ -1434,6 +1444,42 @@ describe("Network", () => {
             expect(l1.fromIMG).to.not.be.called
             expect(l2.fromIMG).to.be.calledWith([1,2,3,4])
             expect(l3.fromIMG).to.be.calledWith([5,6,7])
+        })
+    })
+
+    describe("loadData", () => {
+
+        let net
+
+        beforeEach(() => net = new Network({Module: fakeModule}))
+
+        it("Moves data from a given array to the given typedArray", () => {
+            const data = {input: [1,2,3], expected: [4]}
+            const typedArray = new Float32Array(4)
+            net.loadData([data], typedArray, 4, () => {})
+            expect(typedArray[0]).to.equal(1)
+            expect(typedArray[1]).to.equal(2)
+            expect(typedArray[2]).to.equal(3)
+            expect(typedArray[3]).to.equal(4)
+        })
+
+        it("Flattens and moves data from a given volume to the given typedArray", () => {
+            const data = {input: [[[1,2],[3,4]]], expected: [5]}
+            const typedArray = new Float32Array(5)
+            net.loadData([data], typedArray, 5, () => {})
+            expect(typedArray[0]).to.equal(1)
+            expect(typedArray[1]).to.equal(2)
+            expect(typedArray[2]).to.equal(3)
+            expect(typedArray[3]).to.equal(4)
+            expect(typedArray[4]).to.equal(5)
+        })
+
+        it("Calls its provided rejection function if a data item doesn't contain the 'input' or 'expected' key", () => {
+            const stub = sinon.stub()
+            const data = {inputs: [[[1,2],[3,4]]], expected: [5]}
+            const typedArray = new Float32Array(5)
+            net.loadData([data], typedArray, 5, stub)
+            expect(stub).to.be.calledWith("Data set must be a list of objects with keys: 'input' and 'expected'")
         })
     })
 })
@@ -3123,6 +3169,18 @@ describe("PoolLayer", () => {
             const pool = new PoolLayer()
             expect(pool.fromIMG([])).to.be.undefined
         })
+    })
+})
+
+describe("InputLayer", () => {
+    it("Returns an extended FCLayer", () => {
+        const il = new InputLayer(2)
+        expect(il).instanceof(FCLayer)
+    })
+    it("Configures itself with as many neurons as there would be filter 'neurons', when configured with 'span'", () => {
+        const il = new InputLayer(2, {span: 5})
+        expect(il).instanceof(FCLayer)
+        expect(il.size).to.equal(50)
     })
 })
 

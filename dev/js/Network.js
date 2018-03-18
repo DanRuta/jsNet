@@ -212,6 +212,20 @@ class Network {
             throw new Error("No data passed to Network.forward()")
         }
 
+        // Flatten volume inputs
+        if (Array.isArray(data[0])) {
+            const flat = []
+
+            for (let c=0; c<data.length; c++) {
+                for (let r=0; r<data[0].length; r++) {
+                    for (let v=0; v<data[0].length; v++) {
+                        flat.push(data[c][r][v])
+                    }
+                }
+            }
+            data = flat
+        }
+
         if (data.length != this.layers[0].neurons.length) {
             console.warn("Input data length did not match input layer neurons count.")
         }

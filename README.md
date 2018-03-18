@@ -182,7 +182,7 @@ The data structure must be an object with key ```input``` having an array of num
 ```javascript
 {input: [1,0,0.2], expected: [1, 2]}
 ```
-***Tip**: You can normalize 1D data using the ```NetUtil.normalize()``` function (see at the bottom)*
+***Tip**: You can normalize 1D data using the ```NetUtil.normalize()``` function ([see at the bottom](#normalizedata))*
 
 Alternativelty, when using volume data, the following is also a valid input:
 ```javascript

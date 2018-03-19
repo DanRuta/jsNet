@@ -1,0 +1,6 @@
+coverage:
+  status:
+    project:
+      default:
+        # basic
+        target: 95%

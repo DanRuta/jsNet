@@ -6,3 +6,4 @@ Plan.todo
 *.stackdump
 /test/googletest/
 /build
+/examples/mnist/mnist.js

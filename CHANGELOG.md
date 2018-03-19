@@ -1,3 +1,17 @@
+# 3.3.0 - Misc Improvements
+---
+#### Network
+- Added confusion matrix
+- Made it possible to pass volume (3D array) input data
+- Added callback interval config to .train()
+- Added collectErrors config to .train() and .test()
+
+#### InputLayer
+- Added InputLayer class
+
+#### Examples
+- Added MNIST dev enviromnment example
+
 # 3.2.0 - IMG data, validation, early stopping
 ---
 #### Network

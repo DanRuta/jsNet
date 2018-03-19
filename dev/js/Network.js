@@ -148,6 +148,8 @@ class Network {
                     throw new Error("There was an error constructing from the layers given.")
             }
         }
+
+        this.collectedErrors = {training: [], validation: [], test: []}
     }
 
     initLayers (input, expected) {
@@ -166,6 +168,12 @@ class Network {
         }
 
         this.layers.forEach(this.joinLayer.bind(this))
+
+        const outSize = this.layers[this.layers.length-1].size
+        this.trainingConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.testConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+        this.validationConfusionMatrix = [...new Array(outSize)].map(r => [...new Array(outSize)].map(v => 0))
+
         this.state = "initialised"
     }
 
@@ -206,6 +214,20 @@ class Network {
             throw new Error("No data passed to Network.forward()")
         }
 
+        // Flatten volume inputs
+        if (Array.isArray(data[0])) {
+            const flat = []
+
+            for (let c=0; c<data.length; c++) {
+                for (let r=0; r<data[0].length; r++) {
+                    for (let v=0; v<data[0].length; v++) {
+                        flat.push(data[c][r][v])
+                    }
+                }
+            }
+            data = flat
+        }
+
         if (data.length != this.layers[0].neurons.length) {
             console.warn("Input data length did not match input layer neurons count.")
         }
@@ -233,7 +255,7 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
+    train (dataSet, {epochs=1, callback, callbackInterval=1, collectErrors, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
         this.validation = validation
@@ -324,9 +346,15 @@ class Network {
                 const output = this.forward(input)
                 const target = dataSet[iterationIndex].expected
 
+                let classification = -Infinity
                 const errors = []
                 for (let n=0; n<output.length; n++) {
                     errors[n] = (target[n]==1 ? 1 : 0) - output[n]
+                    classification = Math.max(classification, output[n])
+                }
+
+                if (this.trainingConfusionMatrix[target.indexOf(1)]) {
+                    this.trainingConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
                 }
 
                 // Do validation
@@ -355,7 +383,15 @@ class Network {
 
                 elapsed = Date.now() - startTime
 
-                if (typeof callback=="function") {
+                if (collectErrors) {
+                    this.collectedErrors.training.push(trainingError)
+
+                    if (validationError) {
+                        this.collectedErrors.validation.push(validationError)
+                    }
+                }
+
+                if ((iterationIndex%callbackInterval == 0 || validationError) && typeof callback=="function") {
                     callback({
                         iterations: this.iterations,
                         validations: this.validations,
@@ -365,7 +401,12 @@ class Network {
                 }
 
                 if (iterationIndex < dataSet.length) {
-                    setTimeout(doIteration.bind(this), 0)
+
+                    if (iterationIndex%callbackInterval == 0) {
+                        setTimeout(doIteration.bind(this), 0)
+                    } else {
+                        doIteration()
+                    }
 
                 } else {
                     epochsCounter++
@@ -407,6 +448,15 @@ class Network {
 
                 const output = this.forward(data[validationIndex].input)
                 const target = data[validationIndex].expected
+
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.validationConfusionMatrix[target.indexOf(1)]) {
+                    this.validationConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
 
                 this.validations++
                 totalValidationErrors += this.cost(target, output)
@@ -470,7 +520,7 @@ class Network {
         }
     }
 
-    test (testSet, {log=true, callback}={}) {
+    test (testSet, {log=true, callback, collectErrors}={}) {
         return new Promise((resolve, reject) => {
 
             if (testSet === undefined || testSet === null) {
@@ -492,9 +542,22 @@ class Network {
                 const target = testSet[iterationIndex].expected
                 const elapsed = Date.now() - startTime
 
+                let classification = -Infinity
+                for (let i=0; i<output.length; i++) {
+                    classification = Math.max(classification, output[i])
+                }
+
+                if (this.testConfusionMatrix[target.indexOf(1)]) {
+                    this.testConfusionMatrix[target.indexOf(1)][output.indexOf(classification)]++
+                }
+
                 const iterationError = this.cost(target, output)
                 totalError += iterationError
                 iterationIndex++
+
+                if (collectErrors) {
+                    this.collectedErrors.test.push(iterationError)
+                }
 
                 if (typeof callback=="function") {
                     callback({
@@ -589,8 +652,26 @@ class Network {
         }
     }
 
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
+        }
+    }
+
     static get version () {
-        return "3.2.0"
+        return "3.3.0"
     }
 }
 

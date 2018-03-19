@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits>
 #include <emscripten.h>
 #include "Network.cpp"
 
@@ -203,6 +204,63 @@ extern "C" {
                 net->costFunction = &NetMath::crossentropy;
                 break;
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_trainingConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->trainingConfusionMatrix.size();
+        int mapSpan = net->trainingConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->trainingConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_testConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->testConfusionMatrix.size();
+        int mapSpan = net->testConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->testConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_validationConfusionMatrix (int instanceIndex, int layerIndex, int filterIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int mapDepth = net->validationConfusionMatrix.size();
+        int mapSpan = net->validationConfusionMatrix[0].size();
+        double map[mapDepth * mapSpan * mapSpan];
+
+        for (int r=0; r<mapSpan; r++) {
+            for (int c=0; c<mapSpan; c++) {
+                map[r*mapSpan + c] = net->validationConfusionMatrix[r][c];
+            }
+        }
+
+        auto ptr = &map[0];
+        return ptr;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -451,6 +509,7 @@ extern "C" {
     void loadTrainingData (int instanceIndex, float *buf, int total, int size, int dimension) {
         Network* net = Network::getInstance(instanceIndex);
         net->trainingData.clear();
+        net->collectErrors = false;
 
         std::tuple<std::vector<double>, std::vector<double> > epoch;
 
@@ -469,6 +528,65 @@ extern "C" {
                 std::get<1>(epoch).push_back((double)buf[i]);
             }
         }
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_collected_training (int instanceIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int errorsCount = net->collectedTrainingErrors.size();
+        double errors[errorsCount+1];
+        errors[0] = errorsCount;
+
+
+        for (int i=1; i<=errorsCount; i++) {
+            errors[i] = net->collectedTrainingErrors[i];
+        }
+
+        auto ptr = &errors[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_collected_test (int instanceIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int errorsCount = net->collectedTestErrors.size();
+        double errors[errorsCount+1];
+        errors[0] = errorsCount;
+
+
+        for (int i=1; i<=errorsCount; i++) {
+            errors[i] = net->collectedTestErrors[i];
+        }
+
+        auto ptr = &errors[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    double* get_collected_validation (int instanceIndex) {
+
+        Network* net = Network::getInstance(instanceIndex);
+
+        int errorsCount = net->collectedValidationErrors.size();
+        double errors[errorsCount+1];
+        errors[0] = errorsCount;
+
+
+        for (int i=1; i<=errorsCount; i++) {
+            errors[i] = net->collectedValidationErrors[i];
+        }
+
+        auto ptr = &errors[0];
+        return ptr;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void collectErrors (int instanceIndex) {
+        Network::getInstance(instanceIndex)->collectErrors = true;
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -511,6 +629,7 @@ extern "C" {
     void loadTestingData (int instanceIndex, float *buf, int total, int size, int dimension) {
         Network* net = Network::getInstance(instanceIndex);
         net->testData.clear();
+        net->collectErrors = false;
         std::tuple<std::vector<double>, std::vector<double> > epoch;
 
         // Push test data to memory

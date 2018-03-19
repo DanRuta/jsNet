@@ -399,6 +399,18 @@ typeof window!="undefined" && (window.Filter = Filter)
 exports.Filter = Filter
 "use strict"
 
+class InputLayer extends FCLayer {
+    constructor (size, {span=1}={}) {
+        super(size * span*span)
+    }
+}
+
+/* istanbul ignore next */
+typeof window!="undefined" && (window.InputLayer = InputLayer)
+exports.InputLayer = InputLayer
+
+"use strict"
+
 class NetMath {
     static softmax (values) {
         let total = 0
@@ -450,12 +462,7 @@ class NetUtil {
 
                     if (paramTypes[p] == "array" || Array.isArray(params[p])) {
 
-                        const typedArray = new heapMap[heapIn](params[p].length)
-
-                        for (let i=0; i<params[p].length; i++) {
-                            typedArray[i] = params[p][i]
-                        }
-
+                        const typedArray = new heapMap[heapIn](params[p])
                         const buf = NetUtil.Module._malloc(typedArray.length * typedArray.BYTES_PER_ELEMENT)
 
                         switch (heapIn) {
@@ -501,7 +508,15 @@ class NetUtil {
         if (returnType=="array") {
             const returnData = []
 
-            for (let v=0; v<returnArraySize; v++) {
+            let v = 0
+
+            if (returnArraySize === "auto") {
+                // Use the first value as the returnArraySize value
+                v++
+                returnArraySize = NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT] + 1
+            }
+
+            for (v; v<returnArraySize; v++) {
                 returnData.push(NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT+v])
             }
 
@@ -687,6 +702,171 @@ class NetUtil {
             get: () => getCallback(NetUtil.ccallVolume(`get_${pre}${prop}`, "volume", valTypes, values, {depth, rows, columns, heapOut: "HEAPF64"})),
             set: value => NetUtil.ccallVolume(`set_${pre}${prop}`, null, valTypes.concat("array"), values.concat([setCallback(value)]), {heapIn: "HEAPF64"})
         })
+    }
+
+    static makeConfusionMatrix (originalData) {
+        let total = 0
+        let totalCorrect = 0
+        const data = []
+
+        for (let r=0; r<originalData.length; r++) {
+            const row = []
+            for (let c=0; c<originalData[r].length; c++) {
+                row.push(originalData[r][c])
+            }
+            data.push(row)
+        }
+
+
+        for (let r=0; r<data.length; r++) {
+            for (let c=0; c<data[r].length; c++) {
+                total += data[r][c]
+            }
+        }
+
+        for (let r=0; r<data.length; r++) {
+
+            let rowTotal = 0
+            totalCorrect += data[r][r]
+
+            for (let c=0; c<data[r].length; c++) {
+                rowTotal += data[r][c]
+                data[r][c] = {count: data[r][c], percent: (data[r][c] / total * 100)||0}
+            }
+
+            const correctPercent = data[r][r].count / rowTotal * 100
+
+            data[r].total = {
+                correct: (correctPercent||0),
+                wrong: (100 - correctPercent)||0
+            }
+        }
+
+        // Collect bottom row percentages
+        const bottomRow = []
+
+        for (let c=0; c<data[0].length; c++) {
+
+            let columnTotal = 0
+
+            for (let r=0; r<data.length; r++) {
+                columnTotal += data[r][c].count
+            }
+
+            const correctPercent = data[c][c].count / columnTotal * 100
+
+            bottomRow.push({
+                correct: (correctPercent)||0,
+                wrong: (100 - correctPercent)||0
+            })
+        }
+
+        data.total = bottomRow
+
+        // Calculate final matrix percentage
+        data.total.total = {
+            correct: (totalCorrect / total * 100)||0,
+            wrong: (100 - (totalCorrect / total * 100))||0
+        }
+
+        return data
+    }
+
+    /* istanbul ignore next */
+    static printConfusionMatrix (data) {
+        if (typeof window!="undefined") {
+
+            for (let r=0; r<data.length; r++) {
+                for (let c=0; c<data[r].length; c++) {
+                    data[r][c] = `${data[r][c].count} (${data[r][c].percent.toFixed(1)}%)`
+                }
+                data[r].total = `${data[r].total.correct.toFixed(1)}% / ${data[r].total.wrong.toFixed(1)}%`
+                data.total[r] = `${data.total[r].correct.toFixed(1)}% / ${data.total[r].wrong.toFixed(1)}%`
+            }
+
+            data.total.total = `${data.total.total.correct.toFixed(1)}% / ${data.total.total.wrong.toFixed(1)}%`
+
+            console.table(data)
+            return
+        }
+
+
+        const padNum = (num, percent) => {
+            num = percent ? num.toFixed(1) + "%" : num.toString()
+            const leftPad = Math.max(Math.floor((3*2+1 - num.length) / 2), 0)
+            const rightPad = Math.max(3*2+1 - (num.length + leftPad), 0)
+            return " ".repeat(leftPad)+num+" ".repeat(rightPad)
+        }
+
+        let colourText
+        let colourBackground
+
+        // Bright
+        process.stdout.write("\n\x1b[1m")
+
+        for (let r=0; r<data.length; r++) {
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+
+            // Count
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}\x1b[1m${padNum(data[r][c].count)}\x1b[22m`)
+            }
+
+            // Dim green text on white background
+            colourText = "\x1b[2m\x1b[32m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.correct, true)}`)
+
+            // Bright white text
+            colourText = "\x1b[2m\x1b[37m"
+            process.stdout.write(`${colourText}\n`)
+
+            // Percent
+            for (let c=0; c<data[r].length; c++) {
+                colourBackground =  r==c ? "\x1b[42m" : "\x1b[41m"
+                process.stdout.write(`${colourText}${colourBackground}${padNum(data[r][c].percent, true)}`)
+            }
+
+            // Dim red
+            colourText = "\x1b[2m\x1b[31m"
+            colourBackground = "\x1b[47m"
+            process.stdout.write(`${colourText}${colourBackground}${padNum(data[r].total.wrong, true)}`)
+
+            // Bright
+            process.stdout.write("\x1b[1m\x1b[30m\n")
+        }
+
+        // Dim green text
+        colourText = "\x1b[22m\x1b[32m"
+
+        // Bottom row correct percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.correct, true)}`)
+        }
+        // Total correct percentages
+        // Blue background
+        colourBackground = "\x1b[1m\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.correct, true)}\n`)
+
+        // Dim red on white background
+        colourText = "\x1b[22m\x1b[31m"
+        colourBackground = "\x1b[47m"
+
+        // Bottom row wrong percentages
+        for (const col of data.total) {
+            process.stdout.write(`${colourText}${colourBackground}${padNum(col.wrong, true)}`)
+        }
+
+        // Bright red on blue background
+        colourText = "\x1b[1m\x1b[31m"
+        colourBackground = "\x1b[44m"
+        process.stdout.write(`${colourText}${colourBackground}${padNum(data.total.total.wrong, true)}\n`)
+
+        // Reset
+        process.stdout.write("\x1b[0m\n")
     }
 }
 
@@ -935,6 +1115,11 @@ class Network {
         NetUtil.defineProperty(this, "earlyStoppingPatience", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingPercent", ["number"], [this.netInstance])
 
+        this.collectedErrors = {}
+        NetUtil.defineArrayProperty(this.collectedErrors, "training", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+        NetUtil.defineArrayProperty(this.collectedErrors, "test", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+        NetUtil.defineArrayProperty(this.collectedErrors, "validation", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+
         if (layers.length) {
 
             this.state = "constructed"
@@ -994,6 +1179,12 @@ class Network {
         }
 
         this.Module.ccall("initLayers", null, ["number"], [this.netInstance])
+        const outSize = this.layers[this.layers.length-1].size
+        const floorFunc = map => map.map(row => row.map(v => Math.floor(v)))
+
+        NetUtil.defineMapProperty(this, "trainingConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "testConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
+        NetUtil.defineMapProperty(this, "validationConfusionMatrix", ["number"], [this.netInstance], outSize, outSize, {getCallback: floorFunc})
     }
 
     joinLayer (layer, layerIndex) {
@@ -1018,6 +1209,20 @@ class Network {
             throw new Error("No data passed to Network.forward()")
         }
 
+        // Flatten volume inputs
+        if (Array.isArray(data[0])) {
+            const flat = []
+
+            for (let c=0; c<data.length; c++) {
+                for (let r=0; r<data[0].length; r++) {
+                    for (let v=0; v<data[0].length; v++) {
+                        flat.push(data[c][r][v])
+                    }
+                }
+            }
+            data = flat
+        }
+
         if (data.length != this.layers[0].neurons.length) {
             console.warn("Input data length did not match input layer neurons count.")
         }
@@ -1028,7 +1233,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
+    train (data, {epochs=1, callback, callbackInterval=1, collectErrors, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
@@ -1048,7 +1253,7 @@ class Network {
 
             const startTime = Date.now()
 
-            const dimension = data[0].input.length
+            const dimension = this.layers[0].size
             const itemSize = dimension + data[0].expected.length
             const itemsCount = itemSize * data.length
 
@@ -1058,25 +1263,7 @@ class Network {
 
             // Load training data
             const typedArray = new Float32Array(itemsCount)
-
-            for (let di=0; di<data.length; di++) {
-
-                if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
-                }
-
-                let index = itemSize*di
-
-                for (let ii=0; ii<data[di].input.length; ii++) {
-                    typedArray[index] = data[di].input[ii]
-                    index++
-                }
-
-                for (let ei=0; ei<data[di].expected.length; ei++) {
-                    typedArray[index] = data[di].expected[ei]
-                    index++
-                }
-            }
+            this.loadData(data, typedArray, itemSize, reject)
 
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)
@@ -1088,6 +1275,10 @@ class Network {
 
             if (shuffle) {
                 this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            }
+
+            if (collectErrors) {
+                this.Module.ccall("collectErrors", null, ["number"], [this.netInstance])
             }
 
             let validationBuf
@@ -1123,21 +1314,7 @@ class Network {
                 // Load validation data
                 if (this.validation.data) {
                     const typedArray = new Float32Array(this.validation.data.length)
-
-                    for (let di=0; di<this.validation.data.length; di++) {
-
-                        let index = itemSize*di
-
-                        for (let ii=0; ii<this.validation.data[di].input.length; ii++) {
-                            typedArray[index] = this.validation.data[di].input[ii]
-                            index++
-                        }
-
-                        for (let ei=0; ei<this.validation.data[di].expected.length; ei++) {
-                            typedArray[index] = this.validation.data[di].expected[ei]
-                            index++
-                        }
-                    }
+                    this.loadData(this.validation.data, typedArray, itemSize , reject)
                     validationBuf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
                     this.Module.HEAPF32.set(typedArray, buf >> 2)
 
@@ -1178,19 +1355,25 @@ class Network {
 
                     this.Module.ccall("train", "number", ["number", "number", "number"], [this.netInstance, miniBatchSize, iterationIndex])
 
-                    callback({
-                        iterations: (this.iterations),
-                        validations: (this.validations),
-                        trainingError: this.error,
-                        validationError: this.validationError,
-                        elapsed: Date.now() - startTime,
-                        input: data[iterationIndex].input
-                    })
+                    if (iterationIndex%callbackInterval == 0 || this.validationError) {
+                        callback({
+                            iterations: (this.iterations),
+                            validations: (this.validations),
+                            trainingError: this.error,
+                            validationError: this.validationError,
+                            elapsed: Date.now() - startTime,
+                            input: data[iterationIndex].input
+                        })
+                    }
 
                     iterationIndex += miniBatchSize
 
                     if (iterationIndex < data.length && !this.stoppedEarly) {
-                        setTimeout(doIteration.bind(this), 0)
+                        if (iterationIndex%callbackInterval == 0) {
+                            setTimeout(doIteration.bind(this), 0)
+                        } else {
+                            doIteration()
+                        }
                     } else {
                         epochIndex++
 
@@ -1253,7 +1436,41 @@ class Network {
         })
     }
 
-    test (data, {log=true, callback}={}) {
+    loadData (data, typedArray, itemSize, reject) {
+        for (let di=0; di<data.length; di++) {
+
+            if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
+                return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
+            }
+
+            let index = itemSize * di
+
+            // Volume input
+            if (Array.isArray(data[di].input[0])) {
+                for (let c=0; c<data[di].input.length; c++) {
+                    for (let r=0; r<data[di].input[0].length; r++) {
+                        for (let v=0; v<data[di].input[0].length; v++) {
+                            typedArray[index] = data[di].input[c][r][v]
+                            index++
+                        }
+                    }
+                }
+            } else {
+                // Flat input
+                for (let ii=0; ii<data[di].input.length; ii++) {
+                    typedArray[index] = data[di].input[ii]
+                    index++
+                }
+            }
+
+            for (let ei=0; ei<data[di].expected.length; ei++) {
+                typedArray[index] = data[di].expected[ei]
+                index++
+            }
+        }
+    }
+
+    test (data, {log=true, collectErrors, callback}={}) {
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -1270,26 +1487,17 @@ class Network {
             const itemsCount = itemSize * data.length
             const typedArray = new Float32Array(itemsCount)
 
-            for (let di=0; di<data.length; di++) {
-
-                let index = itemSize*di
-
-                for (let ii=0; ii<data[di].input.length; ii++) {
-                    typedArray[index] = data[di].input[ii]
-                    index++
-                }
-
-                for (let ei=0; ei<data[di].expected.length; ei++) {
-                    typedArray[index] = data[di].expected[ei]
-                    index++
-                }
-            }
+            this.loadData(data, typedArray, itemSize, reject)
 
             const buf = this.Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT)
             this.Module.HEAPF32.set(typedArray, buf >> 2)
 
             this.Module.ccall("loadTestingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
+
+            if (collectErrors) {
+                this.Module.ccall("collectErrors", null, ["number"], [this.netInstance])
+            }
 
             if (callback) {
 
@@ -1390,10 +1598,29 @@ class Network {
 
             const dataCount = this.layers[l].getDataSize()
             this.layers[l].fromIMG(data.splice(0, dataCount))
-        }    }
+        }
+    }
+
+    printConfusionMatrix (type) {
+        if (type) {
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(this[`${type}ConfusionMatrix`]))
+        } else {
+            // Total all data
+            const data = []
+
+            for (let r=0; r<this.trainingConfusionMatrix.length; r++) {
+                const row = []
+                for (let c=0; c<this.trainingConfusionMatrix.length; c++) {
+                    row.push(this.trainingConfusionMatrix[r][c] + this.testConfusionMatrix[r][c] + this.validationConfusionMatrix[r][c])
+                }
+                data.push(row)
+            }
+            NetUtil.printConfusionMatrix(NetUtil.makeConfusionMatrix(data))
+        }
+    }
 
     static get version () {
-        return "3.2.0"
+        return "3.3.0"
     }
 }
 

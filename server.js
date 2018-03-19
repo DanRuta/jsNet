@@ -1,31 +1,33 @@
 "use strict"
 
-const http = require("http"),
-fs = require("fs"),
-url = require("url")
+const http = require("http")
+const fs = require("fs")
+const url = require("url")
+const PORT = 1337
 
 http.createServer((request, response) => {
 
-    let path = url.parse(request.url).pathname,
-    data
+    let path = url.parse(request.url).pathname
+    let data
 
-    path = (path=="/"?"/browserDemo.html":path)
+    path = (path=="/"?"/examples/index.html":path)
 
     console.log(path)
 
-    switch(path){
-        case "/NetWASM.wasm":
-            try{
-                data = fs.readFileSync(__dirname+"/dist"+path)
-            }catch(e){}
+    switch (true) {
+        case path.endsWith("/NetWASM.wasm"):
+            try {
+                console.log("Returning the wasm file", __dirname+"/dist/NetWASM.wasm")
+                data = fs.readFileSync(__dirname+"/dist/NetWASM.wasm")
+            } catch (e) {}
             break
         default:
-            try{
+            try {
                 data = fs.readFileSync(__dirname+path)
-            }catch(e){}
+            } catch (e) {}
     }
 
     response.end(data)
 
-}).listen(1337, () => console.log("Server Listening"))
+}).listen(PORT, () => console.log(`Server Listening on port: ${PORT}`))
 

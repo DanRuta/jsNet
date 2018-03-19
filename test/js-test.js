@@ -9,7 +9,7 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, InputLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
 
 describe("Loading", () => {
 
@@ -22,6 +22,7 @@ describe("Loading", () => {
     it("FCLayer is loaded", () => expect(FCLayer).to.not.be.undefined)
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
     it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
+    it("InputLayer is loaded", () => expect(InputLayer).to.not.be.undefined)
 
     it("Loads Layer as an alias of FCLayer", () => {
 
@@ -33,7 +34,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.2.0")
+        expect(Network.version).to.equal("3.3.0")
     })
 })
 
@@ -771,6 +772,15 @@ describe("Network", () => {
 
             expect(result).to.deep.equal(activations)
         })
+
+        it("Flattens volume input data", () => {
+            const net = new Network({layers: [new FCLayer(4)]})
+            net.forward([[[1,2],[3,4]]])
+            expect(net.layers[0].neurons[0].activation).to.equal(1)
+            expect(net.layers[0].neurons[1].activation).to.equal(2)
+            expect(net.layers[0].neurons[2].activation).to.equal(3)
+            expect(net.layers[0].neurons[3].activation).to.equal(4)
+        })
     })
 
     describe("backward", () => {
@@ -1026,6 +1036,9 @@ describe("Network", () => {
 
         beforeEach(() => {
             net = new Network({layers: [2, 3, 2], updateFn: null, l2: false})
+            net.trainingConfusionMatrix = [[0,0],[0,0]]
+            net.testConfusionMatrix = [[0,0],[0,0]]
+            net.validationConfusionMatrix = [[0,0],[0,0]]
             sinon.stub(net, "forward").callsFake(() => [1,1])
             sinon.stub(net, "backward")
             sinon.stub(net, "resetDeltaWeights")
@@ -1177,6 +1190,9 @@ describe("Network", () => {
 
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
             const network = new Network({updateFn: null})
+            network.trainingConfusionMatrix = [[0,0],[0,0]]
+            network.testConfusionMatrix = [[0,0],[0,0]]
+            network.validationConfusionMatrix = [[0,0],[0,0]]
             sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
@@ -1187,6 +1203,9 @@ describe("Network", () => {
 
         it("Calls the initLayers function with the length of the first input and length of first expected", () => {
             const network = new Network({updateFn: null})
+            network.trainingConfusionMatrix = [[0,0],[0,0]]
+            network.testConfusionMatrix = [[0,0],[0,0]]
+            network.validationConfusionMatrix = [[0,0],[0,0]]
             sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
@@ -1226,6 +1245,9 @@ describe("Network", () => {
 
         it("Resets the net.l2Error if it's configured", () => {
             const net = new Network({l2: true})
+            net.trainingConfusionMatrix = [[0,0],[0,0]]
+            net.testConfusionMatrix = [[0,0],[0,0]]
+            net.validationConfusionMatrix = [[0,0],[0,0]]
             sinon.stub(net, "applyDeltaWeights")
             net.l2Error = 999
             return net.train(testData).then(() => {
@@ -1242,6 +1264,9 @@ describe("Network", () => {
 
         it("Resets the net.l1Error if it's configured", () => {
             const net = new Network({l1: true})
+            net.trainingConfusionMatrix = [[0,0],[0,0]]
+            net.testConfusionMatrix = [[0,0],[0,0]]
+            net.validationConfusionMatrix = [[0,0],[0,0]]
             sinon.stub(net, "applyDeltaWeights")
             net.l1Error = 999
             return net.train(testData).then(() => {
@@ -1449,6 +1474,23 @@ describe("Network", () => {
                 })
             })
 
+            it("Does not use setTimeout for every iteration when the callback interval is used", () => {
+                let totalCalls = 0
+                const cb = () => totalCalls++
+                return net.train(testData, {callback: cb, callbackInterval: 2}).then(() => {
+                    expect(totalCalls).to.equal(2)
+                })
+            })
+
+            it("Collects training and validation errors when collectErrors is configured as true", () => {
+                const stub = sinon.stub(net, "checkEarlyStopping")
+
+                return net.train(testDataX10, {collectErrors: true, validation: {data: testData, interval: 1}}).then(() => {
+                    expect(net.collectedErrors.training.length).to.not.equal(0)
+                    expect(net.collectedErrors.validation.length).to.not.equal(0)
+                    stub.restore()
+                })
+            })
         })
     })
 
@@ -1556,9 +1598,12 @@ describe("Network", () => {
         let net
         beforeEach(() => {
             net = new Network({layers: [2,4,3]})
+            net.trainingConfusionMatrix = [[0,0],[0,0]]
+            net.testConfusionMatrix = [[0,0],[0,0]]
+            net.validationConfusionMatrix = [[0,0],[0,0]]
             net.cost = (x,y) => x+y
             sinon.spy(net, "cost")
-            sinon.stub(net, "forward")
+            sinon.stub(net, "forward").callsFake(() => [1,2])
         })
 
         afterEach(() => {
@@ -1608,12 +1653,6 @@ describe("Network", () => {
             })
         })
 
-        it("Accepts test data with output key instead of expected", () => {
-            return net.test(testDataOutput).then(() => {
-                expect(net.cost.callCount).to.equal(4)
-            })
-        })
-
         it("Logs to the console twice", () => {
             sinon.spy(console, "log")
             return net.test(testData).then(() => {
@@ -1641,6 +1680,12 @@ describe("Network", () => {
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
+            })
+        })
+
+        it("Collects test errors when collectErrors is configured as true", () => {
+            return net.test(testData, {collectErrors: true}).then(() => {
+                expect(net.collectedErrors.test.length).to.not.equal(0)
             })
         })
     })
@@ -1691,6 +1736,59 @@ describe("Network", () => {
             expect(l1.fromIMG).to.not.be.called
             expect(l2.fromIMG).to.be.calledWith([1,2,3,4])
             expect(l3.fromIMG).to.be.calledWith([5,6,7])
+        })
+    })
+
+    describe("printConfusionMatrix", () => {
+
+        let net
+
+        beforeEach(() => {
+            net = new Network()
+            net.trainingConfusionMatrix = 1
+            net.testConfusionMatrix = 2
+            net.validationConfusionMatrix = 3
+            sinon.stub(NetUtil, "printConfusionMatrix")
+            sinon.stub(NetUtil, "makeConfusionMatrix")
+        })
+
+        afterEach(() => {
+            NetUtil.printConfusionMatrix.restore()
+            NetUtil.makeConfusionMatrix.restore()
+        })
+
+        it("Calls the NetUtil 'printConfusionMatrix' and 'makeConfusionMatrix' functions with all confusion matrix data, by default", () => {
+            net.printConfusionMatrix()
+            expect(NetUtil.printConfusionMatrix).to.be.called
+            expect(NetUtil.makeConfusionMatrix).to.not.be.calledWith(1)
+            expect(NetUtil.makeConfusionMatrix).to.not.be.calledWith(2)
+            expect(NetUtil.makeConfusionMatrix).to.not.be.calledWith(3)
+        })
+
+        it("Sums all confusion data before calling the NetUtil functions (All matrices)", () => {
+            net.trainingConfusionMatrix = [[1,2],[3,4]]
+            net.testConfusionMatrix = [[1,2],[3,4]]
+            net.validationConfusionMatrix = [[1,2],[3,4]]
+            net.printConfusionMatrix()
+            expect(NetUtil.makeConfusionMatrix).to.be.calledWith([[3,6],[9,12]])
+        })
+
+        it("Calls the NetUtil functions with the training matrix, when called with 'training'", () => {
+            net.printConfusionMatrix("training")
+            expect(NetUtil.printConfusionMatrix).to.be.called
+            expect(NetUtil.makeConfusionMatrix).to.be.calledWith(1)
+        })
+
+        it("Calls the NetUtil functions with the test matrix, when called with 'test'", () => {
+            net.printConfusionMatrix("test")
+            expect(NetUtil.printConfusionMatrix).to.be.called
+            expect(NetUtil.makeConfusionMatrix).to.be.calledWith(2)
+        })
+
+        it("Calls the NetUtil functions with the validation matrix, when called with 'validation'", () => {
+            net.printConfusionMatrix("validation")
+            expect(NetUtil.printConfusionMatrix).to.be.called
+            expect(NetUtil.makeConfusionMatrix).to.be.calledWith(3)
         })
     })
 })
@@ -2364,7 +2462,6 @@ describe("FCLayer", () => {
             expect(fc.neurons[2].weights).to.deep.equal([0,2])
         })
     })
-
 })
 
 describe("Neuron", () => {
@@ -4097,7 +4194,6 @@ describe("ConvLayer", () => {
             expect(conv.filters[1].weights).to.deep.equal([[[1,2],[3,4]]])
         })
     })
-
 })
 
 describe("PoolLayer", () => {
@@ -4747,6 +4843,18 @@ describe("PoolLayer", () => {
             const pool = new PoolLayer()
             expect(pool.fromIMG([])).to.be.undefined
         })
+    })
+})
+
+describe("InputLayer", () => {
+    it("Returns an extended FCLayer", () => {
+        const il = new InputLayer(2)
+        expect(il).instanceof(FCLayer)
+    })
+    it("Configures itself with as many neurons as there would be filter 'neurons', when configured with 'span'", () => {
+        const il = new InputLayer(2, {span: 5})
+        expect(il).instanceof(FCLayer)
+        expect(il.size).to.equal(50)
     })
 })
 
@@ -6046,5 +6154,196 @@ describe("NetUtil", () => {
             expect(data).to.deep.equal([0.375,0.4375,0.5,0.5625,0.625,0.6875,0.75,0.8125,0.875,0.9375,1,0.9375,0.875,0.875,0.8125,0.75,0.6875,0.625,0.5625,0.5,0.4375,0.375,0.3125,0.25,0.1875,0.125,0.0625,0])
         })
 
+    })
+
+    describe("makeConfusionMatrix", () => {
+
+        // MATLAB example
+        const testData = [
+            [4712, 64, 876, 395],
+            [20, 4458, 442, 550],
+            [565, 518, 4163, 82],
+            [353, 474, 139, 4589]
+        ]
+
+        it("Calculates the confusion matrix correctly", () => {
+            const expected = [
+              [
+                {
+                  "count": 4712,
+                  "percent": 21.035714285714285
+                },
+                {
+                  "count": 64,
+                  "percent": 0.2857142857142857
+                },
+                {
+                  "count": 876,
+                  "percent": 3.9107142857142856
+                },
+                {
+                  "count": 395,
+                  "percent": 1.7633928571428572
+                }
+              ],
+              [
+                {
+                  "count": 20,
+                  "percent": 0.08928571428571429
+                },
+                {
+                  "count": 4458,
+                  "percent": 19.901785714285715
+                },
+                {
+                  "count": 442,
+                  "percent": 1.9732142857142858
+                },
+                {
+                  "count": 550,
+                  "percent": 2.455357142857143
+                }
+              ],
+              [
+                {
+                  "count": 565,
+                  "percent": 2.522321428571429
+                },
+                {
+                  "count": 518,
+                  "percent": 2.3125
+                },
+                {
+                  "count": 4163,
+                  "percent": 18.58482142857143
+                },
+                {
+                  "count": 82,
+                  "percent": 0.3660714285714286
+                }
+              ],
+              [
+                {
+                  "count": 353,
+                  "percent": 1.5758928571428572
+                },
+                {
+                  "count": 474,
+                  "percent": 2.116071428571429
+                },
+                {
+                  "count": 139,
+                  "percent": 0.6205357142857143
+                },
+                {
+                  "count": 4589,
+                  "percent": 20.486607142857142
+                }
+              ]
+            ]
+            expected[0].total = {correct: 77.92293699355052, wrong: 22.077063006449478}
+            expected[1].total = {correct: 81.49908592321755, wrong: 18.50091407678245}
+            expected[2].total = {correct: 78.13438438438438, wrong: 21.865615615615624}
+            expected[3].total = {correct: 82.6102610261026, wrong: 17.389738973897394}
+            expected.total = [
+                {correct: 83.39823008849557, wrong: 16.601769911504434},
+                {correct: 80.8487486398259, wrong: 19.1512513601741},
+                {correct: 74.07473309608541, wrong: 25.92526690391459},
+                {correct: 81.71296296296296, wrong: 18.287037037037038}
+            ]
+            expected.total.total = {correct: 80.00892857142857, wrong: 19.99107142857143}
+
+            expect(NetUtil.makeConfusionMatrix(testData)).to.deep.equal(expected)
+        })
+
+        it("Keeps count values at 0 when no data is given", () => {
+            const expected = [
+              [
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                }
+              ],
+              [
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                }
+              ],
+              [
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                }
+              ],
+              [
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                },
+                {
+                  "count": 0,
+                  "percent": 0
+                }
+              ]
+            ]
+            expected[0].total = {correct: 0, wrong: 0}
+            expected[1].total = {correct: 0, wrong: 0}
+            expected[2].total = {correct: 0, wrong: 0}
+            expected[3].total = {correct: 0, wrong: 0}
+            expected.total = [
+                {correct: 0, wrong: 0},
+                {correct: 0, wrong: 0},
+                {correct: 0, wrong: 0},
+                {correct: 0, wrong: 0}
+            ]
+            expected.total.total = {correct: 0, wrong: 0}
+
+            expect(NetUtil.makeConfusionMatrix([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]])).to.deep.equal(expected)
+        })
     })
 })

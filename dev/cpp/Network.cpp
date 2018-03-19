@@ -1,3 +1,4 @@
+#include <limits>
 #include "jsNet.h"
 #include "FCLayer.cpp"
 #include "ConvLayer.cpp"
@@ -58,6 +59,14 @@ void Network::joinLayers(void) {
 
         layers[l]->init(l);
     }
+
+    // Confusion matrices
+    int outSize = layers[layers.size()-1]->size;
+    for (int r=0; r<outSize; r++) {
+        trainingConfusionMatrix.push_back(std::vector<int>(outSize, 0));
+        testConfusionMatrix.push_back(std::vector<int>(outSize, 0));
+        validationConfusionMatrix.push_back(std::vector<int>(outSize, 0));
+    }
 }
 
 std::vector<double> Network::forward (std::vector<double> input) {
@@ -94,12 +103,33 @@ void Network::train (int its, int startI) {
         iterations++;
         std::vector<double> output = forward(std::get<0>(trainingData[iterationIndex]));
 
+        int classIndex = -1;
+        int targetClassIndex = -1;
+        double classValue = -std::numeric_limits<double>::infinity();
+
         for (int n=0; n<output.size(); n++) {
-            layers[layers.size()-1]->errs[n] = (std::get<1>(trainingData[iterationIndex])[n]==1 ? 1 : 0) - output[n];
+            if (output[n] > classValue) {
+                classValue = output[n];
+                classIndex = n;
+            }
+            if (std::get<1>(trainingData[iterationIndex])[n]==1) {
+                targetClassIndex = n;
+                layers[layers.size()-1]->errs[n] = 1 - output[n];
+            } else {
+                layers[layers.size()-1]->errs[n] = 0 - output[n];
+            }
+        }
+
+        if (targetClassIndex != -1) {
+            trainingConfusionMatrix[targetClassIndex][classIndex]++;
         }
 
         if (validationInterval!=0 && iterationIndex!=0 && iterationIndex%validationInterval==0) {
             validationError = validate();
+
+            if (collectErrors) {
+                collectedValidationErrors.push_back(validationError);
+            }
 
             if (earlyStoppingType && checkEarlyStopping()) {
                 if (trainingLogging) {
@@ -114,6 +144,10 @@ void Network::train (int its, int startI) {
 
         iterationError = costFunction(std::get<1>(trainingData[iterationIndex]), output);
         totalErrors += iterationError;
+
+        if (collectErrors) {
+            collectedTrainingErrors.push_back(iterationError);
+        }
 
         if ((iterationIndex+1) % miniBatchSize == 0) {
             applyDeltaWeights();
@@ -133,6 +167,25 @@ double Network::validate (void) {
 
     for (int i=0; i<validationData.size(); i++) {
         std::vector<double> output = forward(std::get<0>(validationData[i]));
+
+        int classIndex = -1;
+        int targetClassIndex = -1;
+        double classValue = -std::numeric_limits<double>::infinity();
+
+        for (int n=0; n<output.size(); n++) {
+            if (output[n] > classValue) {
+                classValue = output[n];
+                classIndex = n;
+            }
+            if (std::get<1>(validationData[i])[n]==1) {
+                targetClassIndex = n;
+            }
+        }
+
+        if (targetClassIndex != -1) {
+            validationConfusionMatrix[targetClassIndex][classIndex]++;
+        }
+
         totalValidationErrors += costFunction(std::get<1>(validationData[i]), output);
 
         validations++;
@@ -201,7 +254,32 @@ double Network::test (int its, int startI) {
 
     for (int i=startI; i<(startI+its); i++) {
         std::vector<double> output = forward(std::get<0>(testData[i]));
-        totalErrors += costFunction(std::get<1>(testData[i]), output);
+
+        int classIndex = -1;
+        int targetClassIndex = -1;
+        double classValue = -std::numeric_limits<double>::infinity();
+
+        for (int n=0; n<output.size(); n++) {
+            if (output[n] > classValue) {
+                classValue = output[n];
+                classIndex = n;
+            }
+            if (std::get<1>(testData[i])[n]==1) {
+                targetClassIndex = n;
+            }
+        }
+
+        if (targetClassIndex != -1) {
+            testConfusionMatrix[targetClassIndex][classIndex]++;
+        }
+
+        double iterationError = costFunction(std::get<1>(testData[i]), output);
+
+        if (collectErrors) {
+            collectedTestErrors.push_back(iterationError);
+        }
+
+        totalErrors += iterationError;
     }
 
     return totalErrors / its;

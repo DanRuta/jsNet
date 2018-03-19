@@ -28,6 +28,10 @@ double standardDeviation (std::vector<double> arr) {
     return sqrt(var / arr.size());
 }
 
+double mockCostFunction (std::vector<double> target, std::vector<double> output) {
+    return 0;
+}
+
 MockLayer::MockLayer(int netI, int s) : Layer(netI, s) {
     netInstance = netI;
     size = s;
@@ -78,6 +82,7 @@ namespace Network_cpp {
     TEST(Network, deleteNetwork_1) {
         EXPECT_EQ( Network::netInstances.size(), 3 );
         EXPECT_FALSE( Network::netInstances[1] == 0 );
+        Network::getInstance(1)->layers.push_back(new FCLayer(0, 1));
         Network::deleteNetwork(1);
         EXPECT_TRUE( Network::netInstances[1] == 0 );
     }
@@ -219,32 +224,83 @@ namespace Network_cpp {
         Network::deleteNetwork();
     }
 
+    class TrainFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+            net->costFunction = mockCostFunction;
+            net->miniBatchSize = 1;
+
+            std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData = {};
+            std::tuple<std::vector<double>, std::vector<double> > data;
+            std::get<0>(data) = {};
+            std::get<1>(data) = {};
+            trainingData.push_back(data);
+            trainingData.push_back(data);
+
+            net->trainingData = trainingData;
+
+            net->trainingConfusionMatrix = {};
+            for (int r=0; r<3; r++) {
+                net->trainingConfusionMatrix.push_back(std::vector<int>(3, 0));
+            }
+
+            l1 = new MockLayer(0, 3);
+            l2 = new MockLayer(0, 3);
+            l3 = new MockLayer(0, 3);
+
+
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
+            net->layers.push_back(l3);
+
+            l1->neurons = {};
+            l3->neurons = {};
+        }
+
+        virtual void TearDown() {
+            delete l1;
+            delete l2;
+            delete l3;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        MockLayer* l1;
+        MockLayer* l2;
+        MockLayer* l3;
+    };
+
     // Forward, backward, resetDeltaWeights and applyDeltaWeights functions are called appropriately
-    TEST(Network, train) {
-        Network::deleteNetwork();
-        Network::newNetwork();
-        Network::getInstance(0)->costFunction = NetMath::meansquarederror;
+    TEST_F(TrainFixture, train_1) {
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(1);
+        EXPECT_CALL(*l3, backward(true)).Times(1);
+        EXPECT_CALL(*l1, resetDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l1, applyDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, applyDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, applyDeltaWeights()).Times(1);
 
-        std::vector<std::tuple<std::vector<double>, std::vector<double> > > trainingData = {};
-        std::tuple<std::vector<double>, std::vector<double> > data;
-        std::get<0>(data) = {};
-        std::get<1>(data) = {};
-        trainingData.push_back(data);
-        trainingData.push_back(data);
+        net->train(1, 0);
+    }
 
-        Network::getInstance(0)->trainingData = trainingData;
-        Network::getInstance(0)->miniBatchSize = 1;
+    // Populates the confusion matrix data
+    TEST_F(TrainFixture, train_2) {
+        std::get<0>(net->trainingData[0]) = {1,0};
+        std::get<0>(net->trainingData[1]) = {1,0};
+        std::get<1>(net->trainingData[0]) = {0,1};
+        std::get<1>(net->trainingData[1]) = {0,1};
 
-        MockLayer* l1 = new MockLayer(0, 3);
-        MockLayer* l2 = new MockLayer(0, 3);
-        MockLayer* l3 = new MockLayer(0, 3);
-
-        Network::getInstance(0)->layers.push_back(l1);
-        Network::getInstance(0)->layers.push_back(l2);
-        Network::getInstance(0)->layers.push_back(l3);
-
-        l1->neurons = {};
-        l3->neurons = {};
+        l3->errs = {1,0};
+        l3->sums = {1,0};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
@@ -259,39 +315,109 @@ namespace Network_cpp {
         EXPECT_CALL(*l2, applyDeltaWeights()).Times(1);
         EXPECT_CALL(*l3, applyDeltaWeights()).Times(1);
 
-        Network::getInstance(0)->train(1, 0);
+        net->train(1, 0);
 
-        delete l1;
-        delete l2;
-        delete l3;
-        Network::deleteNetwork();
+        std::vector<std::vector<int>> notExpected = {{0,0,0},{0,0,0},{0,0,0}};
+        EXPECT_NE( Network::getInstance(0)->trainingConfusionMatrix, notExpected );
     }
 
+    // Collects training errors when configured to do so
+    TEST_F(TrainFixture, train_3) {
+        std::get<0>(net->trainingData[0]) = {1,0};
+        std::get<0>(net->trainingData[1]) = {1,0};
+        std::get<1>(net->trainingData[0]) = {0,1};
+        std::get<1>(net->trainingData[1]) = {0,1};
+
+        l3->errs = {1,0};
+        l3->sums = {1,0};
+
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(1);
+        EXPECT_CALL(*l3, backward(true)).Times(1);
+        EXPECT_CALL(*l1, resetDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, resetDeltaWeights()).Times(1);
+        EXPECT_CALL(*l1, applyDeltaWeights()).Times(0);
+        EXPECT_CALL(*l2, applyDeltaWeights()).Times(1);
+        EXPECT_CALL(*l3, applyDeltaWeights()).Times(1);
+
+        net->collectErrors = true;
+        net->train(1, 0);
+
+        EXPECT_GT( net->collectedTrainingErrors.size(), 0 );
+    }
+
+    class TestFixture : public ::testing::Test {
+    public:
+        virtual void SetUp() {
+            Network::deleteNetwork();
+            Network::newNetwork();
+            net = Network::getInstance(0);
+            net->weightInitFn = &NetMath::uniform;
+            net->costFunction = mockCostFunction;
+
+            std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData = {};
+            std::tuple<std::vector<double>, std::vector<double> > data;
+            std::get<0>(data) = {};
+            std::get<1>(data) = {};
+            testData.push_back(data);
+            testData.push_back(data);
+
+            net->testData = testData;
+
+            net->testConfusionMatrix = {};
+            for (int r=0; r<3; r++) {
+                net->testConfusionMatrix.push_back(std::vector<int>(3, 0));
+            }
+
+            l1 = new MockLayer(0, 3);
+            l2 = new MockLayer(0, 3);
+            l3 = new MockLayer(0, 3);
+
+
+            net->layers.push_back(l1);
+            net->layers.push_back(l2);
+            net->layers.push_back(l3);
+
+            l1->neurons = {};
+            l3->neurons = {};
+        }
+
+        virtual void TearDown() {
+            delete l1;
+            delete l2;
+            delete l3;
+            Network::deleteNetwork();
+        }
+
+        Network* net;
+        MockLayer* l1;
+        MockLayer* l2;
+        MockLayer* l3;
+    };
+
     // The forward and backward functions are called appropriately
-    TEST(Network, test) {
-        Network::deleteNetwork();
-        Network::newNetwork();
-        Network::getInstance(0)->costFunction = NetMath::meansquarederror;
+    TEST_F(TestFixture, test_1) {
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(0);
+        EXPECT_CALL(*l3, backward(false)).Times(0);
+        net->test(1, 0);
+    }
 
-        std::vector<std::tuple<std::vector<double>, std::vector<double> > > testData = {};
-        std::tuple<std::vector<double>, std::vector<double> > data;
-        std::get<0>(data) = {};
-        std::get<1>(data) = {};
-        testData.push_back(data);
-        testData.push_back(data);
+    // Populates the confusion matrix data
+    TEST_F(TestFixture, test_2) {
+        std::get<0>(net->testData[0]) = {1,0};
+        std::get<0>(net->testData[1]) = {1,0};
+        std::get<1>(net->testData[0]) = {0,1};
+        std::get<1>(net->testData[1]) = {0,1};
 
-        Network::getInstance(0)->testData = testData;
-
-        MockLayer* l1 = new MockLayer(0, 3);
-        MockLayer* l2 = new MockLayer(0, 3);
-        MockLayer* l3 = new MockLayer(0, 3);
-
-        Network::getInstance(0)->layers.push_back(l1);
-        Network::getInstance(0)->layers.push_back(l2);
-        Network::getInstance(0)->layers.push_back(l3);
-
-        l1->neurons = {};
-        l3->neurons = {};
+        l3->sums = {1,0};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
@@ -300,14 +426,34 @@ namespace Network_cpp {
         EXPECT_CALL(*l2, backward(false)).Times(0);
         EXPECT_CALL(*l3, backward(false)).Times(0);
 
-        Network::getInstance(0)->test(1, 0);
+        net->test(1, 0);
 
-        delete l1;
-        delete l2;
-        delete l3;
-        Network::deleteNetwork();
+        std::vector<std::vector<int>> notExpected = {{0,0,0},{0,0,0},{0,0,0}};
+        EXPECT_NE( Network::getInstance(0)->testConfusionMatrix, notExpected );
     }
 
+    // Collects error values when configured to
+    TEST_F(TestFixture, test_3) {
+
+        std::get<0>(net->testData[0]) = {1,0};
+        std::get<0>(net->testData[1]) = {1,0};
+        std::get<1>(net->testData[0]) = {0,1};
+        std::get<1>(net->testData[1]) = {0,1};
+
+        l3->sums = {1,0};
+
+        EXPECT_CALL(*l1, forward()).Times(0);
+        EXPECT_CALL(*l2, forward()).Times(1);
+        EXPECT_CALL(*l3, forward()).Times(1);
+        EXPECT_CALL(*l1, backward(false)).Times(0);
+        EXPECT_CALL(*l2, backward(false)).Times(0);
+        EXPECT_CALL(*l3, backward(false)).Times(0);
+
+        net->collectErrors = true;
+        net->test(1, 0);
+
+        EXPECT_GT( net->collectedTestErrors.size(), 0 );
+    }
 
     // Calls the resetDeltaWeights function of each layer except the first's
     TEST(Network, resetDeltaWeights){
@@ -4190,6 +4336,7 @@ namespace NetMath_cpp {
 
     // Returns the same number of values as the size value given
     TEST_F(XavierUniformFixture, xavierUniform_1) {
+        l1->fanOut = 0;
         EXPECT_EQ( NetMath::xavieruniform(0, 0, 10).size(), 10 );
     }
 

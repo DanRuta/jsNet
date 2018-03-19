@@ -759,7 +759,7 @@ const {minValue, maxValue} = NetUtil.normalize(data)
 More and more features will be added, as time goes by, and I learn more. General improvements and optimizations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
 ##### Short term
-Next up are some general framework improvements, in 3.2, following which, the WebGL version, in 4.0. You can keep track of progress on the dev branch.
+The next big feature is a version which uses the GPU for computations via WebGL.
 
 ##### Long term
 A WebAssembly+WebGL version, using shaders to run computations on the GPU.

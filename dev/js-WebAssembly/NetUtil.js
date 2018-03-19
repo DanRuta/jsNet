@@ -74,7 +74,15 @@ class NetUtil {
         if (returnType=="array") {
             const returnData = []
 
-            for (let v=0; v<returnArraySize; v++) {
+            let v = 0
+
+            if (returnArraySize === "auto") {
+                // Use the first value as the returnArraySize value
+                v++
+                returnArraySize = NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT] + 1
+            }
+
+            for (v; v<returnArraySize; v++) {
                 returnData.push(NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT+v])
             }
 

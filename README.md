@@ -250,12 +250,27 @@ net.train(training, {callback: doSomeStuff})
 ###### Callback Interval
 The number of iterations between callbacks can be configured via the `callbackInterval` config. By default, it is set to 1, meaning the callback is called with each iteration. By turning it to 5, for example, callbacks are called only every 5 iterations.
 
-***Tip**: Setting the interval to a number slightly above 1 can **greatly** improve the network speed, especially the WebAssembly version, where callbacks greatly slow down training.
-
-Example:
 ```javascript
 net.train(training, {callback: doSomeStuff, callbackInterval: 1}) // Every iteration
 net.train(training, {callback: doSomeStuff, callbackInterval: 5}) // Every 5 iterations, but considerably quicker
+```
+
+***Tip**: Setting the interval to a number slightly above 1 can **greatly** improve the network speed, especially the WebAssembly version, where callbacks greatly slow down training. For the absolute best performance, while still being able to plot errors, use the *collectErrors* configuration.
+
+###### collectErrors
+If you need to plot the training, validation or test errors, but do not need to see it being plotted in real time, through the callback, you can set this option to true, and the error values will be collected in their respective arrays. This make the largest difference in the WebAssembly version, where callbacks add the most performance cost. An example of this can be seen in the `examples/mnist/mnist.html` file.
+
+```javascript
+const plot = data => ...
+
+net.train(training, {collectErrors: true}).then(() => {
+    plot(net.collectedErrors.training) // Gets all the training errors for plotting
+    plot(net.collectedErrors.validation) // Gets all the validation errors for plotting
+
+    net.test(testData, {collectErrors: true}).then(() => {
+        plot(net.collectedErrors.test) // Gets all the test errors for plotting
+    })
+})
 ```
 
 ###### Log

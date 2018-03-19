@@ -1482,6 +1482,15 @@ describe("Network", () => {
                 })
             })
 
+            it("Collects training and validation errors when collectErrors is configured as true", () => {
+                const stub = sinon.stub(net, "checkEarlyStopping")
+
+                return net.train(testDataX10, {collectErrors: true, validation: {data: testData, interval: 1}}).then(() => {
+                    expect(net.collectedErrors.training.length).to.not.equal(0)
+                    expect(net.collectedErrors.validation.length).to.not.equal(0)
+                    stub.restore()
+                })
+            })
         })
     })
 
@@ -1671,6 +1680,12 @@ describe("Network", () => {
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("input"))
                 expect(console.warn).to.have.been.calledWith(sinon.match.has("elapsed"))
                 console.warn.restore()
+            })
+        })
+
+        it("Collects test errors when collectErrors is configured as true", () => {
+            return net.test(testData, {collectErrors: true}).then(() => {
+                expect(net.collectedErrors.test.length).to.not.equal(0)
             })
         })
     })

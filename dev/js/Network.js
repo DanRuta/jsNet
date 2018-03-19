@@ -148,6 +148,8 @@ class Network {
                     throw new Error("There was an error constructing from the layers given.")
             }
         }
+
+        this.collectedErrors = {training: [], validation: [], test: []}
     }
 
     initLayers (input, expected) {
@@ -253,7 +255,7 @@ class Network {
         }
     }
 
-    train (dataSet, {epochs=1, callback, callbackInterval=1, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
+    train (dataSet, {epochs=1, callback, callbackInterval=1, collectErrors, log=true, miniBatchSize=1, shuffle=false, validation}={}) {
 
         this.miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? dataSet[0].expected.length : miniBatchSize
         this.validation = validation
@@ -380,6 +382,14 @@ class Network {
                 this.iterations++
 
                 elapsed = Date.now() - startTime
+
+                if (collectErrors) {
+                    this.collectedErrors.training.push(trainingError)
+
+                    if (validationError) {
+                        this.collectedErrors.validation.push(validationError)
+                    }
+                }
 
                 if ((iterationIndex%callbackInterval == 0 || validationError) && typeof callback=="function") {
                     callback({
@@ -510,7 +520,7 @@ class Network {
         }
     }
 
-    test (testSet, {log=true, callback}={}) {
+    test (testSet, {log=true, callback, collectErrors}={}) {
         return new Promise((resolve, reject) => {
 
             if (testSet === undefined || testSet === null) {
@@ -544,6 +554,10 @@ class Network {
                 const iterationError = this.cost(target, output)
                 totalError += iterationError
                 iterationIndex++
+
+                if (collectErrors) {
+                    this.collectedErrors.test.push(iterationError)
+                }
 
                 if (typeof callback=="function") {
                     callback({

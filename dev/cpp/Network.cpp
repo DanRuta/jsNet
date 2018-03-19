@@ -127,6 +127,10 @@ void Network::train (int its, int startI) {
         if (validationInterval!=0 && iterationIndex!=0 && iterationIndex%validationInterval==0) {
             validationError = validate();
 
+            if (collectErrors) {
+                collectedValidationErrors.push_back(validationError);
+            }
+
             if (earlyStoppingType && checkEarlyStopping()) {
                 if (trainingLogging) {
                     printf("Stopping early\n");
@@ -140,6 +144,10 @@ void Network::train (int its, int startI) {
 
         iterationError = costFunction(std::get<1>(trainingData[iterationIndex]), output);
         totalErrors += iterationError;
+
+        if (collectErrors) {
+            collectedTrainingErrors.push_back(iterationError);
+        }
 
         if ((iterationIndex+1) % miniBatchSize == 0) {
             applyDeltaWeights();
@@ -265,7 +273,13 @@ double Network::test (int its, int startI) {
             testConfusionMatrix[targetClassIndex][classIndex]++;
         }
 
-        totalErrors += costFunction(std::get<1>(testData[i]), output);
+        double iterationError = costFunction(std::get<1>(testData[i]), output);
+
+        if (collectErrors) {
+            collectedTestErrors.push_back(iterationError);
+        }
+
+        totalErrors += iterationError;
     }
 
     return totalErrors / its;

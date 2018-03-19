@@ -944,6 +944,15 @@ describe("Network", () => {
             })
         })
 
+        it("CCalls the WASM Module's collectErrors function if the option is configured as true", () => {
+            sinon.stub(fakeModule, "ccall")
+            net.netInstance = 456
+            return net.train(testData, {shuffle: true, collectErrors: true}).then(() => {
+                expect(fakeModule.ccall.withArgs("collectErrors").callCount).to.equal(1)
+                fakeModule.ccall.restore()
+            })
+        })
+
         it("Calls the initLayers function when the net state is not 'initialised'", () => {
             const network = new Network({Module: fakeModule})
             sinon.spy(network, "initLayers")
@@ -1284,6 +1293,12 @@ describe("Network", () => {
             net.netInstance = 456
             net.test(testData)
             expect(fakeModule.ccall.withArgs("test").callCount).to.equal(1)
+        })
+
+        it("CCalls the WASM Module's collectErrors function if the option is configured as true", () => {
+            net.netInstance = 456
+            net.test(testData, {collectErrors: true})
+            expect(fakeModule.ccall.withArgs("collectErrors").callCount).to.equal(1)
         })
 
         it("CCalls the WASM Module's test for every test item when a callback is given", () => {
@@ -3261,6 +3276,11 @@ describe("NetUtil", () => {
         it("HEAPF64 in and out using 'HEAPF64' config", () => {
             const res = NetUtil.ccallArrays("testHEAPF64", "array", ["array"], [[1,2,3,4,5]], {heapIn: "HEAPF64", heapOut: "HEAPF64", returnArraySize: 5})
             expect(res).to.deep.equal([2,4,6,8,10])
+        })
+
+        it("Uses the first value as the number of elements to query, when returnArraySize is set to 'auto'", () => {
+            const res = NetUtil.ccallArrays("testHEAPF64", "array", ["array"], [[1,2,3,4,5]], {heapIn: "HEAPF64", heapOut: "HEAPF64", returnArraySize: "auto"})
+            expect(res).to.deep.equal([4,6])
         })
 
         it("Returns original value when return type is not array", () => {

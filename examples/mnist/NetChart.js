@@ -78,6 +78,7 @@ class NetChart {
     }
 
     addValidationError (err) {
+
         this.chart.data.datasets[1].data.push({
             x: this.chartX * this.interval,
             y: err
@@ -98,4 +99,22 @@ class NetChart {
         this.chart.update()
     }
 
+    loadAllData ({training, validation, validationRate}) {
+
+        this.clear()
+
+        let chartY = 0
+        let chartYCount = 0
+
+        for (let i=0; i<training.length; i++) {
+
+            this.addTrainingError(training[i])
+
+            if (validation && i > validationRate && i%validationRate == 0) {
+                this.addValidationError(validation.shift())
+            }
+        }
+
+        this.chart.update()
+    }
 }

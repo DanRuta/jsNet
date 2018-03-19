@@ -508,7 +508,15 @@ class NetUtil {
         if (returnType=="array") {
             const returnData = []
 
-            for (let v=0; v<returnArraySize; v++) {
+            let v = 0
+
+            if (returnArraySize === "auto") {
+                // Use the first value as the returnArraySize value
+                v++
+                returnArraySize = NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT] + 1
+            }
+
+            for (v; v<returnArraySize; v++) {
                 returnData.push(NetUtil.Module[heapOut][res/heapMap[heapOut].BYTES_PER_ELEMENT+v])
             }
 
@@ -1107,6 +1115,11 @@ class Network {
         NetUtil.defineProperty(this, "earlyStoppingPatience", ["number"], [this.netInstance])
         NetUtil.defineProperty(this, "earlyStoppingPercent", ["number"], [this.netInstance])
 
+        this.collectedErrors = {}
+        NetUtil.defineArrayProperty(this.collectedErrors, "training", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+        NetUtil.defineArrayProperty(this.collectedErrors, "test", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+        NetUtil.defineArrayProperty(this.collectedErrors, "validation", ["number"], [this.netInstance], "auto", {pre: "collected_"})
+
         if (layers.length) {
 
             this.state = "constructed"
@@ -1220,7 +1233,7 @@ class Network {
         })
     }
 
-    train (data, {epochs=1, callback, callbackInterval=1, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
+    train (data, {epochs=1, callback, callbackInterval=1, collectErrors, miniBatchSize=1, log=true, shuffle=false, validation}={}) {
 
         miniBatchSize = typeof miniBatchSize=="boolean" && miniBatchSize ? data[0].expected.length : miniBatchSize
         this.Module.ccall("set_miniBatchSize", null, ["number", "number"], [this.netInstance, miniBatchSize])
@@ -1262,6 +1275,10 @@ class Network {
 
             if (shuffle) {
                 this.Module.ccall("shuffleTrainingData", null, ["number"], [this.netInstance])
+            }
+
+            if (collectErrors) {
+                this.Module.ccall("collectErrors", null, ["number"], [this.netInstance])
             }
 
             let validationBuf
@@ -1453,7 +1470,7 @@ class Network {
         }
     }
 
-    test (data, {log=true, callback}={}) {
+    test (data, {log=true, collectErrors, callback}={}) {
         return new Promise((resolve, reject) => {
 
             if (data === undefined || data === null) {
@@ -1477,6 +1494,10 @@ class Network {
 
             this.Module.ccall("loadTestingData", "number", ["number", "number", "number", "number", "number"],
                                             [this.netInstance, buf, itemsCount, itemSize, dimension])
+
+            if (collectErrors) {
+                this.Module.ccall("collectErrors", null, ["number"], [this.netInstance])
+            }
 
             if (callback) {
 

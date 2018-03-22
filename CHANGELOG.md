@@ -1,3 +1,11 @@
+# Upcoming
+---
+#### WebAssembly
+- Added fix for Webpack loading of NetWASM.js
+
+#### Examples
+- Added example project for loading jsNet through Webpack
+
 # 3.3.0 - Misc Improvements
 ---
 #### Network

@@ -9,12 +9,16 @@ module.exports = function(grunt){
                 dest: "dist/jsNet.js"
             },
             "js-WebAssembly": {
-                src: ["dev/js-WebAssembly/*.js"],
+                src: ["dev/js-WebAssembly/*.js", "!dev/js-WebAssembly/NetWASM.js"],
                 dest: "dist/jsNetWebAssembly.concat.js"
             },
             "js-noWebAssembly": {
                 src: ["dev/js/*.js", "!dev/js/NetAssembly.js"],
                 dest: "dist/jsNetJS.concat.js"
+            },
+            "NetWASM.js": {
+                src: ["dist/NetWASM.js", "dev/js-WebAssembly/NetWASM.js"],
+                dest: "dist/NetWASM.js"
             }
         },
 
@@ -45,7 +49,7 @@ module.exports = function(grunt){
             },
             cpp: {
                 files: ["dev/cpp/*.cpp", "dev/cpp/*.h"],
-                tasks: ["exec:build", "concat:js-WebAssembly", "uglify", "replace:emscriptenWASMPath"]
+                tasks: ["exec:build", "concat:NetWASM.js", "concat:js-WebAssembly", "uglify", "replace:emscriptenWASMPath"]
             },
             js: {
                 files: ["dev/js/*.js"],

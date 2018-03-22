@@ -77,8 +77,7 @@ std::vector<double> Network::forward (std::vector<double> input) {
         layers[l]->forward();
     }
 
-    std::vector<double> output = layers[layers.size()-1]->sums;
-    return output.size() > 1 ? NetMath::softmax(output) : output;
+    return layers[layers.size()-1]->actvns;
 }
 
 void Network::backward () {

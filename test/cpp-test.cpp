@@ -138,6 +138,7 @@ namespace Network_cpp {
             l1->neurons.push_back(new Neuron());
             l2->neurons.push_back(new Neuron());
             l2->neurons.push_back(new Neuron());
+            l2->softmax = false;
 
             net->layers.push_back(l1);
             net->layers.push_back(l2);
@@ -185,14 +186,14 @@ namespace Network_cpp {
     }
 
 
-    // Returns a vector of softmax-ed sums in the last layer
+    // Returns the activations in the last layer
     TEST_F(ForwardFixture, forward_3) {
 
-        l2->sums = {1,2};
+        l2->actvns = {1,2};
 
         net->layers[0]->neurons = {new Neuron(), new Neuron(), new Neuron()};
         std::vector<double> returned = net->forward(testInput);
-        std::vector<double> actualValues = NetMath::softmax({1, 2});
+        std::vector<double> actualValues = {1, 2};
 
         EXPECT_EQ( returned, actualValues );
     }
@@ -300,7 +301,7 @@ namespace Network_cpp {
         std::get<1>(net->trainingData[1]) = {0,1};
 
         l3->errs = {1,0};
-        l3->sums = {1,0};
+        l3->actvns = {1,0};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
@@ -329,7 +330,7 @@ namespace Network_cpp {
         std::get<1>(net->trainingData[1]) = {0,1};
 
         l3->errs = {1,0};
-        l3->sums = {1,0};
+        l3->actvns = {1,0};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
@@ -417,7 +418,7 @@ namespace Network_cpp {
         std::get<1>(net->testData[0]) = {0,1};
         std::get<1>(net->testData[1]) = {0,1};
 
-        l3->sums = {1,0};
+        l3->actvns = {1,0};
 
         EXPECT_CALL(*l1, forward()).Times(0);
         EXPECT_CALL(*l2, forward()).Times(1);
@@ -666,6 +667,7 @@ namespace Network_cpp {
         }
 
         l2->sums = {1,2,3};
+        l2->actvns = NetMath::softmax({1,2,3});
 
         std::vector<std::tuple<std::vector<double>, std::vector<double> > > validationData = {};
         std::tuple<std::vector<double>, std::vector<double> > data;
@@ -685,7 +687,6 @@ namespace Network_cpp {
         delete l2;
         Network::deleteNetwork();
     }
-
 }
 
 namespace FCLayer_cpp {
@@ -828,6 +829,7 @@ namespace FCLayer_cpp {
             l2->hasActivation = true;
             l2->prevLayer = l1;
             l2->netInstance = 1;
+            l2->softmax = false;
             l1->init(0);
             l2->init(1);
             l2->activation = &NetMath::sigmoid<Neuron>;
@@ -967,6 +969,28 @@ namespace FCLayer_cpp {
         EXPECT_DOUBLE_EQ( l2->actvns[0], 0.9933071490757153 * 2 );
         EXPECT_DOUBLE_EQ( l2->actvns[1], 0.9975273768433653 * 2 );
         EXPECT_DOUBLE_EQ( l2->actvns[2], 0.9990889488055994 * 2 );
+    }
+
+    // Sets the activations to softmax, if softmax is configured
+    TEST_F(FCForwardFixture, forward_7) {
+        l2->hasActivation = false;
+        l2->softmax = true;
+
+        for (int n=0; n<3; n++) {
+            l2->weights[n] = {1,2};
+        }
+        l2->biases = {0,1,2};
+
+        net->isTraining = false;
+        net->dropout = 1;
+        l2->forward();
+
+        std::vector<double> softmax = NetMath::softmax({5,6,7});
+
+        EXPECT_FALSE( net->isTraining );
+        EXPECT_NEAR( l2->actvns[0], softmax[0], 1e-2 );
+        EXPECT_NEAR( l2->actvns[1], softmax[1], 1e-2 );
+        EXPECT_NEAR( l2->actvns[2], softmax[2], 1e-2 );
     }
 
     class FCBackwardFixture : public ::testing::Test {
@@ -2531,7 +2555,6 @@ namespace ConvLayer_cpp {
 
         delete conv;
     }
-
 }
 
 namespace PoolLayer_cpp {

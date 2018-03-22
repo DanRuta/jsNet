@@ -185,26 +185,36 @@ Or you can fully configure the layers by constructing them. Check below what con
 ```javascript
 // Example 1 - fully connected network
 const net = new Network({
-    layers: [new InputLayer(784), new Layer(100), new Layer(10)]
+    layers: [new InputLayer(784), new Layer(100), new OutputLayer(10)]
 })
 // Example 2 - convolutional network
 const net = new Network({
-    layers: [new FCLayer(784), new ConvLayer(8, {filterSize: 3}), new PoolLayer(2), new FCLayer(196), new FCLayer(10)]
+    layers: [new InputLayer(784), new ConvLayer(8, {filterSize: 3}), new PoolLayer(2), new FCLayer(196), new OutputLayer(10)]
 })
 ```
 
 ##### InputLayer
-The input data can be either a one dimensional array, or a volume (3D array). To define the input layer, you can configure the InputLayer with
+The input data can be either a one dimensional array, or a volume (3D array). The input layer can be defined with either an FCLayer, or an InputLayer.
 
-The input layer can be defined with either an FCLayer, or an InputLayer. The InputLayer can be configured either with the number of total inputs, or as the number of filters, with the filter spans, like so:
+To define an InputLayer, you can configure it with the number of total neurons, (for example 784, in a 1x28x28 input like MNIST), or with the number of channels, and their span, for both X and Y.
+
 ```javascript
 const inputA = new InputLayer(10) // For 10 input items
 const inputB = new InputLayer(3, {span: 5}) // For 75 input items
+const inputC = new InputLayer(1, {span: 28}) // For MNIST
+const inputD = new InputLayer(3, {span: 28}) // For an RGB version of MNIST input, if there was one
+```
+##### OutputLayer
+The output layer goes last, and, like InputLayer, is for the most part, just an wrapper/alias for FCLayer. However, in addition to the FCLayer functionality, the OutputLayer can be configured to run Softmax on the neuron activations.
+```javascript
+const inputA = new OutputLayer(10) // For 10 output neurons
+const inputB = new OutputLayer(10, {activation: "sigmoid"}) // For 10 output neurons
+const inputC = new OutputLayer(10, {activation: "sigmoid", softmax: true}) // For 10 output neurons, to be softmax-ed
 ```
 
-The usual arrangement of layers would folow something like this:
+The usual arrangement of layers would follow something like this:
 
-```InputLayer -> [ConvLayer]* -> [ConvLayer* -> PoolLayer*]* -> FCLayer+```
+```InputLayer -> [ConvLayer]* -> [ConvLayer* -> PoolLayer*]* -> FCLayer* -> OutputLayer```
 
 In words, an InputLayer, optionally followed by pairs of Conv and (optional) Pool layers (starting with Conv), and at the end, at least one FCLayer.
 The first FCLayer needs to have as many neurons in it as there are data points per iteration, and the last FCLayer needs to have as many neurons as there are classes for your data set.
@@ -232,8 +242,6 @@ const net = new Network()
 net.train(training) // This on its own is enough
 .then(() => console.log("done")) // Training resolves a promise, meaning you can add further code here (eg testing)
 ```
-
-Softmax is used by default during training, on the last layer (unless there is only one value). As such, activation configurations are not used there.
 
 ##### Options
 ###### Epochs

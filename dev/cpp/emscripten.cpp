@@ -264,6 +264,11 @@ extern "C" {
     }
 
     EMSCRIPTEN_KEEPALIVE
+    void setOutputSoftmax (int instanceIndex, int layerIndex) {
+        Network::getInstance(instanceIndex)->layers[layerIndex]->softmax = true;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
     void set_momentum  (int instanceIndex, float momentum) {
         Network::getInstance(instanceIndex)->momentum = momentum;
     }

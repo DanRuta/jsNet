@@ -362,7 +362,7 @@ window.net = new Network({
     layers: [
         new InputLayer(784),
         new FCLayer(100),
-        new FCLayer(10)
+        new OutputLayer(10, {activation: false, softmax: true})
     ]
 })
     </textarea>
@@ -373,7 +373,7 @@ window.net = new Network({
     <button id="exportButton">Export JSON</button>
     <button id="switchVersions">Switch to WASM</button><br><br>
     <textarea id="impexpText" placeholder="JSON import/export"></textarea>
-    <br><br> <!-- fight me -->
+    <br><br>
     <button id="toIMGButton">Export IMG</button>
     <button id="fromIMGButton">Import IMG</button>
     <br><br>

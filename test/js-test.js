@@ -9,7 +9,8 @@ const sinon = require("sinon")
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const {Network, Layer, FCLayer, ConvLayer, InputLayer, PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, InputLayer, OutputLayer,
+    PoolLayer, Neuron, Filter, NetMath, NetUtil} = require("../dist/jsNetJS.concat.js")
 
 describe("Loading", () => {
 
@@ -23,6 +24,7 @@ describe("Loading", () => {
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
     it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
     it("InputLayer is loaded", () => expect(InputLayer).to.not.be.undefined)
+    it("OutputLayer is loaded", () => expect(OutputLayer).to.not.be.undefined)
 
     it("Loads Layer as an alias of FCLayer", () => {
 
@@ -34,7 +36,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.3.0")
+        expect(Network.version).to.equal("3.3.1")
     })
 })
 
@@ -749,26 +751,14 @@ describe("Network", () => {
             expect(layer3.forward).to.have.been.called
         })
 
-        it("Returns the softmax of the neurons in the last layer", () => {
+        it("Returns the activations of the neurons in the last layer", () => {
             const layer1 = new Layer(3)
             const layer2 = new Layer(4)
             const layer3 = new Layer(7)
             const net = new Network({layers: [layer1, layer2, layer3]})
 
             const result = net.forward([1,2,3])
-            const activations = net.layers[2].neurons.map(n => n.sum)
-
-            expect(result).to.deep.equal(NetMath.softmax(activations))
-        })
-
-        it("Returns just the output without softmax if there is only one value in the output layer", () => {
-            const layer1 = new Layer(3)
-            const layer2 = new Layer(4)
-            const layer3 = new Layer(1)
-            const net = new Network({layers: [layer1, layer2, layer3]})
-
-            const result = net.forward([1,2,3])
-            const activations = net.layers[2].neurons.map(n => n.sum)
+            const activations = net.layers[2].neurons.map(n => n.activation)
 
             expect(result).to.deep.equal(activations)
         })
@@ -4855,6 +4845,68 @@ describe("InputLayer", () => {
         const il = new InputLayer(2, {span: 5})
         expect(il).instanceof(FCLayer)
         expect(il.size).to.equal(50)
+    })
+})
+
+describe("OutputLayer", () => {
+
+    describe("constructor", () => {
+        it("Returns an extended FCLayer", () => {
+            const ol = new OutputLayer(2)
+            expect(ol).instanceof(FCLayer)
+        })
+
+        it("Configures itself with as many neurons as the number given", () => {
+            const ol = new OutputLayer(10)
+            expect(ol).instanceof(FCLayer)
+            expect(ol.size).to.equal(10)
+        })
+
+        it("Configures itself with the activation function given", () => {
+            const ol = new OutputLayer(10, {activation: "sigmoid"})
+            expect(ol).instanceof(FCLayer)
+            expect(ol.activation.name).to.equal("bound sigmoid")
+        })
+
+        it("Sets the softmax attribute to true when configured so", () => {
+            const ol = new OutputLayer(10, {activation: "sigmoid", softmax: true})
+            expect(ol).instanceof(FCLayer)
+            expect(ol.softmax).to.be.true
+        })
+    })
+
+    describe("forward", () => {
+        it("Calls the FCLayer forward function (super)", () => {
+            const ol = new OutputLayer(10, {activation: "sigmoid"})
+            ol.weightsConfig = {limit: 0.1}
+            ol.net = {weightsInitFn: NetMath.uniform}
+            ol.init()
+            ol.neurons.forEach(neuron => neuron.sum = 0)
+
+            sinon.stub(NetUtil, "getActivations").callsFake(() => [1,2,3,4,5,6,7,8,9,0])
+
+            ol.forward()
+            expect(ol).instanceof(FCLayer)
+            expect(ol.neurons.map(neuron => neuron.sum)).to.not.deep.equal([0,0,0,0,0,0,0,0,0,0])
+            NetUtil.getActivations.restore()
+        })
+
+        it("Applies the softmax when configured to do so", () => {
+            const ol = new OutputLayer(10, {activation: "sigmoid", softmax: true})
+            ol.weightsConfig = {limit: 0.1}
+            ol.net = {weightsInitFn: NetMath.uniform}
+            ol.init()
+            ol.neurons.forEach(neuron => neuron.sum = 0)
+
+            sinon.stub(NetUtil, "getActivations").callsFake(() => [1,2,3,4,5,6,7,8,9,0])
+            sinon.stub(NetMath, "softmax").callsFake(() => [2,3,4,5,6,7,8,9,0,1])
+
+            ol.forward()
+            expect(ol).instanceof(FCLayer)
+            expect(ol.neurons.map(neuron => neuron.activation)).to.deep.equal([2,3,4,5,6,7,8,9,0,1])
+            NetUtil.getActivations.restore()
+            NetMath.softmax.restore()
+        })
     })
 })
 

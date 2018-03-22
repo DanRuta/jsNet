@@ -102,6 +102,10 @@ void FCLayer::forward (void) {
             }
         }
     }
+
+    if (softmax) {
+        actvns = NetMath::softmax(actvns);
+    }
 }
 
 void FCLayer::backward (bool lastLayer) {

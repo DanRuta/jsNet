@@ -11,7 +11,8 @@ chai.use(chaiAsPromised)
 
 global.Module = require("./emscriptenTests.js")
 
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, InputLayer, Neuron, Filter, NetUtil, NetMath} = require("../dist/jsNetWebAssembly.concat.js")
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, InputLayer, OutputLayer,
+    Neuron, Filter, NetUtil, NetMath} = require("../dist/jsNetWebAssembly.concat.js")
 
 describe("Loading", () => {
     it("Network is loaded", () => expect(Network).to.not.be.undefined)
@@ -20,6 +21,7 @@ describe("Loading", () => {
     it("ConvLayer is loaded", () => expect(ConvLayer).to.not.be.undefined)
     it("PoolLayer is loaded", () => expect(PoolLayer).to.not.be.undefined)
     it("InputLayer is loaded", () => expect(InputLayer).to.not.be.undefined)
+    it("OutputLayer is loaded", () => expect(OutputLayer).to.not.be.undefined)
     it("Neuron is loaded", () => expect(Neuron).to.not.be.undefined)
     it("Filter is loaded", () => expect(Filter).to.not.be.undefined)
     it("NetUtil is loaded", () => expect(NetUtil).to.not.be.undefined)
@@ -34,7 +36,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.3.0")
+        expect(Network.version).to.equal("3.3.1")
     })
 })
 
@@ -728,6 +730,17 @@ describe("Network", () => {
             const net = new Network({Module: fakeModule, layers: [2, 3, 1]})
             net.initLayers()
             expect(spy.withArgs("addFCLayer").callCount).to.equal(3)
+            fakeModule.ccall.restore()
+        })
+
+        it("Also ccalls the WASM Module's setOutputSoftmax function when the layer is configured with softmax, with the layer index", () => {
+            const spy = sinon.spy(fakeModule, "ccall")
+            const layers = [new FCLayer(2), new FCLayer(3), new FCLayer(1)]
+            layers[2].softmax = true
+            const net = new Network({Module: fakeModule, layers})
+            net.initLayers()
+            expect(spy.withArgs("addFCLayer").callCount).to.equal(3)
+            expect(spy.withArgs("setOutputSoftmax")).to.be.calledWith("setOutputSoftmax", null, ["number", "number"], [0, 2])
             fakeModule.ccall.restore()
         })
 
@@ -3202,6 +3215,28 @@ describe("InputLayer", () => {
         const il = new InputLayer(2, {span: 5})
         expect(il).instanceof(FCLayer)
         expect(il.size).to.equal(50)
+    })
+})
+
+describe("OutputLayer", () => {
+
+    describe("constructor", () => {
+        it("Returns an extended FCLayer", () => {
+            const ol = new OutputLayer(2)
+            expect(ol).instanceof(FCLayer)
+        })
+
+        it("Configures itself with as many neurons as the number given", () => {
+            const ol = new OutputLayer(10)
+            expect(ol).instanceof(FCLayer)
+            expect(ol.size).to.equal(10)
+        })
+
+        it("Sets the layer's softmax property to true when configured so", () => {
+            const ol = new OutputLayer(10, {softmax: true})
+            expect(ol).instanceof(FCLayer)
+            expect(ol.softmax).to.be.true
+        })
     })
 })
 

@@ -234,8 +234,8 @@ class Network {
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
         this.layers.forEach((layer, li) => li && layer.forward())
-        const output = this.layers[this.layers.length-1].neurons.map(n => n.sum)
-        return output.length > 1 ? NetMath.softmax(output) : output
+
+        return this.layers[this.layers.length-1].neurons.map(n => n.activation)
     }
 
     backward (errors) {
@@ -671,7 +671,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.0"
+        return "3.3.1"
     }
 }
 

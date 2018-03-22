@@ -1732,8 +1732,8 @@ class Network {
 
         this.layers[0].neurons.forEach((neuron, ni) => neuron.activation = data[ni])
         this.layers.forEach((layer, li) => li && layer.forward())
-        const output = this.layers[this.layers.length-1].neurons.map(n => n.sum)
-        return output.length > 1 ? NetMath.softmax(output) : output
+
+        return this.layers[this.layers.length-1].neurons.map(n => n.activation)
     }
 
     backward (errors) {
@@ -2169,7 +2169,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.0"
+        return "3.3.1"
     }
 }
 
@@ -2247,6 +2247,38 @@ class Neuron {
 /* istanbul ignore next */
 typeof window!="undefined" && (window.Neuron = Neuron)
 exports.Neuron = Neuron
+"use strict"
+
+class OutputLayer extends FCLayer {
+
+    constructor (size, {activation, softmax}={}) {
+
+        super(size, {activation})
+
+        if (softmax) {
+            this.softmax = true
+        }
+    }
+
+    forward () {
+
+        super.forward()
+
+        if (this.softmax) {
+
+            const softmax = NetMath.softmax(this.neurons.map(n => n.activation))
+
+            for (let s=0; s<softmax.length; s++) {
+                this.neurons[s].activation = softmax[s]
+            }
+        }
+    }
+}
+
+/* istanbul ignore next */
+typeof window!="undefined" && (window.OutputLayer = OutputLayer)
+exports.OutputLayer = OutputLayer
+
 "use strict"
 
 class PoolLayer {

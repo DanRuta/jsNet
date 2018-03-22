@@ -1,7 +1,13 @@
 # Upcoming
 ---
+#### Global
+- Removed implicit softmax from last layer, to allow multi-variate regression (#42)
+
 #### WebAssembly
 - Added fix for Webpack loading of NetWASM.js
+
+#### OutputLayer
+- Added OutputLayer class
 
 #### Examples
 - Added example project for loading jsNet through Webpack

@@ -278,6 +278,10 @@ class Network {
             switch (true) {
                 case layer instanceof FCLayer:
                     this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
+
+                    if (layer.softmax) {
+                        this.Module.ccall("setOutputSoftmax", null, ["number", "number"], [this.netInstance, l])
+                    }
                     break
 
                 case layer instanceof ConvLayer:
@@ -734,7 +738,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.0"
+        return "3.3.1"
     }
 }
 

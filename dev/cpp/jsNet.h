@@ -118,6 +118,7 @@ public:
     int outMapSize;
     int prevLayerOutWidth;
     bool hasActivation;
+    bool softmax=false;
     std::vector<Neuron*> neurons;
     std::vector<Filter*> filters;
     std::vector<std::vector<std::vector<std::vector<int> > > > indeces;

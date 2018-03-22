@@ -1164,6 +1164,10 @@ class Network {
             switch (true) {
                 case layer instanceof FCLayer:
                     this.Module.ccall("addFCLayer", null, ["number", "number"], [this.netInstance, layer.size])
+
+                    if (layer.softmax) {
+                        this.Module.ccall("setOutputSoftmax", null, ["number", "number"], [this.netInstance, l])
+                    }
                     break
 
                 case layer instanceof ConvLayer:
@@ -1620,7 +1624,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.0"
+        return "3.3.1"
     }
 }
 
@@ -1685,6 +1689,24 @@ class Neuron {
 /* istanbul ignore next */
 typeof window!="undefined" && (window.Neuron = Neuron)
 exports.Neuron = Neuron
+"use strict"
+
+class OutputLayer extends FCLayer {
+
+    constructor (size, {activation, softmax}={}) {
+
+        super(size, {activation})
+
+        if (softmax) {
+            this.softmax = true
+        }
+    }
+}
+
+/* istanbul ignore next */
+typeof window!="undefined" && (window.OutputLayer = OutputLayer)
+exports.OutputLayer = OutputLayer
+
 "use strict"
 
 class PoolLayer {

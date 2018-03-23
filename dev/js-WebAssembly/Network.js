@@ -161,11 +161,11 @@ class Network {
         switch (NetUtil.format(updateFn)) {
 
             case "rmsprop":
-                this.learningRate = this.learningRate==undefined ? 0.001 : this.learningRate
+                this.learningRate = this.learningRate || 0.001
                 break
 
             case "adam":
-                this.learningRate = this.learningRate==undefined ? 0.01 : this.learningRate
+                this.learningRate = this.learningRate || 0.01
                 break
 
             case "adadelta":
@@ -175,6 +175,7 @@ class Network {
 
             case "momentum":
                 NetUtil.defineProperty(this, "momentum", ["number"], [this.netInstance])
+                this.learningRate = this.learningRate || 0.2
                 this.momentum = momentum
                 break
 
@@ -738,7 +739,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.1"
+        return "3.3.4"
     }
 }
 

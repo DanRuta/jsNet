@@ -12,6 +12,10 @@
 #### Examples
 - Added example project for loading jsNet through Webpack
 
+#### Bug fixes
+- WASM misassigned learning rate defaults
+- WASM momentum not training
+
 # 3.3.0 - Misc Improvements
 ---
 #### Network

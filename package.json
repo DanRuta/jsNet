@@ -1,6 +1,6 @@
 {
   "name": "jsnet",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "description": "Javascript based deep learning framework for basic and convolutional neural networks.",
   "scripts": {
     "test": "npm run js-tests && npm run wa-tests",

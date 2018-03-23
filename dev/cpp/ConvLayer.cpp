@@ -312,6 +312,25 @@ void ConvLayer::applyDeltaWeights (void) {
                 biases[f] = NetMath::adadelta(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
             }
             break;
+        case 6: // momentum
+            for (int f=0; f<filters.size(); f++) {
+                for (int c=0; c<filterDeltaWeights[f].size(); c++) {
+                    for (int r=0; r<filterDeltaWeights[f][0].size(); r++) {
+                        for (int v=0; v<filterDeltaWeights[f][0][0].size(); v++) {
+
+                            double regularized = (filterDeltaWeights[f][c][r][v]
+                                                + net->l2 * filterWeights[f][c][r][v]
+                                                + net->l1 * (filterWeights[f][c][r][v] > 0 ? 1 : -1)) / net->miniBatchSize;
+
+                            filterWeights[f][c][r][v] = NetMath::momentum(netInstance, filterWeights[f][c][r][v], regularized, filters[f], c, r, v);
+
+                            if (net->maxNorm) net->maxNormTotal += filterWeights[f][c][r][v] * filterWeights[f][c][r][v];
+                        }
+                    }
+                }
+                biases[f] = NetMath::momentum(netInstance, biases[f], deltaBiases[f], filters[f], -1, -1, -1);
+            }
+            break;
     }
 
     if (net->maxNorm) {

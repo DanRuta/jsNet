@@ -13,7 +13,8 @@
 - Added example project for loading jsNet through Webpack
 
 #### Bug fixes
-- WASM not training on some update functions, due to misassigned learning rate
+- WASM misassigned learning rate defaults
+- WASM momentum not training
 
 # 3.3.0 - Misc Improvements
 ---

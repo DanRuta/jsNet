@@ -274,6 +274,21 @@ void FCLayer::applyDeltaWeights (void) {
                 biases[n] = NetMath::adadelta(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
             }
             break;
+        case 6: // momentum
+            for(int n=0; n<neurons.size(); n++) {
+                for (int dw=0; dw<deltaWeights[n].size(); dw++) {
+
+                    double regularized = (deltaWeights[n][dw]
+                        + net->l2 * weights[n][dw]
+                        + net->l1 * (weights[n][dw] > 0 ? 1 : -1)) / net->miniBatchSize;
+
+                    weights[n][dw] = NetMath::momentum(netInstance, weights[n][dw], regularized, neurons[n], dw);
+
+                    if (net->maxNorm) net->maxNormTotal += weights[n][dw] * weights[n][dw];
+                }
+                biases[n] = NetMath::momentum(netInstance, biases[n], deltaBiases[n], neurons[n], -1);
+            }
+            break;
     }
 
     if (net->maxNorm) {

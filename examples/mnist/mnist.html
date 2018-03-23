@@ -361,7 +361,7 @@ window.net = new Network({
     Module: Module,
     layers: [
         new InputLayer(784),
-        new FCLayer(100),
+        new FCLayer(100, {activation: "sigmoid"}),
         new OutputLayer(10, {activation: false, softmax: true})
     ]
 })

@@ -671,7 +671,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.1"
+        return "3.3.3"
     }
 }
 

@@ -50,6 +50,7 @@ https://ai.danruta.co.uk/webassembly - Performance comparison between JS and Web
 
 <img width="100%" src="./examples/mnist/readmeimg.png">
 
+There are examples also for loading through Webpack, and an XOR example, for using multiple separate WASM net instances.
 
 ##  Loading
 ---

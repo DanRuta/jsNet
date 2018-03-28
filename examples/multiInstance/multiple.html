@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>jsNet - MMultiple WASM instances example</title>
+    <script src="../../dist/jsNetWebAssembly.min.js"></script>
+    <script src="../../dist/NetWASM.js"></script>
+</head>
+<style>
+    #inputs, #newInstanceBtn {
+        margin: 10px;
+    }
+    #netList {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        margin: auto;
+        width: 1000px;
+        max-width: 90vw;
+    }
+    #netList > div {
+        display: flex;
+        width: 100%;
+        height: 100px;
+        border: 1px solid black;
+        margin-bottom: 3px;
+    }
+    #netList > div > button {
+        width: 25%;
+    }
+    #netList > div > div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 200px;
+    }
+</style>
+<script>
+"use strict"
+window.addEventListener("jsNetWASMLoaded", () => {
+
+    const instances = []
+
+    const xorData = [
+        {input: [0, 0], expected: [0]},
+        {input: [0, 1], expected: [1]},
+        {input: [1, 0], expected: [1]},
+        {input: [1, 1], expected: [0]}
+    ]
+
+    const addInstance = () => {
+
+        const net = new Network({Module: window.Module, layers: [2, 3, 1]})
+        instances.push(net)
+
+        const containerRow = document.createElement("div")
+        const label = document.createElement("div")
+
+        const trainButton = document.createElement("button")
+        trainButton.innerHTML = "Train"
+        trainButton.addEventListener("click", () => {
+            net.train(xorData, {epochs: 2000, log: false}).then(() => label.innerHTML = "Training done")
+        })
+
+        const runButton = document.createElement("button")
+        runButton.innerHTML = "Run"
+        runButton.addEventListener("click", () => {
+            const vals = net.forward([parseInt(inputA.value), parseInt(inputB.value)])
+            label.innerHTML = vals[0]
+        })
+
+        containerRow.appendChild(trainButton)
+        containerRow.appendChild(runButton)
+        containerRow.appendChild(label)
+
+        netList.appendChild(containerRow)
+    }
+
+    addInstance()
+
+    newInstanceBtn.addEventListener("click", addInstance)
+})
+</script>
+<body>
+
+<span>Click the Create new net instance button to add new net instances. Click their Train buttons to train them on the XOR data set, and click Run to run the values in the below input fields through the network. </span>
+
+<div id="inputs">
+    <input id="inputA" type="number" min="0" max="1" value="0">
+    <input id="inputB" type="number" min="0" max="1" value="0">
+</div>
+
+<button id="newInstanceBtn">Create new net instance</button>
+
+<div id="netList"></div>
+
+
+</body>
+</html>

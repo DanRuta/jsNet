@@ -11,6 +11,7 @@
 
 #### Examples
 - Added example project for loading jsNet through Webpack
+- Added example for using multiple WASM network instances
 
 #### Bug fixes
 - WASM misassigned learning rate defaults

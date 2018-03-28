@@ -10,7 +10,7 @@ http.createServer((request, response) => {
     let path = url.parse(request.url).pathname
     let data
 
-    path = (path=="/"?"/examples/index.html":path)
+    path = (path=="/"?"/examples/index.html":path).replace(/%20/g, " ")
 
     console.log(path)
 

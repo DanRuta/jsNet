@@ -163,7 +163,7 @@ void FCLayer::resetDeltaWeights (void) {
 
     deltaBiases = std::vector<double>(neurons.size(), 0);
 
-    for(int n=0; n<neurons.size(); n++) {
+    for (int n=0; n<neurons.size(); n++) {
         deltaWeights[n] = std::vector<double>(weights[n].size(), 0);
     }
 }
@@ -173,7 +173,7 @@ void FCLayer::applyDeltaWeights (void) {
 
     Network* net = Network::getInstance(netInstance);
 
-    for(int n=0; n<neurons.size(); n++) {
+    for (int n=0; n<neurons.size(); n++) {
         for (int dw=0; dw<deltaWeights[n].size(); dw++) {
             if (net->l2) net->l2Error += 0.5 * net->l2 * pow(weights[n][dw], 2);
             if (net->l1) net->l1Error += net->l1 * fabs(weights[n][dw]);
@@ -185,7 +185,7 @@ void FCLayer::applyDeltaWeights (void) {
     // Doesn't mean I like it :(
     switch (net->updateFnIndex) {
         case 0: // vanilla
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -200,7 +200,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 1: // gain
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -215,7 +215,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 2: // adagrad
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -230,7 +230,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 3: // rmsprop
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -245,7 +245,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 4: // adam
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -260,7 +260,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 5: // adadelta
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]
@@ -275,7 +275,7 @@ void FCLayer::applyDeltaWeights (void) {
             }
             break;
         case 6: // momentum
-            for(int n=0; n<neurons.size(); n++) {
+            for (int n=0; n<neurons.size(); n++) {
                 for (int dw=0; dw<deltaWeights[n].size(); dw++) {
 
                     double regularized = (deltaWeights[n][dw]

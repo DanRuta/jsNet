@@ -25,6 +25,11 @@ extern "C" {
         return Network::newNetwork();
     }
 
+    EMSCRIPTEN_KEEPALIVE
+    void deleteNetwork (int instanceIndex) {
+        Network::deleteNetwork(instanceIndex);
+    }
+
     /* Network config */
     EMSCRIPTEN_KEEPALIVE
     float getLearningRate (int instanceIndex) {

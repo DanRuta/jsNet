@@ -154,6 +154,10 @@ When everything is loaded, if using WebAssembly, you need to assign the module w
 ```javascript
 const net = new Network({Module: Module})
 ```
+
+**NOTE**
+You can call the `net.delete()` function when using the WebAssembly version to clear memory. After this, it should be ok to run `delete net`, and not incur a memory leak.
+
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ```javascript

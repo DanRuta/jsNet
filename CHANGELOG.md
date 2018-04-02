@@ -5,6 +5,7 @@
 
 #### WebAssembly
 - Added fix for Webpack loading of NetWASM.js
+- Added net.delete() for clean-up
 
 #### OutputLayer
 - Added OutputLayer class

@@ -1624,6 +1624,10 @@ class Network {
         }
     }
 
+    delete () {
+        this.Module.ccall("deleteNetwork", "number", ["number"], [this.netInstance])
+    }
+
     static get version () {
         return "3.3.4"
     }

@@ -1516,6 +1516,17 @@ describe("Network", () => {
             expect(stub).to.be.calledWith("Data set must be a list of objects with keys: 'input' and 'expected'")
         })
     })
+
+    describe("delete", () => {
+        it("CCalls the WASM Module's 'deleteNetwork' function", () => {
+            sinon.stub(fakeModule, "ccall").callsFake(() => 1)
+            const net = new Network({Module: fakeModule})
+            net.netInstance = 123
+            net.delete()
+            expect(fakeModule.ccall).to.be.calledWith("deleteNetwork", "number", ["number"], [123])
+            fakeModule.ccall.restore()
+        })
+    })
 })
 
 describe("FCLayer", () => {

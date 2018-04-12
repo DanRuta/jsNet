@@ -771,11 +771,6 @@ const {minValue, maxValue} = NetUtil.normalize(data)
 ---
 More and more features will be added, as time goes by, and I learn more. General improvements and optimizations will be added throughout. Breaking changes will be documented. Check the changelog to see the history of added features.
 
-##### Short term
-The next big feature is a version which uses the GPU for computations via WebGL.
-
-##### Long term
-A WebAssembly+WebGL version, using shaders to run computations on the GPU.
 
 ## Contributing
 ---

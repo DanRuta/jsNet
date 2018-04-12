@@ -1,4 +1,4 @@
-# Upcoming
+# 3.4.0 - Bug fixes and improvements
 ---
 #### Global
 - Removed implicit softmax from last layer, to allow multi-variate regression (#42)

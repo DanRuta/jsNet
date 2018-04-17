@@ -1,3 +1,8 @@
+# Upcoming
+---
+#### Global
+- Added back ability to use etiher 'expected' or 'output' keys in data sets
+
 # 3.4.0 - Bug fixes and improvements
 ---
 #### Global

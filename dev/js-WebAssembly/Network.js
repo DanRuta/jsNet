@@ -367,13 +367,13 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers(data[0].input.length, data[0].expected.length)
+                this.initLayers(data[0].input.length, (data[0].expected || data[0].output).length)
             }
 
             const startTime = Date.now()
 
             const dimension = this.layers[0].size
-            const itemSize = dimension + data[0].expected.length
+            const itemSize = dimension + (data[0].expected || data[0].output).length
             const itemsCount = itemSize * data.length
 
             if (log) {
@@ -558,8 +558,8 @@ class Network {
     loadData (data, typedArray, itemSize, reject) {
         for (let di=0; di<data.length; di++) {
 
-            if (!data[di].hasOwnProperty("input") || !data[di].hasOwnProperty("expected")) {
-                return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
+            if (!data[di].hasOwnProperty("input") || (!data[di].hasOwnProperty("expected") && !data[di].hasOwnProperty("output"))) {
+                return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
             }
 
             let index = itemSize * di
@@ -582,8 +582,8 @@ class Network {
                 }
             }
 
-            for (let ei=0; ei<data[di].expected.length; ei++) {
-                typedArray[index] = data[di].expected[ei]
+            for (let ei=0; ei<(data[di].expected || data[di].output).length; ei++) {
+                typedArray[index] = (data[di].expected || data[di].output)[ei]
                 index++
             }
         }
@@ -602,7 +602,7 @@ class Network {
 
             const startTime = Date.now()
             const dimension = data[0].input.length
-            const itemSize = dimension + data[0].expected.length
+            const itemSize = dimension + (data[0].expected || data[0].output).length
             const itemsCount = itemSize * data.length
             const typedArray = new Float32Array(itemsCount)
 
@@ -743,7 +743,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.4"
+        return "3.4.1"
     }
 }
 

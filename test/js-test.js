@@ -36,7 +36,7 @@ describe("Loading", () => {
     })
 
     it("Statically returns the Network version when accessing via .version", () => {
-        expect(Network.version).to.equal("3.3.4")
+        expect(Network.version).to.equal("3.4.1")
     })
 })
 
@@ -1093,16 +1093,16 @@ describe("Network", () => {
             return expect(net.train()).to.be.rejectedWith("No data provided")
         })
 
-        it("Rejects the promise if some data does not have the key 'input' and 'expected'", () => {
-            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected")
+        it("Rejects the promise if some data does not have the key 'input' and 'expected'/'output'", () => {
+            return expect(net.train(badTestData)).to.be.rejectedWith("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
         })
 
         it("Resolves the promise when you give it data", () => {
-            return expect(net.train(testData)).to.be.fulfilled
+            return expect(net.train(testDataWithMixedExpectedOutput)).to.be.fulfilled
         })
 
-        it("Does not accept 'output' as an alternative name for expected values", () => {
-            return expect(net.train(testDataWithOutput)).to.not.be.fulfilled
+        it("Accepts 'output' as an alternative name for expected values", () => {
+            return expect(net.train(testDataWithOutput)).to.be.fulfilled
         })
 
         it("Does one iteration when not passing any config data", () => {
@@ -1191,7 +1191,7 @@ describe("Network", () => {
             })
         })
 
-        it("Calls the initLayers function with the length of the first input and length of first expected", () => {
+        it("Calls the initLayers function with the length of the first input and length of first expected, when using output key in the data", () => {
             const network = new Network({updateFn: null})
             network.trainingConfusionMatrix = [[0,0],[0,0]]
             network.testConfusionMatrix = [[0,0],[0,0]]
@@ -1199,7 +1199,7 @@ describe("Network", () => {
             sinon.stub(network, "forward").callsFake(() => [1,1])
             sinon.spy(network, "initLayers")
 
-            return network.train(testData).then(() => {
+            return network.train(testDataWithOutput).then(() => {
                 expect(network.initLayers).to.have.been.calledWith(2, 2)
                 network.initLayers.restore()
             })
@@ -1307,7 +1307,7 @@ describe("Network", () => {
 
         it("Runs validation when validation data is given", () => {
             sinon.spy(net, "validate")
-            return net.train(testData, {epochs: 10, validation: {data: testData, interval: 2}}).then(() => {
+            return net.train(testDataWithOutput, {epochs: 10, validation: {data: testDataWithOutput, interval: 2}}).then(() => {
                 expect(net.validate).to.be.called
                 net.validate.restore()
             })
@@ -1632,7 +1632,7 @@ describe("Network", () => {
         })
 
         it("Resolves with a number, indicating error", () => {
-            return net.test(testData).then((result) => {
+            return net.test(testDataOutput).then((result) => {
                 expect(typeof result).to.equal("number")
             })
         })

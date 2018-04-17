@@ -275,7 +275,7 @@ class Network {
             }
 
             if (this.state != "initialised") {
-                this.initLayers.bind(this, dataSet[0].input.length, dataSet[0].expected.length)()
+                this.initLayers.bind(this, dataSet[0].input.length, (dataSet[0].expected || dataSet[0].output).length)()
             }
 
             this.layers.forEach(layer => layer.state = "training")
@@ -335,8 +335,8 @@ class Network {
 
             const doIteration = async () => {
 
-                if (!dataSet[iterationIndex].hasOwnProperty("input") || !dataSet[iterationIndex].hasOwnProperty("expected")) {
-                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected'")
+                if (!dataSet[iterationIndex].hasOwnProperty("input") || (!dataSet[iterationIndex].hasOwnProperty("expected") && !dataSet[iterationIndex].hasOwnProperty("output"))) {
+                    return void reject("Data set must be a list of objects with keys: 'input' and 'expected' (or 'output')")
                 }
 
                 let trainingError
@@ -344,7 +344,7 @@ class Network {
 
                 const input = dataSet[iterationIndex].input
                 const output = this.forward(input)
-                const target = dataSet[iterationIndex].expected
+                const target = dataSet[iterationIndex].expected || dataSet[iterationIndex].output
 
                 let classification = -Infinity
                 const errors = []
@@ -447,7 +447,7 @@ class Network {
             const validateItem = (item) => {
 
                 const output = this.forward(data[validationIndex].input)
-                const target = data[validationIndex].expected
+                const target = data[validationIndex].expected || data[validationIndex].output
 
                 let classification = -Infinity
                 for (let i=0; i<output.length; i++) {
@@ -539,7 +539,7 @@ class Network {
 
                 const input = testSet[iterationIndex].input
                 const output = this.forward(input)
-                const target = testSet[iterationIndex].expected
+                const target = testSet[iterationIndex].expected || testSet[iterationIndex].output
                 const elapsed = Date.now() - startTime
 
                 let classification = -Infinity
@@ -671,7 +671,7 @@ class Network {
     }
 
     static get version () {
-        return "3.3.4"
+        return "3.4.1"
     }
 }
 

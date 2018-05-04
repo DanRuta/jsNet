@@ -63,19 +63,19 @@ weights[0] = 1
 net.layers[1].neurons[0].weights = weights
 ```
 
-Note that you need to serve files via a server (a basic server is an included) to load WebAssembly into a browser.
+Note that you need to serve files via a server (a basic server is included) to load WebAssembly into a browser.
 
 ### As an NPM package
-To install jsNet, run ```npm install jsNet```. You can choose which version you want to use at runtime. When ```require```-ing the package, you need to call the appropriate version, like so:
+To install jsNet, run ```npm install jsnet```. You can choose which version you want to use at runtime. When ```require```-ing the package, you need to call the appropriate version, like so:
 
 #### JavaScript
 ```javascript
-const {Network, FCLayer} = require("jsNet").js()
+const {Network, FCLayer} = require("jsnet").js()
 ```
 
 #### WebAssembly
 ```javascript
-const {Module, Network, FCLayer} = require("jsNet").webassembly()
+const {Module, Network, FCLayer} = require("jsnet").webassembly()
 ```
 When loading the WebAssembly version, you also need to use the Module object. This is the compiled emscripten WebAssembly object which binds your code to the C++ code. If you change the file structure, read below on how to load manually.
 

@@ -161,7 +161,7 @@ You can call the `net.delete()` function when using the WebAssembly version to c
 I will use [the MNIST dataset](https://github.com/cazala/mnist) in the examples below.
 
 ```javascript
-const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("jsNet").js()
+const {Network, Layer, FCLayer, ConvLayer, PoolLayer, Filter, Neuron, NetMath, NetUtil} = require("jsnet").js()
 // Get just what you need.
 ```
 Layer is an alias for FCLayer, for people not using the library for convolutional networks.
